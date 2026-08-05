@@ -21,9 +21,10 @@
   monitor agent before a `tail` operation was added. Nothing caps its growth.
 - Review the model catalogue periodically: context windows and prices are declared in
   code (`src/model_engine/providers/*_provider.py`) and drift as vendors change them
-- Implement the 11 remaining tools declared in `tools/tools.yaml` (api, database, memory,
-  rag, embeddings, ocr, pdf, email, calendar, docker, logging, metrics). They currently
-  fail to load with `Could not load class`.
+- Write the missing tool tests: `git`, `github`, `model` and `agri_advice` have no
+  test file. (The 20 tools are implemented and all load — the old entry claiming 11
+  of them failed with `Could not load class` was stale; the single real failure was
+  the `memory` tool, fixed with the import convention.)
 - Migrate the root `test_*.py` scripts to pytest, as required by `.claude/rules/testing.md`
 - Speed up the orchestration suites: `test_integration.py` takes ~4 minutes because the
   tester agent runs eight real suites on every pipeline execution

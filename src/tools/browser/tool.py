@@ -172,7 +172,16 @@ class BrowserTool(BaseTool):
         elif operation == "get_title":
             return self.get_title(*args, **kwargs)
         else:
-            raise ValueError(f"Unsupported operation: {operation}")
+            raise ValueError(
+                f"Unsupported operation: {operation}. "
+                f"Available operations: {', '.join(self.available_operations())}"
+            )
+
+    def available_operations(self) -> List[str]:
+        """Retourne la liste des opérations prises en charge."""
+        # Le dispatch se fait par nom explicite (pas de convention `_op_`),
+        # la liste est donc déclarée ici et doit suivre le dispatch d'execute().
+        return ["get_links", "get_text", "get_title", "visit"]
 
     def visit(self, url: str) -> dict:
         """
