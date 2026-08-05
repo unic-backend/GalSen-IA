@@ -10,10 +10,7 @@
 5. Extend SQLite persistence to the engines still in-memory (audit, approval,
    and the three backend services) — the backend itself is decided (ADR-005) and
    already wired into memory, model and knowledge
-6. Finish testing the tools: the 20 tools declared in `tools/tools.yaml` are all
-   implemented and load, but `git`, `github`, `model` and `agri_advice` still have
-   no test file
-7. Build the first real feature for Senegalese users
+6. Build the first real feature for Senegalese users (the `agri_advice` tool is the seed)
 
 ## How to use this file
 - Always check this file before starting new work.

@@ -12,9 +12,8 @@ Exemple:
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
-from src.model_engine.model_manager import ModelManagerImpl
 from src.tool.base import BaseTool
 
 logger = logging.getLogger(__name__)
@@ -40,10 +39,24 @@ class AgriAdviceTool(BaseTool):
                     - language: langue de réponse par défaut ('fr' ou 'wo', défaut 'fr')
         """
         super().__init__(config)
-        self.model_manager = ModelManagerImpl()
         self.default_language = self.config.get('language', 'fr') if self.config else 'fr'
         self.model_id = self.config.get('model_id') if self.config else None
+        self._model_manager = None
         logger.debug("AgriAdviceTool initialisé.")
+
+    @property
+    def model_manager(self):
+        """
+        Retourne le gestionnaire de modèles partagé de la plateforme.
+
+        L'outil passe par le registre commun plutôt que d'instancier son propre
+        gestionnaire : sans cela, les modèles enregistrés par un agent seraient
+        invisibles depuis l'outil.
+        """
+        if self._model_manager is None:
+            from src.integration.engine_registry import get_shared_registry
+            self._model_manager = get_shared_registry().model
+        return self._model_manager
 
     def _op_get_advice(
         self, question: str, **kwargs
@@ -61,9 +74,14 @@ class AgriAdviceTool(BaseTool):
 
         Returns:
             Dictionnaire contenant :
-                - "answer": str, conseil généré
+                - "status": str, `ready` si le conseil est exploitable
+                - "answer": str, conseil généré (vide si aucun modèle n'a répondu)
                 - "language": str, langue utilisée pour la réponse
-                - "model_used": str, ID du modèle utilisé
+                - "model_used": str ou None, nom du modèle utilisé
+                - "detail": str, présent seulement quand aucun conseil n'a pu être produit
+
+        Raises:
+            ValueError: Si la question est vide
         """
         if not isinstance(question, str) or not question.strip():
             raise ValueError("La question doit être une chaîne non vide")
@@ -91,25 +109,53 @@ Conseil :"""
         if temperature is not None:
             gen_params["temperature"] = temperature
 
-        try:
-            # Utiliser le gestionnaire de modèles pour générer le texte
-            answer = self.model_manager.generate_text_with_fallback(
-                prompt=prompt,
-                task_requirements={"domain": "agriculture", "region": "Senegal", "language": language},
-                model_id=model_id,
-                **gen_params
-            )
-
-            result = {
-                "answer": answer.strip(),
+        manager = self.model_manager
+        model_item = self._resolve_model(manager, model_id, language)
+        if model_item is None:
+            # Aucun modèle disponible n'est une information, pas une panne :
+            # l'agent appelant doit pouvoir le constater et se rabattre ailleurs.
+            return {
+                "status": "unavailable",
+                "answer": "",
                 "language": language,
-                "model_used": model_id or self.model_manager.get_default_model_name()
+                "model_used": None,
+                "detail": manager.unavailability_reason() or "Aucun modèle sélectionnable",
             }
-            logger.debug(f"Conseil agricole généré pour question : {question[:50]}...")
-            return result
-        except Exception as e:
-            logger.error(f"Erreur lors de la génération du conseil agricole : {e}")
-            raise RuntimeError(f"Échec de génération du conseil : {e}")
+
+        # `generate` est l'API synchrone du moteur : elle porte un statut, là où
+        # `generate_text_with_fallback` est une coroutine qu'un outil ne peut pas attendre.
+        response = manager.generate(model_item, prompt, **gen_params)
+        result = response.to_dict()
+
+        logger.debug(f"Conseil agricole généré pour question : {question[:50]}...")
+        return {
+            "status": result.get("status"),
+            "answer": (result.get("text") or "").strip(),
+            "language": language,
+            "model_used": model_item.name,
+            **({"detail": result["detail"]} if result.get("detail") else {}),
+        }
+
+    def _resolve_model(self, manager, model_id: Optional[str], language: str):
+        """
+        Détermine le modèle à utiliser : celui imposé, sinon la sélection automatique.
+
+        Args:
+            manager: Gestionnaire de modèles de la plateforme
+            model_id: Nom du modèle imposé, ou None
+            language: Langue de réponse attendue
+
+        Returns:
+            Le modèle retenu, ou None si aucun n'est disponible
+        """
+        if model_id:
+            return manager.get_model(model_id) or manager._model_registry.to_model_item(model_id)
+
+        return manager.select_model_for_task({
+            "domain": "agriculture",
+            "region": "Senegal",
+            "language": language,
+        })
 
     def available_operations(self) -> list[str]:
         """Retourne la liste des opérations prises en charge."""
