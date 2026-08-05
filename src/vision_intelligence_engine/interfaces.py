@@ -66,7 +66,7 @@ class SceneAnalyzer(ABC):
     """Interface for analyzing scenes in images (e.g., indoor/outdoor, landscape type)."""
 
     @abstractmethod
-    def __init__(self, object_detector: ObjectDetector, color_analyzer: ColorAnalyzer):
+    def __init__(self, object_detector: "ObjectDetector", color_analyzer: "ColorAnalyzer"):
         """Initialize the scene analyzer with required dependencies."""
         pass
 
