@@ -17,6 +17,10 @@ This project follows Semantic Versioning.
   - `src/services/` statement coverage raised from 92% to 99%
 
 ### Fixed
+- `test_embeddings_tool.py`: the three tests that patch `sentence_transformers`
+  are now skipped when that optional dependency is absent, so the suite is green
+  out of the box. The behaviour without the dependency stays covered by
+  `test_embeddings_tool_missing_sentence_transformer`
 - `requirements.txt` now declares two dependencies the code already required:
   `opencv-python-headless` (imported at module level by four
   `src/vision_intelligence_engine/` modules — without it the `vision` engine is

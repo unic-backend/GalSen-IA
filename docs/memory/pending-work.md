@@ -10,9 +10,6 @@
   and the notification / search / file services. The backend, the `BaseRepository`
   contract and the `GALSEN_STORAGE_BACKEND` / `GALSEN_DATA_DIR` selection already exist
   and are used by memory, model and knowledge.
-- Make `test_embeddings_tool.py` skip when `sentence_transformers` is missing: the three
-  tests fail on any environment without the optional dependency (which pulls torch), so
-  the suite is never fully green out of the box.
 
 ## Medium Priority
 - Add log rotation. `logs/application.log` reached 6 MB and had silently broken the
