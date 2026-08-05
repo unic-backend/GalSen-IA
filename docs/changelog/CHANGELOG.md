@@ -17,6 +17,12 @@ This project follows Semantic Versioning.
   - `src/services/` statement coverage raised from 92% to 99%
 
 ### Fixed
+- `requirements.txt` now declares two dependencies the code already required:
+  `opencv-python-headless` (imported at module level by four
+  `src/vision_intelligence_engine/` modules — without it the `vision` engine is
+  unavailable in the registry) and `httpx` (required by
+  `starlette.testclient.TestClient`, without which four API test files cannot be
+  collected)
 - Three pre-existing `NameError` failures that prevented the full pytest suite
   from being collected: missing `Optional` import in
   `src/memory_engine/memory_summarizer.py` and

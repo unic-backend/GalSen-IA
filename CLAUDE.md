@@ -68,4 +68,7 @@ Foundation phase is complete (ADR-001 Python, ADR-002 technology stack).
 The project is now building its **core engines** in `src/` — see `docs/architecture/overview.md`
 for the list, the shared conventions and what remains.
 
-Every engine is in-memory today. Persistent storage still needs an ADR before being introduced.
+Persistence is decided and implemented (ADR-005, SQLite): memory, model and knowledge
+select their store through `GALSEN_STORAGE_BACKEND` (`in-memory` by default, `sqlite` to
+persist) and `GALSEN_DATA_DIR`. The audit and approval engines and the three backend
+services are still in-memory only — extending them reuses `src/storage/`, no new ADR.

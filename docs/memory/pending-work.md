@@ -6,11 +6,13 @@
   The ADR must cover: source of keys (environment only, never committed), how they are
   supplied per deployment, rotation, and what happens when a key is present but
   rejected. Until then only the local Ollama provider can generate.
-- Write an ADR choosing the persistent storage backend, then implement it behind the
-  existing store interfaces (every engine is in-memory, so nothing survives a restart)
-- Add a `requirements.txt` / dependency manifest: optional libraries (PyPDF2, python-docx,
-  openpyxl, python-pptx, Pillow, markdown) are imported lazily but never declared anywhere.
-  The deployment agent reports its absence as a critical blocker.
+- Extend SQLite persistence (ADR-005) to the engines still in-memory: audit, approval,
+  and the notification / search / file services. The backend, the `BaseRepository`
+  contract and the `GALSEN_STORAGE_BACKEND` / `GALSEN_DATA_DIR` selection already exist
+  and are used by memory, model and knowledge.
+- Make `test_embeddings_tool.py` skip when `sentence_transformers` is missing: the three
+  tests fail on any environment without the optional dependency (which pulls torch), so
+  the suite is never fully green out of the box.
 
 ## Medium Priority
 - Add log rotation. `logs/application.log` reached 6 MB and had silently broken the
@@ -27,7 +29,8 @@
 - Create API / dataset / research templates
 
 ## Low Priority
-- Set up GitHub repository and contribution guidelines
+- Write contribution guidelines (the repository itself is live:
+  `github.com/unic-backend/GalSen-IA`)
 - Remove the empty stray directories at the repository root (`C:GalSen`,
   `IAsrcmodel_engine`, `IAsrcweb_intelligence_engine`), created by a Windows path bug
 

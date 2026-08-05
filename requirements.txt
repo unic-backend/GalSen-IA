@@ -13,8 +13,13 @@ PyYAML>=6.0
 
 # === Vision & Image Processing (PIL, OpenCV) ===
 # Vision Intelligence Engine, OCR Tool
-# Importé en lazy — l'absence désactive les fonctionnalités vision/OCR
+# Pillow est importé en lazy — son absence désactive les fonctionnalités vision/OCR
 Pillow>=10.0.0
+# opencv est importé au niveau module par le Vision Intelligence Engine
+# (object_detector, contour_object_detector, quality_analyzer, image_classifier) :
+# sans lui le moteur `vision` est indisponible dans l'EngineRegistry.
+# Variante headless : aucune dépendance à un serveur graphique (le code n'affiche rien).
+opencv-python-headless>=4.8.0
 
 # === Machine Learning (numpy, scipy) ===
 # Knowledge Engine (ranking), Vision Engine
@@ -24,3 +29,5 @@ numpy>=1.24.0
 pytest>=7.0.0
 pytest-asyncio>=0.21.0
 pytest-cov>=4.0.0
+# Requis par starlette.testclient.TestClient (tests API : health, rate limiter, RBAC, auth)
+httpx>=0.27.0
