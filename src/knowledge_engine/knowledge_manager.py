@@ -55,7 +55,7 @@ class KnowledgeManagerImpl(KnowledgeManager):
             self._store = store
         elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
             # Import différé pour éviter un import circulaire avec storage.
-            from storage.sqlite_knowledge_store import SQLiteKnowledgeStore
+            from src.storage.sqlite_knowledge_store import SQLiteKnowledgeStore
             self._store = SQLiteKnowledgeStore()
         else:
             self._store = InMemoryKnowledgeStore()

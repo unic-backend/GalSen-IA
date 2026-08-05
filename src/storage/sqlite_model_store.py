@@ -13,8 +13,8 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
-from model_engine.types import ModelItem, ModelStatus
-from model_engine.interfaces import ModelStore
+from src.model_engine.types import ModelItem, ModelStatus
+from src.model_engine.interfaces import ModelStore
 from .paths import default_sqlite_path
 
 

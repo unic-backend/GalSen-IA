@@ -27,16 +27,17 @@ import datetime
 import pytest
 
 # S'assurer que le chemin d'importation est correct
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+# La racine du dépôt doit être importable : convention unique `src.<module>`.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from storage.sqlite_model_store import SQLiteModelStore
-from storage.sqlite_knowledge_store import SQLiteKnowledgeStore
-from storage.paths import default_sqlite_path
+from src.storage.sqlite_model_store import SQLiteModelStore
+from src.storage.sqlite_knowledge_store import SQLiteKnowledgeStore
+from src.storage.paths import default_sqlite_path
 
-from model_engine.types import ModelItem, ModelType, ModelPriority, ModelStatus
-from model_engine.model_manager import ModelManagerImpl
+from src.model_engine.types import ModelItem, ModelType, ModelPriority, ModelStatus
+from src.model_engine.model_manager import ModelManagerImpl
 
-from knowledge_engine.types import (
+from src.knowledge_engine.types import (
     KnowledgeItem,
     KnowledgeSource,
     KnowledgeType,
@@ -45,7 +46,7 @@ from knowledge_engine.types import (
     SourceCategory,
     KnowledgePriority,
 )
-from knowledge_engine.knowledge_manager import KnowledgeManagerImpl
+from src.knowledge_engine.knowledge_manager import KnowledgeManagerImpl
 
 
 # --------------------------------------------------------------------------

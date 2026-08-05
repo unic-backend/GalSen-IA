@@ -7,6 +7,11 @@ This project follows Semantic Versioning.
 
 ## [Unreleased]
 ### Added
+- `tests/test_api_startup.py`: seven integration tests that actually boot the
+  application (`with TestClient(app)`), covering the lifespan, the late binding
+  of the tool engine into the health checker, resilience to a broken tool engine
+  and a real end-to-end tool execution. No test booted the app before, which is
+  why the two startup defects above went unnoticed
 - **Backend services test coverage (VOLET 02 Phase 2)**
   - `tests/test_services.py` extended from 93 to 135 unit tests: notification
     serialization edge cases (`read_at`, omitted optional fields, enum instances
@@ -17,6 +22,23 @@ This project follows Semantic Versioning.
   - `src/services/` statement coverage raised from 92% to 99%
 
 ### Fixed
+- **The API could not start.** `uvicorn src.api.server:app` — the command the
+  Dockerfile runs — failed with `ModuleNotFoundError: No module named 'storage'`
+  because `memory_manager.py`, the three `src/storage/sqlite_*_store.py` modules
+  and the deferred imports in `knowledge_manager.py` / `model_manager.py` used
+  top-level absolute imports assuming `src/` was on `sys.path`. Every import
+  inside `src/` now uses the single `src.<module>` convention, which also fixes
+  the duplicate-module identity bug (two distinct `MemoryPriority` classes)
+- **The startup handler was dead code.** `startup_event()` called
+  `tool_loader.load_tools()`, `ToolEngine(tools)` and
+  `tool_engine.set_executor()` — none of which exist. It now builds the engine
+  from the registry path and logs a failure instead of taking the API down
+- **`/tool/execute` never worked**: it called `tool_engine.execute()` (absent —
+  the method is `execute_tool()`) and passed `config` as a positional dict, so
+  the tool never received its options
+- `ToolLoader.get_tool_class()` no longer swallows `ImportError` /
+  `AttributeError` silently; the cause is logged. All 20 tools in
+  `tools/tools.yaml` now load
 - `test_embeddings_tool.py`: the three tests that patch `sentence_transformers`
   are now skipped when that optional dependency is absent, so the suite is green
   out of the box. The behaviour without the dependency stays covered by

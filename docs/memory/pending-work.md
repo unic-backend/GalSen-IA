@@ -12,6 +12,11 @@
   and are used by memory, model and knowledge.
 
 ## Medium Priority
+- Align the remaining root `test_*.py` files on the single `src.<module>` import
+  convention. They insert `src/` into `sys.path` and import `memory_engine...`
+  directly; that works only because they never touch a module importing the same
+  package under the `src.` prefix. `tests/test_storage*.py` already broke this way.
+- No CI: `.github/workflows/` does not exist, so nothing runs the suite on push.
 - Add log rotation. `logs/application.log` reached 6 MB and had silently broken the
   monitor agent before a `tail` operation was added. Nothing caps its growth.
 - Review the model catalogue periodically: context windows and prices are declared in

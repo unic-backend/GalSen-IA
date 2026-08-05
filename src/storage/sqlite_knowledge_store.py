@@ -14,11 +14,11 @@ import threading
 import datetime
 from typing import Any, Dict, List, Optional
 
-from knowledge_engine.types import (
+from src.knowledge_engine.types import (
     KnowledgeItem, KnowledgeSource, KnowledgeType, ContentType,
     Language, SourceCategory, KnowledgePriority,
 )
-from knowledge_engine.interfaces import KnowledgeStore
+from src.knowledge_engine.interfaces import KnowledgeStore
 from .paths import default_sqlite_path
 
 

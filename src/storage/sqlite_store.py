@@ -10,8 +10,8 @@ import sqlite3
 import time
 from typing import Any, Dict, List, Optional
 
-from memory_engine.types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
-from memory_engine.interfaces import MemoryStore
+from src.memory_engine.types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
+from src.memory_engine.interfaces import MemoryStore
 
 
 class SQLiteMemoryStore(MemoryStore):

@@ -4,10 +4,13 @@ Tool Loader for GalSen IA.
 Loads tool configurations from the tools registry YAML file.
 """
 
+import logging
 import yaml
 import os
 from typing import Dict, Any, Optional, Type
 from .base import BaseTool
+
+logger = logging.getLogger(__name__)
 
 
 class ToolLoader:
@@ -92,11 +95,16 @@ class ToolLoader:
         """
         config = self.get_tool_config(tool_id)
         if not config:
+            logger.warning("Outil '%s' absent du registre %s.", tool_id, self.registry_path)
             return None
 
         module_path = config.get('module')
         class_name = config.get('class')
         if not module_path or not class_name:
+            logger.warning(
+                "Outil '%s' mal déclaré : 'module' et 'class' sont requis (module=%r, class=%r).",
+                tool_id, module_path, class_name,
+            )
             return None
 
         try:
@@ -106,5 +114,10 @@ class ToolLoader:
             module = __import__(full_module_path, fromlist=[class_name])
             return getattr(module, class_name)
         except (ImportError, AttributeError) as e:
-            # Log error in real implementation, but for now return None
+            # Un échec silencieux rendait un outil introuvable sans la moindre trace :
+            # la cause réelle (dépendance manquante, classe renommée) est journalisée.
+            logger.warning(
+                "Chargement de l'outil '%s' impossible depuis %s.%s : %s: %s",
+                tool_id, full_module_path, class_name, type(e).__name__, e,
+            )
             return None
