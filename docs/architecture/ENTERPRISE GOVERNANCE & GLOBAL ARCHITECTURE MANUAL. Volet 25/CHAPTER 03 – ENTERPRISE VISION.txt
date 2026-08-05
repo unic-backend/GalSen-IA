@@ -1,0 +1,33 @@
+GALSEN IA
+VOLET 25 - ENTERPRISE GOVERNANCE & GLOBAL ARCHITECTURE MANUAL
+CHAPTER 03 - ENTERPRISE GOVERNANCE
+
+Version: 1.0
+Language: English
+
+PURPOSE
+
+Define governance across the complete GalSen IA platform.
+
+OBJECTIVES
+
+- Enterprise alignment.
+- Strategic governance.
+- Operational governance.
+- Security governance.
+- AI governance.
+- Compliance governance.
+
+GOVERNANCE BODIES
+
+- Executive Board.
+- AI Governance Board.
+- Security Board.
+- Compliance Board.
+- Architecture Board.
+
+FINAL DIRECTIVE
+
+Enterprise governance shall coordinate every strategic decision across GalSen IA.
+
+END OF CHAPTER 03

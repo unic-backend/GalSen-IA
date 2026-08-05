@@ -1,0 +1,28 @@
+GALSEN IA VOLET 1 - MASTER CONSTITUTION CHAPTER 09 - PROJECT PHILOSOPHY
+Version: 1.1 Language: English
+
+PURPOSE This chapter defines the permanent philosophy behind every
+decision made during the development of GalSen IA.
+
+CORE PHILOSOPHY GalSen IA is built to solve real-world problems, not to
+demonstrate technology.
+
+DESIGN PRINCIPLES - Simplicity before complexity. - Reliability before
+novelty. - Long-term value before short-term gains. - Maintainability
+before rapid expansion. - User benefit before technical elegance.
+
+USER-CENTERED DEVELOPMENT Every feature must answer: - Who benefits? -
+What problem is solved? - Is the solution sustainable? - Can it be
+maintained? - Can it scale?
+
+ENGINEERING PRINCIPLES - Build only what is useful. - Remove unnecessary
+complexity. - Reuse before rewriting. - Automate repetitive tasks. -
+Document important decisions.
+
+COLLABORATION Encourage clear communication, traceable decisions and
+continuous learning.
+
+FINAL RULE Technology is a tool. The success of GalSen IA is measured by
+the value it creates for people, organizations and society.
+
+END OF CHAPTER 09

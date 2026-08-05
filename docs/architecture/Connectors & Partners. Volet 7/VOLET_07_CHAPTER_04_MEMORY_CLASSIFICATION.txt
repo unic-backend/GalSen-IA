@@ -1,0 +1,32 @@
+GALSEN IA VOLET 7 - MEMORY ENGINE MANUAL CHAPTER 04 - MEMORY
+CLASSIFICATION Version: 1.0 Language: English
+
+PURPOSE Define how memories are categorized, labeled and organized to
+enable efficient retrieval, governance and long-term management.
+
+OBJECTIVES - Organize memories consistently. - Improve retrieval
+accuracy. - Support governance policies. - Reduce duplication. - Enable
+scalable memory management.
+
+CLASSIFICATION PRINCIPLES - Use standardized categories. - Apply
+consistent metadata. - Preserve contextual relationships. - Support
+hierarchical organization. - Maintain traceability.
+
+MEMORY CATEGORIES - User Memory - System Memory - Knowledge References -
+Operational Memory - Temporary Memory - Archived Memory
+
+METADATA STANDARDS - Unique identifier - Creation date - Last updated -
+Source - Confidence level - Access level - Retention policy - Tags
+
+CLASSIFICATION PROCESS 1. Analyze new memory. 2. Determine category. 3.
+Assign metadata. 4. Validate classification. 5. Store and index. 6.
+Review periodically.
+
+QUALITY CONTROLS - Classification accuracy - Metadata completeness -
+Consistency - Duplicate detection - Retrieval effectiveness
+
+FINAL DIRECTIVE Every memory shall be classified using standardized
+rules and metadata to ensure reliable retrieval, governance and
+long-term scalability across GalSen IA.
+
+END OF CHAPTER 04

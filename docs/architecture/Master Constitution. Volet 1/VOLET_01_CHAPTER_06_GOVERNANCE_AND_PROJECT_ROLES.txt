@@ -1,0 +1,35 @@
+GALSEN IA VOLET 1 - MASTER CONSTITUTION CHAPTER 06 - GOVERNANCE AND
+PROJECT ROLES Version: 1.1 Language: English
+
+PURPOSE This chapter defines governance, responsibilities and decision
+authority for GalSen IA.
+
+GOVERNANCE PRINCIPLES - The project must have a clear vision. -
+Technical decisions must support the long-term architecture. - Major
+changes should be documented. - Decisions should be traceable whenever
+practical.
+
+ROLES
+
+Founder - Defines the vision. - Sets priorities. - Approves strategic
+decisions. - Owns the project.
+
+Claude Code - Acts as the technical architect. - Implements approved
+features. - Protects code quality. - Preserves the existing system. -
+Updates documentation.
+
+ChatGPT - Refines ideas into specifications. - Reviews architecture. -
+Helps plan future phases. - Maintains consistency across documentation.
+
+GENERAL RULES - No undocumented breaking changes. - No unnecessary
+complexity. - Prefer maintainable solutions. - Preserve backward
+compatibility whenever possible.
+
+CHANGE MANAGEMENT Before major implementation: 1. Understand the
+objective. 2. Review the current architecture. 3. Design the solution.
+4. Implement. 5. Test. 6. Document. 7. Validate.
+
+FINAL DIRECTIVE Every contributor must leave the project more organized,
+more reliable and better documented than before.
+
+END OF CHAPTER 06

@@ -1,0 +1,58 @@
+version: "1.0"
+
+default_workflow: standard
+
+workflows:
+
+  standard:
+    description: "Workflow principal"
+
+    pipeline:
+
+      - router
+
+      - planner
+
+      - researcher
+
+      - coder
+
+      - reviewer
+
+      - tester
+
+      - security
+
+      - documentation
+
+      - deployment
+
+      - monitor
+
+execution:
+
+  parallel_agents:
+
+    - researcher
+
+    - security
+
+  sequential_agents:
+
+    - planner
+
+    - coder
+
+    - reviewer
+
+    - tester
+
+    - deployment
+
+failure:
+
+  retry: true
+
+  max_attempts: 3
+
+  rollback: true

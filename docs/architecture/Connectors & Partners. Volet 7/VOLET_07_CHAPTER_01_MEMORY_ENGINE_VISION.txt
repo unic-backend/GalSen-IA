@@ -1,0 +1,29 @@
+GALSEN IA VOLET 7 - MEMORY ENGINE MANUAL CHAPTER 01 - MEMORY ENGINE
+VISION Version: 1.0 Language: English
+
+PURPOSE Define the vision, mission and strategic role of the Memory
+Engine within the GalSen IA ecosystem.
+
+VISION Build a secure, intelligent and scalable memory system that
+enables long-term contextual understanding and continuous learning.
+
+MISSION - Preserve meaningful context. - Improve personalization. -
+Support intelligent decision-making. - Maintain trustworthy memory. -
+Enable efficient knowledge reuse.
+
+CORE PRINCIPLES - Accuracy. - Privacy by design. - User control. -
+Context awareness. - Traceability. - Scalability.
+
+RESPONSIBILITIES - Store relevant memories. - Retrieve contextual
+information. - Update memory responsibly. - Remove obsolete
+information. - Support AI reasoning.
+
+SUCCESS CRITERIA - High retrieval accuracy. - Low latency. - Strong
+privacy protection. - Reliable memory consistency. - Continuous
+improvement.
+
+FINAL DIRECTIVE The Memory Engine is the long-term contextual foundation
+of GalSen IA, ensuring that intelligent systems can remember, adapt and
+provide consistent assistance over time.
+
+END OF CHAPTER 01

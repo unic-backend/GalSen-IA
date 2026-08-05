@@ -1,0 +1,30 @@
+GALSEN IA VOLET 3 - DEVELOPMENT MANUAL CHAPTER 07 - DOCUMENTATION
+STANDARDS Version: 1.0 Language: English
+
+PURPOSE Define documentation standards to ensure every GalSen IA project
+remains understandable, maintainable and transferable.
+
+OBJECTIVES - Keep documentation accurate. - Support onboarding. -
+Preserve architectural knowledge. - Reduce dependency on individual
+contributors. - Enable long-term maintenance.
+
+DOCUMENTATION TYPES - Architecture documentation - API documentation -
+User documentation - Developer documentation - Operational
+documentation - Release notes
+
+GENERAL PRINCIPLES - Write clearly and concisely. - Update documentation
+with every significant change. - Keep examples current. - Avoid
+duplicate information. - Reference related documents where appropriate.
+
+REQUIRED CONTENT Each major module should document: - Purpose -
+Responsibilities - Public interfaces - Dependencies - Configuration -
+Known limitations
+
+MAINTENANCE - Review documentation regularly. - Archive obsolete
+documents. - Version important documents. - Record major architectural
+decisions.
+
+FINAL DIRECTIVE Documentation is part of the product and must be
+maintained with the same discipline as source code.
+
+END OF CHAPTER 07

@@ -1,0 +1,26 @@
+# =============================================================================
+# GalSen IA — Core Dependencies
+# =============================================================================
+# Install with: pip install -r requirements.txt
+# For optional features: pip install -r requirements.txt --extra-index-url ...
+# Full installation: pip install -r requirements-dev.txt
+
+# === Core (toujours requis) ===
+fastapi>=0.100.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+PyYAML>=6.0
+
+# === Vision & Image Processing (PIL, OpenCV) ===
+# Vision Intelligence Engine, OCR Tool
+# Importé en lazy — l'absence désactive les fonctionnalités vision/OCR
+Pillow>=10.0.0
+
+# === Machine Learning (numpy, scipy) ===
+# Knowledge Engine (ranking), Vision Engine
+numpy>=1.24.0
+
+# === Testing ===
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0

@@ -1,0 +1,32 @@
+GALSEN IA VOLET 2 - ARCHITECTURE MANUAL CHAPTER 04 - AI ORCHESTRATOR
+ARCHITECTURE Version: 1.0 Language: English
+
+PURPOSE Define how all AI capabilities are coordinated through a single
+orchestration layer.
+
+OBJECTIVES - Centralize AI requests. - Select the appropriate AI
+service. - Manage context and memory. - Enforce security and
+governance. - Optimize performance and cost.
+
+RESPONSIBILITIES - Route requests to AI models. - Manage conversation
+context. - Coordinate memory retrieval. - Apply safety policies. - Log
+important AI operations. - Support future AI providers.
+
+MODEL MANAGEMENT The orchestrator must allow multiple AI providers
+without changing application logic. Models should be replaceable through
+configuration.
+
+MEMORY INTEGRATION Coordinate: - Session memory - User memory - Project
+memory - Knowledge retrieval
+
+ERROR HANDLING - Detect failures. - Retry when appropriate. - Fallback
+to alternative providers when available. - Return clear error messages.
+
+SCALABILITY The orchestration layer must support future AI models, tools
+and autonomous workflows without redesigning the platform.
+
+FINAL DIRECTIVE No application component should communicate directly
+with AI providers. All AI interactions must pass through the AI
+Orchestrator.
+
+END OF CHAPTER 04

@@ -1,0 +1,31 @@
+GALSEN IA VOLET 4 - ROADMAP CHAPTER 10 - ROADMAP GOVERNANCE Version: 1.0
+Language: English
+
+PURPOSE Define how the GalSen IA roadmap is governed, reviewed and
+updated over time.
+
+OBJECTIVES - Maintain strategic alignment. - Ensure transparent
+decision-making. - Control roadmap changes. - Preserve long-term
+vision. - Enable continuous improvement.
+
+GOVERNANCE PRINCIPLES - Review the roadmap regularly. - Base decisions
+on evidence. - Record significant changes. - Communicate approved
+updates. - Protect architectural consistency.
+
+ROLES AND RESPONSIBILITIES - Product Leadership defines strategic
+direction. - Architecture Leadership validates technical alignment. -
+Engineering plans implementation. - Stakeholders provide feedback. -
+Governance approves major roadmap changes.
+
+REVIEW CYCLE - Evaluate milestones. - Measure KPIs. - Assess risks. -
+Reprioritize initiatives when justified. - Publish updated roadmap
+versions.
+
+CHANGE CONTROL - Document every major roadmap revision. - Preserve
+historical versions. - Explain the rationale for significant changes. -
+Avoid unnecessary roadmap instability.
+
+FINAL DIRECTIVE The roadmap is a living document that must evolve
+responsibly while preserving the long-term mission of GalSen IA.
+
+END OF CHAPTER 10 END OF VOLET 4

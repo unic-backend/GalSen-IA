@@ -1,0 +1,30 @@
+GALSEN IA VOLET 16 - AUTHENTICATION & IDENTITY ENGINE MANUAL CHAPTER
+06 - AUTHENTICATION & IDENTITY MONITORING Version: 1.0 Language: English
+
+PURPOSE Define the monitoring framework for authentication, identity
+activities and access events throughout the GalSen IA ecosystem.
+
+OBJECTIVES - Monitor authentication services. - Detect abnormal identity
+behavior. - Ensure service availability. - Support security
+investigations. - Enable continuous operational improvement.
+
+MONITORING AREAS - Authentication events. - Authorization decisions. -
+Session activity. - Identity changes. - Credential usage. - System
+health.
+
+MONITORING PRINCIPLES - Real-time visibility. - Continuous monitoring. -
+Traceability. - Accuracy. - Proactive alerting.
+
+MONITORING PROCESS 1. Collect identity events. 2. Analyze authentication
+activity. 3. Detect anomalies. 4. Generate alerts. 5. Investigate
+incidents. 6. Improve monitoring rules.
+
+KEY METRICS - Authentication success rate. - Failed login rate. -
+Session duration. - Identity modification events. - Service uptime. -
+Alert response time.
+
+FINAL DIRECTIVE Authentication and Identity Monitoring shall provide
+continuous visibility, rapid threat detection and complete traceability
+across the entire GalSen IA ecosystem.
+
+END OF CHAPTER 06

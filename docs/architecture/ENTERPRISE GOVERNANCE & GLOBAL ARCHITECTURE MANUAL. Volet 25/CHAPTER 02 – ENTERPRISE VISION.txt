@@ -1,0 +1,41 @@
+GALSEN IA
+VOLET 25 - ENTERPRISE GOVERNANCE & GLOBAL ARCHITECTURE MANUAL
+CHAPTER 02 - GLOBAL ARCHITECTURE
+
+Version: 1.0
+Language: English
+
+PURPOSE
+
+Define the global architecture connecting every engine.
+
+GLOBAL COMPONENTS
+
+- Identity Engine.
+- Security Engine.
+- Memory Engine.
+- Knowledge Engine.
+- Decision Engine.
+- Learning Engine.
+- Workflow Engine.
+- Notification Engine.
+- Integration Engine.
+- AI Agent Orchestration Engine.
+- Analytics Services.
+- Enterprise Dashboard.
+
+ARCHITECTURE PRINCIPLES
+
+- Modular Architecture.
+- Microservices.
+- Event-Driven Communication.
+- API First.
+- Zero Trust.
+- High Availability.
+- Fault Tolerance.
+
+FINAL DIRECTIVE
+
+Every engine shall communicate through standardized enterprise interfaces.
+
+END OF CHAPTER 02

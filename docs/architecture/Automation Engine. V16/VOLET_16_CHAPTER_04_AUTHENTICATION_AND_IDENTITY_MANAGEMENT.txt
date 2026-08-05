@@ -1,0 +1,29 @@
+GALSEN IA VOLET 16 - AUTHENTICATION & IDENTITY ENGINE MANUAL CHAPTER
+04 - AUTHENTICATION & IDENTITY MANAGEMENT Version: 1.0 Language: English
+
+PURPOSE Define the management framework for identities, credentials and
+authentication services across the GalSen IA ecosystem.
+
+OBJECTIVES - Centralize identity administration. - Manage user and
+service accounts. - Control credentials securely. - Maintain identity
+integrity. - Support lifecycle governance.
+
+MANAGEMENT DOMAINS - User Identity Management. - Service Identity
+Management. - Role Management. - Credential Management. - Session
+Management. - Identity Audit.
+
+MANAGEMENT PRINCIPLES - Least Privilege. - Zero Trust. - Strong
+Authentication. - Accountability. - Continuous Monitoring.
+
+OPERATIONAL PROCESS 1. Create identity. 2. Assign roles. 3. Configure
+authentication methods. 4. Monitor access activity. 5. Update identities
+securely. 6. Disable or retire obsolete identities.
+
+QUALITY CONTROLS - Identity validation. - Credential rotation. - Access
+reviews. - Audit logging. - Compliance verification.
+
+FINAL DIRECTIVE Authentication and Identity Management shall ensure
+secure, centralized and auditable control of all identities and access
+privileges throughout the GalSen IA ecosystem.
+
+END OF CHAPTER 04

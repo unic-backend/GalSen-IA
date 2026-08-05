@@ -1,0 +1,33 @@
+GALSEN IA VOLET 3 - DEVELOPMENT MANUAL CHAPTER 01 - DEVELOPMENT
+STANDARDS Version: 1.0 Language: English
+
+PURPOSE Define the mandatory development standards for every contributor
+working on GalSen IA.
+
+OBJECTIVES - Produce reliable software. - Maintain consistent code
+quality. - Simplify collaboration. - Reduce technical debt. - Support
+long-term maintenance.
+
+GENERAL PRINCIPLES - Write readable code before clever code. - Prefer
+simplicity over unnecessary complexity. - Keep functions and classes
+focused on a single responsibility. - Avoid duplicated logic. - Document
+important architectural decisions.
+
+CODE ORGANIZATION - Use a clear folder structure. - Separate
+presentation, business logic and data access. - Group related modules
+together. - Keep reusable utilities isolated.
+
+NAMING CONVENTIONS - Use meaningful names. - Keep naming consistent
+across the project. - Avoid abbreviations unless widely accepted.
+
+DOCUMENTATION - Document public interfaces. - Maintain architecture
+documentation. - Update documentation whenever behavior changes.
+
+CODE REVIEW Every significant change should be reviewed for: -
+Correctness - Security - Performance - Maintainability - Compliance with
+project standards
+
+FINAL DIRECTIVE Code quality is a permanent responsibility shared by
+every contributor to GalSen IA.
+
+END OF CHAPTER 01

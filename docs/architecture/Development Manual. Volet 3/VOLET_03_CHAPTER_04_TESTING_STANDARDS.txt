@@ -1,0 +1,31 @@
+GALSEN IA VOLET 3 - DEVELOPMENT MANUAL CHAPTER 04 - TESTING STANDARDS
+Version: 1.0 Language: English
+
+PURPOSE Define the testing standards that ensure software quality across
+all GalSen IA projects.
+
+OBJECTIVES - Detect defects early. - Prevent regressions. - Increase
+confidence in deployments. - Maintain reliable software. - Encourage
+continuous quality improvement.
+
+TESTING LEVELS - Unit Testing - Integration Testing - End-to-End
+Testing - Performance Testing - Security Testing
+
+GENERAL PRINCIPLES - Automate tests whenever practical. - Test critical
+business logic first. - Keep tests deterministic. - Isolate test
+environments. - Review failing tests before release.
+
+TEST QUALITY - Use meaningful test names. - Cover normal, edge and error
+cases. - Keep tests simple and maintainable. - Remove obsolete tests.
+
+CONTINUOUS INTEGRATION - Run automated tests on every significant
+change. - Block releases when critical tests fail. - Publish test
+reports for review.
+
+DOCUMENTATION Record: - Test scope - Expected behavior - Known
+limitations - Regression history when relevant
+
+FINAL DIRECTIVE Testing is a core engineering practice and every feature
+should include appropriate automated and manual validation.
+
+END OF CHAPTER 04

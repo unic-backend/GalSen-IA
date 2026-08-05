@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:/GalSen IA/scripts/session_bootstrap.py\"",
+            "timeout": 20,
+            "statusMessage": "Chargement de la memoire projet GalSen IA..."
+          }
+        ]
+      }
+    ]
+  }
+}

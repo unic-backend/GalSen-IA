@@ -1,0 +1,42 @@
+## Done
+- [x] Phase 4 — Generalized Persistence (SQLiteModelStore, SQLiteKnowledgeStore, GALSEN_STORAGE_BACKEND/GALSEN_DATA_DIR, branchement moteurs, 43 tests) — incl. alignement import `memory_manager` sur la convention top-level (plus aucun `from ..storage` dans src/)
+- [x] Phase 3 — Human Approval Gate (approval_engine, ADR-006, requires_approval, portillon BaseAgent, 5 endpoints API, 33 tests)
+- [x] Phase 2 — Structured Audit System (audit_engine, intégration registre/contexte/agents, request_id, 35 tests)
+- [x] Phase 1 — Verifiable Knowledge Hierarchy (hiérarchie P1–P4, provenance/citation, retrieve_reliable)
+- [x] Persistent Storage — Créer src/storage/__init__.py
+- [x] Persistent Storage — Créer src/storage/base_repository.py (interface abstraite générique BaseRepository[T])
+- [x] Persistent Storage — Corriger cleanup_expired() et les imports dans sqlite_store.py
+- [x] Persistent Storage — Écrire tests/test_storage.py (50 tests, 8 classes)
+- [x] Persistent Storage — Mettre à jour la documentation (completed-work.md, CHANGELOG.md, TASKS.md)
+- [x] Build the Model Engineer provider layer (contract, registries, selection, ADR-003)
+- [x] Implement the local Ollama provider with real generation
+- [x] Add the model tool exposing the Model Engine through the Tool Engine
+- [x] Build the engine integration layer (registry, context, base agent, dispatcher)
+- [x] Replace the nine placeholder agents with real engine calls
+- [x] Implement the filesystem, terminal, git and github tool connectors
+- [x] Create test_integration.py (18 tests)
+- [x] Document the integration layer in docs/architecture/overview.md
+- [x] Repair and complete the Document Intelligence Engine (module was broken on import)
+- [x] Extend the document agent test suite from 14 to 22 tests
+- [x] Create root CLAUDE.md
+- [x] Create permanent memory system (vision, objectives, completed, pending, priorities, knowledge-index)
+- [x] Create complete folder structure
+- [x] Create CHANGELOG.md
+- [x] Create roadmap.md
+- [x] Building the complete project foundation
+- [x] Create `docs/architecture/overview.md`
+- [x] Create coding conventions (`.claude/rules/coding-conventions.md`)
+- [x] Create security rules (`.claude/rules/security.md`)
+- [x] Create documentation standards (`.claude/rules/documentation.md`)
+- [x] Create prompt standards (`.claude/rules/prompts.md`)
+- [x] Create git workflow (`.claude/rules/git-workflow.md`)
+- [x] Create testing standards (`.claude/rules/testing.md`)
+- [x] Create coding standards (`.claude/rules/coding-standards.md`)
+- [x] Implement the Embeddings tool for generating text embeddings using sentence-transformers models
+- [x] Implement the OCR tool for optical character recognition using Tesseract
+- [x] Implement the PDF tool for PDF text extraction
+- [x] Implement the Email tool for sending emails via SMTP
+- [x] Implement the Calendar tool for managing calendar events
+- [x] Implement the Docker tool for Docker container management
+- [x] Implement the Logging tool for managing application logs
+- [x] Implement the Metrics tool for collecting and retrieving metrics

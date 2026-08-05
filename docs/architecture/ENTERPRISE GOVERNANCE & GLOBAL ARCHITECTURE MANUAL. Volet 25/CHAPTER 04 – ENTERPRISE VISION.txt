@@ -1,0 +1,35 @@
+GALSEN IA
+VOLET 25 - ENTERPRISE GOVERNANCE & GLOBAL ARCHITECTURE MANUAL
+CHAPTER 04 - ENTERPRISE OPERATIONS
+
+Version: 1.0
+Language: English
+
+PURPOSE
+
+Define operational management across the entire enterprise platform.
+
+OPERATIONAL DOMAINS
+
+- Infrastructure.
+- AI Operations.
+- DevOps.
+- MLOps.
+- Security Operations.
+- Monitoring.
+- Incident Management.
+- Business Continuity.
+
+QUALITY OBJECTIVES
+
+- Availability.
+- Reliability.
+- Scalability.
+- Performance.
+- Continuous Improvement.
+
+FINAL DIRECTIVE
+
+Enterprise operations shall ensure uninterrupted services throughout the GalSen IA ecosystem.
+
+END OF CHAPTER 04

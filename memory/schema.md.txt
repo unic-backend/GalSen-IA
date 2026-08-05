@@ -1,0 +1,71 @@
+# GalSen IA Memory Schema
+
+## Session Memory
+- Contexte de la conversation en cours.
+- Réinitialisée à la fin de la session.
+
+---
+
+## Working Memory
+- Tâches en cours.
+- Raisonnement temporaire.
+- Plans d'exécution.
+
+---
+
+## Long-Term Memory
+- Informations apprises au fil du temps.
+- Préférences.
+- Historique important.
+
+---
+
+## Project Memory
+- Architecture.
+- Décisions techniques.
+- Standards.
+- Conventions.
+- Historique du projet.
+
+---
+
+## Knowledge Base
+- Documentation.
+- API.
+- Guides.
+- Fichiers indexés.
+- Base RAG.
+
+---
+
+## Agent Memory
+Chaque agent possède :
+
+- son historique
+- ses décisions
+- ses erreurs
+- ses réussites
+- son contexte
+
+---
+
+## Tool Memory
+Historique des outils utilisés :
+
+- terminal
+- git
+- filesystem
+- navigateur
+- API
+- base de données
+
+---
+
+## Execution Memory
+Historique complet des exécutions :
+
+- objectif
+- étapes
+- résultat
+- durée
+- erreurs

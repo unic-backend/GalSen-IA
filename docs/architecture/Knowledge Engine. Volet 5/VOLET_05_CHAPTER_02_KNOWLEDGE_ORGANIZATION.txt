@@ -1,0 +1,29 @@
+GALSEN IA VOLET 5 - KNOWLEDGE ENGINE CHAPTER 02 - KNOWLEDGE ORGANIZATION
+Version: 1.0 Language: English
+
+PURPOSE Define how knowledge is organized to ensure consistency,
+discoverability and long-term maintainability.
+
+OBJECTIVES - Organize information logically. - Reduce duplication. -
+Improve retrieval accuracy. - Simplify maintenance. - Support future
+expansion.
+
+ORGANIZATION PRINCIPLES - Use clear categories. - Group related topics
+together. - Assign metadata to every knowledge item. - Maintain explicit
+relationships between documents. - Archive obsolete information without
+losing history.
+
+STRUCTURE - Domains - Categories - Topics - Documents - Tags -
+References - Versions
+
+CLASSIFICATION Knowledge should be classified by: - Source -
+Reliability - Sensitivity - Audience - Status (Draft, Reviewed,
+Approved, Archived)
+
+MAINTENANCE - Review content regularly. - Merge duplicate information. -
+Preserve version history. - Record ownership for each knowledge area.
+
+FINAL DIRECTIVE A well-organized knowledge base enables reliable AI
+reasoning, efficient search and sustainable long-term growth.
+
+END OF CHAPTER 02

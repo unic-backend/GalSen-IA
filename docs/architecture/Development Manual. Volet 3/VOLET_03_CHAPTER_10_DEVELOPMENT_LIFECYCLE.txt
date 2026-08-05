@@ -1,0 +1,30 @@
+GALSEN IA VOLET 3 - DEVELOPMENT MANUAL CHAPTER 10 - DEVELOPMENT
+LIFECYCLE Version: 1.0 Language: English
+
+PURPOSE Define the complete software development lifecycle for every
+GalSen IA project.
+
+OBJECTIVES - Ensure predictable delivery. - Maintain high quality. -
+Reduce project risk. - Improve collaboration. - Support continuous
+improvement.
+
+LIFECYCLE PHASES 1. Requirements Analysis 2. Architecture & Design 3.
+Development 4. Testing 5. Security Review 6. Deployment 7. Monitoring 8.
+Maintenance 9. Continuous Improvement
+
+QUALITY GATES Before advancing to the next phase: - Requirements are
+validated. - Code reviews are completed. - Automated tests pass. -
+Security checks are performed. - Documentation is updated.
+
+CHANGE MANAGEMENT - Evaluate impacts before implementation. - Record
+major decisions. - Preserve backward compatibility when practical. -
+Communicate significant changes.
+
+METRICS Track: - Delivery time - Defect rate - Test coverage -
+Performance indicators - System availability
+
+FINAL DIRECTIVE Every project must follow a disciplined lifecycle that
+prioritizes quality, security, maintainability and long-term
+sustainability.
+
+END OF CHAPTER 10 END OF VOLET 3

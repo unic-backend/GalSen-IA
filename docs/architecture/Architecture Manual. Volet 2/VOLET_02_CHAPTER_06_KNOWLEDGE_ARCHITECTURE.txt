@@ -1,0 +1,37 @@
+GALSEN IA VOLET 2 - ARCHITECTURE MANUAL CHAPTER 06 - KNOWLEDGE
+ARCHITECTURE Version: 1.0 Language: English
+
+PURPOSE Define the architecture of the Knowledge Engine that powers
+information retrieval and reasoning across GalSen IA.
+
+OBJECTIVES - Centralize organizational knowledge. - Maintain accurate
+and versioned information. - Support fast retrieval. - Enable
+AI-assisted reasoning using trusted sources. - Separate knowledge from
+application logic.
+
+KNOWLEDGE SOURCES - Internal documentation - Business rules - Technical
+manuals - Project documentation - User-approved reference data -
+External trusted sources when permitted
+
+KNOWLEDGE STRUCTURE - Categories - Topics - Documents - Metadata -
+Tags - Relationships between knowledge items
+
+KNOWLEDGE LIFECYCLE 1. Create 2. Validate 3. Publish 4. Update 5.
+Archive 6. Retire
+
+RETRIEVAL PRINCIPLES - Return the most relevant knowledge first. -
+Prefer authoritative sources. - Support semantic search. - Minimize
+duplicate information. - Track document versions.
+
+INTEGRATION The Knowledge Engine must integrate with: - AI
+Orchestrator - Memory Engine - Search Engine - Workflow Engine
+
+GOVERNANCE - Maintain ownership of knowledge. - Record significant
+updates. - Review outdated content regularly. - Preserve historical
+versions when appropriate.
+
+FINAL DIRECTIVE Knowledge must remain accurate, organized and
+independent so it can evolve without affecting the platform
+architecture.
+
+END OF CHAPTER 06

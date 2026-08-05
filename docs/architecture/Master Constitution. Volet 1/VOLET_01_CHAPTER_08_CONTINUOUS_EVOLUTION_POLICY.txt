@@ -1,0 +1,31 @@
+GALSEN IA VOLET 1 - MASTER CONSTITUTION CHAPTER 08 - CONTINUOUS
+EVOLUTION POLICY Version: 1.1 Language: English
+
+PURPOSE This chapter defines how GalSen IA must evolve throughout its
+lifetime.
+
+CORE PRINCIPLE GalSen IA is never considered “finished”. It continuously
+evolves while preserving stability.
+
+EVOLUTION RULES - Improve before expanding. - Preserve validated
+functionality. - Avoid unnecessary rewrites. - Favor incremental
+improvements. - Keep backward compatibility whenever practical.
+
+INNOVATION New technologies should be evaluated before adoption. Adopt
+them only if they provide measurable benefits in: - Security -
+Performance - Reliability - Maintainability - User experience
+
+TECHNICAL DEBT - Track technical debt. - Reduce it regularly. - Never
+ignore critical issues.
+
+DOCUMENT REVIEW All documentation should be reviewed and updated
+whenever major changes occur.
+
+FUTURE READINESS The architecture should remain flexible enough to
+support future AI models, services and integrations without redesigning
+the entire platform.
+
+FINAL RULE Every release should leave GalSen IA stronger, cleaner and
+easier to maintain than the previous release.
+
+END OF CHAPTER 08

@@ -1,0 +1,30 @@
+GALSEN IA VOLET 5 - KNOWLEDGE ENGINE CHAPTER 03 - KNOWLEDGE LIFECYCLE
+Version: 1.0 Language: English
+
+PURPOSE Define the complete lifecycle for creating, validating,
+maintaining and retiring knowledge within GalSen IA.
+
+OBJECTIVES - Ensure knowledge quality. - Maintain accuracy over time. -
+Support controlled evolution. - Preserve historical information. -
+Enable continuous improvement.
+
+LIFECYCLE STAGES 1. Creation 2. Review 3. Validation 4. Approval 5.
+Publication 6. Maintenance 7. Archiving 8. Retirement
+
+CREATION RULES - Use trusted sources. - Define ownership. - Add
+metadata. - Classify the content. - Avoid duplicate entries.
+
+REVIEW AND APPROVAL - Verify accuracy. - Check consistency. - Confirm
+relevance. - Approve before publication. - Record review history.
+
+MAINTENANCE - Review periodically. - Update outdated information. -
+Preserve previous versions. - Archive obsolete knowledge responsibly.
+
+GOVERNANCE - Assign clear ownership. - Maintain auditability. - Track
+revisions. - Document major changes.
+
+FINAL DIRECTIVE Knowledge is a living asset and must evolve through a
+disciplined lifecycle that preserves quality, traceability and long-term
+value.
+
+END OF CHAPTER 03

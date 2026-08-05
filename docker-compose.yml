@@ -1,0 +1,157 @@
+# =============================================================================
+# GalSen IA — Docker Compose
+# =============================================================================
+# Démarrage :
+#   docker-compose up -d
+#
+# Arrêt :
+#   docker-compose down
+#
+# Services :
+#   api     — Serveur API FastAPI (production)
+#   api-dev — Serveur API avec rechargement automatique (développement)
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # ---------------------------------------------------------------------------
+  # Service principal : API GalSen IA (mode production)
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: galsen-ia:latest
+    container_name: galsen-ia-api
+    restart: unless-stopped
+
+    ports:
+      - "${GALSEN_PORT:-8000}:8000"
+
+    # Volumes pour la persistance des données et les logs
+    volumes:
+      - galsen_data:/app/data
+      - galsen_logs:/app/logs
+
+    # Variables d'environnement chargées depuis .env
+    environment:
+      # Stockage
+      - GALSEN_STORAGE_BACKEND=${GALSEN_STORAGE_BACKEND:-sqlite}
+
+      # Sécurité API
+      - GALSEN_API_KEYS=${GALSEN_API_KEYS}
+
+      # Limiteur de taux
+      - GALSEN_RATE_LIMIT_ENABLED=${GALSEN_RATE_LIMIT_ENABLED:-true}
+      - GALSEN_RATE_LIMIT_AUTHENTICATED_RPM=${GALSEN_RATE_LIMIT_AUTHENTICATED_RPM:-60}
+      - GALSEN_RATE_LIMIT_UNAUTHENTICATED_RPM=${GALSEN_RATE_LIMIT_UNAUTHENTICATED_RPM:-30}
+      - GALSEN_RATE_LIMIT_BURST_MULTIPLIER=${GALSEN_RATE_LIMIT_BURST_MULTIPLIER:-2.0}
+
+      # Fournisseurs de modèles (clés API)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+
+      # Hôte local Ollama (si utilisé)
+      - OLLAMA_HOST=${OLLAMA_HOST:-}
+
+    # Healthcheck Docker Compose utilisant l'endpoint /health
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+    # Limites de ressources (ajustables selon l'environnement)
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+
+    # Réseau dédié
+    networks:
+      - galsen-network
+
+  # ---------------------------------------------------------------------------
+  # Service de développement : API avec rechargement automatique
+  # ---------------------------------------------------------------------------
+  api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: galsen-ia:dev
+    container_name: galsen-ia-api-dev
+    restart: unless-stopped
+
+    ports:
+      - "${GALSEN_DEV_PORT:-8001}:8000"
+
+    # Monte le code source en direct pour le rechargement
+    volumes:
+      - ./src:/app/src:ro
+      - ./tools:/app/tools:ro
+      - galsen_data_dev:/app/data
+      - galsen_logs_dev:/app/logs
+
+    environment:
+      - GALSEN_STORAGE_BACKEND=${GALSEN_STORAGE_BACKEND:-sqlite}
+      - GALSEN_API_KEYS=${GALSEN_API_KEYS:-dev-key}
+      - GALSEN_RATE_LIMIT_ENABLED=${GALSEN_RATE_LIMIT_ENABLED:-false}
+      - GALSEN_RATE_LIMIT_AUTHENTICATED_RPM=${GALSEN_RATE_LIMIT_AUTHENTICATED_RPM:-60}
+      - GALSEN_RATE_LIMIT_UNAUTHENTICATED_RPM=${GALSEN_RATE_LIMIT_UNAUTHENTICATED_RPM:-30}
+      - GALSEN_RATE_LIMIT_BURST_MULTIPLIER=${GALSEN_RATE_LIMIT_BURST_MULTIPLIER:-2.0}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - OLLAMA_HOST=${OLLAMA_HOST:-}
+
+    # Rechargement automatique activé en développement
+    command: >
+      uvicorn src.api.server:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+      --reload-dir /app/src
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+
+    networks:
+      - galsen-network
+
+# ---------------------------------------------------------------------------
+# Volumes nommés (persistance entre les redémarrages)
+# ---------------------------------------------------------------------------
+volumes:
+  galsen_data:
+    name: galsen_data
+    driver: local
+  galsen_logs:
+    name: galsen_logs
+    driver: local
+  galsen_data_dev:
+    name: galsen_data_dev
+    driver: local
+  galsen_logs_dev:
+    name: galsen_logs_dev
+    driver: local
+
+# ---------------------------------------------------------------------------
+# Réseau dédié
+# ---------------------------------------------------------------------------
+networks:
+  galsen-network:
+    name: galsen-network
+    driver: bridge

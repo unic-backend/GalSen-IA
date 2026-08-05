@@ -1,0 +1,36 @@
+GALSEN IA VOLET 2 - ARCHITECTURE MANUAL CHAPTER 08 - SECURITY
+ARCHITECTURE Version: 1.0 Language: English
+
+PURPOSE Define the security architecture that protects GalSen IA, its
+users, data and services.
+
+OBJECTIVES - Protect confidentiality, integrity and availability. -
+Secure every layer of the platform. - Reduce attack surfaces. - Detect
+and respond to security incidents. - Support regulatory compliance.
+
+SECURITY PRINCIPLES - Security by Design - Least Privilege - Defense in
+Depth - Zero Trust - Secure Defaults
+
+IDENTITY AND ACCESS - Strong authentication. - Role-Based Access Control
+(RBAC). - Multi-Factor Authentication where appropriate. - Secure
+session management. - Periodic access reviews.
+
+DATA PROTECTION - Encrypt data in transit and at rest. - Secure secret
+management. - Data classification. - Backup encryption. - Controlled key
+rotation.
+
+APPLICATION SECURITY - Validate all inputs. - Protect against common web
+vulnerabilities. - Secure APIs. - Dependency management. - Code reviews
+before deployment.
+
+MONITORING - Audit logging. - Security event monitoring. - Alerting. -
+Incident response procedures. - Continuous vulnerability assessment.
+
+SECURITY GOVERNANCE - Document security policies. - Review permissions
+regularly. - Perform periodic security testing. - Continuously improve
+defenses.
+
+FINAL DIRECTIVE Security is a permanent architectural requirement and
+must never be treated as an optional feature.
+
+END OF CHAPTER 08

@@ -1,0 +1,31 @@
+GALSEN IA VOLET 1 - MASTER CONSTITUTION CHAPTER 07 - QUALITY STANDARDS
+Version: 1.1 Language: English
+
+PURPOSE This chapter defines the minimum quality standards that every
+component of GalSen IA must satisfy.
+
+GENERAL PRINCIPLES - Quality is mandatory. - Working software is not
+enough. - Software must also be reliable, maintainable and
+understandable.
+
+CODE QUALITY Every implementation should be: - Readable - Modular -
+Reusable - Consistent - Well documented - Easy to test
+
+ARCHITECTURE QUALITY Avoid: - Duplicate logic - Unnecessary complexity -
+Tight coupling - Hidden dependencies - Temporary shortcuts without
+documentation
+
+DOCUMENTATION Every important feature must include: - Purpose - Design
+decisions - Configuration - Usage - Limitations
+
+TESTING Before considering a task complete: - Verify existing
+functionality. - Test new functionality. - Fix regressions
+immediately. - Update documentation if behavior changes.
+
+CONTINUOUS IMPROVEMENT Each development cycle should improve: -
+Performance - Security - Maintainability - Documentation - User
+experience
+
+FINAL RULE Never lower quality standards to finish a task faster.
+
+END OF CHAPTER 07

@@ -1,0 +1,36 @@
+GALSEN IA VOLET 2 - ARCHITECTURE MANUAL CHAPTER 03 - BACKEND
+ARCHITECTURE Version: 1.0 Language: English
+
+PURPOSE Define the backend architecture and responsibilities of
+server-side services.
+
+GOALS - Reliability - Scalability - Security - Maintainability -
+Observability
+
+ARCHITECTURE The backend shall be organized into independent services
+with clear responsibilities.
+
+CORE COMPONENTS - API Gateway - Authentication Service - Authorization
+Service - AI Orchestrator - Workflow Engine - Notification Service -
+Search Service - File Service - Audit Service
+
+API DESIGN - Version all APIs. - Validate every request. - Return
+consistent response formats. - Handle errors predictably. - Log
+important operations.
+
+BUSINESS LOGIC - Keep business logic separate from controllers. - Reuse
+services. - Avoid duplicated code. - Keep modules loosely coupled.
+
+DATA ACCESS - Access databases only through dedicated data layers. -
+Never mix persistence logic with business logic.
+
+SECURITY - Validate all inputs. - Protect secrets. - Apply
+least-privilege access. - Record security events.
+
+PERFORMANCE - Support asynchronous processing. - Cache expensive
+operations. - Optimize database access. - Design for horizontal scaling.
+
+FINAL DIRECTIVE The backend must remain modular so new services can be
+added without redesigning the platform.
+
+END OF CHAPTER 03

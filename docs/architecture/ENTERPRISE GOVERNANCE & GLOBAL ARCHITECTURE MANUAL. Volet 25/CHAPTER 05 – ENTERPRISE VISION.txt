@@ -1,0 +1,56 @@
+GALSEN IA
+VOLET 25 - ENTERPRISE GOVERNANCE & GLOBAL ARCHITECTURE MANUAL
+CHAPTER 05 - ENTERPRISE SECURITY
+
+Version: 1.0
+Language: English
+
+PURPOSE
+
+Define the enterprise-wide security framework protecting the entire GalSen IA ecosystem.
+
+OBJECTIVES
+
+- Protect enterprise assets.
+- Secure AI operations.
+- Prevent cyber threats.
+- Preserve confidentiality, integrity and availability.
+- Ensure business continuity.
+- Maintain regulatory compliance.
+
+SECURITY PRINCIPLES
+
+- Zero Trust.
+- Defense in Depth.
+- Least Privilege.
+- Secure by Design.
+- Privacy by Design.
+- Continuous Monitoring.
+
+SECURITY DOMAINS
+
+- Identity Security.
+- Infrastructure Security.
+- Network Security.
+- Application Security.
+- API Security.
+- AI Security.
+- Data Security.
+- Cloud Security.
+
+SECURITY CONTROLS
+
+- IAM.
+- MFA.
+- RBAC.
+- Encryption.
+- Threat Detection.
+- SIEM.
+- Vulnerability Management.
+- Incident Response.
+
+FINAL DIRECTIVE
+
+Enterprise Security shall protect every component of the GalSen IA ecosystem through a unified cybersecurity strategy.
+
+END OF CHAPTER 05

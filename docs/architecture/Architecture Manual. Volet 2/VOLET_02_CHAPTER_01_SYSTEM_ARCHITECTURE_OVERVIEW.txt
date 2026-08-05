@@ -1,0 +1,50 @@
+GALSEN IA VOLET 2 - ARCHITECTURE MANUAL CHAPTER 01 - SYSTEM ARCHITECTURE
+OVERVIEW Version: 1.0 Language: English
+
+PURPOSE This document defines the global architecture of GalSen IA.
+
+ARCHITECTURAL VISION GalSen IA shall be built as a modular, scalable and
+maintainable platform. Every component must have a single responsibility
+and communicate through well-defined interfaces.
+
+LAYERS
+
+1.  Presentation Layer
+
+-   Web Application
+-   Mobile Application
+-   Desktop Application
+-   Public API
+
+2.  Application Layer
+
+-   Authentication
+-   User Management
+-   Workflow Engine
+-   Notification Engine
+-   Search
+
+3.  Intelligence Layer
+
+-   AI Orchestrator
+-   Conversation Engine
+-   Reasoning Engine
+-   Memory Engine
+-   Knowledge Engine
+
+4.  Data Layer
+
+-   Relational Database
+-   Document Storage
+-   Vector Database
+-   Cache
+-   Logs
+
+CORE RULES - Keep the core independent from modules. - Minimize
+coupling. - Maximize cohesion. - Design for future expansion. - Never
+duplicate business logic.
+
+FINAL DIRECTIVE Every architectural decision must make the platform
+easier to extend without redesigning the core.
+
+END OF CHAPTER 01

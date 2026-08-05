@@ -1,0 +1,59 @@
+GALSEN IA
+VOLET 25 - ENTERPRISE GOVERNANCE & GLOBAL ARCHITECTURE MANUAL
+CHAPTER 10 - MASTER ENTERPRISE DIRECTIVE
+
+Version: 1.0
+Language: English
+
+PURPOSE
+
+Establish the supreme architectural directive governing every present and future component of the GalSen IA ecosystem.
+
+MASTER PRINCIPLES
+
+- One Enterprise.
+- One Architecture.
+- One Intelligence.
+- One Governance.
+- One Security Model.
+- One Knowledge Platform.
+- One Memory Platform.
+- One Decision Platform.
+- One Learning Platform.
+- Continuous Evolution.
+
+ENTERPRISE COMMITMENTS
+
+Every engine shall:
+
+- Operate independently while collaborating seamlessly.
+- Follow enterprise governance.
+- Respect Zero Trust Security.
+- Share knowledge securely.
+- Maintain complete traceability.
+- Support explainable AI.
+- Enable continuous learning.
+- Remain modular and scalable.
+- Preserve interoperability.
+- Deliver measurable business value.
+
+ENTERPRISE SUCCESS FACTORS
+
+- Enterprise Reliability.
+- Strategic Alignment.
+- Operational Excellence.
+- AI Explainability.
+- Security by Design.
+- Continuous Innovation.
+- Global Scalability.
+- Sustainable Growth.
+- Responsible AI.
+- Customer Value Creation.
+
+MASTER DIRECTIVE
+
+GalSen IA shall function as a unified enterprise artificial intelligence platform where every engine, service, AI agent, workflow, decision, memory, knowledge base and business capability collaborates through a secure, intelligent, scalable and continuously evolving architecture designed to serve organizations at local, continental and global scale.
+
+This directive supersedes all subsystem directives and serves as the highest architectural authority governing the complete GalSen IA ecosystem.
+
+END OF CHAPTER 10

@@ -1,0 +1,29 @@
+GALSEN IA VOLET 18 - WORKFLOW ENGINE MANUAL CHAPTER 06 - WORKFLOW ENGINE
+MONITORING Version: 1.0 Language: English
+
+PURPOSE Define the monitoring framework for workflow orchestration,
+execution and automation services across the GalSen IA ecosystem.
+
+OBJECTIVES - Monitor workflow execution. - Detect operational
+anomalies. - Ensure service availability. - Support incident
+investigation. - Enable continuous improvement.
+
+MONITORING AREAS - Workflow execution. - Task status. - Queue health. -
+Processing latency. - Failure events. - System health.
+
+MONITORING PRINCIPLES - Real-time visibility. - Continuous monitoring. -
+Accuracy. - Traceability. - Proactive alerting.
+
+MONITORING PROCESS 1. Collect workflow events. 2. Analyze execution
+metrics. 3. Detect anomalies. 4. Generate alerts. 5. Investigate
+incidents. 6. Improve monitoring rules.
+
+KEY METRICS - Workflow success rate. - Execution latency. - Queue
+processing time. - Service uptime. - Failure rate. - Alert response
+time.
+
+FINAL DIRECTIVE Workflow Engine Monitoring shall provide continuous
+visibility, rapid issue detection and complete operational traceability
+throughout the GalSen IA ecosystem.
+
+END OF CHAPTER 06

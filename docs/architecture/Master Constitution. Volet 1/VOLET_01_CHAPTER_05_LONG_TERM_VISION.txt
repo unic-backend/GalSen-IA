@@ -1,0 +1,32 @@
+GALSEN IA VOLET 1 - MASTER CONSTITUTION CHAPTER 05 - LONG-TERM VISION
+Version: 1.1 Language: English
+
+PURPOSE This chapter defines the long-term direction of GalSen IA over
+the next decades.
+
+VISION GalSen IA is not a short-term application. It is a long-term
+intelligent platform designed to evolve continuously.
+
+FOUNDATION Every architectural decision must support: - Scalability -
+Reliability - Security - Maintainability - Extensibility - Simplicity
+
+EVOLUTION The platform should evolve by adding new capabilities without
+rebuilding the core engine.
+
+MODULARITY Every new feature should be implemented as an independent
+module whenever practical.
+
+COUNTRY EXPANSION The core platform remains the same. Only
+country-specific knowledge, regulations and integrations change.
+
+FUTURE TECHNOLOGIES The architecture should be prepared for: - Advanced
+AI models - Robotics - Drones - Computer Vision - Voice systems - Smart
+devices - Government services - Enterprise integrations
+
+SUSTAINABILITY Technical debt should be minimized. Temporary solutions
+should eventually be replaced with robust implementations.
+
+FINAL DIRECTIVE Every generation of developers must leave GalSen IA in a
+better state than they found it.
+
+END OF CHAPTER 05

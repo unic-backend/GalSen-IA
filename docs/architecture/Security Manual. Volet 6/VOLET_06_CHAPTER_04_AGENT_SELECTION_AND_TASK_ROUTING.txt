@@ -1,0 +1,32 @@
+GALSEN IA VOLET 6 - AI ORCHESTRATION MANUAL CHAPTER 04 - AGENT SELECTION
+AND TASK ROUTING Version: 1.0 Language: English
+
+PURPOSE Define how the AI Orchestrator selects the most appropriate
+agents and routes tasks efficiently across the GalSen IA ecosystem.
+
+OBJECTIVES - Match tasks with the best available agents. - Optimize
+execution quality. - Minimize latency. - Balance workloads. - Ensure
+reliable task completion.
+
+SELECTION PRINCIPLES - Capability-based matching. - Context-aware
+decisions. - Preference for validated and trusted agents. -
+Performance-aware routing. - Policy compliance.
+
+TASK ROUTING PROCESS 1. Receive execution plan. 2. Identify required
+capabilities. 3. Evaluate candidate agents. 4. Select the optimal agent
+or agents. 5. Route tasks securely. 6. Monitor execution status. 7.
+Reassign tasks if necessary.
+
+ROUTING STRATEGIES - Single-agent execution. - Multi-agent
+collaboration. - Parallel execution. - Sequential execution. - Fallback
+routing.
+
+MONITORING - Track execution progress. - Measure response quality. -
+Detect failures. - Record routing decisions. - Continuously improve
+routing performance.
+
+FINAL DIRECTIVE Agent selection and task routing must consistently
+maximize accuracy, efficiency, resilience and scalability while ensuring
+secure orchestration across GalSen IA.
+
+END OF CHAPTER 04

@@ -1,0 +1,65 @@
+version: "1.0"
+default_language: "fr"
+orchestrator: "router"
+
+agents:
+  - id: router
+    enabled: true
+    priority: 100
+    role: "Central Orchestrator"
+    description: "Analyse chaque demande et délègue aux agents appropriés."
+    module: "router_engine"  # Special: the router engine itself
+  - id: planner
+    enabled: true
+    priority: 95
+    role: "Planning Agent"
+    description: "Découpe les objectifs en tâches."
+    module: "agents.planner.agent"
+  - id: researcher
+    enabled: true
+    priority: 90
+    role: "Research Agent"
+    description: "Recherche des informations fiables."
+    module: "agents.researcher.agent"
+  - id: coder
+    enabled: true
+    priority: 90
+    role: "Software Engineer"
+    description: "Écrit le code."
+    module: "agents.coder.agent"
+  - id: reviewer
+    enabled: true
+    priority: 85
+    role: "Code Reviewer"
+    description: "Vérifie la qualité du code."
+    module: "agents.reviewer.agent"
+  - id: tester
+    enabled: true
+    priority: 85
+    role: "QA Tester"
+    description: "Teste les fonctionnalités."
+    module: "agents.tester.agent"
+  - id: security
+    enabled: true
+    priority: 90
+    role: "Security Agent"
+    description: "Analyse les risques de sécurité."
+    module: "agents.security.agent"
+  - id: documentation
+    enabled: true
+    priority: 70
+    role: "Documentation Agent"
+    description: "Met à jour la documentation."
+    module: "agents.documentation.agent"
+  - id: deployment
+    enabled: true
+    priority: 80
+    role: "Deployment Agent"
+    description: "Prépare les déploiements."
+    module: "agents.deployment.agent"
+  - id: monitor
+    enabled: true
+    priority: 80
+    role: "Monitoring Agent"
+    description: "Surveille les performances et les erreurs."
+    module: "agents.monitor.agent"

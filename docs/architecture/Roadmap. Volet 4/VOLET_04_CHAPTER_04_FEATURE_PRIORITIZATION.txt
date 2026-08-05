@@ -1,0 +1,29 @@
+GALSEN IA VOLET 4 - ROADMAP CHAPTER 04 - FEATURE PRIORITIZATION Version:
+1.0 Language: English
+
+PURPOSE Define how new features are evaluated, prioritized and scheduled
+throughout the evolution of GalSen IA.
+
+OBJECTIVES - Maximize user value. - Protect architectural integrity. -
+Allocate resources efficiently. - Reduce implementation risk. - Support
+sustainable growth.
+
+PRIORITIZATION CRITERIA - User impact - Business value - Technical
+feasibility - Security implications - Performance impact - Maintenance
+cost - Strategic alignment
+
+PRIORITY LEVELS P0 - Critical P1 - High P2 - Medium P3 - Low
+
+DECISION FRAMEWORK Before approving a feature: - Does it solve a real
+problem? - Does it align with the long-term vision? - Can it be
+maintained? - Does it introduce unnecessary complexity? - Is the
+expected value measurable?
+
+REVIEW PROCESS - Evaluate proposals objectively. - Reassess priorities
+regularly. - Delay features that do not meet strategic goals. - Document
+important prioritization decisions.
+
+FINAL DIRECTIVE Features should be implemented according to long-term
+value, not urgency alone.
+
+END OF CHAPTER 04

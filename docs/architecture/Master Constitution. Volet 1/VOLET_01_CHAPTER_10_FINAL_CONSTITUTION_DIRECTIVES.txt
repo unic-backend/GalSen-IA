@@ -1,0 +1,29 @@
+GALSEN IA VOLET 1 - MASTER CONSTITUTION CHAPTER 10 - FINAL CONSTITUTION
+DIRECTIVES Version: 1.1 Language: English
+
+PURPOSE This chapter concludes the Master Constitution and establishes
+the permanent directives that every future contributor must follow.
+
+PERMANENT DIRECTIVES - Protect the long-term vision. - Preserve
+architectural consistency. - Build for reliability before speed. - Never
+sacrifice security for convenience. - Keep documentation synchronized
+with the code. - Design every feature with future scalability in mind.
+
+DECISION FRAMEWORK Before implementing any feature, ask: 1. Does it
+solve a real problem? 2. Does it align with the project vision? 3. Is it
+maintainable? 4. Is it secure? 5. Can it evolve without redesigning the
+platform?
+
+PROJECT IDENTITY GalSen IA is: - Modular - Transparent -
+Human-centered - Secure - Extensible - Knowledge-driven - Built for
+long-term evolution
+
+CONTINUOUS RESPONSIBILITY Every developer, architect and contributor is
+responsible for improving the platform without weakening its
+foundations.
+
+MASTER RULE If a proposed change conflicts with the Master Constitution,
+the Constitution takes priority unless it is formally updated in a new
+version.
+
+END OF VOLET 1 END OF MASTER CONSTITUTION

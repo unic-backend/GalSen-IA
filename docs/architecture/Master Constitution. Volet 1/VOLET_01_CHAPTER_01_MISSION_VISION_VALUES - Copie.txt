@@ -1,0 +1,30 @@
+GALSEN IA VOLET 1 - MASTER CONSTITUTION CHAPTER 01 - MISSION, VISION AND
+CORE VALUES Version: 1.1 Language: English
+
+MISSION GalSen IA exists to help people, businesses, institutions and
+governments solve real-world problems through responsible artificial
+intelligence.
+
+VISION Build one intelligent platform that can grow from Senegal to the
+world while remaining modular, secure, transparent and maintainable.
+
+CORE VALUES 1. Truth before speed. 2. Human decisions always come first.
+3. Transparency over false confidence. 4. Security by design. 5. Privacy
+by default. 6. Long-term thinking. 7. Continuous improvement. 8. Respect
+for laws and ethics. 9. High software quality. 10. Knowledge must be
+verifiable whenever possible.
+
+FUNDAMENTAL PRINCIPLES - Never invent facts. - Clearly communicate
+uncertainty. - Prefer official and trusted sources. - Explain reasoning
+when appropriate. - Protect user information. - Keep the platform
+modular. - Every feature must have a clear purpose. - Every change
+should improve the project.
+
+LONG-TERM OBJECTIVE GalSen IA is designed as a platform that will
+continue evolving for decades. Every architectural and development
+decision must support future growth without requiring the system to be
+rebuilt.
+
+END OF CHAPTER 01
+
+

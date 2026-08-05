@@ -1,0 +1,29 @@
+GALSEN IA VOLET 6 - AI ORCHESTRATION MANUAL CHAPTER 02 - AI ORCHESTRATOR
+ARCHITECTURE Version: 1.0 Language: English
+
+PURPOSE Define the architecture of the AI Orchestrator and its
+interactions with every major subsystem of GalSen IA.
+
+OBJECTIVES - Coordinate intelligent services. - Enable scalable task
+execution. - Ensure reliable communication. - Support modular
+expansion. - Maintain secure operations.
+
+ARCHITECTURE COMPONENTS - Request Manager - Intent Analyzer - Planning
+Engine - Agent Router - Execution Manager - Response Aggregator -
+Monitoring Module
+
+WORKFLOW 1. Receive user request. 2. Analyze intent and context. 3.
+Build execution plan. 4. Select appropriate AI agents. 5. Execute tasks.
+6. Validate outputs. 7. Aggregate responses. 8. Deliver final result.
+
+DESIGN PRINCIPLES - Loose coupling. - High cohesion. - Fault
+tolerance. - Observability. - Extensibility. - Performance optimization.
+
+INTEGRATIONS - Memory Engine - Knowledge Engine - Workflow Engine -
+Security Layer - Analytics Platform - External AI services
+
+FINAL DIRECTIVE The AI Orchestrator architecture must remain modular,
+resilient and scalable while ensuring secure, efficient and consistent
+coordination across the entire GalSen IA ecosystem.
+
+END OF CHAPTER 02

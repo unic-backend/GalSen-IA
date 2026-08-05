@@ -1,0 +1,32 @@
+GALSEN IA VOLET 6 - AI ORCHESTRATION MANUAL CHAPTER 03 - INTENT ANALYSIS
+AND PLANNING Version: 1.0 Language: English
+
+PURPOSE Define how the AI Orchestrator interprets user requests and
+builds an optimal execution plan.
+
+OBJECTIVES - Accurately identify user intent. - Capture relevant
+context. - Select the best execution strategy. - Reduce ambiguity. -
+Improve response quality.
+
+INTENT ANALYSIS - Detect primary objective. - Identify secondary
+goals. - Extract entities and constraints. - Recognize user
+preferences. - Estimate task complexity.
+
+PLANNING PROCESS 1. Receive request. 2. Analyze intent. 3. Collect
+required context. 4. Determine required capabilities. 5. Create
+execution sequence. 6. Validate the plan. 7. Execute through selected
+agents.
+
+PLANNING PRINCIPLES - Minimize unnecessary steps. - Prefer validated
+knowledge. - Optimize speed and reliability. - Adapt dynamically to new
+information. - Preserve traceability.
+
+ERROR HANDLING - Detect ambiguous requests. - Request clarification when
+needed. - Recover from planning failures. - Log planning decisions for
+auditing.
+
+FINAL DIRECTIVE Every execution must begin with accurate intent analysis
+and a structured plan to ensure reliable, efficient and trustworthy
+orchestration.
+
+END OF CHAPTER 03

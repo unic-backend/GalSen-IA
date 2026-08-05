@@ -1,0 +1,53 @@
+version: "1.0"
+
+default_model: claude-sonnet
+
+models:
+
+  - id: claude-opus
+    provider: anthropic
+    enabled: true
+    purpose:
+      - architecture
+      - reasoning
+      - planning
+
+  - id: claude-sonnet
+    provider: anthropic
+    enabled: true
+    purpose:
+      - coding
+      - debugging
+      - refactoring
+
+  - id: gpt
+    provider: openai
+    enabled: true
+    purpose:
+      - reasoning
+      - writing
+      - analysis
+
+  - id: gemini
+    provider: google
+    enabled: true
+    purpose:
+      - research
+      - multimodal
+
+  - id: mistral
+    provider: mistral
+    enabled: true
+    purpose:
+      - local
+      - fast
+
+routing:
+
+  coding: claude-sonnet
+  architecture: claude-opus
+  planning: claude-opus
+  research: gemini
+  writing: gpt
+  multimodal: gemini
+  local: mistral

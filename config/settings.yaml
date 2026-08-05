@@ -1,0 +1,42 @@
+version: "1.0"
+
+project:
+  name: "GalSen IA"
+  environment: "development"
+
+language:
+  default: "fr"
+  fallback: "en"
+
+models:
+  registry: "../models/models.yaml"
+  default: "claude-sonnet"
+
+agents:
+  registry: "../agents/registry.yaml"
+
+tools:
+  registry: "../tools/tools.yaml"
+
+workflows:
+  registry: "../workflows/workflows.yaml"
+
+memory:
+  schema: "../memory/schema.md"
+
+logging:
+  level: "info"
+  save_history: true
+
+security:
+  sandbox: true
+  require_confirmation_for_destructive_actions: true
+
+performance:
+  parallel_execution: true
+  cache_enabled: true
+
+developer:
+  auto_documentation: true
+  auto_review: true
+  auto_testing: true

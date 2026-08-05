@@ -1,0 +1,30 @@
+GALSEN IA VOLET 5 - KNOWLEDGE ENGINE CHAPTER 04 - KNOWLEDGE VALIDATION
+Version: 1.0 Language: English
+
+PURPOSE Define the standards for validating knowledge before it becomes
+part of the GalSen IA Knowledge Engine.
+
+OBJECTIVES - Ensure accuracy. - Prevent misinformation. - Maintain
+consistency. - Increase trust. - Support reliable AI reasoning.
+
+VALIDATION PRINCIPLES - Verify information using trusted sources. -
+Confirm factual accuracy. - Check consistency with existing knowledge. -
+Identify conflicts and duplicates. - Record validation status.
+
+VALIDATION LEVELS - Draft - Under Review - Verified - Approved -
+Deprecated
+
+QUALITY CHECKS - Source credibility - Technical correctness - Business
+relevance - Completeness - Clarity - Version consistency
+
+REVIEW PROCESS 1. Initial validation 2. Peer review 3. Expert approval
+(when required) 4. Publication 5. Periodic revalidation
+
+GOVERNANCE - Record validator identity or role. - Preserve validation
+history. - Revalidate after significant changes. - Archive superseded
+knowledge.
+
+FINAL DIRECTIVE Only validated knowledge should be considered
+authoritative for AI reasoning and decision support.
+
+END OF CHAPTER 04

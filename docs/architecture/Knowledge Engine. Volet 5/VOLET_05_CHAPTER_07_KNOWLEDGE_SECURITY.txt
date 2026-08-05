@@ -1,0 +1,31 @@
+GALSEN IA VOLET 5 - KNOWLEDGE ENGINE CHAPTER 07 - KNOWLEDGE SECURITY
+Version: 1.0 Language: English
+
+PURPOSE Define the security principles that protect the Knowledge Engine
+and the information it contains.
+
+OBJECTIVES - Protect confidentiality. - Preserve integrity. - Ensure
+availability. - Prevent unauthorized access. - Support trusted AI
+reasoning.
+
+SECURITY PRINCIPLES - Least privilege access. - Defense in depth. -
+Secure by default. - Continuous monitoring. - Auditability.
+
+ACCESS CONTROL - Role-based permissions. - Authentication before
+access. - Restrict sensitive knowledge. - Review permissions regularly.
+
+DATA PROTECTION - Encrypt data at rest and in transit. - Protect
+backups. - Manage secrets securely. - Classify sensitive information.
+
+AUDIT AND MONITORING - Log significant access events. - Monitor unusual
+activity. - Preserve audit history. - Investigate security incidents.
+
+COMPLIANCE - Respect organizational policies. - Support applicable
+regulations. - Retain records according to governance rules. -
+Periodically review security controls.
+
+FINAL DIRECTIVE Knowledge security is essential to maintaining trust,
+protecting information and ensuring reliable AI-assisted
+decision-making.
+
+END OF CHAPTER 07

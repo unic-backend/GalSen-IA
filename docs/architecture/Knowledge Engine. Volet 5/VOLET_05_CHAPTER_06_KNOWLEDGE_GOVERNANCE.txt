@@ -1,0 +1,33 @@
+GALSEN IA VOLET 5 - KNOWLEDGE ENGINE CHAPTER 06 - KNOWLEDGE GOVERNANCE
+Version: 1.0 Language: English
+
+PURPOSE Define the governance model that ensures knowledge remains
+accurate, secure, consistent and sustainable across GalSen IA.
+
+OBJECTIVES - Establish clear ownership. - Maintain knowledge quality. -
+Protect sensitive information. - Ensure accountability. - Support
+continuous improvement.
+
+GOVERNANCE PRINCIPLES - Assign an owner to every knowledge domain. -
+Define review responsibilities. - Preserve auditability. - Apply
+consistent policies. - Promote transparency.
+
+ROLES - Knowledge Owner - Knowledge Reviewer - Knowledge Contributor -
+System Administrator - AI Orchestrator (consumer only)
+
+POLICIES - Approve important changes before publication. - Track all
+significant revisions. - Archive superseded content. - Periodically
+review critical knowledge. - Enforce access permissions.
+
+COMPLIANCE - Respect data governance policies. - Preserve version
+history. - Protect confidential information. - Support regulatory
+requirements where applicable.
+
+CONTINUOUS IMPROVEMENT - Measure knowledge quality. - Identify outdated
+content. - Improve governance processes. - Refine standards over time.
+
+FINAL DIRECTIVE Knowledge governance must ensure that the Knowledge
+Engine remains trustworthy, secure and sustainable throughout the
+lifetime of GalSen IA.
+
+END OF CHAPTER 06

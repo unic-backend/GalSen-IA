@@ -1,0 +1,31 @@
+GALSEN IA VOLET 11 - SECURITY ENGINE MANUAL CHAPTER 05 - THREAT
+DETECTION Version: 1.0 Language: English
+
+PURPOSE Define how threats are identified, analyzed and prioritized
+across the GalSen IA ecosystem.
+
+OBJECTIVES - Detect threats early. - Minimize security risks. - Improve
+response readiness. - Reduce false positives. - Support continuous
+monitoring.
+
+THREAT DETECTION PRINCIPLES - Continuous monitoring. - Behavioral
+analysis. - Risk-based prioritization. - Automated detection. -
+Evidence-driven decisions.
+
+DETECTION PROCESS 1. Collect security events. 2. Correlate indicators.
+3. Analyze suspicious behavior. 4. Classify threat severity. 5. Generate
+alerts. 6. Escalate confirmed threats.
+
+DETECTION METHODS - Signature-based detection. - Behavioral analytics. -
+Anomaly detection. - Threat intelligence correlation. - Machine-assisted
+analysis.
+
+QUALITY CONTROLS - Alert validation. - False-positive reduction. -
+Detection accuracy monitoring. - Audit logging. - Continuous rule
+improvement.
+
+FINAL DIRECTIVE Threat detection shall provide timely, accurate and
+actionable identification of security threats to protect every component
+of the GalSen IA ecosystem.
+
+END OF CHAPTER 05

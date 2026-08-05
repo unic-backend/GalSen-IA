@@ -1,0 +1,31 @@
+GALSEN IA VOLET 4 - ROADMAP CHAPTER 03 - MILESTONES AND RELEASES
+Version: 1.0 Language: English
+
+PURPOSE Define how GalSen IA progresses through milestones and official
+software releases.
+
+OBJECTIVES - Deliver predictable progress. - Validate functionality
+incrementally. - Maintain release quality. - Ensure traceable project
+evolution. - Support long-term planning.
+
+MILESTONE FRAMEWORK Each milestone should include: - Clear objectives -
+Defined scope - Success criteria - Risk assessment - Completion review
+
+RELEASE TYPES - Prototype - Alpha - Beta - Stable - Long-Term Support
+(LTS)
+
+RELEASE REQUIREMENTS Before every official release: - Core features are
+complete. - Critical defects are resolved. - Security checks are
+completed. - Documentation is updated. - Performance targets are
+verified.
+
+VERSIONING - Follow semantic versioning. - Record release notes. -
+Maintain compatibility information. - Archive historical releases.
+
+CONTINUOUS IMPROVEMENT Use user feedback, metrics and post-release
+reviews to improve future milestones and releases.
+
+FINAL DIRECTIVE Every release must provide measurable value while
+strengthening the stability and maturity of the GalSen IA platform.
+
+END OF CHAPTER 03

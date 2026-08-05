@@ -1,0 +1,177 @@
+version: "1.0"
+
+tools:
+  # Access is confined to the project root. Writing is disabled: agents report
+  # what should change instead of changing it. Set allow_write to true only when
+  # autonomous edits are actually wanted.
+  - id: filesystem
+    enabled: true
+    category: system
+    module: "tools.filesystem.tool"
+    class: "FileSystemTool"
+    config:
+      allow_write: false
+      max_read_bytes: 5242880
+      max_results: 500
+
+  # Commands run without a shell, so arguments cannot inject a second command.
+  # Only the executables listed here can run.
+  - id: terminal
+    enabled: true
+    category: system
+    module: "tools.terminal.tool"
+    class: "TerminalTool"
+    config:
+      allowed_commands:
+        - python
+        - python3
+        - py
+        - pytest
+        - git
+        - echo
+      timeout: 120
+
+  # Read-only. Pushing to a protected branch and force pushing are refused in
+  # code, per .claude/rules/git-workflow.md.
+  - id: git
+    enabled: true
+    category: development
+    module: "tools.git.tool"
+    class: "GitTool"
+    config:
+      allow_write: false
+      protected_branches:
+        - main
+        - master
+
+  # The token is read from GITHUB_TOKEN at call time and never stored here.
+  # Without a token the API is queried anonymously, with a lower rate limit.
+  - id: github
+    enabled: true
+    category: development
+    module: "tools.github.tool"
+    class: "GitHubTool"
+    config:
+      timeout: 15
+
+  # Short timeout and a single retry: when the network is down the agents must
+  # find out quickly and carry on, not stall the whole pipeline.
+  - id: web_search
+    enabled: true
+    category: internet
+    module: "tools.web_search.tool"
+    class: "WebSearchTool"
+    config:
+      timeout: 5
+      max_retries: 1
+      cache_ttl: 300
+
+  - id: browser
+    enabled: true
+    category: internet
+    module: "tools.browser.tool"
+    class: "BrowserTool"
+    config: {}
+
+  - id: api
+    enabled: true
+    category: integration
+    module: "tools.api.tool"
+    class: "APITool"
+    config: {}
+
+  - id: database
+    enabled: true
+    category: storage
+    module: "tools.database.tool"
+    class: "DatabaseTool"
+    config: {}
+
+  # Exposes the Model Engine through the Tool Engine. Generation returns a
+  # status, so an agent can see that no provider answered instead of receiving
+  # text nobody produced.
+  - id: model
+    enabled: true
+    category: ai
+    module: "tools.model.tool"
+    class: "ModelTool"
+    config:
+      max_tokens: 1024
+      temperature: 0.7
+
+  - id: memory
+    enabled: true
+    category: ai
+    module: "tools.memory.tool"
+    class: "MemoryTool"
+    config: {}
+
+  - id: rag
+    enabled: true
+    category: ai
+    module: "tools.rag.tool"
+    class: "RAGTool"
+    config: {}
+
+  - id: embeddings
+    enabled: true
+    category: ai
+    module: "tools.embeddings.tool"
+    class: "EmbeddingsTool"
+    config: {}
+
+  - id: ocr
+    enabled: true
+    category: documents
+    module: "tools.ocr.tool"
+    class: "OCRTool"
+    config: {}
+
+  - id: pdf
+    enabled: true
+    category: documents
+    module: "tools.pdf.tool"
+    class: "PDFTool"
+    config: {}
+
+  - id: email
+    enabled: true
+    category: communication
+    module: "tools.email.tool"
+    class: "EmailTool"
+    config: {}
+
+  - id: calendar
+    enabled: true
+    category: communication
+    module: "tools.calendar.tool"
+    class: "CalendarTool"
+    config: {}
+
+  - id: docker
+    enabled: true
+    category: deployment
+    module: "tools.docker.tool"
+    class: "DockerTool"
+    config: {}
+
+  - id: logging
+    enabled: true
+    category: monitoring
+    module: "tools.logging.tool"
+    class: "LoggingTool"
+    config: {}
+
+  - id: metrics
+    enabled: true
+    category: monitoring
+    module: "tools.metrics.tool"
+    class: "MetricsTool"
+    config: {}
+
+  - id: agri_advice
+    enabled: true
+    category: ai
+    module: "tools.agri_advice.tool"
+    class: "AgriAdviceTool"
+    config: {}

@@ -1,0 +1,29 @@
+GALSEN IA VOLET 6 - AI ORCHESTRATION MANUAL CHAPTER 07 - RESPONSE
+AGGREGATION AND VALIDATION Version: 1.0 Language: English
+
+PURPOSE Define how the AI Orchestrator combines, validates and delivers
+outputs from one or more AI agents.
+
+OBJECTIVES - Produce coherent responses. - Validate accuracy and
+consistency. - Eliminate duplicate or conflicting information. -
+Preserve traceability. - Ensure high-quality user experiences.
+
+AGGREGATION PRINCIPLES - Merge compatible outputs. - Prioritize
+validated knowledge. - Preserve essential context. - Maintain
+transparency. - Respect security and access policies.
+
+VALIDATION PROCESS 1. Collect all agent outputs. 2. Check completeness.
+3. Detect inconsistencies. 4. Resolve conflicts using confidence and
+trusted knowledge. 5. Verify policy compliance. 6. Build the final
+response. 7. Record validation results.
+
+QUALITY CONTROLS - Accuracy - Consistency - Relevance - Completeness -
+Safety - Readability
+
+ERROR HANDLING - Flag missing information. - Reject invalid outputs. -
+Request clarification when required. - Escalate unresolved conflicts.
+
+FINAL DIRECTIVE Every response delivered by the AI Orchestrator must be
+validated, coherent, secure and traceable before reaching the user.
+
+END OF CHAPTER 07

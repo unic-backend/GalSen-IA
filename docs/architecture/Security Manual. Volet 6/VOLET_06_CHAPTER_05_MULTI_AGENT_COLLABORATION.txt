@@ -1,0 +1,34 @@
+GALSEN IA VOLET 6 - AI ORCHESTRATION MANUAL CHAPTER 05 - MULTI-AGENT
+COLLABORATION Version: 1.0 Language: English
+
+PURPOSE Define how multiple AI agents collaborate to solve complex tasks
+efficiently and consistently.
+
+OBJECTIVES - Enable coordinated execution. - Leverage specialized
+expertise. - Improve reliability and accuracy. - Optimize execution
+time. - Ensure consistent outcomes.
+
+COLLABORATION PRINCIPLES - Shared objectives. - Clear task boundaries. -
+Standardized communication. - Transparent coordination. - Continuous
+synchronization.
+
+COLLABORATION MODELS - Sequential collaboration. - Parallel
+collaboration. - Hierarchical coordination. - Peer-to-peer
+cooperation. - Hybrid execution.
+
+WORKFLOW 1. Receive orchestration plan. 2. Assign roles to agents. 3.
+Execute individual tasks. 4. Exchange intermediate results. 5. Resolve
+conflicts. 6. Aggregate outputs. 7. Validate final response.
+
+CONFLICT RESOLUTION - Prioritize validated knowledge. - Compare
+confidence scores. - Escalate unresolved conflicts. - Record decisions
+for auditing.
+
+PERFORMANCE - Balance workloads. - Minimize redundant work. - Monitor
+collaboration quality. - Continuously optimize coordination.
+
+FINAL DIRECTIVE Multi-agent collaboration must maximize collective
+intelligence while maintaining security, traceability, scalability and
+consistent decision-making across GalSen IA.
+
+END OF CHAPTER 05

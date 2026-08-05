@@ -1,0 +1,33 @@
+GALSEN IA VOLET 3 - DEVELOPMENT MANUAL CHAPTER 06 - VERSION CONTROL
+STANDARDS Version: 1.0 Language: English
+
+PURPOSE Define standards for source code version control across all
+GalSen IA repositories.
+
+OBJECTIVES - Preserve project history. - Enable safe collaboration. -
+Reduce merge conflicts. - Support reliable releases. - Ensure
+traceability.
+
+REPOSITORY PRINCIPLES - Keep repositories organized. - Protect the main
+branch. - Review changes before merging. - Commit frequently with
+meaningful progress. - Never commit secrets or credentials.
+
+BRANCH STRATEGY - main: Production-ready code. - develop: Active
+integration. - feature/: New functionality. - fix/: Bug fixes. -
+release/: Release preparation. - hotfix/: Critical production fixes.
+
+COMMIT STANDARDS - Write clear commit messages. - Keep commits focused
+on one logical change. - Reference related issues when applicable. -
+Avoid unnecessary large commits.
+
+MERGE POLICY - Prefer pull requests. - Resolve conflicts before
+merging. - Verify automated tests. - Update documentation when behavior
+changes.
+
+TAGS AND RELEASES - Use semantic versioning. - Tag official releases. -
+Maintain release notes.
+
+FINAL DIRECTIVE Version control is the official record of project
+evolution and must remain clean, secure and traceable.
+
+END OF CHAPTER 06

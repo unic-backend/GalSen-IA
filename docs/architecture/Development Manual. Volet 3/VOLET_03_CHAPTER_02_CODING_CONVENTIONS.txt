@@ -1,0 +1,34 @@
+GALSEN IA VOLET 3 - DEVELOPMENT MANUAL CHAPTER 02 - CODING CONVENTIONS
+Version: 1.0 Language: English
+
+PURPOSE Define consistent coding conventions across all GalSen IA
+projects.
+
+OBJECTIVES - Improve readability. - Reduce ambiguity. - Simplify
+maintenance. - Enable efficient collaboration.
+
+GENERAL RULES - Write self-explanatory code. - Keep functions small and
+focused. - Avoid unnecessary nesting. - Remove dead code. - Prefer
+composition over duplication.
+
+NAMING - Use descriptive names. - Keep terminology consistent. - Name
+variables, functions and classes according to their responsibilities.
+
+FORMATTING - Use consistent indentation. - Keep line lengths
+reasonable. - Group related code together. - Separate logical sections
+with whitespace.
+
+COMMENTS - Explain why, not what. - Remove outdated comments. - Document
+complex algorithms when necessary.
+
+ERROR HANDLING - Handle expected failures gracefully. - Return
+meaningful error messages. - Avoid silent failures. - Log important
+errors.
+
+DEPENDENCIES - Minimize external dependencies. - Keep libraries up to
+date. - Remove unused packages.
+
+FINAL DIRECTIVE Every line of code should improve clarity,
+maintainability and long-term quality.
+
+END OF CHAPTER 02

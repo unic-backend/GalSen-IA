@@ -1,0 +1,32 @@
+GALSEN IA VOLET 3 - DEVELOPMENT MANUAL CHAPTER 03 - PROJECT STRUCTURE
+Version: 1.0 Language: English
+
+PURPOSE Define a consistent project structure for all GalSen IA
+repositories.
+
+OBJECTIVES - Improve navigation. - Separate responsibilities. - Simplify
+maintenance. - Support modular growth. - Encourage code reuse.
+
+RECOMMENDED STRUCTURE - docs/ - src/ - tests/ - scripts/ - config/ -
+assets/ - public/ - tools/
+
+SOURCE ORGANIZATION - components/ - pages/ - services/ - api/ -
+models/ - hooks/ - utils/ - types/ - middleware/ - workflows/
+
+MODULE RULES - Each module has a single responsibility. - Avoid circular
+dependencies. - Expose only public interfaces. - Keep internal
+implementation private.
+
+CONFIGURATION - Separate environment-specific settings. - Never hardcode
+secrets. - Validate configuration at startup.
+
+TESTING - Keep test files close to the code or under tests/. - Mirror
+the application structure when practical.
+
+DOCUMENTATION Each major module should include: - Purpose -
+Responsibilities - Public interfaces - Dependencies
+
+FINAL DIRECTIVE A predictable project structure reduces complexity and
+enables long-term collaboration across all GalSen IA projects.
+
+END OF CHAPTER 03

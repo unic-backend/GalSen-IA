@@ -1,0 +1,29 @@
+GALSEN IA VOLET 2 - ARCHITECTURE MANUAL CHAPTER 02 - FRONTEND
+ARCHITECTURE Version: 1.0 Language: English
+
+PURPOSE Define the architecture of all user-facing applications.
+
+SUPPORTED CLIENTS - Web - Mobile - Desktop - Progressive Web App (PWA)
+
+DESIGN PRINCIPLES - Responsive by default. - Accessible. - Fast
+loading. - Consistent user experience. - Component-based architecture.
+
+STRUCTURE Presentation Layer - Pages - Layouts - Reusable Components
+
+Application Layer - Routing - State Management - Forms -
+Authentication - Localization
+
+SERVICES - API Client - File Upload - Notifications - Offline Support -
+Error Handling
+
+UI RULES - Reuse components. - Avoid duplicated UI logic. - Keep
+business logic outside presentation components. - Support dark/light
+themes when appropriate.
+
+PERFORMANCE - Lazy loading - Code splitting - Asset optimization -
+Efficient rendering
+
+FINAL DIRECTIVE The frontend must remain independent from backend
+implementation details through clean APIs.
+
+END OF CHAPTER 02

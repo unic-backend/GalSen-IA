@@ -1,0 +1,52 @@
+GALSEN IA VOLET 2 - ARCHITECTURE MANUAL CHAPTER 05 - MEMORY ARCHITECTURE
+Version: 1.0 Language: English
+
+PURPOSE Define the complete memory system used by GalSen IA to provide
+context-aware, personalized and consistent AI interactions.
+
+OBJECTIVES - Preserve relevant context. - Improve continuity across
+conversations. - Separate short-term and long-term information. - Enable
+efficient knowledge retrieval. - Protect user privacy.
+
+MEMORY LAYERS
+
+1.  Session Memory
+
+-   Active conversation context.
+-   Temporary state.
+-   Automatically expires after the session.
+
+2.  User Memory
+
+-   Long-term user preferences.
+-   Persistent profile information.
+-   Stored only with appropriate consent.
+
+3.  Project Memory
+
+-   Project requirements.
+-   Decisions.
+-   Documentation.
+-   Progress tracking.
+
+4.  Knowledge Memory
+
+-   Company knowledge.
+-   Documentation.
+-   Policies.
+-   Structured knowledge base.
+
+MEMORY RULES - Store only useful information. - Avoid unnecessary
+duplication. - Support updates and corrections. - Track memory sources
+when possible. - Allow controlled deletion of stored information.
+
+RETRIEVAL The AI Orchestrator retrieves only the memory relevant to the
+current task to reduce cost and improve accuracy.
+
+SECURITY - Encrypt sensitive data. - Apply access control. - Respect
+data retention policies. - Log significant memory operations.
+
+FINAL DIRECTIVE Memory exists to improve user experience and decision
+quality while preserving privacy, transparency and system performance.
+
+END OF CHAPTER 05

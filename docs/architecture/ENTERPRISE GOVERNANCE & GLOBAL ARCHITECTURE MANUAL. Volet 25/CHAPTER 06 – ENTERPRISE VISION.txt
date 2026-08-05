@@ -1,0 +1,55 @@
+GALSEN IA
+VOLET 25 - ENTERPRISE GOVERNANCE & GLOBAL ARCHITECTURE MANUAL
+CHAPTER 06 - ENTERPRISE MONITORING
+
+Version: 1.0
+Language: English
+
+PURPOSE
+
+Define enterprise-wide monitoring across all GalSen IA services.
+
+OBJECTIVES
+
+- Monitor every engine.
+- Detect anomalies.
+- Ensure availability.
+- Support incident response.
+- Optimize enterprise performance.
+
+MONITORING DOMAINS
+
+- Infrastructure.
+- Applications.
+- AI Engines.
+- APIs.
+- Databases.
+- Security.
+- Network.
+- Business Services.
+
+KEY METRICS
+
+- Availability.
+- Response Time.
+- Error Rate.
+- CPU Usage.
+- Memory Usage.
+- Throughput.
+- SLA Compliance.
+- User Experience.
+
+MONITORING TOOLS
+
+- Dashboards.
+- Centralized Logs.
+- Distributed Tracing.
+- Health Checks.
+- Predictive Analytics.
+- Alerting.
+
+FINAL DIRECTIVE
+
+Enterprise Monitoring shall provide complete operational visibility across the GalSen IA ecosystem.
+
+END OF CHAPTER 06

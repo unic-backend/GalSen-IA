@@ -1,0 +1,33 @@
+GALSEN IA VOLET 3 - DEVELOPMENT MANUAL CHAPTER 08 - PERFORMANCE
+STANDARDS Version: 1.0 Language: English
+
+PURPOSE Define performance standards that ensure GalSen IA remains fast,
+efficient and scalable.
+
+OBJECTIVES - Deliver responsive user experiences. - Optimize resource
+usage. - Reduce latency. - Support growth. - Continuously monitor
+performance.
+
+PERFORMANCE PRINCIPLES - Measure before optimizing. - Optimize the most
+impactful bottlenecks first. - Prefer efficient algorithms and data
+structures. - Avoid premature optimization. - Maintain readability while
+improving efficiency.
+
+APPLICATION PERFORMANCE - Minimize unnecessary computations. - Optimize
+rendering. - Reduce network requests. - Use caching appropriately. -
+Load resources lazily when practical.
+
+BACKEND PERFORMANCE - Optimize database queries. - Process long-running
+tasks asynchronously. - Reuse connections efficiently. - Monitor API
+response times.
+
+MONITORING - Track response times. - Monitor resource consumption. -
+Detect performance regressions. - Review performance metrics regularly.
+
+CONTINUOUS IMPROVEMENT - Benchmark critical workflows. - Review
+performance after major releases. - Document significant optimizations.
+
+FINAL DIRECTIVE Performance is an ongoing engineering responsibility and
+should be continuously measured, reviewed and improved.
+
+END OF CHAPTER 08
