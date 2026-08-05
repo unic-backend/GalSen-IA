@@ -9,8 +9,9 @@ The foundation phase is complete: memory system, standards, ADR-001 and ADR-002 
 1. Keep every engine and service working and tested (all suites must pass before any work is called done).
 2. **VOLET 02 Phase 3 — Intégrations externes (Ch. 09) : connecteurs email, calendrier, cloud**
 3. **VOLET 02 Phase 4 — Frontend minimal : dashboard web, API Client SDK**
-4. Decide on a persistent storage backend — every engine is in-memory today, which is the
-   single biggest gap between the current code and a usable platform. Requires an ADR.
+4. Extend SQLite persistence (ADR-005) to the engines that are still in-memory: audit,
+   approval, and the notification / search / file services. Memory, model and knowledge
+   already select their backend through `GALSEN_STORAGE_BACKEND`.
 5. Build the first real feature for Senegalese users.
 
 ## Success Criteria for this phase

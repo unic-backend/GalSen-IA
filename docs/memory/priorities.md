@@ -7,9 +7,10 @@
 3. **VOLET 02 Phase 4 — Frontend minimal** (dashboard web, API Client SDK)
 4. Decide provider credentials (ADR first) — the provider architecture is done
    (ADR-003), keys are the only thing blocking generation on hosted models
-5. Choose and implement persistent storage (ADR first) — everything is in-memory today
-6. Implement the 12 remaining tools declared in `tools/tools.yaml`
-7. Build the first real feature for Senegalese users
+5. Extend SQLite persistence to the engines still in-memory (audit, approval,
+   and the three backend services) — the backend itself is decided (ADR-005) and
+   already wired into memory, model and knowledge
+6. Build the first real feature for Senegalese users (the `agri_advice` tool is the seed)
 
 ## How to use this file
 - Always check this file before starting new work.

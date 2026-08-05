@@ -21,12 +21,13 @@ import time
 import pytest
 
 # S'assurer que le chemin d'importation est correct
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+# La racine du dépôt doit être importable : convention unique `src.<module>`.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from storage.sqlite_store import SQLiteMemoryStore
-from storage.base_repository import BaseRepository
-from memory_engine.types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
-from memory_engine.interfaces import MemoryStore
+from src.storage.sqlite_store import SQLiteMemoryStore
+from src.storage.base_repository import BaseRepository
+from src.memory_engine.types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
+from src.memory_engine.interfaces import MemoryStore
 
 
 # ---------------------------------------------------------------------------
@@ -563,10 +564,10 @@ class TestStoragePackageExports:
 
     def test_sqlite_memory_store_importable(self):
         """SQLiteMemoryStore est importable depuis le package."""
-        from storage import SQLiteMemoryStore
+        from src.storage import SQLiteMemoryStore
         assert SQLiteMemoryStore is not None
 
     def test_base_repository_importable(self):
         """BaseRepository est importable depuis le package."""
-        from storage import BaseRepository
+        from src.storage import BaseRepository
         assert BaseRepository is not None

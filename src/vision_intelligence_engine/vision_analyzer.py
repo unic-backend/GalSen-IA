@@ -2,7 +2,7 @@
 Vision analyzer that allows configurable analysis pipelines.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict, Optional
 from .interfaces import VisionAnalyzer
 from .types import ImageItem
 from .vision_manager import VisionManagerImpl

@@ -18,7 +18,7 @@ from .memory_indexer import InMemoryMemoryIndexer
 from .memory_cache import LRUMemoryCache
 from .memory_summarizer import SimpleMemorySummarizer
 from .memory_ranker import SimpleMemoryRanker
-from storage.sqlite_store import SQLiteMemoryStore
+from src.storage.sqlite_store import SQLiteMemoryStore
 
 
 class MemoryManager(MemoryManagerInterface):

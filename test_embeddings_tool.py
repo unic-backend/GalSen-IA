@@ -2,12 +2,22 @@
 Tests for the embeddings tool.
 """
 
+from importlib.util import find_spec
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 
 from src.tools.embeddings.tool import EmbeddingsTool
+
+# `sentence-transformers` est une dépendance optionnelle (requirements-optional.txt).
+# Les tests qui simulent le vrai modèle doivent pouvoir l'importer pour le patcher :
+# ils sont ignorés quand elle est absente. Le comportement du tool sans la dépendance
+# reste couvert par test_embeddings_tool_missing_sentence_transformer.
+requires_sentence_transformers = pytest.mark.skipif(
+    find_spec("sentence_transformers") is None,
+    reason="sentence-transformers n'est pas installé (dépendance optionnelle)",
+)
 
 
 @pytest.fixture
@@ -37,6 +47,7 @@ def test_embeddings_tool_initialization_with_config():
     assert tool.normalize_embeddings is False
 
 
+@requires_sentence_transformers
 def test_embeddings_tool_embed_single_text(embeddings_tool):
     """Test embedding a single string."""
     # We need to mock the SentenceTransformer class and its encode method
@@ -61,6 +72,7 @@ def test_embeddings_tool_embed_single_text(embeddings_tool):
         assert result[0] == [0.1, 0.2, 0.3]
 
 
+@requires_sentence_transformers
 def test_embeddings_tool_embed_multiple_texts(embeddings_tool):
     """Test embedding a list of strings."""
     with patch("sentence_transformers.SentenceTransformer") as mock_st:
@@ -81,6 +93,7 @@ def test_embeddings_tool_embed_multiple_texts(embeddings_tool):
         assert result[1] == [0.4, 0.5, 0.6]
 
 
+@requires_sentence_transformers
 def test_embeddings_tool_embed_with_normalize_false():
     """Test embedding with normalization disabled."""
     config = {"normalize_embeddings": False}

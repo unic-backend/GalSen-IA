@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional
+import logging
 import time
 import uuid
 import os
@@ -21,7 +22,6 @@ from src.knowledge_engine.knowledge_manager import KnowledgeManagerImpl
 from src.approval_engine.approval_manager import ApprovalManagerImpl
 from src.tool.tool_engine import ToolEngine
 from src.tool.tool_loader import ToolLoader
-from src.tool.tool_executor import ToolExecutor
 
 # Import du limiteur de taux
 from src.api.rate_limiter import (
@@ -48,6 +48,8 @@ from src.services.notification.types import NotificationType, NotificationPriori
 from src.services.search.manager import SearchManagerImpl
 from src.services.search.types import SearchQuery, SearchSource, SearchSort
 from src.services.file.manager import FileManagerImpl
+
+logger = logging.getLogger(__name__)
 
 # Horodatage de démarrage (utilisé pour le calcul de l'uptime)
 APP_START_TIME = time.time()
@@ -131,9 +133,10 @@ app.add_middleware(
 memory_manager = MemoryManager()
 model_manager = ModelManagerImpl()
 knowledge_manager = KnowledgeManagerImpl()
+# Le chargeur ne sert plus qu'à localiser le registre : le ToolEngine construit
+# son propre chargeur et son propre exécuteur à partir de ce chemin (startup_event).
 tool_loader = ToolLoader()
-tool_executor = ToolExecutor()
-tool_engine = None  # sera initialisé après chargement des outils
+tool_engine = None  # sera initialisé au démarrage, dans startup_event
 # File d'attente d'approbation humaine : les agents qui demandent une décision
 # soumettent ici leur action, et un opérateur la valide ou la refuse (ADR-006).
 approval_manager = ApprovalManagerImpl()
@@ -146,19 +149,27 @@ file_manager = FileManagerImpl()
 # Initialisation du moteur d'outils au démarrage
 @app.on_event("startup")
 async def startup_event():
+    """Construit le moteur d'outils et le publie au vérificateur de santé.
+
+    Le moteur lit lui-même le registre `tools/tools.yaml` : il construit son
+    propre chargeur et son propre exécuteur. Un échec ici laisserait toute
+    l'API hors service, donc l'erreur est journalisée et `tool_engine` reste
+    à None — `/tool/execute` répond alors 503 et `/health` signale le moteur
+    comme indisponible.
+    """
     global tool_engine
-    # Charger les outils depuis la configuration
-    tools = tool_loader.load_tools()
-    tool_engine = ToolEngine(tools)
-    # Enregistrer l'executeur d'outils
-    tool_engine.set_executor(tool_executor)
+    try:
+        tool_engine = ToolEngine(tool_loader.registry_path)
+        enabled = tool_engine.list_enabled_tools()
+        logger.info("Moteur d'outils initialisé avec %d outils actifs.", len(enabled))
+    except Exception as error:
+        tool_engine = None
+        logger.error("Échec de l'initialisation du moteur d'outils : %s", error)
+
     # Mettre à jour la référence au moteur d'outils dans le vérificateur de santé
     checker = get_health_checker()
-    if hasattr(checker, 'set_tool_engine'):
+    if hasattr(checker, "set_tool_engine"):
         checker.set_tool_engine(tool_engine)
-    # Démarrer le moteur d'outils (si nécessaire)
-    # Note: le moteur d'outils est généralement prêt après chargement
-    print("Moteur d'outils initialisé avec", len(tools), "outils")
 
 # Modèles Pydantic pour les requêtes/réponses
 class MemoryItemBase(BaseModel):
@@ -484,7 +495,9 @@ async def execute_tool(request: ToolExecuteRequest):
 
     try:
         # Exécuter l'outil via le moteur d'outils
-        result = tool_engine.execute(request.tool_id, request.input, request.config or {})
+        # `input` porte l'opération, `config` ses options : les outils attendent
+        # les options en arguments nommés, pas en dictionnaire positionnel.
+        result = tool_engine.execute_tool(request.tool_id, request.input, **(request.config or {}))
         return ToolExecuteResponse(
             output=result,
             status="success",

@@ -8,7 +8,7 @@ import json
 import urllib.request
 import urllib.parse
 import urllib.error
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from src.tool.base import BaseTool
 
 
@@ -178,7 +178,16 @@ class APITool(BaseTool):
         elif operation == "request":
             return self.request(*args, **kwargs)
         else:
-            raise ValueError(f"Opération non prise en charge : {operation}")
+            raise ValueError(
+                f"Opération non prise en charge : {operation}. "
+                f"Opérations disponibles : {', '.join(self.available_operations())}"
+            )
+
+    def available_operations(self) -> List[str]:
+        """Retourne la liste des opérations prises en charge."""
+        # Le dispatch se fait par nom explicite (pas de convention `_op_`),
+        # la liste est donc déclarée ici et doit suivre le dispatch d'execute().
+        return ["delete", "get", "patch", "post", "put", "request"]
 
     def get(
         self,

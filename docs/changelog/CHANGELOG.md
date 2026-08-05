@@ -7,6 +7,56 @@ This project follows Semantic Versioning.
 
 ## [Unreleased]
 ### Added
+- `tests/test_api_startup.py`: seven integration tests that actually boot the
+  application (`with TestClient(app)`), covering the lifespan, the late binding
+  of the tool engine into the health checker, resilience to a broken tool engine
+  and a real end-to-end tool execution. No test booted the app before, which is
+  why the two startup defects above went unnoticed
+- **Backend services test coverage (VOLET 02 Phase 2)**
+  - `tests/test_services.py` extended from 93 to 135 unit tests: notification
+    serialization edge cases (`read_at`, omitted optional fields, enum instances
+    in `from_mapping`), advanced store filters (`min_priority`, role, tags,
+    content type), search source weighting, offset pagination, `DATE_ASC` sort,
+    provider-query construction and single-source failures, file base64
+    round-trip and best-effort failure handling of `FileManagerImpl`
+  - `src/services/` statement coverage raised from 92% to 99%
+
+### Fixed
+- **The API could not start.** `uvicorn src.api.server:app` — the command the
+  Dockerfile runs — failed with `ModuleNotFoundError: No module named 'storage'`
+  because `memory_manager.py`, the three `src/storage/sqlite_*_store.py` modules
+  and the deferred imports in `knowledge_manager.py` / `model_manager.py` used
+  top-level absolute imports assuming `src/` was on `sys.path`. Every import
+  inside `src/` now uses the single `src.<module>` convention, which also fixes
+  the duplicate-module identity bug (two distinct `MemoryPriority` classes)
+- **The startup handler was dead code.** `startup_event()` called
+  `tool_loader.load_tools()`, `ToolEngine(tools)` and
+  `tool_engine.set_executor()` — none of which exist. It now builds the engine
+  from the registry path and logs a failure instead of taking the API down
+- **`/tool/execute` never worked**: it called `tool_engine.execute()` (absent —
+  the method is `execute_tool()`) and passed `config` as a positional dict, so
+  the tool never received its options
+- `ToolLoader.get_tool_class()` no longer swallows `ImportError` /
+  `AttributeError` silently; the cause is logged. All 20 tools in
+  `tools/tools.yaml` now load
+- `test_embeddings_tool.py`: the three tests that patch `sentence_transformers`
+  are now skipped when that optional dependency is absent, so the suite is green
+  out of the box. The behaviour without the dependency stays covered by
+  `test_embeddings_tool_missing_sentence_transformer`
+- `requirements.txt` now declares two dependencies the code already required:
+  `opencv-python-headless` (imported at module level by four
+  `src/vision_intelligence_engine/` modules — without it the `vision` engine is
+  unavailable in the registry) and `httpx` (required by
+  `starlette.testclient.TestClient`, without which four API test files cannot be
+  collected)
+- Three pre-existing `NameError` failures that prevented the full pytest suite
+  from being collected: missing `Optional` import in
+  `src/memory_engine/memory_summarizer.py` and
+  `src/vision_intelligence_engine/vision_analyzer.py`, and a forward reference to
+  `ColorAnalyzer` in `src/vision_intelligence_engine/interfaces.py` (now a string
+  annotation)
+
+### Added
 - **VOLET 02 Phase 2 — Services Backend (Ch. 03, 07, 09)**
   - **Notification Service** (`src/services/notification/`): types.py, interfaces.py, store.py, manager.py. 8 types de notification (info, warning, error, approval_request, approval_decided, system, task_completed, task_failed), 4 niveaux de priorité, stockage en mémoire thread-safe avec filtres (type, destinataire, rôle, priorité minimale), marquage de lecture individuel et groupé, statistiques agrégées
   - **Search Service** (`src/services/search/`): types.py, interfaces.py, manager.py. Recherche unifiée multi-source (knowledge, memory, document, vision) avec fusion pondérée par source, tri par pertinence/date, filtrage par score minimum. Architecture extensible : tout moteur implémentant `SearchProvider` peut être branché

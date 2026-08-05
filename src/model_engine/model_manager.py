@@ -65,7 +65,7 @@ class ModelManagerImpl(ModelManager):
             self._store = store
         elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
             # Import différé pour éviter un import circulaire avec storage.
-            from storage.sqlite_model_store import SQLiteModelStore
+            from src.storage.sqlite_model_store import SQLiteModelStore
             self._store = SQLiteModelStore()
         else:
             self._store = InMemoryModelStore()
