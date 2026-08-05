@@ -12,25 +12,22 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-05
 
-**En cours** : Rien — session interrompue après la mise sous git du projet.
+**En cours** : Rien.
 
 **Terminé dans cette session**
-- Notification Service (`src/services/notification/`)
-- Search Service (`src/services/search/`)
-- File Service (`src/services/file/`)
-- Intégration des services à l'API REST et à l'EngineRegistry
-- Dépôt git initialisé et publié : `github.com/unic-backend/GalSen-IA` (branche `main`,
-  commit initial `5469a4a`, 570 fichiers, aucun secret ni log)
+- `tests/test_services.py` étendu à 135 tests (notification, search, file) —
+  couverture `src/services/` portée de 92 % à 99 %.
+- Corrigé 3 `NameError` préexistants qui bloquaient la collecte pytest
+  (`memory_summarizer.py`, `vision_analyzer.py`, `vision .../interfaces.py`).
+- Suite complète lancée : 591 tests passent, 3 échecs environnementaux.
+- Travail poussé sur `claude/unit-tests-notification-search-file-4z0ok1`.
 
 **Prochaine étape**
-Écrire les tests unitaires des 3 services (`notification`, `search`, `file`),
-puis lancer la suite complète.
+Ouvrir la PR vers `main` pour cette branche, ou attaquer la suite du VOLET 02.
 
 **Bloqué / à surveiller**
-- `gh` (GitHub CLI) n'est pas installé sur le PC : toute opération GitHub passe par
-  GitHub Desktop ou doit être faite depuis claude.ai/code.
-- Le commit initial est sur `main` (création du dépôt). Tout le travail suivant doit
-  passer par une branche, conformément à `.claude/rules/git-workflow.md`.
-
-**Ne pas refaire**
-- Les 5 tâches ci-dessus sont terminées et vérifiées.
+- `test_embeddings_tool.py` (3 tests) exige `sentence-transformers` (+ torch).
+- La collecte de la suite exige `fastapi`, `httpx` et `opencv-python-headless` ;
+  `opencv` n'est listé dans aucun `requirements*.txt`.
+- Le commit initial est sur `main`. Tout travail suivant passe par une branche
+  (`.claude/rules/git-workflow.md`).

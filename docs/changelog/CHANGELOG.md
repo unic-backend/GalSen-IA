@@ -7,6 +7,24 @@ This project follows Semantic Versioning.
 
 ## [Unreleased]
 ### Added
+- **Backend services test coverage (VOLET 02 Phase 2)**
+  - `tests/test_services.py` extended from 93 to 135 unit tests: notification
+    serialization edge cases (`read_at`, omitted optional fields, enum instances
+    in `from_mapping`), advanced store filters (`min_priority`, role, tags,
+    content type), search source weighting, offset pagination, `DATE_ASC` sort,
+    provider-query construction and single-source failures, file base64
+    round-trip and best-effort failure handling of `FileManagerImpl`
+  - `src/services/` statement coverage raised from 92% to 99%
+
+### Fixed
+- Three pre-existing `NameError` failures that prevented the full pytest suite
+  from being collected: missing `Optional` import in
+  `src/memory_engine/memory_summarizer.py` and
+  `src/vision_intelligence_engine/vision_analyzer.py`, and a forward reference to
+  `ColorAnalyzer` in `src/vision_intelligence_engine/interfaces.py` (now a string
+  annotation)
+
+### Added
 - **VOLET 02 Phase 2 — Services Backend (Ch. 03, 07, 09)**
   - **Notification Service** (`src/services/notification/`): types.py, interfaces.py, store.py, manager.py. 8 types de notification (info, warning, error, approval_request, approval_decided, system, task_completed, task_failed), 4 niveaux de priorité, stockage en mémoire thread-safe avec filtres (type, destinataire, rôle, priorité minimale), marquage de lecture individuel et groupé, statistiques agrégées
   - **Search Service** (`src/services/search/`): types.py, interfaces.py, manager.py. Recherche unifiée multi-source (knowledge, memory, document, vision) avec fusion pondérée par source, tri par pertinence/date, filtrage par score minimum. Architecture extensible : tout moteur implémentant `SearchProvider` peut être branché

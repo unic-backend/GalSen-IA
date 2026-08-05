@@ -172,3 +172,7 @@
   - Exposés via 14 endpoints API REST dans `src/api/server.py` avec permissions RBAC.
   - Créé `tests/test_services.py` : 93 tests unitaires — tous passent.
 - Suite de tests complète Phase 2 : 519 tests passent, 33 désélectionnés, 0 échecs. Aucune régression.
+### 2026-08-05 (VOLET 02 Phase 2 — Couverture de tests des services)
+- Étendu `tests/test_services.py` de 93 à 135 tests : sérialisation (`read_at`, champs optionnels omis, base64, dates ISO), filtres avancés (min_priority, rôle, tags, content_type), pondération et pagination de la recherche fusionnée, pannes du store fichier. Couverture `src/services/` : 92 % → 99 % (seule ligne non couverte : `_priority_value(None)` dans `notification/store.py`, branche défensive inatteignable par l'API publique).
+- Corrigé 3 `NameError` préexistants qui empêchaient la collecte pytest de la suite complète : `Optional` manquant dans `src/memory_engine/memory_summarizer.py` et `src/vision_intelligence_engine/vision_analyzer.py`, référence avant définition de `ColorAnalyzer` dans `src/vision_intelligence_engine/interfaces.py` (annotations en chaîne).
+- Suite complète : 591 tests passent, 3 échecs environnementaux dans `test_embeddings_tool.py` (`sentence_transformers` non installé, dépendance optionnelle). `cv2` et `fastapi` doivent être installés pour que la suite se collecte entièrement.

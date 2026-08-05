@@ -1,4 +1,5 @@
 ## Done
+- [x] Backend services — Compléter tests/test_services.py (135 tests, couverture src/services 99 %) + correction de 3 NameError bloquant la collecte pytest
 - [x] Phase 4 — Generalized Persistence (SQLiteModelStore, SQLiteKnowledgeStore, GALSEN_STORAGE_BACKEND/GALSEN_DATA_DIR, branchement moteurs, 43 tests) — incl. alignement import `memory_manager` sur la convention top-level (plus aucun `from ..storage` dans src/)
 - [x] Phase 3 — Human Approval Gate (approval_engine, ADR-006, requires_approval, portillon BaseAgent, 5 endpoints API, 33 tests)
 - [x] Phase 2 — Structured Audit System (audit_engine, intégration registre/contexte/agents, request_id, 35 tests)
