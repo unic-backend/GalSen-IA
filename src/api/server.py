@@ -27,7 +27,7 @@ from src.tool.tool_loader import ToolLoader
 # Import du limiteur de taux
 from src.api.rate_limiter import (
     rate_limit_dependency,
-    set_valid_api_keys,
+    set_valid_api_key_digests,
 )
 
 # Import du vérificateur de santé
@@ -72,7 +72,7 @@ api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 rbac_manager = RBACManager()
 
 # Enregistrer les clés API valides auprès du limiteur de taux
-set_valid_api_keys(rbac_manager.get_valid_keys())
+set_valid_api_key_digests(rbac_manager.get_valid_key_digests())
 
 
 def require_auth(api_key: str = Security(api_key_header)) -> RBACContext:

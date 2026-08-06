@@ -6,6 +6,7 @@ l'authentification, la vérification des permissions, et l'intégration
 avec FastAPI.
 """
 
+import logging
 import os
 import sys
 from typing import Any, Dict
@@ -75,16 +76,16 @@ class TestParseApiKeyMappings:
     def test_empty_env(self):
         """Variable d'environnement vide → mapping vide."""
         with patch.dict(os.environ, {"GALSEN_API_KEYS": ""}, clear=False):
-            from src.api.rbac import parse_api_key_mappings
+            from src.api.rbac import hash_api_key, parse_api_key_mappings
             assert parse_api_key_mappings() == {}
 
     def test_keys_without_role_default_to_user(self):
         """Clés sans rôle explicite → rôle 'user' par défaut."""
         with patch.dict(os.environ, {"GALSEN_API_KEYS": "key1,key2"}, clear=False):
-            from src.api.rbac import parse_api_key_mappings
+            from src.api.rbac import hash_api_key, parse_api_key_mappings
             mappings = parse_api_key_mappings()
-            assert mappings["key1"].value == "user"
-            assert mappings["key2"].value == "user"
+            assert mappings[hash_api_key("key1")].value == "user"
+            assert mappings[hash_api_key("key2")].value == "user"
 
     def test_keys_with_explicit_roles(self):
         """Clés avec rôle explicite dans le format 'key:role'."""
@@ -93,10 +94,10 @@ class TestParseApiKeyMappings:
             {"GALSEN_API_KEYS": "admin-key:admin,read-key:readonly"},
             clear=False,
         ):
-            from src.api.rbac import parse_api_key_mappings
+            from src.api.rbac import hash_api_key, parse_api_key_mappings
             mappings = parse_api_key_mappings()
-            assert mappings["admin-key"].value == "admin"
-            assert mappings["read-key"].value == "readonly"
+            assert mappings[hash_api_key("admin-key")].value == "admin"
+            assert mappings[hash_api_key("read-key")].value == "readonly"
             assert len(mappings) == 2
 
     def test_mixed_format(self):
@@ -106,11 +107,11 @@ class TestParseApiKeyMappings:
             {"GALSEN_API_KEYS": "admin-key:admin,plain-key,op-key:operator"},
             clear=False,
         ):
-            from src.api.rbac import parse_api_key_mappings
+            from src.api.rbac import hash_api_key, parse_api_key_mappings
             mappings = parse_api_key_mappings()
-            assert mappings["admin-key"].value == "admin"
-            assert mappings["plain-key"].value == "user"
-            assert mappings["op-key"].value == "operator"
+            assert mappings[hash_api_key("admin-key")].value == "admin"
+            assert mappings[hash_api_key("plain-key")].value == "user"
+            assert mappings[hash_api_key("op-key")].value == "operator"
 
     def test_invalid_role_defaults_to_user(self):
         """Rôle invalide → 'user' par défaut avec un avertissement log."""
@@ -119,9 +120,9 @@ class TestParseApiKeyMappings:
             {"GALSEN_API_KEYS": "key1:superadmin"},
             clear=False,
         ):
-            from src.api.rbac import parse_api_key_mappings
+            from src.api.rbac import hash_api_key, parse_api_key_mappings
             mappings = parse_api_key_mappings()
-            assert mappings["key1"].value == "user"
+            assert mappings[hash_api_key("key1")].value == "user"
 
 
 class TestRBACManager:
@@ -139,12 +140,14 @@ class TestRBACManager:
 
     def test_authenticate_valid_keys(self):
         """L'authentification doit réussir pour des clés valides."""
-        from src.api.rbac import RBACManager
+        from src.api.rbac import RBACManager, hash_api_key
 
         manager = RBACManager()
         ctx = manager.authenticate("admin-key")
         assert ctx.role.value == "admin"
-        assert ctx.api_key == "admin-key"
+        # Le contexte porte une empreinte, jamais la clé : il peut finir en journal
+        assert ctx.key_fingerprint == hash_api_key("admin-key")[:12]
+        assert "admin-key" not in str(ctx)
 
         ctx2 = manager.authenticate("user-key")
         assert ctx2.role.value == "user"
@@ -165,16 +168,18 @@ class TestRBACManager:
         with pytest.raises(PermissionError, match="Clé API invalide"):
             manager.authenticate("fake-key")
 
-    def test_get_valid_keys(self):
-        """get_valid_keys() retourne toutes les clés configurées."""
-        from src.api.rbac import RBACManager
+    def test_get_valid_key_digests(self):
+        """Le gestionnaire ne publie que des condensés, jamais les clés."""
+        from src.api.rbac import RBACManager, hash_api_key
 
         manager = RBACManager()
-        keys = manager.get_valid_keys()
-        assert "admin-key" in keys
-        assert "user-key" in keys
-        assert "ro-key" in keys
-        assert len(keys) == 3
+        digests = manager.get_valid_key_digests()
+        assert hash_api_key("admin-key") in digests
+        assert hash_api_key("user-key") in digests
+        assert hash_api_key("ro-key") in digests
+        assert len(digests) == 3
+        # La clé en clair ne doit apparaître nulle part
+        assert "admin-key" not in digests
 
     def test_reload(self):
         """reload() met à jour le mapping clé → rôle."""
@@ -213,7 +218,7 @@ class TestRBACContext:
         """has_permission retourne True pour les permissions du rôle."""
         from src.api.rbac import RBACContext, Role, Permission
 
-        ctx = RBACContext(api_key="test", role=Role.ADMIN)
+        ctx = RBACContext(key_fingerprint="empreinte", role=Role.ADMIN)
         assert ctx.has_permission(Permission.ADMIN_MANAGE)
         assert ctx.has_permission(Permission.MEMORY_READ)
 
@@ -221,7 +226,7 @@ class TestRBACContext:
         """has_permission retourne False pour les permissions absentes."""
         from src.api.rbac import RBACContext, Role, Permission
 
-        ctx = RBACContext(api_key="test", role=Role.READONLY)
+        ctx = RBACContext(key_fingerprint="empreinte", role=Role.READONLY)
         assert not ctx.has_permission(Permission.MEMORY_WRITE)
         assert not ctx.has_permission(Permission.MODEL_GENERATE)
 
@@ -229,7 +234,7 @@ class TestRBACContext:
         """has_any_permission retourne True si au moins une permission est présente."""
         from src.api.rbac import RBACContext, Role, Permission
 
-        ctx = RBACContext(api_key="test", role=Role.USER)
+        ctx = RBACContext(key_fingerprint="empreinte", role=Role.USER)
         assert ctx.has_any_permission(Permission.MEMORY_READ, Permission.ADMIN_MANAGE)
         assert not ctx.has_any_permission(Permission.ADMIN_MANAGE, Permission.ADMIN_AUDIT)
 
@@ -237,14 +242,14 @@ class TestRBACContext:
         """require_permission ne lève pas pour une permission valide."""
         from src.api.rbac import RBACContext, Role, Permission
 
-        ctx = RBACContext(api_key="test", role=Role.ADMIN)
+        ctx = RBACContext(key_fingerprint="empreinte", role=Role.ADMIN)
         ctx.require_permission(Permission.ADMIN_MANAGE)  # ne doit pas lever
 
     def test_require_permission_fail(self):
         """require_permission lève PermissionError pour une permission absente."""
         from src.api.rbac import RBACContext, Role, Permission
 
-        ctx = RBACContext(api_key="test", role=Role.READONLY)
+        ctx = RBACContext(key_fingerprint="empreinte", role=Role.READONLY)
         with pytest.raises(PermissionError):
             ctx.require_permission(Permission.TOOL_EXECUTE)
 
@@ -252,7 +257,7 @@ class TestRBACContext:
         """Les permissions sont calculées à l'initialisation du contexte."""
         from src.api.rbac import RBACContext, Role, Permission
 
-        ctx = RBACContext(api_key="test", role=Role.OPERATOR)
+        ctx = RBACContext(key_fingerprint="empreinte", role=Role.OPERATOR)
         assert isinstance(ctx.permissions, frozenset)
         assert Permission.APPROVAL_DECIDE in ctx.permissions
 
@@ -262,3 +267,79 @@ class TestRBACContext:
 # =========================================================================
 # Les tests d'intégration HTTP sont dans test_rbac_integration.py.
 # Ce fichier contient uniquement les tests unitaires purs du module RBAC.
+
+# =========================================================================
+# Les clés API ne subsistent jamais en clair (VOLET 02 ch. 08)
+# =========================================================================
+
+
+class TestSecretsJamaisEnClair:
+    """Vérifie qu'aucune clé rejouable ne subsiste après le démarrage.
+
+    Une clé API est un secret porteur : qui l'obtient agit à la place de son
+    porteur. La conserver en clair en mémoire, la journaliser même partiellement
+    ou la promener dans un contexte de requête sont trois façons de la perdre.
+    """
+
+    def test_le_mapping_ne_contient_aucune_cle_en_clair(self):
+        """Après lecture de l'environnement, seules des empreintes subsistent."""
+        with patch.dict(os.environ, {"GALSEN_API_KEYS": "cle-secrete:admin"}, clear=False):
+            from src.api.rbac import RBACManager
+
+            manager = RBACManager()
+            assert "cle-secrete" not in str(manager._key_role_map)
+
+    def test_le_contexte_ne_porte_pas_la_cle(self):
+        """Le contexte de requête ne doit rien contenir de rejouable."""
+        with patch.dict(os.environ, {"GALSEN_API_KEYS": "cle-secrete:admin"}, clear=False):
+            from src.api.rbac import RBACManager
+
+            contexte = RBACManager().authenticate("cle-secrete")
+            assert "cle-secrete" not in str(vars(contexte))
+
+    def test_un_role_inconnu_ne_journalise_pas_la_cle(self, caplog):
+        """Un rôle mal orthographié ne doit pas faire fuiter le début de la clé.
+
+        L'ancienne version écrivait `key[:8]` : huit caractères d'un secret
+        journalisés restent huit caractères de secret divulgués.
+        """
+        with patch.dict(
+            os.environ, {"GALSEN_API_KEYS": "cle-secrete:roi-du-monde"}, clear=False
+        ):
+            from src.api.rbac import parse_api_key_mappings
+
+            with caplog.at_level(logging.WARNING):
+                parse_api_key_mappings()
+
+        assert "cle-secr" not in caplog.text
+        assert "roi-du-monde" in caplog.text
+
+    def test_condensat_stable_et_non_reversible(self):
+        """Le condensé doit être déterministe et ne pas contenir la clé."""
+        from src.api.rbac import hash_api_key
+
+        assert hash_api_key("cle-secrete") == hash_api_key("cle-secrete")
+        assert hash_api_key("cle-secrete") != hash_api_key("cle-secrete2")
+        assert len(hash_api_key("cle-secrete")) == 64
+        assert "cle-secrete" not in hash_api_key("cle-secrete")
+
+    def test_empreinte_courte_et_distinctive(self):
+        """L'empreinte doit rester courte tout en distinguant deux clés."""
+        from src.api.rbac import hash_api_key, key_fingerprint
+
+        premiere = key_fingerprint(hash_api_key("cle-a"))
+        seconde = key_fingerprint(hash_api_key("cle-b"))
+        assert len(premiere) == 12
+        assert premiere != seconde
+
+    def test_le_limiteur_ne_recoit_que_des_condensats(self):
+        """Le limiteur de taux doit reconnaître un client sans détenir sa clé."""
+        with patch.dict(os.environ, {"GALSEN_API_KEYS": "cle-secrete:admin"}, clear=False):
+            from src.api import rate_limiter
+            from src.api.rbac import RBACManager
+
+            rate_limiter.set_valid_api_key_digests(RBACManager().get_valid_key_digests())
+            try:
+                assert "cle-secrete" not in str(rate_limiter._valid_key_digests)
+            finally:
+                rate_limiter.set_valid_api_key_digests(set())

@@ -8,11 +8,20 @@ Roles are associated with API keys via the GALSEN_API_KEYS environment variable
 using the format: "key1:role1,key2:role2".
 
 A role without an explicit mapping defaults to "user".
+
+Les clés ne sont jamais conservées en clair : seul leur condensé SHA-256 est
+gardé en mémoire, et la comparaison passe par `hmac.compare_digest`. Une clé
+présentée est donc condensée avant d'être cherchée, et rien de réversible ne
+subsiste après le démarrage — ni dans un attribut, ni dans un journal, ni dans
+le contexte porté par la requête (VOLET 02 chapitre 08, *Secure secret
+management*).
 """
 
 from __future__ import annotations
 
 import enum
+import hashlib
+import hmac
 import logging
 import os
 from dataclasses import dataclass, field
@@ -114,6 +123,30 @@ def get_permissions_for_role(role: Role) -> FrozenSet[Permission]:
     return _ROLE_PERMISSIONS.get(role, frozenset())
 
 
+def hash_api_key(api_key: str) -> str:
+    """
+    Retourne le condensé SHA-256 d'une clé API, en hexadécimal.
+
+    Args:
+        api_key: La clé présentée par un client.
+
+    Returns:
+        Le condensé, seule forme sous laquelle la plateforme conserve une clé.
+    """
+    return hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+
+
+def key_fingerprint(digest: str) -> str:
+    """
+    Retourne une empreinte courte, non réversible, utilisable en journal.
+
+    Douze caractères hexadécimaux suffisent à distinguer les clés d'une
+    installation sans permettre de remonter à la clé : c'est ce qui permet de
+    tracer un appelant dans l'audit sans écrire de secret.
+    """
+    return digest[:12]
+
+
 def parse_api_key_mappings() -> Dict[str, Role]:
     """
     Parse la variable d'environnement GALSEN_API_KEYS en un mapping
@@ -126,7 +159,8 @@ def parse_api_key_mappings() -> Dict[str, Role]:
     Une clé invalide (mauvais format) est ignorée avec un avertissement.
 
     Returns:
-        Dictionnaire {clé_api: rôle}.
+        Dictionnaire {condensé de la clé: rôle}. La clé en clair n'est jamais
+        conservée : elle disparaît avec la variable locale.
     """
     raw = os.environ.get("GALSEN_API_KEYS", "").strip()
     if not raw:
@@ -150,14 +184,16 @@ def parse_api_key_mappings() -> Dict[str, Role]:
         try:
             role = Role(role_name)
         except ValueError:
+            # L'empreinte, jamais le début de la clé : huit caractères d'un
+            # secret journalisés restent huit caractères de secret divulgués.
             logger.warning(
-                "Rôle '%s' inconnu pour la clé '%s...'. "
+                "Rôle '%s' inconnu pour la clé d'empreinte %s. "
                 "Rôles valides : %s. Utilisation du rôle 'user' par défaut.",
-                role_name, key[:8], [r.value for r in Role],
+                role_name, key_fingerprint(hash_api_key(key)), [r.value for r in Role],
             )
             role = Role.USER
 
-        mappings[key] = role
+        mappings[hash_api_key(key)] = role
 
     return mappings
 
@@ -170,9 +206,13 @@ class RBACContext:
     Porté par chaque requête authentifiée, il permet aux dépendances
     FastAPI de vérifier rapidement si l'utilisateur a le droit d'effectuer
     une action.
+
+    Il porte l'**empreinte** de la clé, jamais la clé : un contexte peut se
+    retrouver dans un journal, une trace d'audit ou un message d'erreur, et rien
+    de ce qu'il contient ne doit permettre de rejouer un appel.
     """
 
-    api_key: str
+    key_fingerprint: str
     role: Role
     permissions: FrozenSet[Permission] = field(init=False)
 
@@ -259,20 +299,25 @@ class RBACManager:
         if not api_key:
             raise PermissionError("Clé API manquante.")
 
-        role = self._key_role_map.get(api_key)
-        if role is None:
-            raise PermissionError("Clé API invalide.")
+        digest = hash_api_key(api_key)
 
-        return RBACContext(api_key=api_key, role=role)
+        # La recherche dans le dictionnaire suffirait, mais elle n'est pas à
+        # temps constant : la comparaison explicite ferme cette mesure de temps.
+        for connu, role in self._key_role_map.items():
+            if hmac.compare_digest(connu, digest):
+                return RBACContext(key_fingerprint=key_fingerprint(digest), role=role)
 
-    def get_valid_keys(self) -> Set[str]:
+        raise PermissionError("Clé API invalide.")
+
+    def get_valid_key_digests(self) -> Set[str]:
         """
-        Retourne l'ensemble des clés API valides.
+        Retourne l'ensemble des **condensés** des clés API valides.
 
-        Utile pour synchroniser avec le limiteur de taux.
+        Utile pour synchroniser avec le limiteur de taux, qui doit reconnaître
+        un client authentifié sans jamais détenir sa clé.
 
         Returns:
-            Ensemble des clés API valides.
+            Ensemble des condensés SHA-256.
         """
         return set(self._key_role_map.keys())
 

@@ -23,7 +23,7 @@ from src.api.rate_limiter import (
     RateLimitConfig,
     RateLimitInfo,
     get_rate_limiter,
-    set_valid_api_keys,
+    set_valid_api_key_digests,
     rate_limit_dependency,
 )
 
@@ -43,7 +43,7 @@ __all__ = [
     "RateLimitConfig",
     "RateLimitInfo",
     "get_rate_limiter",
-    "set_valid_api_keys",
+    "set_valid_api_key_digests",
     "rate_limit_dependency",
     # Vérificateur de santé
     "ComponentHealth",

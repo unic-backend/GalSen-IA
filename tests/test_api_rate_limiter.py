@@ -23,13 +23,14 @@ from fastapi.testclient import TestClient
 # S'assurer que le chemin d'importation est correct
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from src.api.rbac import hash_api_key
 from src.api.rate_limiter import (
     APIRateLimiter,
     InMemoryRateLimiter,
     RateLimitConfig,
     RateLimitInfo,
     get_rate_limiter,
-    set_valid_api_keys,
+    set_valid_api_key_digests,
     rate_limit_dependency,
 )
 
@@ -380,7 +381,7 @@ class TestRateLimitDependency:
         """Crée un client de test avec rate limiting configuré."""
         # Configurer les clés API
         os.environ["GALSEN_API_KEYS"] = "valid-test-key"
-        set_valid_api_keys({"valid-test-key"})
+        set_valid_api_key_digests({hash_api_key("valid-test-key")})
 
         # S'assurer que le limiteur est activé avec une config de test
         os.environ["GALSEN_RATE_LIMIT_ENABLED"] = "true"
@@ -458,7 +459,7 @@ class TestRateLimitDependency:
         os.environ["GALSEN_RATE_LIMIT_UNAUTHENTICATED_RPM"] = "5"
         os.environ["GALSEN_RATE_LIMIT_BURST_MULTIPLIER"] = "1.0"
 
-        set_valid_api_keys({"high-limit-key"})
+        set_valid_api_key_digests({hash_api_key("high-limit-key")})
         rl_module._rate_limiter = None
 
         app = FastAPI()
@@ -495,7 +496,7 @@ class TestRateLimitDependency:
         os.environ["GALSEN_RATE_LIMIT_UNAUTHENTICATED_RPM"] = "2"
         os.environ["GALSEN_RATE_LIMIT_BURST_MULTIPLIER"] = "1.0"
 
-        set_valid_api_keys({"key-a", "key-b"})
+        set_valid_api_key_digests({hash_api_key("key-a"), hash_api_key("key-b")})
         rl_module._rate_limiter = None
 
         app = FastAPI()
@@ -563,7 +564,7 @@ class TestRateLimitAuthCompatibility:
         os.environ["GALSEN_RATE_LIMIT_UNAUTHENTICATED_RPM"] = "3"
         os.environ["GALSEN_RATE_LIMIT_BURST_MULTIPLIER"] = "1.0"
 
-        set_valid_api_keys({"my-key"})
+        set_valid_api_key_digests({hash_api_key("my-key")})
         rl_module._rate_limiter = None
 
         from fastapi.security.api_key import APIKeyHeader
@@ -609,7 +610,7 @@ class TestRateLimitAuthCompatibility:
         os.environ["GALSEN_RATE_LIMIT_UNAUTHENTICATED_RPM"] = "2"
         os.environ["GALSEN_RATE_LIMIT_BURST_MULTIPLIER"] = "1.0"
 
-        set_valid_api_keys({"only-valid-key"})
+        set_valid_api_key_digests({hash_api_key("only-valid-key")})
         rl_module._rate_limiter = None
 
         app = FastAPI()

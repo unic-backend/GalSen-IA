@@ -27,6 +27,8 @@ import time
 from fastapi import Depends, HTTPException, Request, Security
 from fastapi.security.api_key import APIKeyHeader
 
+from src.api.rbac import hash_api_key, key_fingerprint
+
 # ---------------------------------------------------------------------------
 # Modèles de données
 # ---------------------------------------------------------------------------
@@ -343,8 +345,9 @@ _rate_limiter_lock = threading.Lock()
 API_KEY_NAME = "X-API-Key"
 _api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
-# Référence aux clés API valides (surchargée par server.py au démarrage)
-_valid_api_keys: set = set()
+# Condensés des clés API valides (surchargés par server.py au démarrage).
+# Le limiteur reconnaît un client authentifié sans jamais détenir sa clé.
+_valid_key_digests: set = set()
 
 
 def get_rate_limiter() -> APIRateLimiter:
@@ -365,16 +368,18 @@ def get_rate_limiter() -> APIRateLimiter:
     return _rate_limiter
 
 
-def set_valid_api_keys(keys: set) -> None:
-    """Enregistre l'ensemble des clés API valides pour le limiteur.
+def set_valid_api_key_digests(digests: set) -> None:
+    """Enregistre les condensés des clés API valides pour le limiteur.
 
     Appelée par server.py après le chargement des clés depuis l'environnement.
+    Le limiteur ne reçoit que des condensés : une fuite de sa mémoire ne
+    donnerait aucune clé rejouable.
 
     Args:
-        keys: Ensemble des clés API valides.
+        digests: Ensemble des condensés SHA-256 des clés valides.
     """
-    global _valid_api_keys
-    _valid_api_keys = keys
+    global _valid_key_digests
+    _valid_key_digests = digests
 
 
 # ---------------------------------------------------------------------------
@@ -414,11 +419,12 @@ async def rate_limit_dependency(
     """
     limiter = get_rate_limiter()
 
-    # Déterminer l'identité et le statut d'authentification du client
-    is_authenticated = (
-        api_key is not None and api_key in _valid_api_keys
-    )
-    client_id = api_key if is_authenticated else _get_client_ip(request)
+    # Déterminer l'identité et le statut d'authentification du client.
+    # Le compteur est indexé sur l'empreinte, jamais sur la clé : un seau de
+    # limitation finit dans les journaux et les métriques.
+    digest = hash_api_key(api_key) if api_key else None
+    is_authenticated = digest is not None and digest in _valid_key_digests
+    client_id = key_fingerprint(digest) if is_authenticated else _get_client_ip(request)
 
     allowed, info = limiter.is_allowed(client_id, is_authenticated)
 
