@@ -79,7 +79,7 @@ api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 rbac_manager = RBACManager()
 
 # Enregistrer les clés API valides auprès du limiteur de taux
-set_valid_api_key_digests(rbac_manager.get_valid_key_digests())
+set_valid_api_key_digests(rbac_manager.active_key_digests())
 
 
 def require_auth(api_key: str = Security(api_key_header)) -> RBACContext:
@@ -704,6 +704,88 @@ async def list_roles():
         role.value: sorted(p.value for p in get_permissions_for_role(role))
         for role in Role
     }
+
+
+def _sync_rate_limiter() -> None:
+    """Réaligne le limiteur de taux sur les clés actuellement actives.
+
+    Sans cet appel après un rechargement ou une révocation, le limiteur
+    continuerait de traiter une clé coupée comme un client authentifié, avec
+    le quota élevé qui va avec.
+    """
+    set_valid_api_key_digests(rbac_manager.active_key_digests())
+
+
+@app.get("/auth/keys", tags=["auth"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.ADMIN_MANAGE))])
+async def list_api_keys():
+    """Inventorie les clés API : empreinte, rôle, état de révocation.
+
+    Aucune clé n'y figure. Un opérateur doit pouvoir voir combien de clés
+    existent et avec quels droits, sans obtenir de quoi s'en servir.
+    """
+    cles = rbac_manager.list_keys()
+    return {
+        "total": len(cles),
+        "revoked": sum(1 for cle in cles if cle["revoked"]),
+        "keys": cles,
+    }
+
+
+@app.post("/auth/keys/{fingerprint}/revoke", tags=["auth"],
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.ADMIN_MANAGE))])
+async def revoke_api_key(fingerprint: str):
+    """Coupe immédiatement une clé, désignée par son empreinte.
+
+    La révocation **ne survit pas au redémarrage** : la source durable des clés
+    reste l'environnement du déploiement (ADR-004). Elle arrête l'hémorragie ;
+    retirer la clé de `GALSEN_API_KEYS` la referme pour de bon. La réponse le
+    rappelle, pour qu'un opérateur ne croie pas l'incident clos.
+    """
+    if not rbac_manager.revoke(fingerprint):
+        raise HTTPException(status_code=404, detail=f"Empreinte '{fingerprint}' inconnue.")
+
+    _sync_rate_limiter()
+    return {
+        "fingerprint": fingerprint,
+        "revoked": True,
+        "persistent": False,
+        "detail": (
+            "Révocation immédiate mais non persistante. Retirez la clé de "
+            "GALSEN_API_KEYS pour qu'elle ne revienne pas au prochain démarrage."
+        ),
+    }
+
+
+@app.post("/auth/keys/{fingerprint}/restore", tags=["auth"],
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.ADMIN_MANAGE))])
+async def restore_api_key(fingerprint: str):
+    """Lève une révocation posée par erreur."""
+    if not rbac_manager.restore(fingerprint):
+        raise HTTPException(
+            status_code=404, detail=f"Aucune révocation pour l'empreinte '{fingerprint}'."
+        )
+
+    _sync_rate_limiter()
+    return {"fingerprint": fingerprint, "revoked": False}
+
+
+@app.post("/auth/keys/reload", tags=["auth"],
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.ADMIN_MANAGE))])
+async def reload_api_keys():
+    """Relit `GALSEN_API_KEYS` et resynchronise le limiteur de taux.
+
+    Utile après une rotation : la nouvelle clé devient valide et l'ancienne
+    cesse de l'être sans interrompre le service. Le résumé retourné ne contient
+    que des empreintes.
+    """
+    resume = rbac_manager.reload()
+    _sync_rate_limiter()
+    return resume
 
 
 # =========================================================================
