@@ -2,12 +2,12 @@
 Tests d'intégration du démarrage réel de l'API GalSen IA.
 
 Ces tests utilisent `with TestClient(app)` — la seule forme qui déclenche le
-cycle de vie de FastAPI. Sans cela, `startup_event()` n'est jamais exécuté et
+cycle de vie de FastAPI. Sans cela, `lifespan()` n'est jamais exécuté et
 une erreur de câblage au démarrage reste invisible pour toute la suite.
 
 Couvre :
 - L'import de `src.api.server` depuis la racine du dépôt (commande du Dockerfile)
-- L'exécution de `startup_event()` : construction du moteur d'outils
+- L'exécution de `lifespan()` : construction du moteur d'outils
 - La publication tardive du moteur d'outils au vérificateur de santé
 - Le comportement de `/tool/execute` quand le moteur n'a pas pu être construit
 """
@@ -29,13 +29,25 @@ from src.api.server import app  # noqa: E402
 
 @pytest.fixture
 def api_key(monkeypatch):
-    """Configure une clé API admin et recharge le RBAC de l'application."""
+    """
+    Configure une clé API admin, puis rend son état d'origine à l'application.
+
+    `rbac_manager` et le limiteur de taux sont des singletons partagés par toute
+    la suite : recharger l'un sans le restaurer invalide les clés des autres
+    fichiers de tests, qui se mettent alors à recevoir des 401.
+    """
     from src.api.rate_limiter import set_valid_api_keys
+
+    ancien_mapping = dict(server_module.rbac_manager._key_role_map)
 
     monkeypatch.setenv("GALSEN_API_KEYS", "cle-test:admin")
     server_module.rbac_manager.reload()
     set_valid_api_keys(server_module.rbac_manager.get_valid_keys())
-    return "cle-test"
+
+    yield "cle-test"
+
+    server_module.rbac_manager._key_role_map = ancien_mapping
+    set_valid_api_keys(server_module.rbac_manager.get_valid_keys())
 
 
 class TestApplicationStartup:

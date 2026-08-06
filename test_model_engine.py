@@ -9,7 +9,7 @@ import asyncio
 import pytest
 
 # Add the src directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.dirname(__file__))
 
 from src.model_engine.capability_detector import CapabilityDetector
 from src.model_engine.model_manager import ModelManagerImpl

@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # S'assurer que le projet est dans le chemin
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 
 # =========================================================================

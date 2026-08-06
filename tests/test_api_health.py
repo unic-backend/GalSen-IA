@@ -20,9 +20,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 # S'assurer que le chemin d'importation est correct
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from api.health import (
+from src.api.health import (
     ComponentHealth,
     ComponentHealthChecker,
     HealthChecker,
@@ -41,7 +41,7 @@ from api.health import (
 def reset_health_checker():
     """Réinitialise le singleton du vérificateur de santé avant chaque test."""
     # Sauvegarder l'état actuel
-    import api.health as health_module
+    import src.api.health as health_module
     old = health_module._health_checker
     health_module._health_checker = None
     yield
@@ -796,7 +796,7 @@ def test_app(start_time, version, mock_memory_manager, mock_model_manager,
         tool_engine=mock_tool_engine,
     )
 
-    from api.health import get_health_checker as ghc
+    from src.api.health import get_health_checker as ghc
 
     @app.get("/health")
     async def health():
@@ -838,7 +838,7 @@ def test_app_not_ready(start_time, version):
         tool_engine=None,
     )
 
-    from api.health import get_health_checker as ghc
+    from src.api.health import get_health_checker as ghc
 
     @app.get("/ready")
     async def ready():

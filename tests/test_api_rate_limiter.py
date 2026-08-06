@@ -21,9 +21,9 @@ from fastapi import FastAPI, Depends
 from fastapi.testclient import TestClient
 
 # S'assurer que le chemin d'importation est correct
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from api.rate_limiter import (
+from src.api.rate_limiter import (
     APIRateLimiter,
     InMemoryRateLimiter,
     RateLimitConfig,
@@ -389,7 +389,7 @@ class TestRateLimitDependency:
         os.environ["GALSEN_RATE_LIMIT_BURST_MULTIPLIER"] = "1.0"
 
         # Recréer le limiteur avec la nouvelle config
-        import api.rate_limiter as rl_module
+        import src.api.rate_limiter as rl_module
         rl_module._rate_limiter = None
 
         app = FastAPI()
@@ -450,7 +450,7 @@ class TestRateLimitDependency:
 
     def test_authenticated_requests_have_higher_limit(self):
         """Les requêtes authentifiées doivent avoir une limite plus élevée."""
-        import api.rate_limiter as rl_module
+        import src.api.rate_limiter as rl_module
 
         os.environ["GALSEN_API_KEYS"] = "high-limit-key"
         os.environ["GALSEN_RATE_LIMIT_ENABLED"] = "true"
@@ -487,7 +487,7 @@ class TestRateLimitDependency:
 
     def test_different_api_keys_have_separate_limits(self):
         """Deux clés API différentes doivent avoir des seaux indépendants."""
-        import api.rate_limiter as rl_module
+        import src.api.rate_limiter as rl_module
 
         os.environ["GALSEN_API_KEYS"] = "key-a,key-b"
         os.environ["GALSEN_RATE_LIMIT_ENABLED"] = "true"
@@ -555,7 +555,7 @@ class TestRateLimitAuthCompatibility:
 
     def test_rate_limit_runs_before_auth(self):
         """Le rate limiting doit s'exécuter avant la vérification d'authentification."""
-        import api.rate_limiter as rl_module
+        import src.api.rate_limiter as rl_module
 
         os.environ["GALSEN_API_KEYS"] = "my-key"
         os.environ["GALSEN_RATE_LIMIT_ENABLED"] = "true"
@@ -602,7 +602,7 @@ class TestRateLimitAuthCompatibility:
 
     def test_invalid_api_key_treated_as_unauthenticated(self):
         """Une clé API invalide doit être traitée comme non authentifiée pour le rate limiting."""
-        import api.rate_limiter as rl_module
+        import src.api.rate_limiter as rl_module
 
         os.environ["GALSEN_API_KEYS"] = "only-valid-key"
         os.environ["GALSEN_RATE_LIMIT_ENABLED"] = "true"
@@ -640,7 +640,7 @@ class TestRateLimiterSingleton:
 
     def test_get_rate_limiter_returns_same_instance(self):
         """get_rate_limiter doit retourner la même instance à chaque appel."""
-        import api.rate_limiter as rl_module
+        import src.api.rate_limiter as rl_module
         rl_module._rate_limiter = None
 
         limiter1 = get_rate_limiter()
@@ -650,7 +650,7 @@ class TestRateLimiterSingleton:
     @patch.dict(os.environ, {"GALSEN_RATE_LIMIT_ENABLED": "false"})
     def test_get_rate_limiter_respects_env_config(self):
         """Le singleton doit utiliser la configuration d'environnement."""
-        import api.rate_limiter as rl_module
+        import src.api.rate_limiter as rl_module
         rl_module._rate_limiter = None
 
         limiter = get_rate_limiter()
