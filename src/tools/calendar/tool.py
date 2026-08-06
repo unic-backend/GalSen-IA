@@ -1,7 +1,23 @@
 """
 Outil de calendrier pour GalSen IA.
 
-Fournit une interface pour gérer des événements de calendrier (liste, ajout, suppression).
+Cet outil n'a aujourd'hui **aucun calendrier** derrière lui : aucun service
+externe n'est raccordé. Il le dit, plutôt que d'inventer.
+
+Auparavant, `get_events` retournait deux rendez-vous fabriqués (« Réunion
+d'équipe », « Déjeuner avec client ») et `add_event` répondait `success` sans
+rien créer. Un agent interrogeant l'agenda d'un utilisateur recevait donc des
+rendez-vous imaginaires présentés comme réels — ce que le VOLET 01 chapitre 04
+(*Truth and Knowledge Rules*) interdit, et qui est plus dangereux qu'une panne :
+une panne se voit, une invention se croit.
+
+Chaque opération retourne désormais `status: "unavailable"` avec sa raison, sur
+le modèle de `context.generate()` quand aucun modèle n'est enregistré. La
+validation des entrées, elle, est réelle et reste appliquée : une demande mal
+formée est refusée avant même la question de la disponibilité.
+
+Le raccordement à un vrai service passera par un connecteur calendrier
+(`src/connectors/`, ADR-007), comme la messagerie.
 """
 
 from typing import Any, Dict, List, Optional
@@ -13,72 +29,83 @@ logger = __import__('logging').getLogger(__name__)
 
 class CalendarTool(BaseTool):
     """
-    Outil de gestion de calendrier.
+    Outil de gestion de calendrier, sans service raccordé à ce jour.
 
     Opérations disponibles :
     - `get_events` (liste les événements)
     - `add_event` (ajoute un événement)
     - `delete_event` (supprime un événement par son identifiant)
 
+    Tant qu'aucun connecteur calendrier n'est configuré, chaque opération
+    retourne `status: "unavailable"` : l'appelant doit pouvoir constater
+    l'absence de calendrier et se rabattre sur autre chose.
+
     Exemple:
         tool.execute("get_events")
-        tool.execute("add_event", title="Réunion", start="2026-08-01T10:00:00", end="2026-08-01T11:00:00")
-        tool.execute("delete_event", event_id="123")
+        # {'status': 'unavailable', 'detail': "Aucun calendrier...", 'events': []}
     """
+
+    UNAVAILABLE_DETAIL = (
+        "Aucun calendrier n'est raccordé à cette installation. Un connecteur "
+        "calendrier (src/connectors/, ADR-007) doit être configuré avant que les "
+        "événements puissent être lus ou modifiés."
+    )
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
         Initialise l'outil de calendrier.
 
         Args:
-            config: Configuration avec les clés optionnelles :
-                    Aucune configuration spécifique pour l'instant.
+            config: Configuration ; aucune clé n'est utilisée tant qu'aucun
+                connecteur calendrier n'existe.
         """
         super().__init__(config)
-        # En une implémentation réelle, nous initialiserions la connexion au service de calendrier ici.
-        logger.debug("CalendrierTool initialisé.")
+        logger.debug("CalendarTool initialisé : aucun calendrier raccordé.")
 
-    def _op_get_events(self, **kwargs) -> List[Dict[str, Any]]:
+    def _unavailable(self, **extra: Any) -> Dict[str, Any]:
+        """Construit la réponse d'une opération impossible faute de calendrier."""
+        response: Dict[str, Any] = {
+            "status": "unavailable",
+            "detail": self.UNAVAILABLE_DETAIL,
+        }
+        response.update(extra)
+        return response
+
+    def _op_get_events(self, **kwargs) -> Dict[str, Any]:
         """
         Liste les événements du calendrier.
 
         Args:
-            **kwargs: Options supplémentaires (non utilisées actuellement).
+            **kwargs: Options de filtrage, sans effet tant qu'aucun calendrier
+                n'est raccordé.
 
         Returns:
-            Liste d'événements sous forme de dictionnaires.
+            Un dictionnaire portant `status`, une liste `events` vide et la
+            raison. Jamais d'événement inventé.
         """
-        # En une implémentation réelle, nous interrogerions le service de calendrier.
-        # Pour cet exemple, nous retournons des données factices.
-        return [
-            {
-                "id": "1",
-                "title": "Réunion d'équipe",
-                "start": "2026-08-01T09:00:00",
-                "end": "2026-08-01T10:00:00",
-            },
-            {
-                "id": "2",
-                "title": "Déjeuner avec client",
-                "start": "2026-08-01T12:00:00",
-                "end": "2026-08-01T13:00:00",
-            },
-        ]
+        logger.info("Lecture d'agenda demandée sans calendrier raccordé.")
+        return self._unavailable(events=[])
 
     def _op_add_event(self, title: str, start: str, end: str, **kwargs) -> Dict[str, Any]:
         """
         Ajoute un événement au calendrier.
 
+        La validation des entrées est réelle : une demande mal formée est refusée
+        avant la question de la disponibilité, pour que l'appelant corrige
+        d'abord ce qui dépend de lui.
+
         Args:
             title: Titre de l'événement.
             start: Date et heure de début (format ISO 8601).
             end: Date et heure de fin (format ISO 8601).
-            **kwargs: Options supplémentaires (ex: description, location).
+            **kwargs: Options supplémentaires (description, lieu).
 
         Returns:
-            Dictionnaire contenant le statut et l'ID de l'événement créé.
+            Un dictionnaire portant `status: "unavailable"` et la raison.
+
+        Raises:
+            ValueError: Si le titre, le début ou la fin sont invalides.
         """
-        # Validation des entrées
         if not isinstance(title, str) or not title.strip():
             raise ValueError("Le titre de l'événement doit être une chaîne non vide")
         if not isinstance(start, str) or not start:
@@ -86,15 +113,8 @@ class CalendarTool(BaseTool):
         if not isinstance(end, str) or not end:
             raise ValueError("La date de fin doit être une chaîne non vide")
 
-        # En une implémentation réelle, nous envoie la requête au service de calendrier.
-        # Pour cet exemple, nous générons un ID factice.
-        event_id = "evt_" + str(hash(title + start + end))[-6:]
-
-        return {
-            "status": "success",
-            "message": f"Événement '{title}' ajouté avec succès.",
-            "event_id": event_id,
-        }
+        logger.info("Création d'événement demandée sans calendrier raccordé : %s", title)
+        return self._unavailable(event_id=None)
 
     def _op_delete_event(self, event_id: str, **kwargs) -> Dict[str, Any]:
         """
@@ -105,16 +125,16 @@ class CalendarTool(BaseTool):
             **kwargs: Options supplémentaires.
 
         Returns:
-            Dictionnaire contenant le statut de la suppression.
+            Un dictionnaire portant `status: "unavailable"` et la raison.
+
+        Raises:
+            ValueError: Si l'identifiant est invalide.
         """
         if not isinstance(event_id, str) or not event_id:
             raise ValueError("L'identifiant de l'événement doit être une chaîne non vide")
 
-        # En une implémentation réelle, nous supprimerions l'événement du service de calendrier.
-        return {
-            "status": "success",
-            "message": f"Événement '{event_id}' supprimé avec succès.",
-        }
+        logger.info("Suppression d'événement demandée sans calendrier raccordé : %s", event_id)
+        return self._unavailable(deleted=False)
 
     def execute(self, *args, **kwargs) -> Any:
         """
@@ -128,7 +148,7 @@ class CalendarTool(BaseTool):
             Résultat de l'opération.
 
         Raises:
-            ValueError: Opération inconnue.
+            ValueError: Opération inconnue ou absente.
         """
         if not args:
             raise ValueError("Une opération est requise (get_events, add_event, delete_event)")

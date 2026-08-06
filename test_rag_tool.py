@@ -211,6 +211,44 @@ def test_rag_tool_priority_roundtrip():
         print("+ Test item cleaned up")
 
 
+def test_search_returns_real_relevance_scores():
+    """Le score retourné doit venir de l'indexeur, jamais du rang du résultat.
+
+    Avant correction, `_score` valait `1.0 - (rang * 0.05)` : deux documents
+    d'une pertinence très différente recevaient 1.00 et 0.95, un classement
+    fabriqué qu'aucun appelant ne pouvait distinguer d'un vrai.
+    """
+    tool = RAGTool()
+    identifiants = []
+    try:
+        pertinent = tool.execute(
+            "add", {"content": "Le mil se seme des les premieres pluies au Senegal"},
+        )
+        eloigne = tool.execute(
+            "add", {"content": "Le riz de la vallee du fleuve Senegal"},
+        )
+        identifiants = [pertinent.get("id"), eloigne.get("id")]
+
+        resultats = tool.execute("search", "mil pluies Senegal", limit=5)
+        scores = [r["_score"] for r in resultats]
+
+        assert scores, "La recherche doit retourner au moins un résultat"
+        # Les scores fabriqués formaient toujours la suite 1.00, 0.95, 0.90…
+        rangs_fabriques = [round(1.0 - i * 0.05, 2) for i in range(len(scores))]
+        assert [round(s, 2) for s in scores] != rangs_fabriques or len(scores) == 1
+        # Un document sans rapport ne doit pas frôler le score du document exact
+        if len(scores) > 1:
+            assert scores[0] > scores[1]
+        assert all(0.0 <= s <= 1.0 for s in scores)
+    finally:
+        for identifiant in identifiants:
+            if identifiant:
+                try:
+                    tool.execute("delete", identifiant)
+                except Exception:
+                    pass
+
+
 if __name__ == "__main__":
     print("Running RAGTool unit tests...")
     try:
@@ -218,6 +256,7 @@ if __name__ == "__main__":
         test_add_and_retrieve()
         test_error_handling()
         test_rag_tool_priority_roundtrip()
+        test_search_returns_real_relevance_scores()
         print("\n* All tests passed!")
     except Exception as e:
         print(f"\n! Test failed: {e}")
