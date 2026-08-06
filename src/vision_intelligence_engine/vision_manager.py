@@ -294,11 +294,19 @@ class VisionManagerImpl(VisionManager):
             **kwargs: Additional arguments for the detector.
 
         Returns:
-            List of face detections.
+            La liste des visages détectés, ou `{"error": ...}` quand la détection
+            n'a pas pu avoir lieu. Une liste vide signifie donc « aucun visage sur
+            cette image », jamais « je ne sais pas détecter » : confondre les deux
+            transformerait une incapacité en résultat.
         """
         if self.face_detector is None:
             return {"error": "Component not available"}
-        return self.face_detector.detect_faces(image_item, **kwargs)
+        try:
+            return self.face_detector.detect_faces(image_item, **kwargs)
+        except Exception as error:
+            # Même conversion que dans analyze() : un composant indisponible est
+            # une information rendue à l'appelant, pas une exception à propager.
+            return {"error": str(error)}
 
     def analyze_colors(self, image_item: ImageItem, **kwargs) -> Any:
         """
