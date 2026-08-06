@@ -1,0 +1,56 @@
+name: Tests
+
+# Nothing verified the suite on push before this workflow existed, which is how
+# the API reached `main` in a state where it could not start at all.
+on:
+  push:
+    branches: [main, "claude/**", "feature/**", "fix/**", "chore/**", "docs/**"]
+  pull_request:
+    branches: [main]
+  # Permet de relancer la suite à la main depuis l'onglet Actions
+  workflow_dispatch:
+
+# Une seule exécution par branche : un nouveau push annule la précédente
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    name: pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 est la version de l'image Docker de production
+        python-version: ["3.11"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Check that the API imports the way the Dockerfile starts it
+        # Le Dockerfile lance `uvicorn src.api.server:app` : cet import doit
+        # réussir depuis la racine du dépôt, sans PYTHONPATH particulier.
+        run: python -c "from src.api.server import app; print(len(app.routes), 'routes')"
+
+      - name: Run the test suite
+        run: python -m pytest -q --durations=10
+
+      - name: Report coverage of the backend services
+        # Informatif : la couverture des services est le seuil que le projet suit.
+        run: python -m pytest tests/test_services.py -q --cov=src/services --cov-report=term-missing

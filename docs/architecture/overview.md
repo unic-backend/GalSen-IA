@@ -1,9 +1,14 @@
 # GalSen IA — Architecture Overview
 
 ## Current Status
-The project is building its **core engines**. Eight engines exist in `src/` and are covered
-by their own test suites. No API layer, frontend or persistent storage backend exists yet:
-every engine currently ships an in-memory implementation behind an interface.
+The platform runs. Eleven engines are registered in `EngineRegistry`, reachable through a
+REST API (`src/api/server.py`, 29 endpoints behind API-key authentication and RBAC) and
+covered by their own test suites. Persistence exists: memory, model and knowledge select a
+SQLite store through `GALSEN_STORAGE_BACKEND` (ADR-005); the audit and approval engines and
+the three backend services are still in-memory only.
+
+Not there yet: no frontend, no external connectors, and no configured model provider —
+generation reports `unavailable` until a key is present in the environment.
 
 ## High-Level Vision
 GalSen IA will be a modular AI platform composed of several systems:
@@ -31,6 +36,11 @@ can be replaced without touching the callers.
 | Knowledge Engine | `src/knowledge_engine/` | `KnowledgeManagerImpl` | Knowledge base and retrieval for RAG |
 | Document Intelligence Engine | `src/document_intelligence_engine/` | `DocumentManagerImpl` | Loads, chunks, indexes, summarizes and compares documents |
 | Vision Intelligence Engine | `src/vision_intelligence_engine/` | `VisionManagerImpl` | Analyses images without OCR or generation |
+| Audit Engine | `src/audit_engine/` | `AuditManagerImpl` | Structured trace of what agents and engines did |
+| Approval Engine | `src/approval_engine/` | `ApprovalManagerImpl` | Human decision gate for sensitive actions (ADR-006) |
+| Notification Service | `src/services/notification/` | `NotificationManagerImpl` | Sends and lists platform notifications |
+| Search Service | `src/services/search/` | `SearchManagerImpl` | Unified search merging several sources by relevance |
+| File Service | `src/services/file/` | `FileManagerImpl` | Uploads, lists and validates files |
 
 ## Integration Layer
 The engines are independent, so something has to connect them. That is the job of
@@ -41,7 +51,7 @@ learns about another one.
 Router Engine / Agent Runtime
         │  creates one AgentContext per request
         ▼
-   AgentContext ──────► EngineRegistry ──────► the 6 engines
+   AgentContext ──────► EngineRegistry ──────► the 11 engines
         │                (lazy, shared)
         │  passed to every agent by AgentDispatcher
         ▼
@@ -68,14 +78,21 @@ Router Engine / Agent Runtime
   Agents fall back to deterministic work rather than presenting invented output.
 
 ### Shared conventions
-- Storage, indexing and caching are in-memory today; the interfaces exist so that a database
-  or vector store can be introduced without rewriting the engines.
-- Optional third-party libraries (PyPDF2, python-docx, openpyxl, python-pptx, Pillow,
-  pytesseract, markdown) are imported lazily. A missing library degrades one loader, never
-  the whole engine.
-- Each engine has a test suite at the repository root named `test_<engine>.py`.
+- **One import convention: `src.<module>`.** Every import inside `src/` uses it, and the
+  repository root is what must be importable. Mixing it with top-level absolute imports
+  (`from storage...`) creates two copies of the same class in memory, so `LOW != LOW`.
+- Memory, model and knowledge select their store through `GALSEN_STORAGE_BACKEND`
+  (`in-memory` by default, `sqlite` to persist) and `GALSEN_DATA_DIR` (ADR-005). Indexing and
+  caching remain in memory; the interfaces exist so a vector store can be introduced later.
+- Optional third-party libraries (PyPDF2, python-docx, openpyxl, python-pptx,
+  pytesseract, markdown, sentence-transformers) are imported lazily. A missing library
+  degrades one loader, never the whole engine. What is *not* optional is declared in
+  `requirements.txt`: Pillow and opencv are imported at module level by the vision engine.
+- Each engine has a test suite named `test_<engine>.py`; the newer suites live in `tests/`.
   `test_integration.py` covers what those cannot see: that the engines are
-  reachable from the agents and from the orchestrators.
+  reachable from the agents and from the orchestrators. `tests/test_api_startup.py` boots
+  the application for real — `TestClient(app)` without `with` does not run the lifespan,
+  and that blind spot once let a non-starting API reach `main`.
 
 ## Model Engine provider layer
 The Model Engine reaches models through a single contract, so no code above the
