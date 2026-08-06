@@ -11,10 +11,10 @@
   contract and the `GALSEN_STORAGE_BACKEND` / `GALSEN_DATA_DIR` selection already exist
   and are used by memory, model and knowledge.
 
-- VOLET 02 ch. 09 — connectors, remaining phases: 3.2 email connector (SMTP, reusing
-  the existing tool), 3.3 calendar, 3.4 cloud storage (disk first, S3 later),
-  3.5 wiring into EngineRegistry, `/connectors` endpoints and an RBAC permission.
-  The contract, the types and the registry landed in phase 3.1 (ADR-007).
+- VOLET 02 ch. 09 — connectors, remaining phases: 3.3 calendar, 3.4 cloud storage
+  (disk first, S3 later), 3.5 wiring into EngineRegistry, `/connectors` endpoints and
+  an RBAC permission. The contract and registry landed in 3.1 (ADR-007), the SMTP
+  email connector in 3.2.
 
 ## Medium Priority
 - Add log rotation. `logs/application.log` reached 6 MB and had silently broken the
