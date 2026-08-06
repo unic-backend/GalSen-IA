@@ -1,27 +1,23 @@
 # GalSen IA — Pending Work
 
 ## High Priority
-- Write an ADR on provider credentials, then implement it. The provider architecture
-  is done (ADR-003) and `HostedProvider._call_api` is the single method left to fill.
-  The ADR must cover: source of keys (environment only, never committed), how they are
-  supplied per deployment, rotation, and what happens when a key is present but
-  rejected. Until then only the local Ollama provider can generate.
+- Cover the hosted-provider generation path with tests. ADR-004 is accepted and
+  `_call_api` is implemented for OpenAI, Anthropic and Google, but only the
+  no-credentials branch is tested: a successful generation and the 401 / 400 / 429
+  responses are not. Nothing else blocks generation — a key in the environment is
+  enough.
 - Extend SQLite persistence (ADR-005) to the engines still in-memory: audit, approval,
   and the notification / search / file services. The backend, the `BaseRepository`
   contract and the `GALSEN_STORAGE_BACKEND` / `GALSEN_DATA_DIR` selection already exist
   and are used by memory, model and knowledge.
 
 ## Medium Priority
-- Align the remaining root `test_*.py` files on the single `src.<module>` import
-  convention. They insert `src/` into `sys.path` and import `memory_engine...`
-  directly; that works only because they never touch a module importing the same
-  package under the `src.` prefix. `tests/test_storage*.py` already broke this way.
-- No CI: `.github/workflows/` does not exist, so nothing runs the suite on push.
 - Add log rotation. `logs/application.log` reached 6 MB and had silently broken the
   monitor agent before a `tail` operation was added. Nothing caps its growth.
 - Review the model catalogue periodically: context windows and prices are declared in
   code (`src/model_engine/providers/*_provider.py`) and drift as vendors change them
-- Migrate the root `test_*.py` scripts to pytest, as required by `.claude/rules/testing.md`
+- Move the 27 root `test_*.py` files into `tests/`. They are collected and green as they
+  are; only their location still contradicts `.claude/rules/testing.md`.
 - Speed up the orchestration suites: `test_integration.py` takes ~4 minutes because the
   tester agent runs eight real suites on every pipeline execution
 - Create deployment documentation
@@ -30,8 +26,6 @@
 ## Low Priority
 - Write contribution guidelines (the repository itself is live:
   `github.com/unic-backend/GalSen-IA`)
-- Remove the empty stray directories at the repository root (`C:GalSen`,
-  `IAsrcmodel_engine`, `IAsrcweb_intelligence_engine`), created by a Windows path bug
 
 ## Notes
 This file is the backlog.  
