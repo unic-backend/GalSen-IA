@@ -25,6 +25,12 @@ opencv-python-headless>=4.8.0
 # Knowledge Engine (ranking), Vision Engine
 numpy>=1.24.0
 
+# === Sécurité ===
+# Chiffrement au repos des bases SQLite (VOLET 02 ch. 08).
+# Sans clé configurée le chiffrement reste inactif, mais la bibliothèque est
+# requise dès qu'on l'active.
+cryptography>=42.0.0
+
 # === Testing ===
 pytest>=7.0.0
 pytest-asyncio>=0.21.0

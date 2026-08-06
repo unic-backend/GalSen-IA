@@ -19,6 +19,7 @@ from src.knowledge_engine.types import (
     Language, SourceCategory, KnowledgePriority,
 )
 from src.knowledge_engine.interfaces import KnowledgeStore
+from src.storage.encryption import decrypt, encrypt
 from .paths import default_sqlite_path
 
 
@@ -122,7 +123,7 @@ class SQLiteKnowledgeStore(KnowledgeStore):
         """Convertit une connaissance en dictionnaire prêt pour SQLite."""
         data = {
             "id": knowledge.id,
-            "content": knowledge.content,
+            "content": encrypt(knowledge.content),
             "summary": knowledge.summary,
             "knowledge_type": knowledge.knowledge_type.value,
             "content_type": knowledge.content_type.value,
@@ -157,7 +158,7 @@ class SQLiteKnowledgeStore(KnowledgeStore):
         )
         return KnowledgeItem(
             id=data["id"],
-            content=data["content"],
+            content=decrypt(data["content"]),
             summary=data["summary"],
             knowledge_type=KnowledgeType(data["knowledge_type"]),
             content_type=ContentType(data["content_type"]),
