@@ -7,7 +7,8 @@ questions sans déclencher la moindre action métier — qui es-tu, es-tu config
 réponds-tu — ce qui permet d'auditer un déploiement sans envoyer d'e-mail ni
 écrire un fichier.
 
-Connecteurs disponibles : `SMTPEmailConnector` (messagerie).
+Connecteurs disponibles : `SMTPEmailConnector` (messagerie),
+`LocalDiskStorageConnector` (stockage sur disque).
 Les suivants arrivent un par un, chacun avec ses propres tests.
 
 Référence : ADR-007, VOLET 02 chapitre 09 (Integration Architecture).
@@ -15,6 +16,7 @@ Référence : ADR-007, VOLET 02 chapitre 09 (Integration Architecture).
 
 from .email_connector import SMTPEmailConnector
 from .interfaces import Connector, ConnectorRegistryContract
+from .storage_connector import LocalDiskStorageConnector, StorageAccessError
 from .registry import (
     ConnectorRegistry,
     get_shared_connector_registry,
@@ -35,7 +37,9 @@ __all__ = [
     "ConnectorRegistry",
     "ConnectorRegistryContract",
     "ConnectorStatus",
+    "LocalDiskStorageConnector",
     "SMTPEmailConnector",
+    "StorageAccessError",
     "get_shared_connector_registry",
     "reset_shared_connector_registry",
 ]
