@@ -12,23 +12,25 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-06
 
-**En cours** : Rien. `main` = `8832027`, tout est fusionné, rien en attente.
+**En cours** : Rien. `main` = `0ec16b3`, 10 PR fusionnées, rien en attente.
 
 **Terminé dans cette session**
-- 4 PR fusionnées dans `main` : la plateforme démarre (#1), CI + docs d'entrée (#2),
-  dettes techniques soldées (#3), backlog remis en accord avec le code (#4).
-- Tests : 93 → 756 passants, 4 ignorés, **zéro avertissement**. Les 20 outils
-  déclarés ont un fichier de tests. Couverture `src/services/` à 99 %.
-- Corrections notables : l'API ne démarrait pas, `agri_advice` ne pouvait jamais
-  répondre, deux conventions d'import créaient deux applications en mémoire.
-- CI en place (`.github/workflows/tests.yml`), verte, ~80 s par exécution.
+- La plateforme démarre, CI verte (~85 s), docs d'entrée et backlog remis au vrai.
+- **VOLET 02 ch. 09 bouclé** — couche de connecteurs (ADR-007) : contrat + registre,
+  connecteur SMTP, connecteur stockage disque, 4 routes `/connectors` avec deux
+  permissions RBAC (décrire ≠ vérifier).
+- **Quatre inventions supprimées** : calendrier (rendez-vous fabriqués), RAG (scores
+  déduits du rang), détection de visages (« aucun visage » systématique), routeur de
+  modèles (« Réponse simulée »). Ce dernier est branché sur la vraie génération et
+  apporte `generate_with_fallback()`.
+- Tests : 93 → **899 passants**, 5 ignorés, zéro avertissement.
 
-**Prochaine étape**
-Priorité 4 : couvrir le chemin de génération des fournisseurs hébergés
-(génération réussie, 401 / 400 / 429). Seule la branche « sans clé » est testée.
-Sinon priorité 2 : connecteurs externes (email, calendrier, cloud).
+**Prochaine étape** (au choix, aucune n'est bloquée)
+Santé des connecteurs dans `/health` · connecteur calendrier (CalDAV) · service de
+fichiers adossé au connecteur stockage · tests du chemin de génération hébergé.
 
 **Bloqué / à surveiller**
-- `/model/generate` répond 503 : aucune clé dans l'environnement. Ce n'est plus un
-  chantier — ADR-004 est appliquée et `_call_api` implémentée pour les 3 fournisseurs.
-- `test_embeddings_tool.py` (3 tests) exige `sentence-transformers` : ignorés sans.
+- `/model/generate` répond 503 : aucune clé dans l'environnement. ADR-004 appliquée,
+  `_call_api` implémentée pour les 3 fournisseurs — il ne manque que la clé.
+- Une invention peut se cacher derrière un test vert : les quatre trouvées étaient
+  couvertes par des tests qui affirmaient la fiction ou ne la voyaient pas.
