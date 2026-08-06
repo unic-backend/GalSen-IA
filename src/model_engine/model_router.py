@@ -1,26 +1,48 @@
 """
 Routeur de modèles pour le moteur de modèles GalSen IA.
+
+Le routeur apporte ce que `ModelManagerImpl.generate()` ne fait pas : compter les
+échecs par modèle, écarter temporairement un modèle qui tombe, basculer sur le
+candidat suivant, et répartir la charge entre plusieurs modèles sains.
+
+La génération elle-même ne lui appartient pas : elle lui est **injectée**. Le
+routeur recevait auparavant un « chargeur de modèles » qui ne chargeait rien, et
+retournait `"Réponse simulée du modèle X"` — un texte fabriqué qu'aucun appelant
+n'aurait pu distinguer d'une vraie réponse. Il reçoit désormais la fonction de
+génération réelle du gestionnaire.
+
+Point important : le fournisseur ne lève pas quand il échoue, il retourne un
+statut. Le routeur doit donc **interpréter la réponse** ; sans cela, une réponse
+`unavailable` compterait comme un succès et la bascule ne se déclencherait jamais.
 """
 
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, Callable, List, Tuple
 from .types import ModelItem
-from .interfaces import ModelRouter, ModelLoader
+from .interfaces import ModelRouter
+from .providers.base import GenerationResponse, ProviderStatus
 import logging
 import time
 import random
 
 
+class ModelRoutingError(RuntimeError):
+    """Levée quand un modèle n'a produit aucun texte exploitable."""
+
+
 class FailoverModelRouter(ModelRouter):
     """Routeur de modèles avec mécanisme de basculement (failover)."""
 
-    def __init__(self, model_loader: ModelLoader):
+    def __init__(self, generate: Callable[..., GenerationResponse]):
         """
         Initialise le routeur avec basculement.
 
         Args:
-            model_loader: Chargeur de modèles à utiliser
+            generate: Fonction de génération réelle, de signature
+                `(model_item, prompt, **kwargs) -> GenerationResponse`.
+                Injectée plutôt qu'importée, pour que le routeur n'ait pas à
+                connaître le gestionnaire qui le construit.
         """
-        self._model_loader = model_loader
+        self._generate = generate
         self._logger = logging.getLogger(__name__)
         self._failure_counts: dict = {}  # Suivi des échecs par modèle
         self._last_failure_time: dict = {}  # Timestamp du dernier échec
@@ -52,68 +74,61 @@ class FailoverModelRouter(ModelRouter):
         failure_count = self._failure_counts.get(model_id, 0)
         return failure_count < self._failure_threshold
 
-    def route_request(self, model_item: ModelItem, request: Dict[str, Any]) -> Any:
+    def route_request(self, model_item: ModelItem, request: Dict[str, Any]) -> GenerationResponse:
         """
-        Route une requête vers un modèle spécifique avec gestion des erreurs de base.
+        Route une requête vers un modèle précis, en tenant son historique d'échecs.
 
         Args:
             model_item: Modèle à utiliser
-            request: Requête à envoyer au modèle
+            request: Requête portant `prompt` et les options de génération
+                (`max_tokens`, `temperature`, `system_prompt`, `stop_sequences`)
 
         Returns:
-            Réponse du modèle
+            La réponse du fournisseur, dont le statut vaut `READY`.
 
         Raises:
-            Exception: Si le modèle échoue après les tentatives
+            ValueError: Si la requête ne porte aucune invite.
+            ModelRoutingError: Si le modèle n'a pas produit de texte exploitable.
+                L'exception est le signal qu'attend `route_with_fallback` pour
+                essayer le candidat suivant ; un statut non `READY` retourné tel
+                quel arrêterait la bascule sur le premier modèle indisponible.
         """
         model_id = model_item.model_id
 
-        # Vérifier si le modèle est considéré comme sain
+        prompt = request.get("prompt")
+        if not prompt or not str(prompt).strip():
+            raise ValueError("La requête doit porter une invite non vide ('prompt').")
+
         if not self._is_model_healthy(model_id):
-            self._logger.warning(f"Modèle {model_id} considéré comme unhealthy, tentative malgré tout")
+            self._logger.warning(
+                f"Modèle {model_id} considéré comme unhealthy, tentative malgré tout"
+            )
+
+        options = {
+            cle: request[cle]
+            for cle in ("max_tokens", "temperature", "system_prompt", "stop_sequences")
+            if cle in request
+        }
 
         try:
-            # Charger le modèle si nécessaire
-            model_instance = self._model_loader.load_model(model_item)
-
-            # Dans une implémentation réelle, nous appellerions le modèle ici
-            # Par exemple:
-            # if model_item.provider == "openai":
-            #     response = model_instance.chat.completions.create(
-            #         model=model_item.name,
-            #         messages=request.get("messages", []),
-            #         temperature=request.get("temperature", 0.7),
-            #         max_tokens=request.get("max_tokens", 1000)
-            #     )
-            # elif model_item.provider == "anthropic":
-            #     response = model_instance.messages.create(
-            #         model=model_item.name,
-            #         max_tokens=request.get("max_tokens", 1000),
-            #         messages=request.get("messages", [])
-            #     )
-
-            # Pour l'instant, nous simulons une réponse
-            response = {
-                "model_id": model_id,
-                "prompt": request.get("prompt", ""),
-                "response": f"Réponse simulée du modèle {model_id}",
-                "timestamp": time.time(),
-                "tokens_used": len(str(request)) // 4  # Estimation très approximative
-            }
-
-            # Réinitialiser le compteur d'échecs en cas de succès
-            self._reset_failure_count(model_id)
-
-            return response
-
-        except Exception as e:
-            # Enregistrer l'échec
+            response = self._generate(model_item, prompt, **options)
+        except Exception as error:
             self._record_failure(model_id)
-            self._logger.error(f"Erreur lors de l'appel au modèle {model_id}: {str(e)}")
-            raise  # Re-lever l'exception pour que le mécanisme de basculement puisse la gérer
+            self._logger.error(f"Erreur lors de l'appel au modèle {model_id}: {error}")
+            raise
+
+        if not response.succeeded:
+            self._record_failure(model_id)
+            detail = response.detail or (
+                response.reason.value if response.reason else response.status.value
+            )
+            raise ModelRoutingError(f"Le modèle {model_id} n'a pas répondu : {detail}")
+
+        self._reset_failure_count(model_id)
+        return response
 
     def route_with_fallback(self, model_candidates: List[ModelItem],
-                           request: Dict[str, Any]) -> Any:
+                           request: Dict[str, Any]) -> GenerationResponse:
         """
         Route une requête avec mécanisme de basculement automatique.
 
@@ -138,12 +153,12 @@ class FailoverModelRouter(ModelRouter):
                 continue  # Essayer le modèle suivant
 
         # Si tous les modèles ont échoué
-        error_msg = f"Tous les modèles ont échoué. Dernière erreur: {str(last_exception)}"
+        error_msg = f"Tous les modèles ont échoué. Dernière erreur: {last_exception}"
         self._logger.error(error_msg)
-        raise Exception(error_msg)
+        raise ModelRoutingError(error_msg)
 
     def route_with_load_balancing(self, model_candidates: List[ModelItem],
-                                 request: Dict[str, Any]) -> Any:
+                                 request: Dict[str, Any]) -> GenerationResponse:
         """
         Route une requête avec équilibrage de charge entre les modèles disponibles.
 
