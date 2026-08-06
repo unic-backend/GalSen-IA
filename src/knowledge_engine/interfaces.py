@@ -222,6 +222,23 @@ class KnowledgeManager(ABC):
         pass
 
     @abstractmethod
+    def search_knowledge_with_scores(
+        self, query: str, limit: int = 10
+    ) -> List[Tuple[KnowledgeItem, float]]:
+        """
+        Recherche des connaissances en conservant leur score de pertinence.
+
+        L'indexeur calcule un score réel (proportion des termes de la requête
+        présents dans le document) ; `search_knowledge` le jette. Un appelant qui
+        doit classer ou filtrer par pertinence a besoin de ce score, et
+        l'inventer à partir du rang produirait un classement faux.
+
+        Returns:
+            Les couples (connaissance, score), du plus pertinent au moins pertinent.
+        """
+        pass
+
+    @abstractmethod
     def retrieve_for_prompt(self, prompt: str, max_items: int = 5) -> List[KnowledgeItem]:
         """Récupère des connaissances pertinentes pour enrichir un prompt (RAG)."""
         pass

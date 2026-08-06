@@ -235,6 +235,30 @@ class KnowledgeManagerImpl(KnowledgeManager):
                     self._increment_access_count(knowledge.id)
             return results
 
+    def search_knowledge_with_scores(
+        self, query: str, limit: int = 10
+    ) -> List[Tuple[KnowledgeItem, float]]:
+        """
+        Recherche des connaissances en conservant leur score de pertinence.
+
+        Args:
+            query: Texte recherché
+            limit: Nombre maximum de résultats
+
+        Returns:
+            Les couples (connaissance, score), du plus pertinent au moins pertinent.
+            Le score vient de l'indexeur : c'est la proportion des termes de la
+            requête présents dans le document, jamais une valeur déduite du rang.
+        """
+        with self._lock:
+            results: List[Tuple[KnowledgeItem, float]] = []
+            for knowledge, score in self._indexer.search(query, limit=limit):
+                if knowledge is None:
+                    continue
+                results.append((knowledge, score))
+                self._increment_access_count(knowledge.id)
+            return results
+
     def retrieve_for_prompt(self, prompt: str, max_items: int = 5) -> List[KnowledgeItem]:
         """
         Récupère des connaissances pertinentes pour enrichir un prompt (RAG).

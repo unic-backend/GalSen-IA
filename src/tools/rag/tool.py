@@ -337,7 +337,8 @@ class RAGTool(BaseTool):
         Returns:
             Liste de dictionnaires représentant les connaissances trouvées,
             chacun contenant les champs de la connaissance ainsi qu'un
-            champ '_score' représentant la pertinence.
+            champ '_score' : le score réel calculé par l'indexeur (proportion
+            des termes de la requête présents dans le document).
         """
         if not isinstance(query, str) or not query.strip():
             raise ValueError("La requête de recherche doit être une chaîne non vide")
@@ -345,7 +346,9 @@ class RAGTool(BaseTool):
         # Au niveau du gestionnaire de connaissances, nous n'avons pas de filtrage
         # par type ou tags directement dans search_knowledge ; nous allons
         # récupérer tous les résultats puis filtrer en post-traitement.
-        raw_results: List[KnowledgeItem] = self._get_knowledge_manager().search_knowledge(
+        # Le score vient de l'indexeur ; le déduire du rang produirait un
+        # classement faux, que rien ne distinguerait ensuite d'un vrai.
+        scored_results: List[tuple] = self._get_knowledge_manager().search_knowledge_with_scores(
             query, limit=limit * 3
         )  # récupérer davantage pour permettre le filtrage
 
@@ -372,25 +375,25 @@ class RAGTool(BaseTool):
 
         tag_set: set = set(tags) if tags else set()
 
-        filtered: List[KnowledgeItem] = []
-        for k in raw_results:
+        filtered: List[tuple] = []
+        for k, score in scored_results:
             if kt_enum is not None and k.knowledge_type != kt_enum:
                 continue
             if ct_enum is not None and k.content_type != ct_enum:
                 continue
             if tag_set and not tag_set.issubset(set(k.tags)):
                 continue
-            filtered.append(k)
+            filtered.append((k, score))
             if len(filtered) >= limit:
                 break
 
-        # Convertir chaque KnowledgeItem en dictionnaire avec un score
-        # (pour garder une similarité avec l'outil mémoire, nous ajoutons un score factice basé sur l'ordre)
-        # Idéalement, le moteur de connaissances retournerait des scores ; ici nous utilisons un score décroissant.
+        # Convertir chaque KnowledgeItem en dictionnaire, avec le score réel
+        # calculé par l'indexeur : la proportion des termes de la requête
+        # présents dans le document.
         results: List[Dict[str, Any]] = []
-        for idx, k in enumerate(filtered):
+        for k, score in filtered:
             k_dict = self._serialize_item(k, iso_dates=True)
-            k_dict["_score"] = 1.0 - (idx * 0.05)  # score décroissant factice
+            k_dict["_score"] = score
             results.append(k_dict)
 
         logger.debug(f"Search '{query}' returned {len(results)} results via RAG tool")
