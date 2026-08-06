@@ -35,15 +35,15 @@ def registre_neuf():
 @pytest.fixture
 def cle_admin(monkeypatch):
     """Clé administrateur, avec restauration de l'état RBAC partagé."""
-    from src.api.rate_limiter import set_valid_api_keys
+    from src.api.rate_limiter import set_valid_api_key_digests
 
     ancien = dict(server_module.rbac_manager._key_role_map)
     monkeypatch.setenv("GALSEN_API_KEYS", "cle-admin:admin,cle-lecture:readonly")
     server_module.rbac_manager.reload()
-    set_valid_api_keys(server_module.rbac_manager.get_valid_keys())
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
     yield "cle-admin"
     server_module.rbac_manager._key_role_map = ancien
-    set_valid_api_keys(server_module.rbac_manager.get_valid_keys())
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
 
 
 class TestInventaire:

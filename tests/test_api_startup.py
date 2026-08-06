@@ -36,18 +36,18 @@ def api_key(monkeypatch):
     la suite : recharger l'un sans le restaurer invalide les clés des autres
     fichiers de tests, qui se mettent alors à recevoir des 401.
     """
-    from src.api.rate_limiter import set_valid_api_keys
+    from src.api.rate_limiter import set_valid_api_key_digests
 
     ancien_mapping = dict(server_module.rbac_manager._key_role_map)
 
     monkeypatch.setenv("GALSEN_API_KEYS", "cle-test:admin")
     server_module.rbac_manager.reload()
-    set_valid_api_keys(server_module.rbac_manager.get_valid_keys())
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
 
     yield "cle-test"
 
     server_module.rbac_manager._key_role_map = ancien_mapping
-    set_valid_api_keys(server_module.rbac_manager.get_valid_keys())
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
 
 
 class TestApplicationStartup:
