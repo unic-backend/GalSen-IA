@@ -39,7 +39,28 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     # `frame-ancestors 'none'` double `X-Frame-Options` pour les navigateurs
     # récents ; les deux sont conservés car le parc n'est pas homogène.
+    # `sandbox` sans valeur interdit jusqu'à l'exécution de scripts : c'est juste
+    # pour une API qui ne sert que du JSON.
     CONTENT_SECURITY_POLICY = "default-src 'none'; frame-ancestors 'none'; sandbox"
+
+    # L'interface web, elle, doit charger sa feuille de style et ses modules.
+    # La politique de l'API l'aurait rendue muette dans un navigateur — sans
+    # qu'aucun test HTTP ne s'en aperçoive, un client de test n'appliquant pas
+    # les CSP. Tout reste limité à la même origine : aucun script tiers, aucune
+    # ressource distante, et rien d'incorporé dans la page (pas d'`unsafe-inline`).
+    UI_CONTENT_SECURITY_POLICY = (
+        "default-src 'none'; "
+        "style-src 'self'; "
+        "script-src 'self'; "
+        "connect-src 'self'; "
+        "img-src 'self' data:; "
+        "base-uri 'none'; "
+        "form-action 'none'; "
+        "frame-ancestors 'none'"
+    )
+
+    # Préfixe sous lequel l'interface est servie.
+    UI_PATH_PREFIX = "/ui"
 
     # Deux ans, la valeur attendue pour une éventuelle inscription en liste de
     # préchargement. Envoyé uniquement sur HTTPS : en clair, l'en-tête ne
@@ -55,8 +76,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
-        response.headers.setdefault("Content-Security-Policy", self.CONTENT_SECURITY_POLICY)
-        # Toute réponse est authentifiée : aucun intermédiaire ne doit la garder.
+        politique = (
+            self.UI_CONTENT_SECURITY_POLICY
+            if request.url.path.startswith(self.UI_PATH_PREFIX)
+            else self.CONTENT_SECURITY_POLICY
+        )
+        response.headers.setdefault("Content-Security-Policy", politique)
+        # Toute réponse d'API est authentifiée : aucun intermédiaire ne doit la
+        # garder. Les fichiers de l'interface, eux, ne contiennent aucun secret.
         response.headers.setdefault("Cache-Control", "no-store")
 
         if self._is_https(request):

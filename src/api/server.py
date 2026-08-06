@@ -6,6 +6,8 @@ Expose les fonctionnalités du noyau via une API RESTful.
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, Field
 from contextlib import asynccontextmanager
@@ -49,6 +51,9 @@ from src.api.rbac import (
     Permission,
     RBACContext,
 )
+
+# Import de l'interface web (ADR-008)
+from src.web import STATIC_DIRECTORY, UI_PREFIX
 
 # Import des connecteurs externes (ADR-007)
 from src.connectors import (
@@ -215,6 +220,22 @@ app.add_middleware(
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["X-API-Key", "Content-Type"],
 )
+
+# Interface web (ADR-008) : fichiers servis tels quels, sans étape de
+# construction. `html=True` fait servir index.html à la racine du préfixe, de
+# sorte que /ui affiche le tableau de bord.
+# L'interface ne contient aucun secret : la clé API est saisie par l'utilisateur
+# et reste dans son navigateur, elle n'est jamais écrite dans une page.
+app.mount(UI_PREFIX, StaticFiles(directory=STATIC_DIRECTORY, html=True), name="ui")
+
+
+@app.get("/", include_in_schema=False)
+async def racine():
+    """Redirige la racine vers le tableau de bord.
+
+    Une racine qui répondait 404 laissait croire que rien n'écoutait.
+    """
+    return RedirectResponse(url=f"{UI_PREFIX}/")
 if not _origines:
     logger.info(
         "Aucune origine croisée autorisée. Déclarez-les dans %s si un frontend en a besoin.",

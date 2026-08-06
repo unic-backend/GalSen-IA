@@ -7,8 +7,11 @@ covered by their own test suites. Persistence exists: memory, model and knowledg
 SQLite store through `GALSEN_STORAGE_BACKEND` (ADR-005); the audit and approval engines and
 the three backend services are still in-memory only.
 
-Not there yet: no frontend, no external connectors, and no configured model provider —
-generation reports `unavailable` until a key is present in the environment.
+A buildless web dashboard is served at `/ui` (ADR-008): platform health, external
+connectors and API keys, with no build step and nothing to install.
+
+Not there yet: no configured model provider — generation reports `unavailable` until a
+key is present in the environment.
 
 ## High-Level Vision
 GalSen IA will be a modular AI platform composed of several systems:
