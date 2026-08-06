@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, Field
+from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 import logging
 import time
@@ -113,11 +114,47 @@ def require_permission(permission: Permission):
         return ctx
     return _check_permission
 
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """
+    Construit le moteur d'outils au démarrage et le publie au vérificateur de santé.
+
+    Le moteur lit lui-même le registre `tools/tools.yaml` : il construit son
+    propre chargeur et son propre exécuteur. Un échec ici laisserait toute l'API
+    hors service, donc l'erreur est journalisée et `tool_engine` reste à None —
+    `/tool/execute` répond alors 503 et `/health` signale le moteur comme
+    indisponible.
+
+    Les objets utilisés ici sont définis plus bas dans le module : le corps de
+    cette fonction ne s'exécute qu'au démarrage, jamais à l'import.
+    """
+    global tool_engine
+    try:
+        tool_engine = ToolEngine(tool_loader.registry_path)
+        logger.info(
+            "Moteur d'outils initialisé avec %d outils actifs.",
+            len(tool_engine.list_enabled_tools()),
+        )
+    except Exception as error:
+        tool_engine = None
+        logger.error("Échec de l'initialisation du moteur d'outils : %s", error)
+
+    checker = get_health_checker()
+    if hasattr(checker, "set_tool_engine"):
+        checker.set_tool_engine(tool_engine)
+
+    yield
+
+    # Rien à libérer aujourd'hui : les moteurs sont en mémoire et les connexions
+    # SQLite sont ouvertes et refermées par opération.
+
+
 # Initialisation de l'application FastAPI
 app = FastAPI(
     title="GalSen IA API",
     description="API exposant les fonctionnalités de la plateforme GalSen IA",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 # Configuration CORS (à ajuster en production)
@@ -134,9 +171,9 @@ memory_manager = MemoryManager()
 model_manager = ModelManagerImpl()
 knowledge_manager = KnowledgeManagerImpl()
 # Le chargeur ne sert plus qu'à localiser le registre : le ToolEngine construit
-# son propre chargeur et son propre exécuteur à partir de ce chemin (startup_event).
+# son propre chargeur et son propre exécuteur à partir de ce chemin (lifespan).
 tool_loader = ToolLoader()
-tool_engine = None  # sera initialisé au démarrage, dans startup_event
+tool_engine = None  # sera initialisé au démarrage, par lifespan()
 # File d'attente d'approbation humaine : les agents qui demandent une décision
 # soumettent ici leur action, et un opérateur la valide ou la refuse (ADR-006).
 approval_manager = ApprovalManagerImpl()
@@ -145,31 +182,6 @@ approval_manager = ApprovalManagerImpl()
 notification_manager = NotificationManagerImpl()
 search_manager = SearchManagerImpl()
 file_manager = FileManagerImpl()
-
-# Initialisation du moteur d'outils au démarrage
-@app.on_event("startup")
-async def startup_event():
-    """Construit le moteur d'outils et le publie au vérificateur de santé.
-
-    Le moteur lit lui-même le registre `tools/tools.yaml` : il construit son
-    propre chargeur et son propre exécuteur. Un échec ici laisserait toute
-    l'API hors service, donc l'erreur est journalisée et `tool_engine` reste
-    à None — `/tool/execute` répond alors 503 et `/health` signale le moteur
-    comme indisponible.
-    """
-    global tool_engine
-    try:
-        tool_engine = ToolEngine(tool_loader.registry_path)
-        enabled = tool_engine.list_enabled_tools()
-        logger.info("Moteur d'outils initialisé avec %d outils actifs.", len(enabled))
-    except Exception as error:
-        tool_engine = None
-        logger.error("Échec de l'initialisation du moteur d'outils : %s", error)
-
-    # Mettre à jour la référence au moteur d'outils dans le vérificateur de santé
-    checker = get_health_checker()
-    if hasattr(checker, "set_tool_engine"):
-        checker.set_tool_engine(tool_engine)
 
 # Modèles Pydantic pour les requêtes/réponses
 class MemoryItemBase(BaseModel):
@@ -292,14 +304,14 @@ class FileListRequest(BaseModel):
 # Endpoints de santé
 
 # Initialiser le vérificateur de santé (singleton) avec les instances des moteurs
-# Le moteur d'outils sera mis à jour après le démarrage via startup_event
+# Le moteur d'outils sera mis à jour au démarrage, par lifespan()
 init_health_checker(
     start_time=APP_START_TIME,
     version=app.version,
     memory_manager=memory_manager,
     model_manager=model_manager,
     knowledge_manager=knowledge_manager,
-    tool_engine=tool_engine,  # None au démarrage, mis à jour dans startup_event
+    tool_engine=tool_engine,  # None à l'import, mis à jour par lifespan()
 )
 
 

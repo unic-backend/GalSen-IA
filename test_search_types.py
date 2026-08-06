@@ -13,7 +13,9 @@ The wiring checks below run offline and are the part that must always pass.
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+import pytest
+
+sys.path.insert(0, os.path.dirname(__file__))
 
 from src.tool.tool_engine import ToolEngine
 
@@ -65,9 +67,25 @@ def test_input_validation(engine: ToolEngine) -> None:
     print("[OK] Invalid inputs are rejected")
 
 
-def test_search_types(engine: ToolEngine) -> bool:
+def test_search_types(engine: ToolEngine) -> None:
     """
     Exécute une recherche pour chaque type pris en charge.
+
+    Réseau injoignable : le test est ignoré, pas mis en échec — la suite ne doit
+    pas dépendre de l'état d'internet (`.claude/rules/testing.md`).
+    """
+    if not run_search_types(engine):
+        pytest.skip("Réseau injoignable : les recherches en direct sont ignorées")
+
+
+def run_search_types(engine: ToolEngine) -> bool:
+    """
+    Exécute une recherche pour chaque type pris en charge.
+
+    Cette fonction porte le résultat sous forme de booléen pour le mode script
+    (`python test_search_types.py`) ; le test pytest au-dessus le traduit en
+    « ignoré ». Un test qui retourne une valeur au lieu d'affirmer n'affirme
+    rien, et pytest l'avertit à juste titre.
 
     Returns:
         True si le réseau a répondu, False si les recherches ont été ignorées
@@ -105,7 +123,7 @@ def run_all_tests() -> bool:
         engine = build_engine()
         test_tool_is_registered(engine)
         test_input_validation(engine)
-        network_available = test_search_types(engine)
+        network_available = run_search_types(engine)
 
         print("=" * 60)
         if network_available:

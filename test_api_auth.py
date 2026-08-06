@@ -3,12 +3,12 @@ import sys
 from fastapi.testclient import TestClient
 
 # Ensure the application can be imported
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.dirname(__file__))
 
 # Set environment variable for API keys before importing the app
 os.environ["GALSEN_API_KEYS"] = "test-key-123,another-key"
 
-from api.server import app, rbac_manager
+from src.api.server import app, rbac_manager
 
 # S'assurer que le RBACManager est synchronisé avec la variable d'environnement
 # (nécessaire quand l'import a déjà eu lieu avec d'autres valeurs)

@@ -12,13 +12,13 @@ import zipfile
 from pathlib import Path
 
 # Add the src directory to the path so we can import the modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.dirname(__file__))
 
-from document_intelligence_engine.document_manager import DocumentManagerImpl
-from document_intelligence_engine.document_loader_factory import DocumentLoaderFactory
-from document_intelligence_engine.keyword_qa_engine import SimpleQAEngine
-from document_intelligence_engine.lru_document_cache import LRUDocumentCache
-from document_intelligence_engine.types import DocumentItem, DocumentType
+from src.document_intelligence_engine.document_manager import DocumentManagerImpl
+from src.document_intelligence_engine.document_loader_factory import DocumentLoaderFactory
+from src.document_intelligence_engine.keyword_qa_engine import SimpleQAEngine
+from src.document_intelligence_engine.lru_document_cache import LRUDocumentCache
+from src.document_intelligence_engine.types import DocumentItem, DocumentType
 
 
 def test_document_manager_initialization():

@@ -3,8 +3,11 @@ name: Tests
 # Nothing verified the suite on push before this workflow existed, which is how
 # the API reached `main` in a state where it could not start at all.
 on:
+  # Le push est limité à `main` : une branche de travail est déjà couverte par
+  # l'événement pull_request, et déclencher les deux lançait la suite deux fois
+  # sur le même commit.
   push:
-    branches: [main, "claude/**", "feature/**", "fix/**", "chore/**", "docs/**"]
+    branches: [main]
   pull_request:
     branches: [main]
   # Permet de relancer la suite à la main depuis l'onglet Actions
