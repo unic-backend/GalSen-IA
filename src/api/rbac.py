@@ -25,7 +25,7 @@ import hmac
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Dict, FrozenSet, Optional, Set
+from typing import Any, Dict, FrozenSet, List, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -266,22 +266,102 @@ class RBACManager:
 
     Maintient le mapping clé API → rôle à partir de la variable
     d'environnement et fournit la méthode d'authentification avec rôle.
+
+    Il tient aussi une **liste de révocation** : une clé compromise doit cesser
+    d'ouvrir la porte immédiatement, sans attendre un redémarrage. Cette liste
+    ne survit pas au processus, et c'est assumé — la source durable des clés
+    reste l'environnement du déploiement (ADR-004). Révoquer arrête l'hémorragie ;
+    retirer la clé de l'environnement la referme pour de bon.
     """
 
     def __init__(self):
         """Initialise le gestionnaire en parsant la variable d'environnement."""
         self._key_role_map: Dict[str, Role] = {}
+        self._revoked_digests: Set[str] = set()
         self.reload()
 
-    def reload(self) -> None:
-        """Recharge le mapping clé → rôle depuis la variable d'environnement."""
+    def reload(self) -> Dict[str, Any]:
+        """
+        Recharge le mapping clé → rôle depuis la variable d'environnement.
+
+        Les révocations qui ne correspondent plus à aucune clé connue sont
+        oubliées : la clé a disparu de l'environnement, la révoquer n'a plus
+        d'objet et garder l'entrée ferait grossir la liste sans fin.
+
+        Returns:
+            Un résumé du changement : nombre de clés avant et après, empreintes
+            ajoutées et retirées. Jamais de clé en clair.
+        """
+        avant = set(self._key_role_map)
         self._key_role_map = parse_api_key_mappings()
+        apres = set(self._key_role_map)
+
+        self._revoked_digests &= apres
+
         roles_present = set(self._key_role_map.values())
         logger.info(
             "RBAC chargé : %s clé(s) mappée(s) vers %s",
             len(self._key_role_map),
             {r.value for r in roles_present} if roles_present else "{}",
         )
+        return {
+            "before": len(avant),
+            "after": len(apres),
+            "added": sorted(key_fingerprint(d) for d in apres - avant),
+            "removed": sorted(key_fingerprint(d) for d in avant - apres),
+        }
+
+    def revoke(self, fingerprint: str) -> bool:
+        """
+        Révoque une clé à partir de son empreinte, avec effet immédiat.
+
+        L'empreinte suffit : l'opérateur qui révoque n'a pas à détenir la clé,
+        et n'a donc aucune raison de la manipuler.
+
+        Args:
+            fingerprint: Les 12 caractères retournés par `list_keys()`.
+
+        Returns:
+            True si une clé correspondait, False si l'empreinte est inconnue.
+        """
+        for digest in self._key_role_map:
+            if key_fingerprint(digest) == fingerprint:
+                self._revoked_digests.add(digest)
+                logger.warning("Clé d'empreinte %s révoquée.", fingerprint)
+                return True
+        return False
+
+    def restore(self, fingerprint: str) -> bool:
+        """Lève une révocation ; retourne False si la clé n'était pas révoquée."""
+        for digest in list(self._revoked_digests):
+            if key_fingerprint(digest) == fingerprint:
+                self._revoked_digests.discard(digest)
+                logger.info("Révocation levée pour l'empreinte %s.", fingerprint)
+                return True
+        return False
+
+    def list_keys(self) -> List[Dict[str, Any]]:
+        """
+        Retourne l'inventaire des clés : empreinte, rôle, état de révocation.
+
+        Aucune clé n'y figure : un opérateur doit pouvoir voir *combien* de clés
+        existent et *avec quels droits*, sans obtenir de quoi s'en servir.
+        """
+        return sorted(
+            (
+                {
+                    "fingerprint": key_fingerprint(digest),
+                    "role": role.value,
+                    "revoked": digest in self._revoked_digests,
+                }
+                for digest, role in self._key_role_map.items()
+            ),
+            key=lambda entree: entree["fingerprint"],
+        )
+
+    def active_key_digests(self) -> Set[str]:
+        """Retourne les condensés des clés valides **et non révoquées**."""
+        return set(self._key_role_map) - self._revoked_digests
 
     def authenticate(self, api_key: Optional[str]) -> RBACContext:
         """
@@ -294,7 +374,9 @@ class RBACManager:
             Contexte RBAC avec le rôle et les permissions.
 
         Raises:
-            PermissionError: Si la clé est invalide ou absente.
+            PermissionError: Si la clé est absente, inconnue ou révoquée. Les
+                trois cas renvoient le même message : dire à un appelant que sa
+                clé « a été révoquée » lui confirmerait qu'elle a existé.
         """
         if not api_key:
             raise PermissionError("Clé API manquante.")
@@ -304,8 +386,19 @@ class RBACManager:
         # La recherche dans le dictionnaire suffirait, mais elle n'est pas à
         # temps constant : la comparaison explicite ferme cette mesure de temps.
         for connu, role in self._key_role_map.items():
-            if hmac.compare_digest(connu, digest):
-                return RBACContext(key_fingerprint=key_fingerprint(digest), role=role)
+            if not hmac.compare_digest(connu, digest):
+                continue
+
+            if connu in self._revoked_digests:
+                # Le message ne distingue pas « révoquée » de « inconnue » :
+                # confirmer qu'une clé a existé renseignerait un attaquant.
+                logger.warning(
+                    "Tentative avec une clé révoquée (empreinte %s).",
+                    key_fingerprint(digest),
+                )
+                raise PermissionError("Clé API invalide.")
+
+            return RBACContext(key_fingerprint=key_fingerprint(digest), role=role)
 
         raise PermissionError("Clé API invalide.")
 
