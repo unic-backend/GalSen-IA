@@ -57,6 +57,12 @@ class Permission(str, enum.Enum):
     APPROVAL_VIEW = "approval:view"
     APPROVAL_DECIDE = "approval:decide"
 
+    # Connecteurs externes (ADR-007)
+    # La lecture décrit les intégrations et interroge leur état ; la
+    # vérification déclenche un appel sortant, elle est donc distinguée.
+    CONNECTOR_VIEW = "connector:view"
+    CONNECTOR_CHECK = "connector:check"
+
     # Administration
     ADMIN_MANAGE = "admin:manage"
     ADMIN_AUDIT = "admin:audit"
@@ -73,6 +79,8 @@ _ROLE_PERMISSIONS: Dict[Role, FrozenSet[Permission]] = {
         Permission.APPROVAL_VIEW,
         Permission.APPROVAL_DECIDE,
         Permission.ADMIN_AUDIT,
+        Permission.CONNECTOR_VIEW,
+        Permission.CONNECTOR_CHECK,
     }),
     Role.USER: frozenset({
         Permission.HEALTH_VIEW,
@@ -82,11 +90,13 @@ _ROLE_PERMISSIONS: Dict[Role, FrozenSet[Permission]] = {
         Permission.KNOWLEDGE_SEARCH,
         Permission.TOOL_EXECUTE,
         Permission.APPROVAL_VIEW,
+        Permission.CONNECTOR_VIEW,
     }),
     Role.READONLY: frozenset({
         Permission.HEALTH_VIEW,
         Permission.KNOWLEDGE_SEARCH,
         Permission.APPROVAL_VIEW,
+        Permission.CONNECTOR_VIEW,
     }),
 }
 

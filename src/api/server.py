@@ -43,6 +43,13 @@ from src.api.rbac import (
     RBACContext,
 )
 
+# Import des connecteurs externes (ADR-007)
+from src.connectors import (
+    LocalDiskStorageConnector,
+    SMTPEmailConnector,
+    get_shared_connector_registry,
+)
+
 # Import des services
 from src.services.notification.manager import NotificationManagerImpl
 from src.services.notification.types import NotificationType, NotificationPriority
@@ -143,10 +150,31 @@ async def lifespan(_app: FastAPI):
     if hasattr(checker, "set_tool_engine"):
         checker.set_tool_engine(tool_engine)
 
+    _register_builtin_connectors()
+
     yield
 
     # Rien à libérer aujourd'hui : les moteurs sont en mémoire et les connexions
     # SQLite sont ouvertes et refermées par opération.
+
+
+def _register_builtin_connectors() -> None:
+    """
+    Inscrit les connecteurs livrés avec la plateforme au registre partagé.
+
+    L'inscription ne dépend d'aucune configuration : un connecteur non
+    configuré doit rester **visible** dans l'inventaire, sinon un opérateur ne
+    peut pas savoir ce que l'installation saurait joindre une fois branchée.
+    Un identifiant déjà pris n'est pas une erreur ici : le cycle de vie peut
+    être rejoué (rechargement, tests), et le registre est partagé.
+    """
+    registre = get_shared_connector_registry()
+    for connecteur in (SMTPEmailConnector(), LocalDiskStorageConnector()):
+        try:
+            registre.register(connecteur)
+        except ValueError:
+            logger.debug("Connecteur %s déjà enregistré.", connecteur.connector_id)
+    logger.info("Connecteurs enregistrés : %d", registre.count())
 
 
 # Initialisation de l'application FastAPI
@@ -649,6 +677,64 @@ async def list_roles():
         role.value: sorted(p.value for p in get_permissions_for_role(role))
         for role in Role
     }
+
+
+# =========================================================================
+# Endpoints — Connecteurs externes (ADR-007)
+# =========================================================================
+
+@app.get("/connectors", tags=["connectors"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.CONNECTOR_VIEW))])
+async def list_connectors():
+    """Décrit les intégrations externes de cette installation.
+
+    Aucun appel sortant : cet inventaire répond depuis la configuration seule,
+    de sorte qu'un déploiement s'audite sans solliciter les services distants.
+    """
+    registre = get_shared_connector_registry()
+    return {
+        "total": registre.count(),
+        "kinds": [kind.value for kind in registre.kinds()],
+        "connectors": registre.describe_all(),
+    }
+
+
+@app.get("/connectors/status", tags=["connectors"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.CONNECTOR_CHECK))])
+async def check_connectors():
+    """Vérifie chaque connecteur et retourne un rapport agrégé.
+
+    Contrairement à `/connectors`, cette route **contacte les services
+    externes** : elle demande donc une permission distincte.
+    """
+    return get_shared_connector_registry().check_all()
+
+
+@app.get("/connectors/{connector_id}", tags=["connectors"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.CONNECTOR_VIEW))])
+async def describe_connector(connector_id: str):
+    """Décrit un connecteur précis, sans le contacter."""
+    connecteur = get_shared_connector_registry().get(connector_id)
+    if connecteur is None:
+        raise HTTPException(status_code=404, detail=f"Connecteur '{connector_id}' inconnu.")
+
+    description = connecteur.describe().to_dict()
+    description["configured"] = connecteur.is_configured()
+    return description
+
+
+@app.get("/connectors/{connector_id}/check", tags=["connectors"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.CONNECTOR_CHECK))])
+async def check_connector(connector_id: str):
+    """Vérifie un connecteur précis en contactant le service externe."""
+    resultat = get_shared_connector_registry().check(connector_id)
+    if resultat is None:
+        raise HTTPException(status_code=404, detail=f"Connecteur '{connector_id}' inconnu.")
+    return resultat.to_dict()
 
 
 # =========================================================================
