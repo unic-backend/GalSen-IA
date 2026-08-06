@@ -36,6 +36,13 @@ from src.api.health import (
     get_health_checker,
 )
 
+# Import de la posture de sécurité HTTP (VOLET 02 ch. 08)
+from src.api.security_headers import (
+    SecurityHeadersMiddleware,
+    allowed_origins,
+    docs_enabled,
+)
+
 # Import du RBAC
 from src.api.rbac import (
     RBACManager,
@@ -178,21 +185,41 @@ def _register_builtin_connectors() -> None:
 
 
 # Initialisation de l'application FastAPI
+# La documentation interactive n'est servie que si l'API est elle-même ouverte
+# (aucune clé configurée), ou si GALSEN_API_DOCS le demande explicitement.
+_docs_actives = docs_enabled()
+
 app = FastAPI(
     title="GalSen IA API",
     description="API exposant les fonctionnalités de la plateforme GalSen IA",
     version="0.1.0",
     lifespan=lifespan,
+    docs_url="/docs" if _docs_actives else None,
+    redoc_url="/redoc" if _docs_actives else None,
+    openapi_url="/openapi.json" if _docs_actives else None,
 )
 
-# Configuration CORS (à ajuster en production)
+# En-têtes de sécurité sur toutes les réponses
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Origines croisées : aucune par défaut. `allow_origins=["*"]` avec
+# `allow_credentials=True` renvoyait l'origine de l'appelant quelle qu'elle
+# soit, ce qui autorisait n'importe quel site à appeler l'API avec les
+# identifiants du visiteur. Les origines légitimes se déclarent dans
+# GALSEN_CORS_ORIGINS.
+_origines = allowed_origins()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En production, remplacer par les origines autorisées
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_origines,
+    allow_credentials=bool(_origines),
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["X-API-Key", "Content-Type"],
 )
+if not _origines:
+    logger.info(
+        "Aucune origine croisée autorisée. Déclarez-les dans %s si un frontend en a besoin.",
+        "GALSEN_CORS_ORIGINS",
+    )
 
 # Initialisation des moteurs (singleton pour la durée de vie de l'application)
 memory_manager = MemoryManager()
