@@ -5,14 +5,13 @@ Gestionnaire principal du moteur de modèles GalSen IA.
 from typing import Optional, Dict, Any, List
 from .types import ModelItem, ModelType, ModelPriority, ModelStatus
 from .interfaces import (
-    ModelStore, ModelLoader, ModelSelector, ModelRouter,
+    ModelStore, ModelSelector, ModelRouter,
     ModelContextManager, PromptOptimizer, ResponseValidator,
     TokenTracker, CostTracker, RateLimiter, RetryManager,
     StreamHandler, ParallelExecutor, ResponseRanker,
     HealthMonitor, CapabilityDiscoverer, ModelManager
 )
 from .model_store import InMemoryModelStore
-from .model_loader import BaseModelLoader
 from .model_selector import SimpleModelSelector
 from .model_router import FailoverModelRouter
 from .model_context_manager import SimpleModelContextManager
@@ -69,9 +68,10 @@ class ModelManagerImpl(ModelManager):
             self._store = SQLiteModelStore()
         else:
             self._store = InMemoryModelStore()
-        self._loader = BaseModelLoader()
         self._selector = SimpleModelSelector()
-        self._router = FailoverModelRouter(self._loader)
+        # Le routeur reçoit la génération réelle : c'est lui qui compte les échecs
+        # et bascule d'un modèle à l'autre, pas lui qui appelle les fournisseurs.
+        self._router = FailoverModelRouter(self.generate)
         self._context_manager = SimpleModelContextManager()
         self._po = TemplateBasedPromptOptimizer()
         self._rv = BasicResponseValidator()
@@ -436,6 +436,47 @@ class ModelManagerImpl(ModelManager):
         self._provider_registry.register(provider)
         # Les capacités mises en cache reposaient sur l'ancien ensemble de fournisseurs
         self._cd.clear_cache()
+
+    def generate_with_fallback(
+        self, model_candidates: List[ModelItem], prompt: str, **kwargs
+    ) -> GenerationResponse:
+        """
+        Génère du texte en essayant plusieurs modèles, du préféré au dernier recours.
+
+        `generate()` interroge un modèle et retourne son statut. Cette méthode va
+        plus loin : elle passe au candidat suivant quand un modèle ne répond pas,
+        et retient les échecs pour écarter temporairement un modèle qui tombe
+        souvent.
+
+        Args:
+            model_candidates: Modèles à essayer, dans l'ordre de préférence
+            prompt: Invite envoyée au modèle
+            **kwargs: `max_tokens`, `temperature`, `system_prompt`, `stop_sequences`
+
+        Returns:
+            La réponse du premier modèle qui produit du texte. Si aucun n'y
+            parvient, une réponse de statut `UNAVAILABLE` portant la dernière
+            raison rencontrée — jamais une exception, pour rester cohérent avec
+            `generate()`.
+
+        Raises:
+            ValueError: Si aucun candidat n'est fourni. Une liste vide est une
+                erreur de l'appelant, pas une indisponibilité de la plateforme.
+        """
+        if not model_candidates:
+            raise ValueError("Au moins un modèle candidat est requis.")
+
+        request = {"prompt": prompt, **kwargs}
+        try:
+            return self._router.route_with_fallback(model_candidates, request)
+        except Exception as error:
+            self._logger.warning("Bascule épuisée : %s", error)
+            return GenerationResponse.unavailable(
+                provider_id=model_candidates[-1].provider,
+                model_name=model_candidates[-1].name,
+                reason=UnavailabilityReason.UNREACHABLE,
+                detail=str(error),
+            )
 
     def sync_catalogue_to_store(self, available_only: bool = True) -> List[str]:
         """

@@ -42,25 +42,6 @@ class ModelStore(ABC):
         pass
 
 
-class ModelLoader(ABC):
-    """Interface pour le chargement dynamique des modèles."""
-
-    @abstractmethod
-    def load_model(self, model_item: ModelItem) -> Any:
-        """Charge un modèle et retourne une instance utilisable."""
-        pass
-
-    @abstractmethod
-    def unload_model(self, model_item: ModelItem) -> bool:
-        """Décharge un modèle."""
-        pass
-
-    @abstractmethod
-    def is_loaded(self, model_item: ModelItem) -> bool:
-        """Vérifie si un modèle est chargé."""
-        pass
-
-
 class ModelSelector(ABC):
     """Interface pour la sélection de modèles."""
 
