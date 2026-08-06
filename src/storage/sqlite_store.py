@@ -11,6 +11,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 from src.memory_engine.types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
+from src.storage.encryption import decrypt, encrypt
 from src.memory_engine.interfaces import MemoryStore
 
 
@@ -106,7 +107,11 @@ class SQLiteMemoryStore(MemoryStore):
         """Convertir un MemoryItem en dictionnaire pour le stockage."""
         return {
             "id": item.id,
-            "content": json.dumps(item.content) if not isinstance(item.content, str) else item.content,
+            # Le contenu d'une mémoire est la donnée réelle : c'est lui qu'un
+            # fichier de base copié livrerait en clair (VOLET 02 ch. 08).
+            "content": encrypt(
+                json.dumps(item.content) if not isinstance(item.content, str) else item.content
+            ),
             "memory_type": item.memory_type.value,
             "user_id": item.user_id,
             "session_id": item.session_id,
@@ -139,6 +144,10 @@ class SQLiteMemoryStore(MemoryStore):
             metadata_json,
             version,
         ) = row
+
+        # Déchiffrer avant d'interpréter : une base écrite avant l'activation
+        # du chiffrement traverse sans marque et reste lisible.
+        content_json = decrypt(content_json)
 
         # Déterminer si le contenu est JSON ou chaîne simple
         try:
