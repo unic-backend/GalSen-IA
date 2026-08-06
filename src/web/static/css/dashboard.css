@@ -1,0 +1,211 @@
+/*
+ * Feuille de style du tableau de bord GalSen IA.
+ *
+ * Trois exigences du chapitre 02 tiennent dans ce fichier : lisible sans
+ * JavaScript, adapté à toutes les tailles d'écran, et respectant le thème
+ * clair ou sombre choisi par le système. Aucune police n'est téléchargée : sur
+ * une connexion lente, une police distante retarde l'affichage du texte.
+ */
+
+:root {
+  --fond: #ffffff;
+  --fond-carte: #f6f7f9;
+  --bordure: #dfe3e8;
+  --texte: #16191d;
+  --texte-doux: #5b6570;
+  --accent: #0b6e4f; /* vert, comme le drapeau */
+  --succes: #0b6e4f;
+  --alerte: #9a6700;
+  --erreur: #b42318;
+  --rayon: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #14171a;
+    --fond-carte: #1c2024;
+    --bordure: #2c3238;
+    --texte: #e8eaed;
+    --texte-doux: #9aa4ae;
+    --accent: #35c08c;
+    --succes: #35c08c;
+    --alerte: #e0a800;
+    --erreur: #ff6b5e;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 1rem;
+  background: var(--fond);
+  color: var(--texte);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+h1 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+h1 small {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: normal;
+  color: var(--texte-doux);
+}
+
+h2 {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texte-doux);
+}
+
+main {
+  display: grid;
+  gap: 1rem;
+  /* Une seule colonne sur téléphone, autant que la largeur le permet ensuite */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+}
+
+section {
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--bordure);
+  vertical-align: top;
+}
+
+td {
+  /* Les empreintes et identifiants sans espace doivent pouvoir se couper,
+     sinon ils débordent de l'écran d'un téléphone. */
+  overflow-wrap: anywhere;
+}
+
+th {
+  color: var(--texte-doux);
+  font-weight: 600;
+  /* Un titre de colonne coupé en plein mot (« Composan t ») se lit mal :
+     mieux vaut une colonne plus étroite qu'un mot brisé. */
+  white-space: nowrap;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.etat {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid currentColor;
+  /* Une pastille scindée en deux lignes cesse d'être lisible d'un coup d'œil */
+  white-space: nowrap;
+}
+
+.etat--ok {
+  color: var(--succes);
+}
+
+.etat--attention {
+  color: var(--alerte);
+}
+
+.etat--probleme {
+  color: var(--erreur);
+}
+
+button {
+  font: inherit;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--rayon);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+button.secondaire {
+  background: transparent;
+  color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+input[type="password"],
+input[type="text"] {
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--rayon);
+  border: 1px solid var(--bordure);
+  background: var(--fond);
+  color: var(--texte);
+  min-width: 0;
+}
+
+.barre-cle {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.message {
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--rayon);
+  border: 1px solid currentColor;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.message--erreur {
+  color: var(--erreur);
+}
+
+.message--info {
+  color: var(--texte-doux);
+}
+
+.discret {
+  color: var(--texte-doux);
+  font-size: 0.85rem;
+}
+
+/* Le focus doit rester visible : c'est la seule façon de naviguer au clavier */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
