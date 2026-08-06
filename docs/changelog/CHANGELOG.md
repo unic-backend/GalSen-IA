@@ -7,6 +7,20 @@ This project follows Semantic Versioning.
 
 ## [Unreleased]
 ### Added
+- **Scaling posture made explicit (VOLET 02 ch. 10, ADR-009)** — closes VOLET 02
+  - `src/api/scaling.py`: inventory of every subsystem holding state, with where
+    it lives, what a second instance would do to it, and whether that is a loss
+    of correctness or harmless duplication. Recomputed on each call so a change
+    of `GALSEN_STORAGE_BACKEND` is reflected instead of frozen at import
+  - `/health` carries a `scaling` section: instance identity,
+    `multi_instance_ready` verdict and the names of the blocking subsystems
+  - `POST /auth/keys/{fingerprint}/revoke`, `/restore` and `GET /auth/keys` now
+    state `scope: "instance"` — a revoked key keeps opening any other instance,
+    and an operator responding to a compromise must not learn that afterwards
+  - `GALSEN_INSTANCE_ID` names an instance; unset, `<host>:<pid>` is used
+  - `tests/test_scaling.py`: 20 tests, including a demonstration that a key
+    revoked on one manager still authenticates on another
+
 - `tests/test_api_startup.py`: seven integration tests that actually boot the
   application (`with TestClient(app)`), covering the lifespan, the late binding
   of the tool engine into the health checker, resilience to a broken tool engine

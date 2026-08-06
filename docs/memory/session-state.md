@@ -12,24 +12,23 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-06
 
-**En cours** : Rien. `main` = `a2c596f`, 15 PR fusionnées, rien en attente.
+**En cours** : Rien. **VOLET 02 terminé, 10 chapitres sur 10.**
 
 **Terminé dans cette session**
-- La plateforme démarre, CI verte (~90 s). Tests : 93 → **967 passants**, 5 ignorés.
-- **VOLET 02 ch. 09 bouclé** — connecteurs (ADR-007) : contrat, registre, SMTP,
-  stockage disque, 4 routes `/connectors`.
-- **VOLET 02 ch. 08 bouclé** — clés jamais en clair (condensés + `compare_digest`),
-  CORS refermé (il reflétait toute origine avec identifiants), en-têtes de sécurité,
-  doc privée, révocation et rotation à chaud, chiffrement au repos.
-- **Quatre inventions supprimées** : calendrier, scores RAG, détection de visages,
-  « Réponse simulée » du routeur de modèles.
+- **ch. 10 (montée en charge) — ADR-009** : la plateforme tourne en **une seule
+  instance** et le dit à l'exécution (`/health` → `scaling`, `scope: "instance"`
+  sur les routes de clés). Quatre sous-systèmes cassent avec une 2ᵉ instance ;
+  ordre de réparation fixé : révocations → limiteur → fichiers → notifications.
+  Aucune infrastructure (Redis, files d'attente, réplicas) n'a été ajoutée.
+- **ch. 02 (frontend) — ADR-008** : tableau de bord sans étape de construction
+  sous `/ui`, vérifié dans un vrai navigateur.
+- Tests : **1008 passants**, 5 ignorés.
 
 **Prochaine étape**
-VOLET 02, il reste **2 chapitres sur 10** : ch. 02 (frontend, rien n'existe) et
-ch. 10 (montée en charge : files d'attente, réplicas, cache distribué).
+Choisir le prochain VOLET. VOLET 03 (Development Manual) ou VOLET 04 (Roadmap)
+sont les suites naturelles ; VOLET 01 (Master Constitution) sert d'arbitrage.
 
 **Bloqué / à surveiller**
 - `/model/generate` répond 503 : il ne manque qu'une clé dans l'environnement.
-- `GALSEN_API_DOCS=enabled` est nécessaire pour voir `/docs` maintenant que des
-  clés sont configurées.
+- Une clé révoquée n'est coupée que sur l'instance jointe (ADR-009).
 - Perdre `GALSEN_ENCRYPTION_KEY` = perdre les données chiffrées, sans recours.

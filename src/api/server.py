@@ -38,6 +38,9 @@ from src.api.health import (
     get_health_checker,
 )
 
+# Import de l'inventaire d'état local au processus (VOLET 02 ch. 10, ADR-009)
+from src.api.scaling import instance_id, scaling_report
+
 # Import de la posture de sécurité HTTP (VOLET 02 ch. 08)
 from src.api.security_headers import (
     SecurityHeadersMiddleware,
@@ -403,7 +406,13 @@ async def health_check():
     """
     checker = get_health_checker()
     report = checker.check_health()
-    return report.to_dict()
+    donnees = report.to_dict()
+    # La plateforme ne tourne aujourd'hui qu'en une seule instance (ADR-009).
+    # La contrainte est exposée ici plutôt que laissée à la documentation :
+    # c'est le seul endroit qu'un opérateur consulte avant de dupliquer un
+    # service.
+    donnees["scaling"] = scaling_report()
+    return donnees
 
 
 @app.get("/ready", tags=["health"], dependencies=[Depends(rate_limit_dependency)])
@@ -750,6 +759,11 @@ async def list_api_keys():
     return {
         "total": len(cles),
         "revoked": sum(1 for cle in cles if cle["revoked"]),
+        # L'état de révocation décrit *cette* instance et aucune autre (ADR-009).
+        # Sans cette précision, un inventaire sans clé révoquée se lit comme
+        # « aucune clé n'est coupée sur la plateforme ».
+        "scope": "instance",
+        "instance": instance_id(),
         "keys": cles,
     }
 
@@ -760,10 +774,17 @@ async def list_api_keys():
 async def revoke_api_key(fingerprint: str):
     """Coupe immédiatement une clé, désignée par son empreinte.
 
-    La révocation **ne survit pas au redémarrage** : la source durable des clés
-    reste l'environnement du déploiement (ADR-004). Elle arrête l'hémorragie ;
-    retirer la clé de `GALSEN_API_KEYS` la referme pour de bon. La réponse le
-    rappelle, pour qu'un opérateur ne croie pas l'incident clos.
+    La révocation a deux limites, et toutes deux figurent dans la réponse :
+
+    - elle **ne survit pas au redémarrage** : la source durable des clés reste
+      l'environnement du déploiement (ADR-004) ;
+    - elle **ne vaut que pour cette instance** : la liste de révocation vit
+      dans la mémoire du processus (ADR-009), donc la clé continue d'ouvrir
+      toute autre instance de la plateforme.
+
+    Un opérateur qui ne connaît pas la seconde limite croit avoir coupé une clé
+    compromise alors qu'elle reste valide ailleurs. C'est la raison pour
+    laquelle elle est écrite dans la réponse plutôt que dans un document.
     """
     if not rbac_manager.revoke(fingerprint):
         raise HTTPException(status_code=404, detail=f"Empreinte '{fingerprint}' inconnue.")
@@ -773,9 +794,12 @@ async def revoke_api_key(fingerprint: str):
         "fingerprint": fingerprint,
         "revoked": True,
         "persistent": False,
+        "scope": "instance",
+        "instance": instance_id(),
         "detail": (
-            "Révocation immédiate mais non persistante. Retirez la clé de "
-            "GALSEN_API_KEYS pour qu'elle ne revienne pas au prochain démarrage."
+            "Révocation immédiate, limitée à cette instance et non persistante. "
+            "Retirez la clé de GALSEN_API_KEYS et redémarrez chaque instance "
+            "pour la couper partout et définitivement."
         ),
     }
 
@@ -791,7 +815,12 @@ async def restore_api_key(fingerprint: str):
         )
 
     _sync_rate_limiter()
-    return {"fingerprint": fingerprint, "revoked": False}
+    return {
+        "fingerprint": fingerprint,
+        "revoked": False,
+        "scope": "instance",
+        "instance": instance_id(),
+    }
 
 
 @app.post("/auth/keys/reload", tags=["auth"],

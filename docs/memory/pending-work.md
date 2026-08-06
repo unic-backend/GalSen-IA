@@ -20,6 +20,11 @@
   `InMemoryFileStore`, so uploaded files disappear on restart; `LocalDiskStorageConnector`
   now gives them somewhere durable to live.
 
+- Share the state that blocks a second instance (ADR-009), in this order:
+  API key revocations, rate-limit counters, uploaded files, notifications.
+  `/health` reports `multi_instance_ready: false` and names them. The trigger is
+  the first deployment that needs more than one instance — not a date.
+
 ## Medium Priority
 - Add log rotation. `logs/application.log` reached 6 MB and had silently broken the
   monitor agent before a `tail` operation was added. Nothing caps its growth.
