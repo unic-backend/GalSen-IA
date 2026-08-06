@@ -12,25 +12,24 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-06
 
-**En cours** : Rien. `main` = `0ec16b3`, 10 PR fusionnées, rien en attente.
+**En cours** : Rien. `main` = `a2c596f`, 15 PR fusionnées, rien en attente.
 
 **Terminé dans cette session**
-- La plateforme démarre, CI verte (~85 s), docs d'entrée et backlog remis au vrai.
-- **VOLET 02 ch. 09 bouclé** — couche de connecteurs (ADR-007) : contrat + registre,
-  connecteur SMTP, connecteur stockage disque, 4 routes `/connectors` avec deux
-  permissions RBAC (décrire ≠ vérifier).
-- **Quatre inventions supprimées** : calendrier (rendez-vous fabriqués), RAG (scores
-  déduits du rang), détection de visages (« aucun visage » systématique), routeur de
-  modèles (« Réponse simulée »). Ce dernier est branché sur la vraie génération et
-  apporte `generate_with_fallback()`.
-- Tests : 93 → **899 passants**, 5 ignorés, zéro avertissement.
+- La plateforme démarre, CI verte (~90 s). Tests : 93 → **967 passants**, 5 ignorés.
+- **VOLET 02 ch. 09 bouclé** — connecteurs (ADR-007) : contrat, registre, SMTP,
+  stockage disque, 4 routes `/connectors`.
+- **VOLET 02 ch. 08 bouclé** — clés jamais en clair (condensés + `compare_digest`),
+  CORS refermé (il reflétait toute origine avec identifiants), en-têtes de sécurité,
+  doc privée, révocation et rotation à chaud, chiffrement au repos.
+- **Quatre inventions supprimées** : calendrier, scores RAG, détection de visages,
+  « Réponse simulée » du routeur de modèles.
 
-**Prochaine étape** (au choix, aucune n'est bloquée)
-Santé des connecteurs dans `/health` · connecteur calendrier (CalDAV) · service de
-fichiers adossé au connecteur stockage · tests du chemin de génération hébergé.
+**Prochaine étape**
+VOLET 02, il reste **2 chapitres sur 10** : ch. 02 (frontend, rien n'existe) et
+ch. 10 (montée en charge : files d'attente, réplicas, cache distribué).
 
 **Bloqué / à surveiller**
-- `/model/generate` répond 503 : aucune clé dans l'environnement. ADR-004 appliquée,
-  `_call_api` implémentée pour les 3 fournisseurs — il ne manque que la clé.
-- Une invention peut se cacher derrière un test vert : les quatre trouvées étaient
-  couvertes par des tests qui affirmaient la fiction ou ne la voyaient pas.
+- `/model/generate` répond 503 : il ne manque qu'une clé dans l'environnement.
+- `GALSEN_API_DOCS=enabled` est nécessaire pour voir `/docs` maintenant que des
+  clés sont configurées.
+- Perdre `GALSEN_ENCRYPTION_KEY` = perdre les données chiffrées, sans recours.
