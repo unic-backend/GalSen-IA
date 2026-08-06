@@ -11,7 +11,9 @@ A buildless web dashboard is served at `/ui` (ADR-008): platform health, externa
 connectors and API keys, with no build step and nothing to install.
 
 Not there yet: no configured model provider — generation reports `unavailable` until a
-key is present in the environment.
+key is present in the environment. The platform also runs as a **single instance**
+(ADR-009): six subsystems keep state in the process, and `/health` says so rather than
+leaving it to be discovered in production.
 
 ## High-Level Vision
 GalSen IA will be a modular AI platform composed of several systems:
@@ -96,6 +98,27 @@ Router Engine / Agent Runtime
   reachable from the agents and from the orchestrators. `tests/test_api_startup.py` boots
   the application for real — `TestClient(app)` without `with` does not run the lifespan,
   and that blind spot once let a non-starting API reach `main`.
+
+## Scaling posture
+One instance, stated at runtime rather than assumed (ADR-009). `src/api/scaling.py`
+inventories every subsystem holding state, and `/health` carries the verdict:
+
+```
+GET /health → "scaling": { "instance": "...", "multi_instance_ready": false,
+                           "blocking": ["api_key_revocations", ...] }
+```
+
+Five subsystems are blocking under the default backend, in this repair order: **API
+key revocations** (a revoked key still opens the other instances — the security one),
+**rate-limit counters** (the quota is multiplied), **files** and **notifications**
+(both already behind a store interface, so a shared store is a substitution), and
+**engine state** — which stops blocking as soon as `GALSEN_STORAGE_BACKEND=sqlite`
+(ADR-005), the one item already solved by configuration. The connector and engine
+registries are per-process by design and break nothing.
+
+Nothing prevents horizontal scaling structurally — no session affinity, stores behind
+interfaces, configuration from the environment. What is missing is a shared store, and
+that decision belongs to the first deployment that needs one.
 
 ## Model Engine provider layer
 The Model Engine reaches models through a single contract, so no code above the
