@@ -7,6 +7,7 @@ d'échec, un avertissement est journalisé et une valeur vide est retournée.
 """
 
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
 from .interfaces import FileManager, FileStore
@@ -26,7 +27,13 @@ class FileManagerImpl(FileManager):
     """Façade du service de fichiers, toujours disponible en mémoire."""
 
     def __init__(self, store: Optional[FileStore] = None) -> None:
-        self._store = store or InMemoryFileStore()
+        if store is not None:
+            self._store = store
+        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
+            from storage.sqlite_file_store import SQLiteFileStore
+            self._store = SQLiteFileStore()
+        else:
+            self._store = InMemoryFileStore()
         self._logger = logging.getLogger(f"{__name__}.FileManagerImpl")
 
     def _validate_file(

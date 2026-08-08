@@ -7,11 +7,17 @@ The foundation phase is complete: memory system, standards, ADR-001 and ADR-002 
 ## Current Objectives (ordered by priority)
 
 1. Keep every engine and service working and tested (all suites must pass before any work is called done).
-2. **VOLET 02 Phase 3 — Intégrations externes (Ch. 09) : connecteurs email, calendrier, cloud**
-3. **VOLET 02 Phase 4 — Frontend minimal : dashboard web, API Client SDK**
-4. Decide on a persistent storage backend — every engine is in-memory today, which is the
-   single biggest gap between the current code and a usable platform. Requires an ADR.
-5. Build the first real feature for Senegalese users.
+2. ✅ **VOLET 02 Phase 3 — Intégrations externes (Ch. 09) : connecteurs email, calendrier, cloud**
+3. ✅ **VOLET 02 Phase 4 — Frontend minimal : dashboard web, API Client SDK**
+4. ✅ **Stockage persistant (ADR-005)** — SQLite adopté, 8 stores concrets, 92 tests verts.
+   Backend sélectionnable via `GALSEN_STORAGE_BACKEND=sqlite` ou par injection.
+5. ✅ **Credentials providers (ADR-004)** — `HostedProvider._call_api` implémenté
+   pour OpenAI, Anthropic, Google. 24 tests. Les 3 providers hosted peuvent générer
+   si les clés API sont dans l'environnement.
+6. ✅ **Tools `tools/tools.yaml`** — les 20 outils déclarés chargent tous.
+7. 🔄 **Première feature réelle pour les utilisateurs sénégalais — Conseil Agricole**.
+   Slice API livrée : outil `AgriAdviceTool` réparé, endpoint `POST /agri/advice`,
+   17 tests verts. Reste : page « Conseil Agricole » dans le dashboard web.
 
 ## Success Criteria for this phase
 - Claude Code can understand the full project vision and current state just by reading the memory files.

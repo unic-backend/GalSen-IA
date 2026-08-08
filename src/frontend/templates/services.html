@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Services</h1>
+<p class="subtitle">État détaillé de chaque service backend</p>
+
+{% for s, v in details.items() %}
+<div class="card" style="margin-bottom:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+        <h2 style="font-size:1rem">{{ s|capitalize }}</h2>
+        {% if v.available %}
+        <span class="status-badge status-ok">Actif</span>
+        {% else %}
+        <span class="status-badge status-error">Indisponible</span>
+        {% endif %}
+    </div>
+    {% if v.available and v.stats %}
+    <table>
+        <thead>
+            <tr><th>Métrique</th><th>Valeur</th></tr>
+        </thead>
+        <tbody>
+            {% for k, val in v.stats.items() %}
+            <tr><td>{{ k }}</td><td>{{ val }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--text-dim);font-size:0.85rem">Aucune statistique disponible</p>
+    {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

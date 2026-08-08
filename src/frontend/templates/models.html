@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Modèles</h1>
+<p class="subtitle">Catalogue des modèles de langage disponibles</p>
+
+{% if models %}
+<table>
+    <thead>
+        <tr><th>Nom</th><th>Fournisseur</th><th>Statut</th><th>Type</th></tr>
+    </thead>
+    <tbody>
+        {% for m in models %}
+        <tr>
+            <td>{{ m.name if m.name else '—' }}</td>
+            <td>{{ m.provider if m.provider else '—' }}</td>
+            <td>
+                <span class="status-badge status-{{ 'ok' if m.status == 'active' else 'unknown' }}">
+                    {{ m.status if m.status else 'inconnu' }}
+                </span>
+            </td>
+            <td style="color:var(--text-dim)">{{ m.model_type if m.model_type else '—' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="card">
+    <p style="color:var(--text-dim)">Aucun modèle trouvé. Le catalogue est vide ou le gestionnaire de modèles n'est pas disponible.</p>
+</div>
+{% endif %}
+{% endblock %}

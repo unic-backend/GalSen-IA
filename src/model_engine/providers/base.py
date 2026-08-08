@@ -41,6 +41,8 @@ class UnavailabilityReason(Enum):
     UNREACHABLE = "unreachable"
     # Le quota d'appels est épuisé
     QUOTA_EXCEEDED = "quota_exceeded"
+    # Clé API invalide ou refusée
+    UNAUTHORIZED = "unauthorized"
     # Le fournisseur a été désactivé par configuration
     DISABLED = "disabled"
 

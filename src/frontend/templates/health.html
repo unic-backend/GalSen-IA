@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Santé du système</h1>
+<p class="subtitle">Rapport détaillé de l'état de la plateforme</p>
+
+{% if report.error %}
+<div class="card" style="border-color:var(--red)">
+    <p style="color:var(--red)">{{ report.error }}</p>
+</div>
+{% else %}
+<div class="cards">
+    <div class="card">
+        <div class="label">Statut global</div>
+        <div class="value">
+            <span class="status-badge status-{{ 'ok' if report.get('status') == 'healthy' else ('degraded' if report.get('status') == 'degraded' else 'error') }}">
+                {{ report.get('status', 'inconnu') }}
+            </span>
+        </div>
+    </div>
+    <div class="card">
+        <div class="label">Version</div>
+        <div class="value" style="font-size:1.25rem">{{ report.get('version', '—') }}</div>
+    </div>
+    <div class="card">
+        <div class="label">Uptime</div>
+        <div class="value" style="font-size:1.25rem">{{ report.get('uptime', '—') }}</div>
+    </div>
+</div>
+
+<h2 class="section-title">Composants</h2>
+<table>
+    <thead>
+        <tr><th>Composant</th><th>Statut</th><th>Détails</th></tr>
+    </thead>
+    <tbody>
+        {% for c in report.get('components', []) %}
+        <tr>
+            <td>{{ c.get('name', c.get('component', '?')) }}</td>
+            <td>
+                <span class="status-badge status-{{ 'ok' if c.get('status') in ('healthy','ok','available') else ('degraded' if c.get('status') == 'degraded' else 'error') }}">
+                    {{ c.get('status', 'inconnu') }}
+                </span>
+            </td>
+            <td style="color:var(--text-dim)">{{ c.get('details', c.get('message', '')) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

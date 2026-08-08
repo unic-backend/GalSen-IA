@@ -11,6 +11,11 @@ from .base_repository import BaseRepository
 from .sqlite_store import SQLiteMemoryStore
 from .sqlite_model_store import SQLiteModelStore
 from .sqlite_knowledge_store import SQLiteKnowledgeStore
+from .sqlite_notification_store import SQLiteNotificationStore
+from .sqlite_calendar_store import SQLiteCalendarStore
+from .sqlite_email_store import SQLiteEmailStore
+from .sqlite_cloud_store import SQLiteCloudStore
+from .sqlite_file_store import SQLiteFileStore
 from .paths import default_sqlite_path
 
 __all__ = [
@@ -18,5 +23,10 @@ __all__ = [
     "SQLiteMemoryStore",
     "SQLiteModelStore",
     "SQLiteKnowledgeStore",
+    "SQLiteNotificationStore",
+    "SQLiteCalendarStore",
+    "SQLiteEmailStore",
+    "SQLiteCloudStore",
+    "SQLiteFileStore",
     "default_sqlite_path",
 ]

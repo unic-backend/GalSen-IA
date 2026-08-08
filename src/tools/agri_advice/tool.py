@@ -91,19 +91,35 @@ Conseil :"""
         if temperature is not None:
             gen_params["temperature"] = temperature
 
+        task_requirements = {"domain": "agriculture", "region": "Senegal", "language": language}
+
         try:
-            # Utiliser le gestionnaire de modèles pour générer le texte
-            answer = self.model_manager.generate_text_with_fallback(
-                prompt=prompt,
-                task_requirements={"domain": "agriculture", "region": "Senegal", "language": language},
-                model_id=model_id,
-                **gen_params
+            # Résoudre le modèle : un modèle imposé prime, sinon sélection automatique
+            if model_id:
+                model_item = self.model_manager.get_model(model_id)
+                if model_item is None:
+                    raise ValueError(f"Modèle inconnu : {model_id}")
+            else:
+                model_item = self.model_manager.select_model_for_task(task_requirements)
+                if model_item is None:
+                    raise RuntimeError(
+                        self.model_manager.unavailability_reason()
+                        or "Aucun modèle disponible pour le conseil agricole"
+                    )
+
+            # Générer la réponse via l'API synchrone (pas de coroutine à attendre)
+            response = self.model_manager.generate(
+                model_item,
+                prompt,
+                **gen_params,
             )
+            if not response.succeeded:
+                raise RuntimeError(response.detail or "Génération impossible")
 
             result = {
-                "answer": answer.strip(),
+                "answer": response.text.strip(),
                 "language": language,
-                "model_used": model_id or self.model_manager.get_default_model_name()
+                "model_used": response.model_name or model_item.name,
             }
             logger.debug(f"Conseil agricole généré pour question : {question[:50]}...")
             return result

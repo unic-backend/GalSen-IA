@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Mémoire</h1>
+<p class="subtitle">Éléments stockés dans la mémoire du système</p>
+
+{% if items %}
+<table>
+    <thead>
+        <tr><th>ID</th><th>Type</th><th>Contenu (extrait)</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td style="font-family:monospace;font-size:0.8rem">{{ item.id[:12] if item.id else '—' }}…</td>
+            <td>{{ item.memory_type if item.memory_type else '—' }}</td>
+            <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                {{ item.content[:120] if item.content else '—' }}
+            </td>
+            <td style="color:var(--text-dim)">{{ item.created_at if item.created_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="card">
+    <p style="color:var(--text-dim)">Aucun élément en mémoire. La mémoire est vide ou le gestionnaire n'est pas disponible.</p>
+</div>
+{% endif %}
+{% endblock %}

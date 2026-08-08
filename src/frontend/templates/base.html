@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GalSen IA — Dashboard</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --green: #22c55e;
+            --yellow: #eab308;
+            --red: #ef4444;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background: var(--bg-card);
+            padding: 1.5rem 0;
+            border-right: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .sidebar h2 {
+            font-size: 1rem;
+            padding: 0 1.25rem 1rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+        }
+        .sidebar a {
+            display: block;
+            padding: 0.6rem 1.25rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: 0.15s;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: var(--bg-hover);
+            color: var(--text);
+        }
+        .sidebar a.active { border-left: 3px solid var(--accent); }
+        /* Main */
+        .main {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+        .subtitle { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 2rem; }
+        /* Cards */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            transition: 0.15s;
+        }
+        .card:hover { border-color: var(--accent); }
+        .card .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+        .card .value { font-size: 1.75rem; font-weight: 700; margin-top: 0.25rem; }
+        .card .meta { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.5rem; }
+        .status-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-ok { background: rgba(34,197,94,0.15); color: var(--green); }
+        .status-degraded { background: rgba(234,179,8,0.15); color: var(--yellow); }
+        .status-error { background: rgba(239,68,68,0.15); color: var(--red); }
+        .status-unknown { background: rgba(148,163,184,0.15); color: var(--text-dim); }
+        /* Section */
+        .section-title { font-size: 1rem; margin: 1.5rem 0 1rem; color: var(--text-dim); }
+        /* Service row */
+        .service-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .service-row .name { font-weight: 600; }
+        .service-row .count { color: var(--text-dim); font-size: 0.85rem; }
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+        th { color: var(--text-dim); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
+        tr:last-child td { border-bottom: none; }
+    </style>
+</head>
+<body>
+    <nav class="sidebar">
+        <h2>⚡ GalSen IA</h2>
+        <a href="/admin/" class="{{ 'active' if page == 'accueil' else '' }}">Accueil</a>
+        <a href="/admin/health" class="{{ 'active' if page == 'sante' else '' }}">Santé</a>
+        <a href="/admin/services" class="{{ 'active' if page == 'services' else '' }}">Services</a>
+        <a href="/admin/models" class="{{ 'active' if page == 'modeles' else '' }}">Modèles</a>
+        <a href="/admin/memory" class="{{ 'active' if page == 'memoire' else '' }}">Mémoire</a>
+        <a href="/admin/agri-conseil" class="{{ 'active' if page == 'agri' else '' }}">Conseil Agricole</a>
+        <div style="margin-top:2rem;padding:0 1.25rem;font-size:0.75rem;color:var(--text-dim);">
+            GalSen IA v0.1.0
+        </div>
+    </nav>
+    <div class="main">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

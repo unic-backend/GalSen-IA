@@ -7,6 +7,26 @@ This project follows Semantic Versioning.
 
 ## [Unreleased]
 ### Added
+- **Priorité #7 — Conseil Agricole (première feature réelle)** : outil
+  `AgriAdviceTool` réparé (passage à l'API synchrone `select_model_for_task()` +
+  `generate()`, corrigeait un bug d'appel de coroutine asynchrone et une méthode
+  inexistante), endpoint `POST /agri/advice` dans `src/api/server.py` (question
+  agricole en fr/wo, options model_id/max_tokens, protégé par RBAC
+  `model:generate`), 17 tests unitaires dans `tests/test_agri_advice.py` — tous
+  verts. Génération réelle vérifiée via Ollama (qwen2.5-coder:14b).
+- **Credentials providers (ADR-004)** : `_call_api` implémenté pour OpenAI,
+  Anthropic et Google (stdlib urllib, zéro dépendance). Lecture des clés via
+  `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`. Correctifs : imports
+  manquants dans `openai_provider.py` et `google_provider.py`, enum `UNAUTHORIZED`,
+  commentaires arabes → français. 24 tests unitaires — tous verts.
+- **Stockage persistant complet (ADR-005)** : 8 stores SQLite pour Memory, Model,
+  Knowledge, Notification, Calendar, Email, Cloud, File. 92 tests — tous verts.
+  Backend sélectionnable via `GALSEN_STORAGE_BACKEND=sqlite` ou injection. Correctif
+  `:memory:` mode sur `SQLiteFileStore` (connexion persistante).
+- **Connecteur S3/Minio + FileSystem pour le service Cloud** : `S3CloudStore` (`src/services/cloud/store_s3.py`) avec upload/download via boto3 (lazy import, configuration par variables d'environnement `CLOUD_S3_*`). `FileSystemCloudStore` (`src/services/cloud/store_fs.py`) pour un stockage persistant local zéro dépendance (index JSON + fichiers binaires). 19 nouveaux tests. **185 tests pour les 3 services externes — tous verts**.
+- **Connecteur SMTP pour le service Email** : `SmtpTransport` (`src/services/email/transport.py`) avec support STARTTLS et SSL, configuration par variables d'environnement, construction MIME complète. `ConsoleTransport` et `NoopTransport`. 18 nouveaux tests.
+- **Dashboard web (`src/frontend/`)** : 5 templates Jinja2 (base, accueil, santé, services, modèles, mémoire), monté comme sous-application FastAPI sur `/admin` dans `src/api/server.py`. Interface sombre avec sidebar et badges de statut.
+- **SDK Client Python (`src/client/`)** : Client REST sans dépendances externes (stdlib `urllib`), couvrant tous les endpoints (santé, mémoire, modèles, notifications, fichiers, cloud, calendrier, email). Retourne des objets Pydantic, pattern best-effort (pas d'exception levée). **48 tests — tous verts**.
 - **VOLET 02 Phase 2 — Services Backend (Ch. 03, 07, 09)**
   - **Notification Service** (`src/services/notification/`): types.py, interfaces.py, store.py, manager.py. 8 types de notification (info, warning, error, approval_request, approval_decided, system, task_completed, task_failed), 4 niveaux de priorité, stockage en mémoire thread-safe avec filtres (type, destinataire, rôle, priorité minimale), marquage de lecture individuel et groupé, statistiques agrégées
   - **Search Service** (`src/services/search/`): types.py, interfaces.py, manager.py. Recherche unifiée multi-source (knowledge, memory, document, vision) avec fusion pondérée par source, tri par pertinence/date, filtrage par score minimum. Architecture extensible : tout moteur implémentant `SearchProvider` peut être branché

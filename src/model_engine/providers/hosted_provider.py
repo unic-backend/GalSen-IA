@@ -103,10 +103,12 @@ class HostedProvider(ModelProvider):
         except Exception as error:
             # En cas d'erreur d'authentification ou autre, retourner UNAVAILABLE
             # Ne pas exposer les détails de l'erreur pour des raisons de sécurité
+            error_code = getattr(error, "code", None)
+            is_quota = error_code == 429 or "429" in str(error)
             return GenerationResponse.unavailable(
                 provider_id=self.provider_id,
                 model_name=request.model_name,
-                reason=UnavailabilityReason.QUOTA_EXCEEDED if "429" in str(error) else UnavailabilityReason.UNAUTHORIZED,
+                reason=UnavailabilityReason.QUOTA_EXCEEDED if is_quota else UnavailabilityReason.UNAUTHORIZED,
                 detail="Échec de l'authentification ou quota dépassé. Vérifiez votre clé API."
             )
 

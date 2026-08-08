@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Conseil Agricole</h1>
+<p class="subtitle">Une réponse adaptée au contexte agricole sénégalais, en français ou en wolof</p>
+
+<form method="post" action="/admin/agri-conseil">
+    <div class="card" style="margin-bottom:1rem">
+        <label for="question" style="display:block;margin-bottom:0.5rem;font-size:0.9rem">Votre question</label>
+        <textarea id="question" name="question" rows="4"
+            style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:0.75rem;font-family:inherit;font-size:0.9rem"
+            placeholder="Ex. : Quand planter le mil à Thiès ?">{{ question }}</textarea>
+
+        <div style="display:flex;gap:1rem;align-items:center;margin-top:0.75rem">
+            <label style="font-size:0.9rem">Langue
+                <select name="language"
+                    style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.6rem">
+                    <option value="fr" {{ 'selected' if language == 'fr' else '' }}>Français</option>
+                    <option value="wo" {{ 'selected' if language == 'wo' else '' }}>Wolof</option>
+                </select>
+            </label>
+            <button type="submit"
+                style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:0.5rem 1.25rem;font-size:0.9rem;font-weight:600;cursor:pointer">
+                Obtenir un conseil
+            </button>
+        </div>
+    </div>
+</form>
+
+{% if error %}
+<div class="card" style="border-color:var(--red)">
+    <p style="color:var(--red);font-size:0.9rem">{{ error }}</p>
+</div>
+{% endif %}
+
+{% if result %}
+<div class="card" style="margin-top:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+        <h2 style="font-size:1rem">Réponse</h2>
+        <span class="status-badge status-ok">{{ result.language|upper }}</span>
+    </div>
+    <p style="font-size:0.95rem;line-height:1.6;white-space:pre-wrap">{{ result.answer }}</p>
+    <p class="meta" style="margin-top:1rem">Modèle : {{ result.model_used }}</p>
+</div>
+{% endif %}
+{% endblock %}

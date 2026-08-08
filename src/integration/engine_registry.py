@@ -34,6 +34,9 @@ ENGINE_NAMES = (
     "notification",
     "search",
     "file",
+    "cloud",
+    "calendar",
+    "email",
 )
 
 
@@ -94,6 +97,9 @@ class EngineRegistry:
             "notification": self._build_notification_service,
             "search": self._build_search_service,
             "file": self._build_file_service,
+            "cloud": self._build_cloud_service,
+            "calendar": self._build_calendar_service,
+            "email": self._build_email_service,
         }
 
     # ------------------------------------------------------------------
@@ -258,6 +264,21 @@ class EngineRegistry:
         return self.get("file")
 
     @property
+    def cloud(self):
+        """Service cloud (CloudManagerImpl)."""
+        return self.get("cloud")
+
+    @property
+    def calendar(self):
+        """Service de calendrier (CalendarManagerImpl)."""
+        return self.get("calendar")
+
+    @property
+    def email(self):
+        """Service email (EmailManagerImpl)."""
+        return self.get("email")
+
+    @property
     def project_root(self) -> str:
         """Racine du projet utilisée pour localiser les fichiers de configuration."""
         return self._project_root
@@ -333,6 +354,21 @@ class EngineRegistry:
         """Construit le service de fichiers (pur en mémoire, toujours disponible)."""
         from ..services.file.manager import FileManagerImpl
         return FileManagerImpl()
+
+    def _build_cloud_service(self):
+        """Construit le service cloud (pur en mémoire, toujours disponible)."""
+        from ..services.cloud.manager import CloudManagerImpl
+        return CloudManagerImpl()
+
+    def _build_calendar_service(self):
+        """Construit le service de calendrier (pur en mémoire, toujours disponible)."""
+        from ..services.calendar.manager import CalendarManagerImpl
+        return CalendarManagerImpl()
+
+    def _build_email_service(self):
+        """Construit le service email (pur en mémoire, toujours disponible)."""
+        from ..services.email.manager import EmailManagerImpl
+        return EmailManagerImpl()
 
     @staticmethod
     def _detect_project_root() -> str:

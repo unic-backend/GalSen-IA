@@ -67,9 +67,28 @@ Each engine will manage its own SQLite database file (or a shared file with sepa
 6. Write unit tests using an in‑memory SQLite database (`:memory:`) to ensure correctness without touching the filesystem.
 7. Update documentation (`docs/storage.md` if needed) and update `CHANGELOG.md`.
 
-## Implementation Status (Phase 4 — 2026-08-04)
+## Implementation Status (Phase 5 — 2026-08-05) — COMPLETE
 
-Steps 1–5 are implemented for the Model and Knowledge engines:
+All 8 stores are implemented and tested (92 tests — all green):
+
+| Store | File | Tests |
+|-------|------|-------|
+| `SQLiteMemoryStore` | `src/storage/sqlite_store.py` | ✅ Legacy tests |
+| `SQLiteModelStore` | `src/storage/sqlite_model_store.py` | ✅ Legacy tests |
+| `SQLiteKnowledgeStore` | `src/storage/sqlite_knowledge_store.py` | ✅ Legacy tests |
+| `SQLiteNotificationStore` | `src/storage/sqlite_notification_store.py` | ✅ `test_storage_service_stores.py` |
+| `SQLiteCalendarStore` | `src/storage/sqlite_calendar_store.py` | ✅ `test_storage_service_stores.py` |
+| `SQLiteEmailStore` | `src/storage/sqlite_email_store.py` | ✅ `test_storage_service_stores.py` |
+| `SQLiteCloudStore` | `src/storage/sqlite_cloud_store.py` | ✅ `test_storage_service_stores.py` |
+| `SQLiteFileStore` | `src/storage/sqlite_file_store.py` | ✅ `test_storage_service_stores.py` |
+
+Backend selection via `GALSEN_STORAGE_BACKEND=sqlite` env var or explicit store injection
+at manager construction. Default remains `"in-memory"`. Data directory configurable via
+`GALSEN_DATA_DIR` (default `"data"`), resolved by `src/storage/paths.py`.
+
+All stores exposed in `src/storage/__init__.py`.
+
+Steps 1–5 were initially implemented for the Model and Knowledge engines:
 
 - `SQLiteModelStore` and `SQLiteKnowledgeStore` under `src/storage/` persist the
   authoritative items of the Model and Knowledge engines (ADR-005 scope).

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Tableau de bord</h1>
+<p class="subtitle">Vue d'ensemble de la plateforme GalSen IA</p>
+
+<div class="cards">
+    <div class="card">
+        <div class="label">Système</div>
+        <div class="value">
+            <span class="status-badge status-{{ 'ok' if health.status == 'healthy' else ('degraded' if health.status == 'degraded' else 'error') }}">
+                {{ health.status }}
+            </span>
+        </div>
+        <div class="meta">{{ health.components.get('components', {})|length }} composants</div>
+    </div>
+    <div class="card">
+        <div class="label">Mémoire</div>
+        <div class="value">{{ memory.count }}</div>
+        <div class="meta">éléments stockés</div>
+    </div>
+    <div class="card">
+        <div class="label">Modèles</div>
+        <div class="value">{{ models.active }}<span style="font-size:1rem;color:var(--text-dim)"> / {{ models.total }}</span></div>
+        <div class="meta">actifs / total</div>
+    </div>
+    <div class="card">
+        <div class="label">Services</div>
+        <div class="value">{{ services|length }}</div>
+        <div class="meta">
+            {% for s, v in services.items() %}
+            {% if v.available %}<span class="status-badge status-ok" style="margin-right:3px">{{ s }}</span>{% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<h2 class="section-title">Services disponibles</h2>
+{% for s, v in services.items() %}
+<div class="service-row">
+    <div>
+        <span class="name">{{ s|capitalize }}</span>
+        {% if v.available %}
+        <span class="status-badge status-ok">actif</span>
+        {% else %}
+        <span class="status-badge status-error">indisponible</span>
+        {% endif %}
+    </div>
+    <span class="count">{{ v.count }} éléments</span>
+</div>
+{% endfor %}
+{% endblock %}
