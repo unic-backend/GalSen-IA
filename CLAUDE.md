@@ -18,6 +18,9 @@ Focus: practical AI agents, data platforms, and tools for African contexts first
 - Prefer reusing existing architecture over creating new patterns.
 - Never duplicate documentation. Update the existing file instead.
 - Keep answers under 8 lines by default → `.claude/rules/response-style.md`.
+- **One phase per turn. Never two, never a whole chapter** → `.claude/rules/phase-protocol.md`.
+  Opening a VOLET starts with a phase plan (chapters → phases) and nothing else.
+  Every phase ends with `Je continue ?` and waits for an explicit confirmation.
 - Work in phases of ≤ 8 min; at 25 min elapsed, stop and ask → `.claude/rules/work-cadence.md`.
 - Ask for clarification when requirements are ambiguous.
 - Never call work done without running it → `.claude/rules/verification.md`.
@@ -32,6 +35,7 @@ last session stopped. Keep it up to date; it is the project's continuity.
 
 | File | Purpose |
 |------|---------|
+| `docs/memory/phase-plan.md` | The VOLET's phase plan and the one pending phase — auto-loaded |
 | `docs/memory/session-state.md` | Where the last session stopped — auto-loaded |
 | `docs/memory/priorities.md` | Current ranking of work — read first |
 | `docs/memory/current-objectives.md` | Active goals |
@@ -46,6 +50,7 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - All technical decisions: `docs/architecture/decisions/` (ADR format)
 
 ## Standards (load on demand)
+- Phase protocol → `.claude/rules/phase-protocol.md`
 - Memory → `.claude/rules/memory.md`
 - Answer style → `.claude/rules/response-style.md`
 - Work cadence & token economy → `.claude/rules/work-cadence.md`
