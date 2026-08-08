@@ -710,11 +710,22 @@ async def agri_advice(request: AgriAdviceRequest):
 
     try:
         result = tool.execute("get_advice", request.question, **gen_params)
+        # L'outil ne lève pas quand aucun modèle ne peut répondre : il retourne
+        # un statut, pour qu'un agent puisse se rabattre ailleurs. En HTTP, ce
+        # statut doit devenir un 503 — répondre 200 avec un conseil vide ferait
+        # passer une indisponibilité pour une réponse.
+        if result.get("status") not in (None, "ready"):
+            raise HTTPException(
+                status_code=503,
+                detail=result.get("detail") or "Aucun modèle disponible pour le conseil agricole",
+            )
         return AgriAdviceResponse(
             answer=result["answer"],
             language=result["language"],
             model_used=result["model_used"],
         )
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:

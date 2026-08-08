@@ -10,13 +10,13 @@ exécuter, et une seule.
 
 **Travail en cours** : réconciliation des deux lignes de développement
 **Phases** : 4
-**Phase courante** : R.2 — en attente de confirmation
-**Terminées** : R.1
+**Phase courante** : R.3 — en attente de confirmation
+**Terminées** : R.1, R.2
 
 ```
 R.1  Merge mécanique       ✅ 12 conflits résolus, src/frontend/ retiré, l'app démarre
-R.2  Suite verte           ⏳ faire passer les tests des deux côtés ensemble
-R.3  Page Conseil Agricole    portée dans src/web/ (ADR-008) + ses tests
+R.2  Suite verte           ✅ 1376 passent, 5 ignorés (6 échecs corrigés)
+R.3  Page Conseil Agricole ⏳ portée dans src/web/ (ADR-008) + ses tests
 R.4  Mémoire, ADR, PR         trace de la réconciliation
 ```
 
