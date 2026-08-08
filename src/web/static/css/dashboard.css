@@ -79,8 +79,10 @@ h2 {
 main {
   display: grid;
   gap: 1rem;
-  /* Une seule colonne sur téléphone, autant que la largeur le permet ensuite */
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  /* Une seule colonne sur téléphone, autant que la largeur le permet ensuite.
+     28rem et non 21 : en dessous, les tableaux à quatre colonnes deviennent si
+     étroits que les identifiants se coupent en plein mot. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr));
 }
 
 section {
@@ -94,6 +96,11 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+  /* `fixed` : les colonnes se partagent la largeur disponible au lieu de
+     s'étirer sur leur contenu. Sans cela, un détail long pousse le tableau
+     au-delà de sa carte et la dernière colonne est tronquée sans que rien ne
+     le signale — ce qui arrivait avec trois cartes côte à côte. */
+  table-layout: fixed;
 }
 
 th,
@@ -106,16 +113,18 @@ td {
 
 td {
   /* Les empreintes et identifiants sans espace doivent pouvoir se couper,
-     sinon ils débordent de l'écran d'un téléphone. */
-  overflow-wrap: anywhere;
+     sinon ils débordent de l'écran d'un téléphone. `break-word` et non
+     `anywhere` : `anywhere` autorise la coupure même quand elle est évitable,
+     ce qui donnait « memory_eng ine » et « emai l » dans une colonne étroite. */
+  overflow-wrap: break-word;
 }
 
 th {
   color: var(--texte-doux);
   font-weight: 600;
-  /* Un titre de colonne coupé en plein mot (« Composan t ») se lit mal :
-     mieux vaut une colonne plus étroite qu'un mot brisé. */
-  white-space: nowrap;
+  /* Pas de `nowrap` : avec `table-layout: fixed`, un titre qui refuse de
+     revenir à la ligne déborde sur la colonne suivante — « ConnecteurType ». */
+  overflow-wrap: break-word;
 }
 
 tr:last-child td {
@@ -174,6 +183,48 @@ input[type="text"] {
   background: var(--fond);
   color: var(--texte);
   min-width: 0;
+}
+
+textarea {
+  font: inherit;
+  width: 100%;
+  margin: 0.35rem 0 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--rayon);
+  border: 1px solid var(--bordure);
+  background: var(--fond);
+  color: var(--texte);
+  /* Redimensionnable en hauteur seulement : en largeur, la carte déborderait */
+  resize: vertical;
+}
+
+select {
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--rayon);
+  border: 1px solid var(--bordure);
+  background: var(--fond);
+  color: var(--texte);
+}
+
+.barre-conseil {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.reponse-conseil {
+  /* Le modèle produit des retours à la ligne porteurs de sens (listes,
+     étapes) : les écraser rendrait le conseil illisible. */
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+/* Le conseil agricole occupe toute la largeur : c'est un texte, pas une
+   colonne de tableau. */
+.pleine-largeur {
+  grid-column: 1 / -1;
 }
 
 .barre-cle {

@@ -200,6 +200,56 @@ async function rendreCles() {
   }
 }
 
+/**
+ * Panneau : conseil agricole.
+ *
+ * L'API répond 503 quand aucun modèle ne peut générer. C'est traité comme un
+ * message et non comme une panne : la cause est actionnable (« aucun
+ * fournisseur configuré »), et l'utilisateur doit la lire plutôt que voir une
+ * zone vide.
+ */
+async function demanderConseil(evenement) {
+  evenement.preventDefault();
+
+  const conteneur = $("#conseil");
+  const champ = $("#question-agricole");
+  const bouton = $("#demander-conseil");
+  const question = champ.value.trim();
+
+  if (!question) {
+    conteneur.replaceChildren(
+      element("p", "Posez une question avant de demander un conseil.", "message message--info"),
+    );
+    champ.focus();
+    return;
+  }
+
+  bouton.disabled = true;
+  conteneur.replaceChildren(element("p", "Génération en cours…", "discret"));
+
+  try {
+    const reponse = await api.agri.conseil(question, $("#langue-conseil").value);
+    conteneur.replaceChildren();
+
+    const entete = element("p");
+    entete.appendChild(element("span", "Réponse "));
+    entete.appendChild(pastille("ready"));
+    conteneur.appendChild(entete);
+
+    // Le conseil est du texte libre venu d'un modèle : il est inséré comme
+    // texte, jamais comme balisage. La mise en forme des retours à la ligne
+    // est faite par la feuille de style.
+    conteneur.appendChild(element("p", reponse.answer, "reponse-conseil"));
+    conteneur.appendChild(
+      element("p", `Modèle : ${reponse.model_used} — langue : ${reponse.language}`, "discret"),
+    );
+  } catch (erreur) {
+    afficherErreur(conteneur, erreur);
+  } finally {
+    bouton.disabled = false;
+  }
+}
+
 /** Recharge tous les panneaux. */
 async function toutCharger() {
   await Promise.all([rendreSante(), rendreConnecteurs(false), rendreCles()]);
@@ -222,6 +272,8 @@ function preparerBarreDeCle() {
 
   $("#verifier-connecteurs").addEventListener("click", () => rendreConnecteurs(true));
   $("#recharger").addEventListener("click", toutCharger);
+  // Sur le formulaire et non sur le bouton : la touche Entrée doit fonctionner.
+  $("#formulaire-conseil").addEventListener("submit", demanderConseil);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

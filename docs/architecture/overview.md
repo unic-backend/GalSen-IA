@@ -2,13 +2,16 @@
 
 ## Current Status
 The platform runs. Eleven engines are registered in `EngineRegistry`, reachable through a
-REST API (`src/api/server.py`, 29 endpoints behind API-key authentication and RBAC) and
-covered by their own test suites. Persistence exists: memory, model and knowledge select a
-SQLite store through `GALSEN_STORAGE_BACKEND` (ADR-005); the audit and approval engines and
-the three backend services are still in-memory only.
+REST API (`src/api/server.py`, 60 routes behind API-key authentication and RBAC) and
+covered by their own test suites. Persistence exists: memory, model, knowledge and the
+notification, calendar, email, cloud and file services select a SQLite store through
+`GALSEN_STORAGE_BACKEND` (ADR-005); the audit and approval engines are still in-memory
+only.
 
-A buildless web dashboard is served at `/ui` (ADR-008): platform health, external
-connectors and API keys, with no build step and nothing to install.
+A buildless web dashboard is served at `/ui` (ADR-008): the *Conseil agricole* page —
+the platform's first real feature — plus platform health, external connectors and API
+keys, with no build step and nothing to install. A dependency-free Python client
+(`src/client/`) covers the same routes for programmatic callers.
 
 Not there yet: no configured model provider — generation reports `unavailable` until a
 key is present in the environment. The platform also runs as a **single instance**
@@ -46,6 +49,9 @@ can be replaced without touching the callers.
 | Notification Service | `src/services/notification/` | `NotificationManagerImpl` | Sends and lists platform notifications |
 | Search Service | `src/services/search/` | `SearchManagerImpl` | Unified search merging several sources by relevance |
 | File Service | `src/services/file/` | `FileManagerImpl` | Uploads, lists and validates files |
+| Calendar Service | `src/services/calendar/` | `CalendarManagerImpl` | Events, status and visibility |
+| Email Service | `src/services/email/` | `EmailManagerImpl` | Composes and sends messages through a transport |
+| Cloud Service | `src/services/cloud/` | `CloudManagerImpl` | Object storage across memory, filesystem and S3 |
 
 ## Integration Layer
 The engines are independent, so something has to connect them. That is the job of
@@ -86,9 +92,15 @@ Router Engine / Agent Runtime
 - **One import convention: `src.<module>`.** Every import inside `src/` uses it, and the
   repository root is what must be importable. Mixing it with top-level absolute imports
   (`from storage...`) creates two copies of the same class in memory, so `LOW != LOW`.
-- Memory, model and knowledge select their store through `GALSEN_STORAGE_BACKEND`
-  (`in-memory` by default, `sqlite` to persist) and `GALSEN_DATA_DIR` (ADR-005). Indexing and
-  caching remain in memory; the interfaces exist so a vector store can be introduced later.
+  `src/__init__.py` must therefore stay empty of logic: adding `src/` to `sys.path` makes
+  bare imports resolve, which hides the violation instead of fixing it. The rule has been
+  broken twice, so `tests/test_import_convention.py` now walks every module in `src/` and
+  fails on the first bare internal import.
+- Eight subsystems select their store through `GALSEN_STORAGE_BACKEND` (`in-memory` by
+  default, `sqlite` to persist) and `GALSEN_DATA_DIR` (ADR-005): memory, model, knowledge,
+  notification, calendar, email, cloud and file. Indexing and caching remain in memory; the
+  interfaces exist so a vector store can be introduced later. Audit and approval are still
+  in-memory only.
 - Optional third-party libraries (PyPDF2, python-docx, openpyxl, python-pptx,
   pytesseract, markdown, sentence-transformers) are imported lazily. A missing library
   degrades one loader, never the whole engine. What is *not* optional is declared in
@@ -108,12 +120,12 @@ GET /health → "scaling": { "instance": "...", "multi_instance_ready": false,
                            "blocking": ["api_key_revocations", ...] }
 ```
 
-Five subsystems are blocking under the default backend, in this repair order: **API
-key revocations** (a revoked key still opens the other instances — the security one),
-**rate-limit counters** (the quota is multiplied), **files** and **notifications**
-(both already behind a store interface, so a shared store is a substitution), and
-**engine state** — which stops blocking as soon as `GALSEN_STORAGE_BACKEND=sqlite`
-(ADR-005), the one item already solved by configuration. The connector and engine
+Five subsystems block under the default backend; `GALSEN_STORAGE_BACKEND=sqlite`
+(ADR-005) clears three of them — files, notifications and engine state — because their
+scope is derived from the configuration rather than declared. What no storage backend
+fixes, and what therefore comes first in the repair order, is **API key revocations** (a
+revoked key still opens the other instances — the security one) and **rate-limit
+counters** (the quota is multiplied by the instance count). The connector and engine
 registries are per-process by design and break nothing.
 
 Nothing prevents horizontal scaling structurally — no session affinity, stores behind

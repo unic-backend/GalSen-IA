@@ -10,25 +10,27 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 ## Dernière session
 
-**Date** : 2026-08-06
+**Date** : 2026-08-08
 
-**En cours** : Rien. **VOLET 02 terminé, 10 chapitres sur 10.**
+**En cours** : rien. Réconciliation terminée (4 phases), VOLET 02 clos (10/10).
 
 **Terminé dans cette session**
-- **ch. 10 (montée en charge) — ADR-009** : la plateforme tourne en **une seule
-  instance** et le dit à l'exécution (`/health` → `scaling`, `scope: "instance"`
-  sur les routes de clés). Quatre sous-systèmes cassent avec une 2ᵉ instance ;
-  ordre de réparation fixé : révocations → limiteur → fichiers → notifications.
-  Aucune infrastructure (Redis, files d'attente, réplicas) n'a été ajoutée.
-- **ch. 02 (frontend) — ADR-008** : tableau de bord sans étape de construction
-  sous `/ui`, vérifié dans un vrai navigateur.
-- Tests : **1008 passants**, 5 ignorés.
+- **VOLET 02 clos** : ADR-008 (`/ui` sans build) et ADR-009 (une seule instance,
+  dite à l'exécution par `/health`).
+- **Protocole de phases** installé : une phase par tour, plan avant chaque VOLET.
+- **Deux branches réconciliées** : arrivent les services calendar/cloud/email,
+  5 magasins SQLite, le SDK client, `POST /agri/advice`. `src/frontend/` (Jinja2)
+  écarté ; la page « Conseil agricole » vit dans `/ui`.
+- **Trois défauts corrigés** : `/agri/advice` répondait 200 avec un conseil vide ;
+  la convention `src.` était de nouveau enfreinte et masquée par un `sys.path` ;
+  le rapport `scaling` ne suivait pas le backend de stockage.
+- Tests : **1405 passants**, 5 ignorés.
 
 **Prochaine étape**
-Choisir le prochain VOLET. VOLET 03 (Development Manual) ou VOLET 04 (Roadmap)
-sont les suites naturelles ; VOLET 01 (Master Constitution) sert d'arbitrage.
+Choisir le prochain VOLET (03 Development Manual ou 04 Roadmap), publier son plan
+de phases, puis s'arrêter — protocole `.claude/rules/phase-protocol.md`.
 
 **Bloqué / à surveiller**
-- `/model/generate` répond 503 : il ne manque qu'une clé dans l'environnement.
-- Une clé révoquée n'est coupée que sur l'instance jointe (ADR-009).
-- Perdre `GALSEN_ENCRYPTION_KEY` = perdre les données chiffrées, sans recours.
+- `/model/generate` et `/agri/advice` répondent 503 : il ne manque qu'une clé.
+- Trois façons d'écrire un fichier sur disque cohabitent (connecteur, magasin
+  SQLite, magasin fichier) — à arbitrer, c'est dans `pending-work.md`.

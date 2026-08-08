@@ -30,6 +30,10 @@ minutes does.
 
 # Phases
 
+**How a phase is executed is decided by `.claude/rules/phase-protocol.md`:
+one phase per turn, then stop and wait for confirmation.** This section defines
+what a phase *is*; that file defines the discipline around it.
+
 Split before starting, not when you are already lost.
 
 A phase is:

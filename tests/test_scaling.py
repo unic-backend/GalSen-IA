@@ -130,6 +130,22 @@ class TestInventaire:
         assert moteurs.scope == SCOPE_INSTANCE
         assert moteurs.blocking is True
 
+    @pytest.mark.parametrize("nom", ["uploaded_files", "notifications"])
+    def test_les_services_suivent_le_backend(self, monkeypatch, nom):
+        """Ces services ont un magasin SQLite depuis l'ADR-005 : le rapport doit
+        le refléter, sinon il annonce un blocage que la configuration a levé."""
+        monkeypatch.setenv(STORAGE_BACKEND_VARIABLE, "sqlite")
+        composant = next(c for c in state_inventory() if c.name == nom)
+        assert composant.scope == SCOPE_SHARED
+        assert composant.blocking is False
+
+    @pytest.mark.parametrize("nom", ["uploaded_files", "notifications"])
+    def test_les_services_bloquent_en_memoire(self, sans_variables, nom):
+        """Backend par défaut : chaque instance garde ses fichiers et ses avis."""
+        composant = next(c for c in state_inventory() if c.name == nom)
+        assert composant.scope == SCOPE_INSTANCE
+        assert composant.blocking is True
+
     def test_serialisation_sans_champ_vide(self, sans_variables):
         """Un `caveat` vide ne doit pas encombrer la réponse."""
         for composant in state_inventory():
@@ -157,6 +173,13 @@ class TestRapport:
         rapport = scaling_report()
         attendus = [c.name for c in state_inventory() if c.blocking]
         assert rapport["blocking"] == attendus
+
+    def test_sqlite_ne_laisse_que_les_deux_points_de_securite(self, monkeypatch):
+        """Persister ne suffit pas : révocations et quotas restent locaux."""
+        monkeypatch.setenv(STORAGE_BACKEND_VARIABLE, "sqlite")
+        rapport = scaling_report()
+        assert rapport["blocking"] == ["api_key_revocations", "rate_limit_counters"]
+        assert rapport["multi_instance_ready"] is False
 
     def test_le_rapport_designe_son_adr(self, sans_variables):
         """Un opérateur doit pouvoir remonter au raisonnement."""

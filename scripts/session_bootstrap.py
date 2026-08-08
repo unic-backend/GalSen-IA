@@ -17,6 +17,7 @@ MEMORY = ROOT / "docs" / "memory"
 
 # (file, heading, max lines kept, drop everything above the first "---" rule)
 SOURCES = [
+    ("phase-plan.md", "PHASE EN COURS - N'EN EXECUTER QU'UNE", 20, True),
     ("session-state.md", "ETAT DE LA DERNIERE SESSION", 40, True),
     ("priorities.md", "PRIORITES", 20, False),
     ("current-objectives.md", "OBJECTIFS ACTIFS", 20, False),
@@ -24,6 +25,22 @@ SOURCES = [
 ]
 
 MAX_CHARS = 6000
+
+# Le protocole de phases est repete a chaque demarrage plutot que laisse dans un
+# fichier de regles : une regle qu'il faut penser a ouvrir est une regle oubliee.
+PHASE_PROTOCOL = """
+=== PROTOCOLE DE PHASES - OBLIGATOIRE ===
+Le travail va par VOLET > chapitre > phase. Seules les phases s'executent.
+1. Nouveau VOLET : publier d'abord le plan (nb de chapitres -> nb de phases),
+   l'ecrire dans docs/memory/phase-plan.md, puis S'ARRETER.
+2. Ensuite : UNE phase par tour. Jamais deux. Jamais un chapitre entier,
+   sauf si ce chapitre ne contient qu'une seule phase.
+3. Fin de phase : verifier, annoncer "Phase X.Y terminee", nommer la suivante,
+   demander "Je continue ?" et ATTENDRE.
+   Seul un "continuer" / "confirmer" / "oui" explicite relance le travail.
+4. Mettre a jour docs/memory/phase-plan.md avant chaque arret.
+Detail : `.claude/rules/phase-protocol.md`
+"""
 
 
 def read_trimmed(path: Path, max_lines: int, skip_preamble: bool = False) -> str:
@@ -56,6 +73,7 @@ def build_context() -> str:
     blocks = [
         "MEMOIRE PROJET GALSEN IA - chargee automatiquement au demarrage.",
         "Reprends le travail a partir de cet etat. Ne refais pas ce qui est marque termine.",
+        PHASE_PROTOCOL.strip(),
     ]
     for filename, heading, max_lines, skip_preamble in SOURCES:
         body = read_trimmed(MEMORY / filename, max_lines, skip_preamble)
@@ -64,7 +82,8 @@ def build_context() -> str:
         blocks.append("\n=== {} ({}) ===\n{}".format(heading, filename, body))
 
     blocks.append(
-        "\nRegles: `.claude/rules/memory.md` (memoire), "
+        "\nRegles: `.claude/rules/phase-protocol.md` (une phase par tour), "
+        "`.claude/rules/memory.md` (memoire), "
         "`.claude/rules/work-cadence.md` (phases, 25 min), "
         "`.claude/rules/response-style.md` (reponses courtes)."
     )
@@ -87,14 +106,33 @@ def current_task() -> str:
     return ""
 
 
+def current_phase() -> str:
+    """Return the pending phase, so the banner names it before any work starts."""
+    try:
+        raw = (MEMORY / "phase-plan.md").read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    for line in raw.splitlines():
+        if line.strip().startswith("**Phase courante**"):
+            _, _, value = line.partition(":")
+            value = value.strip()
+            return "" if value in ("", "-", "—") else value
+    return ""
+
+
 def main() -> int:
     if not MEMORY.is_dir():
         return 0  # nothing to inject, never block the session
 
-    task = current_task()
     banner = "Memoire GalSen IA chargee"
-    if task:
-        banner = "{} - en cours : {}".format(banner, task)
+    phase = current_phase()
+    if phase:
+        # La phase passe avant l'etat de session : c'est la seule chose a faire.
+        banner = "{} - phase {} (une seule)".format(banner, phase)
+    else:
+        task = current_task()
+        if task:
+            banner = "{} - en cours : {}".format(banner, task)
 
     payload = {
         "hookSpecificOutput": {

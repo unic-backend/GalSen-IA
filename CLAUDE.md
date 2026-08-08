@@ -18,6 +18,9 @@ Focus: practical AI agents, data platforms, and tools for African contexts first
 - Prefer reusing existing architecture over creating new patterns.
 - Never duplicate documentation. Update the existing file instead.
 - Keep answers under 8 lines by default → `.claude/rules/response-style.md`.
+- **One phase per turn. Never two, never a whole chapter** → `.claude/rules/phase-protocol.md`.
+  Opening a VOLET starts with a phase plan (chapters → phases) and nothing else.
+  Every phase ends with `Je continue ?` and waits for an explicit confirmation.
 - Work in phases of ≤ 8 min; at 25 min elapsed, stop and ask → `.claude/rules/work-cadence.md`.
 - Ask for clarification when requirements are ambiguous.
 - Never call work done without running it → `.claude/rules/verification.md`.
@@ -32,6 +35,7 @@ last session stopped. Keep it up to date; it is the project's continuity.
 
 | File | Purpose |
 |------|---------|
+| `docs/memory/phase-plan.md` | The VOLET's phase plan and the one pending phase — auto-loaded |
 | `docs/memory/session-state.md` | Where the last session stopped — auto-loaded |
 | `docs/memory/priorities.md` | Current ranking of work — read first |
 | `docs/memory/current-objectives.md` | Active goals |
@@ -46,6 +50,7 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - All technical decisions: `docs/architecture/decisions/` (ADR format)
 
 ## Standards (load on demand)
+- Phase protocol → `.claude/rules/phase-protocol.md`
 - Memory → `.claude/rules/memory.md`
 - Answer style → `.claude/rules/response-style.md`
 - Work cadence & token economy → `.claude/rules/work-cadence.md`
@@ -72,3 +77,62 @@ Persistence is decided and implemented (ADR-005, SQLite): memory, model and know
 select their store through `GALSEN_STORAGE_BACKEND` (`in-memory` by default, `sqlite` to
 persist) and `GALSEN_DATA_DIR`. The audit and approval engines and the three backend
 services are still in-memory only — extending them reuses `src/storage/`, no new ADR.
+
+## Cerveau Local (nouveau)
+Le projet a maintenant un **Cerveau local** qui connecte les engines GalSen IA à Ollama.
+
+| Composant | Détail |
+|-----------|--------|
+| **Serveur REST** | `serveur_cerveau.py` — FastAPI sur port 8000 |
+| **Modèle local** | `qwen2.5-coder:14b` via Ollama (localhost:11434) |
+| **Lanceur** | `Lancer_Claude_Gratuit.bat` — démarre le serveur puis Claude Code |
+| **Prompts** | `prompts/systeme.md` — instruction système pour le Cerveau |
+| **Mémorial** | `memorial.md` — description complète du projet pour un agent froid |
+
+### Pour démarrer le Cerveau
+- `Lancer_Claude_Gratuit.bat`
+- API REST : `http://localhost:8000`
+- Documentation API : `http://localhost:8000/docs`
+- Endpoints : `/health`, `/chat`, `/engines`, `/models`, `/reinitialiser`
+
+Le Cerveau est conçu pour fonctionner **même si certains engines sont indisponibles**
+— chaque engine est chargé dans un `try/except`, et l'état est rapporté via `/health`.
+
+<!-- code-review-graph MCP tools -->
+## MCP Tools: code-review-graph
+
+**IMPORTANT: This project has a knowledge graph. ALWAYS use the
+code-review-graph MCP tools BEFORE using Grep/Glob/Read to explore
+the codebase.** The graph is faster, cheaper (fewer tokens), and gives
+you structural context (callers, dependents, test coverage) that file
+scanning cannot.
+
+### When to use graph tools FIRST
+
+- **Exploring code**: `semantic_search_nodes_tool` or `query_graph_tool` instead of Grep
+- **Understanding impact**: `get_impact_radius_tool` instead of manually tracing imports
+- **Code review**: `detect_changes_tool` + `get_review_context_tool` instead of reading entire files
+- **Finding relationships**: `query_graph_tool` with callers_of/callees_of/imports_of/tests_for
+- **Architecture questions**: `get_architecture_overview_tool` + `list_communities_tool`
+
+Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
+
+### Key Tools
+
+| Tool | Use when |
+| ------ | ---------- |
+| `detect_changes_tool` | Reviewing code changes — gives risk-scored analysis |
+| `get_review_context_tool` | Need source snippets for review — token-efficient |
+| `get_impact_radius_tool` | Understanding blast radius of a change |
+| `get_affected_flows_tool` | Finding which execution paths are impacted |
+| `query_graph_tool` | Tracing callers, callees, imports, tests, dependencies |
+| `semantic_search_nodes_tool` | Finding functions/classes by name or keyword |
+| `get_architecture_overview_tool` | Understanding high-level codebase structure |
+| `refactor_tool` | Planning renames, finding dead code |
+
+### Workflow
+
+1. The graph auto-updates on file changes (via hooks).
+2. Use `detect_changes_tool` for code review.
+3. Use `get_affected_flows_tool` to understand impact.
+4. Use `query_graph_tool` pattern="tests_for" to check coverage.
