@@ -14,16 +14,16 @@ from io import BytesIO
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from model_engine.providers.base import (
+from src.model_engine.providers.base import (
     GenerationRequest,
     ProviderStatus,
     UnavailabilityReason,
 )
-from model_engine.providers.openai_provider import OpenAIProvider
-from model_engine.providers.anthropic_provider import AnthropicProvider
-from model_engine.providers.google_provider import GoogleProvider
+from src.model_engine.providers.openai_provider import OpenAIProvider
+from src.model_engine.providers.anthropic_provider import AnthropicProvider
+from src.model_engine.providers.google_provider import GoogleProvider
 
 
 # ── Helpers de mock HTTP ──────────────────────────────────────────────────────

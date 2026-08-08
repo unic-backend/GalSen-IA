@@ -13,9 +13,9 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
-from services.cloud.interfaces import CloudStore
-from services.cloud.types import CloudFileItem, CloudProvider, CloudFileCategory
-from storage.paths import default_sqlite_path
+from src.services.cloud.interfaces import CloudStore
+from src.services.cloud.types import CloudFileItem, CloudProvider, CloudFileCategory
+from src.storage.paths import default_sqlite_path
 
 
 class SQLiteCloudStore(CloudStore):

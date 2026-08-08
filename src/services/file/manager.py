@@ -30,7 +30,7 @@ class FileManagerImpl(FileManager):
         if store is not None:
             self._store = store
         elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
-            from storage.sqlite_file_store import SQLiteFileStore
+            from src.storage.sqlite_file_store import SQLiteFileStore
             self._store = SQLiteFileStore()
         else:
             self._store = InMemoryFileStore()

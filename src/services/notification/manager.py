@@ -24,7 +24,7 @@ class NotificationManagerImpl(NotificationManager):
         if store is not None:
             self._store = store
         elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
-            from storage.sqlite_notification_store import SQLiteNotificationStore
+            from src.storage.sqlite_notification_store import SQLiteNotificationStore
             self._store = SQLiteNotificationStore()
         else:
             self._store = InMemoryNotificationStore()

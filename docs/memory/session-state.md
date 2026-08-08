@@ -12,24 +12,25 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-08
 
-**En cours** : réconciliation des deux branches — phase R.1 terminée, R.2 à faire.
+**En cours** : rien. Réconciliation terminée (4 phases), VOLET 02 clos (10/10).
 
 **Terminé dans cette session**
-- **VOLET 02 clos** (10/10) : ADR-008 (tableau de bord `/ui` sans build) et
-  ADR-009 (une seule instance, dite à l'exécution via `/health`).
-- **Protocole de phases** installé : une phase par tour, plan avant chaque VOLET
-  (`.claude/rules/phase-protocol.md`, chargé au démarrage).
-- **Merge de `feature/service-unit-tests`** : 12 conflits résolus. Arrivent les
-  services calendar/cloud/email, 5 stores SQLite de service, le SDK client,
-  `POST /agri/advice` et le serveur local Ollama (`serveur_cerveau.py`).
-- **Décision** : `src/frontend/` (Jinja2) est abandonné, `/ui` (ADR-008) reste.
-  La page « Conseil Agricole » sera portée dans `src/web/`.
+- **VOLET 02 clos** : ADR-008 (`/ui` sans build) et ADR-009 (une seule instance,
+  dite à l'exécution par `/health`).
+- **Protocole de phases** installé : une phase par tour, plan avant chaque VOLET.
+- **Deux branches réconciliées** : arrivent les services calendar/cloud/email,
+  5 magasins SQLite, le SDK client, `POST /agri/advice`. `src/frontend/` (Jinja2)
+  écarté ; la page « Conseil agricole » vit dans `/ui`.
+- **Trois défauts corrigés** : `/agri/advice` répondait 200 avec un conseil vide ;
+  la convention `src.` était de nouveau enfreinte et masquée par un `sys.path` ;
+  le rapport `scaling` ne suivait pas le backend de stockage.
+- Tests : **1405 passants**, 5 ignorés.
 
 **Prochaine étape**
-Phase R.2 : faire passer la suite complète après le merge — les tests des deux
-côtés n'ont jamais tourné ensemble. Puis R.3 (page agricole), R.4 (mémoire, PR).
+Choisir le prochain VOLET (03 Development Manual ou 04 Roadmap), publier son plan
+de phases, puis s'arrêter — protocole `.claude/rules/phase-protocol.md`.
 
 **Bloqué / à surveiller**
-- `tests/test_agri_advice.py` attend peut-être des exceptions là où l'outil
-  retourne un statut : c'est la version « statut » qui a été gardée.
-- Perdre `GALSEN_ENCRYPTION_KEY` = perdre les données chiffrées, sans recours.
+- `/model/generate` et `/agri/advice` répondent 503 : il ne manque qu'une clé.
+- Trois façons d'écrire un fichier sur disque cohabitent (connecteur, magasin
+  SQLite, magasin fichier) — à arbitrer, c'est dans `pending-work.md`.

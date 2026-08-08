@@ -13,9 +13,9 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
-from services.email.interfaces import EmailStore
-from services.email.types import EmailMessage, EmailAttachment, EmailStatus
-from storage.paths import default_sqlite_path
+from src.services.email.interfaces import EmailStore
+from src.services.email.types import EmailMessage, EmailAttachment, EmailStatus
+from src.storage.paths import default_sqlite_path
 
 
 class SQLiteEmailStore(EmailStore):

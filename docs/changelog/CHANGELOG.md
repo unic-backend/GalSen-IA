@@ -21,6 +21,38 @@ This project follows Semantic Versioning.
   - `tests/test_scaling.py`: 20 tests, including a demonstration that a key
     revoked on one manager still authenticates on another
 
+- **Conseil Agricole page on `/ui`** (ADR-008) — `api.agri.conseil()` in the API
+  client, a full-width section rendered with `textContent`, line breaks
+  preserved. `tests/test_web_agri.py` (18 tests) replaces the removed
+  `tests/test_dashboard_agri.py`
+- `tests/test_import_convention.py` — walks every module under `src/` and fails
+  on the first internal import written without the `src.` prefix, and on any
+  logic in `src/__init__.py`. The convention had been broken twice, both times
+  invisibly, because the tests imported by the bare name too
+
+### Changed
+- Two development lines reconciled. `src/frontend/` (Jinja2, mounted on
+  `/admin`) is removed: ADR-008 stands, and its page was rebuilt on `/ui`
+- `src/api/scaling.py` derives the scope of files and notifications from
+  `GALSEN_STORAGE_BACKEND` instead of declaring them process-local. Under
+  `sqlite`, only key revocations and rate-limit counters still block a second
+  instance
+- `data/` is no longer tracked; five `*.sqlite` databases and
+  `.claude/settings.json.bak` were removed from version control
+
+### Fixed
+- **`POST /agri/advice` answered 200 with an empty answer** when no model
+  provider is configured: only exceptions were translated to 503, and the tool
+  reports unavailability as a status. Any non-`ready` status now yields 503
+  carrying the tool's own detail
+- **The `src.` import convention was broken again** by the five services merged
+  from the parallel branch, and hidden by `src/__init__.py` inserting `src/`
+  into `sys.path`. The same file was importable under two names, so Python
+  built two distinct classes and `isinstance` failed. Ten modules and six test
+  files converted; `src/__init__.py` emptied of logic
+- Three dashboard rendering defects, all found by driving a real browser and
+  invisible to HTTP tests: identifiers broken mid-word, a table column silently
+  cut off, and overlapping column headers
 - `tests/test_api_startup.py`: seven integration tests that actually boot the
   application (`with TestClient(app)`), covering the lifespan, the late binding
   of the tool engine into the health checker, resilience to a broken tool engine

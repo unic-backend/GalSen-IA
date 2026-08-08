@@ -11,9 +11,9 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
-from services.calendar.interfaces import CalendarStore
-from services.calendar.types import CalendarEvent, EventStatus, EventVisibility
-from storage.paths import default_sqlite_path
+from src.services.calendar.interfaces import CalendarStore
+from src.services.calendar.types import CalendarEvent, EventStatus, EventVisibility
+from src.storage.paths import default_sqlite_path
 
 
 class SQLiteCalendarStore(CalendarStore):

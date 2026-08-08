@@ -32,7 +32,7 @@ class EmailManagerImpl(EmailManager):
         if store is not None:
             self._store = store
         elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
-            from storage.sqlite_email_store import SQLiteEmailStore
+            from src.storage.sqlite_email_store import SQLiteEmailStore
             self._store = SQLiteEmailStore()
         else:
             self._store = InMemoryEmailStore()

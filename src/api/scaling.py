@@ -28,6 +28,12 @@ STORAGE_BACKEND_VARIABLE = "GALSEN_STORAGE_BACKEND"
 SCOPE_INSTANCE = "instance"
 SCOPE_SHARED = "shared"
 
+# Réserve commune à tout magasin SQLite partagé entre instances.
+CAVEAT_SQLITE = (
+    "SQLite suppose un disque local : le fichier partagé par un montage réseau "
+    "ne garantit plus le verrouillage entre instances"
+)
+
 
 @dataclass(frozen=True)
 class StateComponent:
@@ -102,6 +108,31 @@ def state_inventory() -> List[StateComponent]:
     """
     sqlite_actif = _storage_backend() == "sqlite"
 
+    def magasin(nom: str, module: str, consequence: str) -> StateComponent:
+        """Décrit un sous-système dont le magasin suit `GALSEN_STORAGE_BACKEND`.
+
+        Ces services ont un magasin mémoire *et* un magasin SQLite (ADR-005) :
+        leur portée dépend donc de la configuration, et un inventaire qui les
+        annoncerait toujours locaux mentirait dès qu'on active la persistance.
+        """
+        if sqlite_actif:
+            return StateComponent(
+                name=nom,
+                scope=SCOPE_SHARED,
+                detail=f"{module} persisté en SQLite (ADR-005)",
+                consequence="deux instances lisent le même état si elles voient le même fichier",
+                blocking=False,
+                caveat=CAVEAT_SQLITE,
+            )
+        return StateComponent(
+            name=nom,
+            scope=SCOPE_INSTANCE,
+            detail=f"{module} en mémoire du processus",
+            consequence=consequence,
+            blocking=True,
+            caveat=f"réglable : {STORAGE_BACKEND_VARIABLE}=sqlite (ADR-005)",
+        )
+
     if sqlite_actif:
         moteurs = StateComponent(
             name="engine_state",
@@ -109,10 +140,7 @@ def state_inventory() -> List[StateComponent]:
             detail="mémoire, modèles et connaissances persistés en SQLite (ADR-005)",
             consequence="deux instances lisent le même état si elles voient le même fichier",
             blocking=False,
-            caveat=(
-                "SQLite suppose un disque local : le fichier partagé par un montage "
-                "réseau ne garantit plus le verrouillage entre instances"
-            ),
+            caveat=CAVEAT_SQLITE,
         )
     else:
         moteurs = StateComponent(
@@ -149,25 +177,17 @@ def state_inventory() -> List[StateComponent]:
             ),
             blocking=True,
         ),
-        StateComponent(
-            name="uploaded_files",
-            scope=SCOPE_INSTANCE,
-            detail="InMemoryFileStore (src/services/file/)",
-            consequence=(
-                "un fichier téléversé n'existe que sur l'instance qui l'a reçu ; "
-                "ailleurs il répond 404"
-            ),
-            blocking=True,
+        magasin(
+            "uploaded_files",
+            "magasin de fichiers (src/services/file/)",
+            "un fichier téléversé n'existe que sur l'instance qui l'a reçu ; "
+            "ailleurs il répond 404",
         ),
-        StateComponent(
-            name="notifications",
-            scope=SCOPE_INSTANCE,
-            detail="InMemoryNotificationStore (src/services/notification/)",
-            consequence=(
-                "un utilisateur ne voit que les notifications servies par "
-                "l'instance qu'il a jointe"
-            ),
-            blocking=True,
+        magasin(
+            "notifications",
+            "magasin de notifications (src/services/notification/)",
+            "un utilisateur ne voit que les notifications servies par "
+            "l'instance qu'il a jointe",
         ),
         moteurs,
         StateComponent(

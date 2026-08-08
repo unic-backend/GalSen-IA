@@ -49,7 +49,7 @@ class CloudManagerImpl(CloudManager):
         if store is not None:
             self._store = store
         elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
-            from storage.sqlite_cloud_store import SQLiteCloudStore
+            from src.storage.sqlite_cloud_store import SQLiteCloudStore
             self._store = SQLiteCloudStore()
         else:
             self._store = InMemoryCloudStore()

@@ -14,9 +14,9 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
-from services.file.interfaces import FileStore
-from services.file.types import FileItem, FileCategory
-from storage.paths import default_sqlite_path
+from src.services.file.interfaces import FileStore
+from src.services.file.types import FileItem, FileCategory
+from src.storage.paths import default_sqlite_path
 
 
 class SQLiteFileStore(FileStore):

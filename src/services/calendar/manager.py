@@ -24,7 +24,7 @@ class CalendarManagerImpl(CalendarManager):
         if store is not None:
             self._store = store
         elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
-            from storage.sqlite_calendar_store import SQLiteCalendarStore
+            from src.storage.sqlite_calendar_store import SQLiteCalendarStore
             self._store = SQLiteCalendarStore()
         else:
             self._store = InMemoryCalendarStore()

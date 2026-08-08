@@ -95,3 +95,30 @@ mobile and desktop clients second-class citizens.
 developers, which is not the same as letting an operator see that the mail server
 is unreachable. That was the state before this ADR, and it is what made the
 platform invisible to everyone but its author.
+
+## Confirmed under pressure (2026-08-08)
+
+A parallel branch, unaware of this ADR, built a **second** dashboard: Jinja2
+templates under `src/frontend/`, mounted on `/admin`, carrying the *Conseil
+agricole* page. Reconciling the two lines of work forced the choice again, this
+time against working code rather than against a hypothesis.
+
+The decision stands, and for the same reason it was taken: server-rendered
+templates put presentation logic back inside the API application, which is what
+the chapter's directive rules out, and it makes the future mobile and desktop
+clients second-class. Keeping both would have meant two interfaces to maintain,
+document and keep consistent — for one platform with one maintainer.
+
+`src/frontend/` and its `/admin` mount were removed; the *Conseil agricole* page
+was rebuilt on this stack (`src/web/static/`), and `tests/test_dashboard_agri.py`
+was replaced by `tests/test_web_agri.py` so the coverage moved with the feature
+instead of disappearing with the code.
+
+What the episode confirmed about the approach itself: rebuilding the page took a
+single phase, and the API client absorbed the new route without any other module
+learning that `/agri/advice` exists. What it confirmed about the gap this ADR
+accepts: three rendering defects — identifiers broken mid-word, a table column
+silently cut off, overlapping headers — were found only by driving a real
+browser. No HTTP test could have seen them, and none of them would have been
+caught by a JavaScript unit runner either. That argues for screenshot-level
+verification before it argues for a test framework.

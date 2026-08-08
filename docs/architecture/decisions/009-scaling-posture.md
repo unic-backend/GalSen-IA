@@ -144,3 +144,28 @@ first real multi-instance deployment — with its constraints known, not guessed
 - ADR-005 — persistent storage for memory, models and knowledge.
 - ADR-007 — connectors configured from the environment.
 - `src/api/scaling.py` — the inventory; `tests/test_scaling.py` — its tests.
+
+## Amended (2026-08-08)
+
+The reconciliation with a parallel branch brought SQLite stores for the
+notification, calendar, email, cloud and file services. Two entries of the
+inventory above — `uploaded_files` and `notifications` — were therefore written
+against a state of the code that no longer holds: they are process-local under
+the default backend and **shared** under `GALSEN_STORAGE_BACKEND=sqlite`.
+
+`state_inventory()` now derives their scope from the configuration, exactly as it
+already did for engine state. The report is stricter about what it claims:
+
+| Backend | Blocking subsystems |
+|---------|--------------------|
+| `in-memory` (default) | key revocations, rate-limit counters, files, notifications, engine state |
+| `sqlite` | key revocations, rate-limit counters |
+
+This is the ADR's own failure mode, caught early: an inventory maintained by hand
+goes stale when the code moves under it. The consequence is recorded in the
+Negative section above and is the reason the tests assert the scope *follows the
+backend* rather than asserting a fixed value.
+
+The repair order is unchanged, and steps 3 and 4 are now done: what remains
+before a second instance is safe is the pair that no storage backend fixes —
+revocations and rate limiting.

@@ -7,20 +7,21 @@
   responses are not.
 - Extend SQLite persistence (ADR-005) to the audit and approval engines. The
   notification, calendar, email, cloud and file services already have their store.
+- Decide whether `LocalDiskStorageConnector` (ADR-007) and `SQLiteFileStore` /
+  `FileSystemCloudStore` should coexist. Three ways to put a file on disk arrived
+  from two branches; they overlap and nothing says which one a caller should use.
 
 - Report connector health inside `/health`, alongside the engines. The connectors are
   exposed on their own routes but a single health call still does not mention them.
   An unconfigured connector must not make the platform unhealthy.
 - Write a calendar connector (CalDAV or an API): the calendar tool answers
   `unavailable` until one exists.
-- Back the file service with the storage connector, now that `SQLiteFileStore`
-  and `LocalDiskStorageConnector` both exist and overlap.
-- Share the state that blocks a second instance (ADR-009), in this order:
-  API key revocations, rate-limit counters, uploaded files, notifications.
-  `/health` reports `multi_instance_ready: false` and names them. The trigger is
-  the first deployment that needs more than one instance — not a date.
-- Remove the temporary probes left at the repository root: `probe_agri.py` and
-  `tests/probe_test.py`.
+- Share the two subsystems that block a second instance whatever the storage
+  backend (ADR-009): API key revocations, then rate-limit counters. Files,
+  notifications and engine state are already cleared by
+  `GALSEN_STORAGE_BACKEND=sqlite`. `/health` reports `multi_instance_ready` and
+  names what remains. The trigger is the first deployment that needs more than
+  one instance — not a date.
 
 ## Medium Priority
 - Add log rotation. `logs/application.log` reached 6 MB and had silently broken the

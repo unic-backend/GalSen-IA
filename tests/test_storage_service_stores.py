@@ -26,19 +26,19 @@ import tempfile
 
 import pytest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from storage.sqlite_notification_store import SQLiteNotificationStore
-from storage.sqlite_calendar_store import SQLiteCalendarStore
-from storage.sqlite_email_store import SQLiteEmailStore
-from storage.sqlite_cloud_store import SQLiteCloudStore
-from storage.sqlite_file_store import SQLiteFileStore
+from src.storage.sqlite_notification_store import SQLiteNotificationStore
+from src.storage.sqlite_calendar_store import SQLiteCalendarStore
+from src.storage.sqlite_email_store import SQLiteEmailStore
+from src.storage.sqlite_cloud_store import SQLiteCloudStore
+from src.storage.sqlite_file_store import SQLiteFileStore
 
-from services.notification.types import Notification, NotificationType, NotificationPriority
-from services.calendar.types import CalendarEvent, EventStatus, EventVisibility
-from services.email.types import EmailMessage, EmailAttachment, EmailStatus
-from services.cloud.types import CloudFileItem, CloudProvider, CloudFileCategory
-from services.file.types import FileItem, FileCategory
+from src.services.notification.types import Notification, NotificationType, NotificationPriority
+from src.services.calendar.types import CalendarEvent, EventStatus, EventVisibility
+from src.services.email.types import EmailMessage, EmailAttachment, EmailStatus
+from src.services.cloud.types import CloudFileItem, CloudProvider, CloudFileCategory
+from src.services.file.types import FileItem, FileCategory
 
 
 # ==============================================================================
@@ -818,75 +818,75 @@ class TestServiceBackendSelection:
         """GALSEN_STORAGE_BACKEND=sqlite branche le service sur SQLite."""
         monkeypatch.setenv("GALSEN_STORAGE_BACKEND", "sqlite")
         monkeypatch.setenv("GALSEN_DATA_DIR", str(tmp_path))
-        from services.notification.manager import NotificationManagerImpl
+        from src.services.notification.manager import NotificationManagerImpl
         manager = NotificationManagerImpl()
         assert isinstance(manager._store, SQLiteNotificationStore)
 
     def test_notification_manager_defaults_in_memory(self, monkeypatch):
         """Sans variable d'environnement, reste en mémoire."""
         monkeypatch.delenv("GALSEN_STORAGE_BACKEND", raising=False)
-        from services.notification.manager import NotificationManagerImpl
-        from services.notification.store import InMemoryNotificationStore
+        from src.services.notification.manager import NotificationManagerImpl
+        from src.services.notification.store import InMemoryNotificationStore
         manager = NotificationManagerImpl()
         assert isinstance(manager._store, InMemoryNotificationStore)
 
     def test_notification_manager_explicit_store_wins(self, tmp_path, monkeypatch):
         """Un store injecté prime sur la variable d'environnement."""
         monkeypatch.setenv("GALSEN_STORAGE_BACKEND", "sqlite")
-        from services.notification.store import InMemoryNotificationStore
+        from src.services.notification.store import InMemoryNotificationStore
         injected = InMemoryNotificationStore()
-        from services.notification.manager import NotificationManagerImpl
+        from src.services.notification.manager import NotificationManagerImpl
         manager = NotificationManagerImpl(store=injected)
         assert manager._store is injected
 
     def test_calendar_manager_uses_sqlite_when_env_set(self, tmp_path, monkeypatch):
         monkeypatch.setenv("GALSEN_STORAGE_BACKEND", "sqlite")
-        from services.calendar.manager import CalendarManagerImpl
+        from src.services.calendar.manager import CalendarManagerImpl
         manager = CalendarManagerImpl()
         assert isinstance(manager._store, SQLiteCalendarStore)
 
     def test_calendar_manager_defaults_in_memory(self, monkeypatch):
         monkeypatch.delenv("GALSEN_STORAGE_BACKEND", raising=False)
-        from services.calendar.manager import CalendarManagerImpl
-        from services.calendar.store import InMemoryCalendarStore
+        from src.services.calendar.manager import CalendarManagerImpl
+        from src.services.calendar.store import InMemoryCalendarStore
         manager = CalendarManagerImpl()
         assert isinstance(manager._store, InMemoryCalendarStore)
 
     def test_email_manager_uses_sqlite_when_env_set(self, tmp_path, monkeypatch):
         monkeypatch.setenv("GALSEN_STORAGE_BACKEND", "sqlite")
-        from services.email.manager import EmailManagerImpl
+        from src.services.email.manager import EmailManagerImpl
         manager = EmailManagerImpl()
         assert isinstance(manager._store, SQLiteEmailStore)
 
     def test_email_manager_defaults_in_memory(self, monkeypatch):
         monkeypatch.delenv("GALSEN_STORAGE_BACKEND", raising=False)
-        from services.email.manager import EmailManagerImpl
-        from services.email.store import InMemoryEmailStore
+        from src.services.email.manager import EmailManagerImpl
+        from src.services.email.store import InMemoryEmailStore
         manager = EmailManagerImpl()
         assert isinstance(manager._store, InMemoryEmailStore)
 
     def test_cloud_manager_uses_sqlite_when_env_set(self, tmp_path, monkeypatch):
         monkeypatch.setenv("GALSEN_STORAGE_BACKEND", "sqlite")
-        from services.cloud.manager import CloudManagerImpl
+        from src.services.cloud.manager import CloudManagerImpl
         manager = CloudManagerImpl()
         assert isinstance(manager._store, SQLiteCloudStore)
 
     def test_cloud_manager_defaults_in_memory(self, monkeypatch):
         monkeypatch.delenv("GALSEN_STORAGE_BACKEND", raising=False)
-        from services.cloud.manager import CloudManagerImpl
-        from services.cloud.store import InMemoryCloudStore
+        from src.services.cloud.manager import CloudManagerImpl
+        from src.services.cloud.store import InMemoryCloudStore
         manager = CloudManagerImpl()
         assert isinstance(manager._store, InMemoryCloudStore)
 
     def test_file_manager_uses_sqlite_when_env_set(self, tmp_path, monkeypatch):
         monkeypatch.setenv("GALSEN_STORAGE_BACKEND", "sqlite")
-        from services.file.manager import FileManagerImpl
+        from src.services.file.manager import FileManagerImpl
         manager = FileManagerImpl()
         assert isinstance(manager._store, SQLiteFileStore)
 
     def test_file_manager_defaults_in_memory(self, monkeypatch):
         monkeypatch.delenv("GALSEN_STORAGE_BACKEND", raising=False)
-        from services.file.manager import FileManagerImpl
-        from services.file.store import InMemoryFileStore
+        from src.services.file.manager import FileManagerImpl
+        from src.services.file.store import InMemoryFileStore
         manager = FileManagerImpl()
         assert isinstance(manager._store, InMemoryFileStore)
