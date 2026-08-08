@@ -39,6 +39,36 @@
     </header>
 
     <main>
+      <!-- Le conseil agricole passe en premier : c'est la fonctionnalité que la
+           plateforme rend à ses utilisateurs, le reste sert à l'exploiter. -->
+      <section aria-labelledby="titre-conseil" class="pleine-largeur">
+        <h2 id="titre-conseil">Conseil agricole</h2>
+        <p class="discret">
+          Une réponse adaptée au contexte agricole sénégalais, en français ou en
+          wolof.
+        </p>
+
+        <form id="formulaire-conseil">
+          <label for="question-agricole" class="discret">Votre question</label>
+          <textarea
+            id="question-agricole"
+            rows="3"
+            placeholder="Ex. : Quand planter le mil à Thiès ?"
+          ></textarea>
+
+          <div class="barre-conseil">
+            <label for="langue-conseil" class="discret">Langue</label>
+            <select id="langue-conseil">
+              <option value="fr">Français</option>
+              <option value="wo">Wolof</option>
+            </select>
+            <button id="demander-conseil" type="submit">Obtenir un conseil</button>
+          </div>
+        </form>
+
+        <div id="conseil"></div>
+      </section>
+
       <section aria-labelledby="titre-sante">
         <h2 id="titre-sante">Santé de la plateforme</h2>
         <div id="sante">

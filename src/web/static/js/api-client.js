@@ -151,6 +151,23 @@ export const api = {
     recharger: () => appeler("/auth/keys/reload", { methode: "POST" }),
   },
 
+  agri: {
+    /**
+     * Demande un conseil agricole.
+     *
+     * @param {string} question Question en français ou en wolof.
+     * @param {string} langue `fr` ou `wo`.
+     * @param {string|null} modele Modèle imposé, ou null pour laisser choisir.
+     */
+    conseil: (question, langue = "fr", modele = null) =>
+      appeler("/agri/advice", {
+        methode: "POST",
+        corps: modele
+          ? { question, language: langue, model_id: modele }
+          : { question, language: langue },
+      }),
+  },
+
   memoire: {
     enregistrer: (contenu, type = "short_term") =>
       appeler("/memory/store", {
