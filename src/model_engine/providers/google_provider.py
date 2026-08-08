@@ -6,6 +6,8 @@ Declares the Gemini model catalogue.
 
 import json
 import os
+import urllib.error
+import urllib.request
 from typing import List
 
 from .base import ModelDescriptor, GenerationRequest, GenerationResponse, ProviderStatus, UnavailabilityReason

@@ -25,6 +25,7 @@ from src.knowledge_engine.knowledge_manager import KnowledgeManagerImpl
 from src.approval_engine.approval_manager import ApprovalManagerImpl
 from src.tool.tool_engine import ToolEngine
 from src.tool.tool_loader import ToolLoader
+from src.tools.agri_advice.tool import AgriAdviceTool
 
 # Import du limiteur de taux
 from src.api.rate_limiter import (
@@ -71,6 +72,13 @@ from src.services.notification.types import NotificationType, NotificationPriori
 from src.services.search.manager import SearchManagerImpl
 from src.services.search.types import SearchQuery, SearchSource, SearchSort
 from src.services.file.manager import FileManagerImpl
+
+# Import des services d'intégration externe (VOLET 02, Phase 3)
+from src.services.cloud.manager import CloudManagerImpl
+from src.services.cloud.types import CloudProvider
+from src.services.calendar.manager import CalendarManagerImpl
+from src.services.calendar.types import EventStatus, EventVisibility
+from src.services.email.manager import EmailManagerImpl
 
 logger = logging.getLogger(__name__)
 
@@ -262,6 +270,11 @@ notification_manager = NotificationManagerImpl()
 search_manager = SearchManagerImpl()
 file_manager = FileManagerImpl()
 
+# Services d'intégration externe (VOLET 02, Phase 3)
+cloud_manager = CloudManagerImpl()
+calendar_manager = CalendarManagerImpl()
+email_manager = EmailManagerImpl()
+
 # Modèles Pydantic pour les requêtes/réponses
 class MemoryItemBase(BaseModel):
     content: Any = Field(..., description="Contenu de la mémoire")
@@ -298,6 +311,17 @@ class ModelGenerateResponse(BaseModel):
     model_used: str = Field(..., description="Modèle utilisé")
     tokens_used: int = Field(..., description="Nombre de tokens utilisés")
     latency_seconds: float = Field(..., description="Latence en secondes")
+
+class AgriAdviceRequest(BaseModel):
+    question: str = Field(..., description="Question agricole en français ou en wolof")
+    language: str = Field("fr", description="Langue de réponse : 'fr' ou 'wo'")
+    model_id: Optional[str] = Field(None, description="ID du modèle à utiliser (optionnel)")
+    max_tokens: Optional[int] = Field(None, description="Nombre maximum de tokens à générer")
+
+class AgriAdviceResponse(BaseModel):
+    answer: str = Field(..., description="Conseil agricole généré")
+    language: str = Field(..., description="Langue de la réponse")
+    model_used: str = Field(..., description="Modèle utilisé")
 
 class ToolExecuteRequest(BaseModel):
     tool_id: str = Field(..., description="Identifiant de l'outil à exécuter")
@@ -379,6 +403,91 @@ class FileListRequest(BaseModel):
     category: Optional[str] = Field(None, description="Filtrer par catégorie")
     content_type: Optional[str] = Field(None, description="Filtrer par type MIME")
     uploaded_by: Optional[str] = Field(None, description="Filtrer par utilisateur")
+
+
+# =========================================================================
+# Modèles Pydantic — Cloud Service
+# =========================================================================
+
+class CloudUploadRequest(BaseModel):
+    """Requête de téléversement cloud."""
+    name: str = Field(..., description="Nom du fichier")
+    content_type: str = Field(..., description="Type MIME")
+    data: str = Field(..., description="Contenu du fichier en base64")
+    provider: str = Field("local", description="Fournisseur cloud (local, s3, gcs, azure)")
+    uploaded_by: Optional[str] = Field(None, description="Identifiant utilisateur")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Métadonnées")
+
+
+class CloudListRequest(BaseModel):
+    """Paramètres de filtrage cloud."""
+    limit: int = Field(50, description="Nombre maximum de résultats")
+    offset: int = Field(0, description="Index de début")
+    provider: Optional[str] = Field(None, description="Filtrer par fournisseur")
+    category: Optional[str] = Field(None, description="Filtrer par catégorie")
+    uploaded_by: Optional[str] = Field(None, description="Filtrer par utilisateur")
+
+
+# =========================================================================
+# Modèles Pydantic — Calendar Service
+# =========================================================================
+
+class CalendarCreateRequest(BaseModel):
+    """Requête de création d'événement."""
+    title: str = Field(..., description="Titre de l'événement")
+    start_time: str = Field(..., description="Début (ISO 8601)")
+    end_time: str = Field(..., description="Fin (ISO 8601)")
+    description: Optional[str] = Field(None, description="Description")
+    location: Optional[str] = Field(None, description="Lieu")
+    organizer: Optional[str] = Field(None, description="Organisateur")
+    attendees: List[str] = Field(default_factory=list, description="Participants")
+    status: str = Field("confirmed", description="Statut (confirmed, tentative, cancelled)")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Métadonnées")
+
+
+class CalendarListRequest(BaseModel):
+    """Paramètres de filtrage des événements."""
+    limit: int = Field(50, description="Nombre maximum de résultats")
+    offset: int = Field(0, description="Index de début")
+    status: Optional[str] = Field(None, description="Filtrer par statut")
+    organizer: Optional[str] = Field(None, description="Filtrer par organisateur")
+    start_after: Optional[str] = Field(None, description="Début après cette date (ISO 8601)")
+    start_before: Optional[str] = Field(None, description="Début avant cette date (ISO 8601)")
+
+
+class CalendarUpdateRequest(BaseModel):
+    """Requête de mise à jour d'événement."""
+    title: Optional[str] = Field(None, description="Titre")
+    start_time: Optional[str] = Field(None, description="Début (ISO 8601)")
+    end_time: Optional[str] = Field(None, description="Fin (ISO 8601)")
+    description: Optional[str] = Field(None, description="Description")
+    location: Optional[str] = Field(None, description="Lieu")
+    status: Optional[str] = Field(None, description="Statut")
+
+
+# =========================================================================
+# Modèles Pydantic — Email Service
+# =========================================================================
+
+class EmailSendRequest(BaseModel):
+    """Requête d'envoi d'email."""
+    subject: str = Field(..., description="Sujet de l'email")
+    body: str = Field(..., description="Corps du message")
+    sender: str = Field(..., description="Adresse expéditeur")
+    recipients: List[str] = Field(..., description="Destinataires")
+    cc: List[str] = Field(default_factory=list, description="Copie carbone")
+    bcc: List[str] = Field(default_factory=list, description="Copie carbone invisible")
+    is_html: bool = Field(False, description="Corps en HTML")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Métadonnées")
+
+
+class EmailListRequest(BaseModel):
+    """Paramètres de filtrage des emails."""
+    limit: int = Field(50, description="Nombre maximum de résultats")
+    offset: int = Field(0, description="Index de début")
+    status: Optional[str] = Field(None, description="Filtrer par statut")
+    sender: Optional[str] = Field(None, description="Filtrer par expéditeur")
+    recipient: Optional[str] = Field(None, description="Filtrer par destinataire")
 
 # Endpoints de santé
 
@@ -581,6 +690,35 @@ async def generate_text(request: ModelGenerateRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la génération: {str(e)}")
+
+# Endpoint conseil agricole (première feature pour les utilisateurs sénégalais)
+@app.post("/agri/advice", response_model=AgriAdviceResponse, tags=["agri"],
+          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MODEL_GENERATE))])
+async def agri_advice(request: AgriAdviceRequest):
+    """Obtenir un conseil agricole adapté au contexte sénégalais, en français ou en wolof."""
+    if not request.question.strip():
+        raise HTTPException(status_code=422, detail="La question ne peut pas être vide")
+    if request.language not in ("fr", "wo"):
+        raise HTTPException(status_code=422, detail="Langue invalide : 'fr' ou 'wo' uniquement")
+
+    tool = AgriAdviceTool()
+    gen_params = {"language": request.language}
+    if request.model_id is not None:
+        gen_params["model_id"] = request.model_id
+    if request.max_tokens is not None:
+        gen_params["max_tokens"] = request.max_tokens
+
+    try:
+        result = tool.execute("get_advice", request.question, **gen_params)
+        return AgriAdviceResponse(
+            answer=result["answer"],
+            language=result["language"],
+            model_used=result["model_used"],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Génération du conseil impossible : {e}")
 
 # Endpoints outils
 @app.post("/tool/execute", response_model=ToolExecuteResponse, tags=["tool"],
@@ -1113,6 +1251,271 @@ async def delete_file(file_id: str):
         raise HTTPException(status_code=404, detail=f"Fichier {file_id} introuvable")
     return {"file_id": file_id, "status": "deleted"}
 
+
+# =========================================================================
+# Endpoints — Cloud Service
+# =========================================================================
+
+@app.post("/cloud/upload", tags=["cloud"],
+          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
+async def cloud_upload(request: CloudUploadRequest):
+    """Téléverse un fichier vers le cloud."""
+    import base64
+    try:
+        data = base64.b64decode(request.data)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Données base64 invalides")
+
+    result = cloud_manager.upload(
+        name=request.name,
+        content_type=request.content_type,
+        data=data,
+        provider=CloudProvider.LOCAL if request.provider == "local"
+                else CloudProvider.S3 if request.provider == "s3"
+                else CloudProvider.GCS if request.provider == "gcs"
+                else CloudProvider.AZURE,
+        uploaded_by=request.uploaded_by,
+        metadata=request.metadata,
+    )
+    if not result.success:
+        raise HTTPException(status_code=400, detail=result.message)
+    return {"file_id": result.file_id, "status": "uploaded"}
+
+
+@app.post("/cloud/list", tags=["cloud"],
+          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def cloud_list_files(request: CloudListRequest):
+    """Liste les fichiers cloud avec filtres."""
+    files = cloud_manager.list_files(
+        limit=request.limit,
+        offset=request.offset,
+        provider=request.provider,
+        category=request.category,
+        uploaded_by=request.uploaded_by,
+    )
+    return {
+        "files": [f.to_dict() for f in files],
+        "total": len(files),
+    }
+
+
+@app.get("/cloud/{file_id}", tags=["cloud"],
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def cloud_get_file(file_id: str):
+    """Retourne les métadonnées d'un fichier cloud."""
+    file = cloud_manager.get_file(file_id)
+    if file is None:
+        raise HTTPException(status_code=404, detail=f"Fichier cloud {file_id} introuvable")
+    return file.to_dict()
+
+
+@app.get("/cloud/{file_id}/download", tags=["cloud"],
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def cloud_download(file_id: str):
+    """Télécharge un fichier cloud."""
+    data = cloud_manager.download(file_id)
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"Fichier cloud {file_id} introuvable")
+    from fastapi.responses import Response
+    return Response(content=data, media_type="application/octet-stream")
+
+
+@app.get("/cloud/stats", tags=["cloud"],
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def cloud_stats():
+    """Statistiques agrégées du stockage cloud."""
+    return cloud_manager.stats()
+
+
+@app.delete("/cloud/{file_id}", tags=["cloud"],
+            dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_DELETE))])
+async def cloud_delete(file_id: str):
+    """Supprime un fichier cloud."""
+    success = cloud_manager.delete(file_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Fichier cloud {file_id} introuvable")
+    return {"file_id": file_id, "status": "deleted"}
+
+
+# =========================================================================
+# Endpoints — Calendar Service
+# =========================================================================
+
+def _resolve_event_status(raw: str) -> EventStatus:
+    """Résout un nom de statut d'événement."""
+    try:
+        return EventStatus(raw)
+    except ValueError:
+        return EventStatus.CONFIRMED
+
+
+@app.post("/calendar/create", tags=["calendar"],
+          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
+async def calendar_create(request: CalendarCreateRequest):
+    """Crée un nouvel événement de calendrier."""
+    result = calendar_manager.create_event(
+        title=request.title,
+        start_time=request.start_time,
+        end_time=request.end_time,
+        description=request.description,
+        location=request.location,
+        organizer=request.organizer,
+        attendees=request.attendees,
+        status=_resolve_event_status(request.status),
+        metadata=request.metadata,
+    )
+    if not result.success:
+        raise HTTPException(status_code=400, detail=result.message)
+    return {
+        "event_id": result.event_id,
+        "event": result.event.to_dict() if result.event else None,
+        "status": "created",
+    }
+
+
+@app.post("/calendar/list", tags=["calendar"],
+          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def calendar_list(request: CalendarListRequest):
+    """Liste les événements avec filtres."""
+    events = calendar_manager.list_events(
+        limit=request.limit,
+        offset=request.offset,
+        status=request.status,
+        organizer=request.organizer,
+        start_after=request.start_after,
+        start_before=request.start_before,
+    )
+    return {
+        "events": [e.to_dict() for e in events],
+        "total": len(events),
+    }
+
+
+@app.get("/calendar/{event_id}", tags=["calendar"],
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def calendar_get(event_id: str):
+    """Retourne un événement par son identifiant."""
+    event = calendar_manager.get_event(event_id)
+    if event is None:
+        raise HTTPException(status_code=404, detail=f"Événement {event_id} introuvable")
+    return event.to_dict()
+
+
+@app.put("/calendar/{event_id}", tags=["calendar"],
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
+async def calendar_update(event_id: str, request: CalendarUpdateRequest):
+    """Met à jour un événement."""
+    updates = {k: v for k, v in request.model_dump(exclude_none=True).items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="Aucune mise à jour fournie")
+    success = calendar_manager.update_event(event_id, updates)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Événement {event_id} introuvable")
+    return {"event_id": event_id, "status": "updated"}
+
+
+@app.post("/calendar/{event_id}/cancel", tags=["calendar"],
+          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
+async def calendar_cancel(event_id: str):
+    """Annule un événement."""
+    success = calendar_manager.cancel_event(event_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Événement {event_id} introuvable")
+    return {"event_id": event_id, "status": "cancelled"}
+
+
+@app.delete("/calendar/{event_id}", tags=["calendar"],
+            dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_DELETE))])
+async def calendar_delete(event_id: str):
+    """Supprime un événement."""
+    success = calendar_manager.delete_event(event_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Événement {event_id} introuvable")
+    return {"event_id": event_id, "status": "deleted"}
+
+
+@app.get("/calendar/stats", tags=["calendar"],
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def calendar_stats():
+    """Statistiques agrégées du calendrier."""
+    return calendar_manager.stats()
+
+
+# =========================================================================
+# Endpoints — Email Service
+# =========================================================================
+
+@app.post("/email/send", tags=["email"],
+          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
+async def email_send(request: EmailSendRequest):
+    """Envoie un email."""
+    result = email_manager.send_email(
+        subject=request.subject,
+        body=request.body,
+        sender=request.sender,
+        recipients=request.recipients,
+        cc=request.cc or None,
+        bcc=request.bcc or None,
+        is_html=request.is_html,
+        metadata=request.metadata,
+    )
+    if not result.success:
+        raise HTTPException(status_code=400, detail=result.message)
+    return {
+        "email_id": result.email_id,
+        "status": "sent",
+        "details": result.details,
+    }
+
+
+@app.post("/email/list", tags=["email"],
+          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def email_list(request: EmailListRequest):
+    """Liste les emails avec filtres."""
+    emails = email_manager.list_emails(
+        limit=request.limit,
+        offset=request.offset,
+        status=request.status,
+        sender=request.sender,
+        recipient=request.recipient,
+    )
+    return {
+        "emails": [e.to_dict() for e in emails],
+        "total": len(emails),
+    }
+
+
+@app.get("/email/{email_id}", tags=["email"],
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def email_get(email_id: str):
+    """Retourne un email par son identifiant."""
+    email = email_manager.get_email(email_id)
+    if email is None:
+        raise HTTPException(status_code=404, detail=f"Email {email_id} introuvable")
+    return email.to_dict()
+
+
+@app.delete("/email/{email_id}", tags=["email"],
+            dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_DELETE))])
+async def email_delete(email_id: str):
+    """Supprime un email."""
+    success = email_manager.delete_email(email_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Email {email_id} introuvable")
+    return {"email_id": email_id, "status": "deleted"}
+
+
+@app.get("/email/stats", tags=["email"],
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def email_stats():
+    """Statistiques agrégées des emails."""
+    return email_manager.stats()
+
+
+# L'interface web est servie sous `/ui` (ADR-008), montée plus haut. Un second
+# tableau de bord Jinja2 avait été monté ici sur `/admin` : deux interfaces
+# concurrentes pour la même plateforme, c'est une de trop à maintenir et à
+# documenter. `/ui` est la décision retenue ; `src/frontend/` a été retiré.
 
 # Point d'entrée pour exécuter le serveur directement (pour le développement)
 if __name__ == "__main__":

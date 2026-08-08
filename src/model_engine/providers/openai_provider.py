@@ -12,7 +12,7 @@ from typing import List, Optional, Dict, Any
 import urllib.request
 import urllib.error
 
-from .base import GenerationRequest, GenerationResponse
+from .base import GenerationRequest, GenerationResponse, ProviderStatus, UnavailabilityReason
 from .hosted_provider import HostedProvider
 from .base import ModelDescriptor
 

@@ -41,3 +41,9 @@ temp/
 # Coverage
 .coverage
 htmlcov/
+
+# Added by code-review-graph
+.code-review-graph/
+
+# Bases de donnees locales : la donnee ne se versionne pas
+data/

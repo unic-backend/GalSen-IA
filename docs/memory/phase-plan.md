@@ -1,6 +1,6 @@
 # Phase Plan
 
-Où en est le découpage en phases du VOLET en cours.
+Où en est le découpage en phases du travail en cours.
 Protocole complet → `.claude/rules/phase-protocol.md`.
 
 Ce fichier est chargé au démarrage de chaque session : il dit quelle phase
@@ -8,10 +8,18 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 02 terminé (10 chapitres / 10)
-**Phases** : —
-**Phase courante** : —
-**Terminées** : —
+**Travail en cours** : réconciliation des deux lignes de développement
+**Phases** : 4
+**Phase courante** : R.2 — en attente de confirmation
+**Terminées** : R.1
 
-**Prochaine action** : choisir le prochain VOLET (03 Development Manual ou
-04 Roadmap), lire ses chapitres, publier le plan de phases, puis s'arrêter.
+```
+R.1  Merge mécanique       ✅ 12 conflits résolus, src/frontend/ retiré, l'app démarre
+R.2  Suite verte           ⏳ faire passer les tests des deux côtés ensemble
+R.3  Page Conseil Agricole    portée dans src/web/ (ADR-008) + ses tests
+R.4  Mémoire, ADR, PR         trace de la réconciliation
+```
+
+**Note pour R.3** : `tests/test_dashboard_agri.py` a été retiré avec
+`src/frontend/`. La page portée dans `src/web/` doit retrouver une couverture
+équivalente — sinon la décision aura coûté des tests sans les remplacer.

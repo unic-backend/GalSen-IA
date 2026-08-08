@@ -103,8 +103,8 @@ class AnthropicProvider(HostedProvider):
         # Convertir le format de requête générique au format Anthropic
         messages = []
         if request.system_prompt:
-            # Anthropic يضع الرسالة النظامية بشكل منفصل
-            pass  # سيتم التعامل مع system_prompt بشكل منفصل في الحقل المخصص
+            # Anthropic place le system prompt dans un champ dédié
+            pass  # sera mis dans le champ "system" dédié ci-dessous
         messages.append({"role": "user", "content": request.prompt})
 
         payload = {
@@ -120,14 +120,14 @@ class AnthropicProvider(HostedProvider):
         if request.stop_sequences:
             payload["stop_sequences"] = request.stop_sequences
 
-        # فاستدعاء API
+        # Appel API
         started_at = time.time()
         try:
             req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
             with urllib.request.urlopen(req, timeout=30) as response:
                 response_data = json.loads(response.read().decode('utf-8'))
 
-            # استخراج الاستجابة
+            # Extraction de la réponse
             content = response_data.get('content', [{}])[0].get('text', '')
 
             return GenerationResponse(
@@ -143,13 +143,13 @@ class AnthropicProvider(HostedProvider):
             error_body = e.read().decode('utf-8') if e.read() else str(e)
             if e.code == 401:
                 reason = UnavailabilityReason.UNAUTHORIZED
-                detail = "مفتاح واجهة برمجة تطبيقات أنثاروبك غير صالح أو مفقود"
+                detail = "Clé API Anthropic invalide ou absente"
             elif e.code == 429:
                 reason = UnavailabilityReason.QUOTA_EXCEEDED
-                detail = "تم تجاوز حصة أنثاروبك"
+                detail = "Quota Anthropic dépassé"
             else:
                 reason = UnavailabilityReason.UNAVAILABLE
-                detail = f"خطأ في واجهة برمجة تطبيقات أنثاروبك: {e.code}"
+                detail = f"Erreur API Anthropic: {e.code}"
 
             return GenerationResponse.unavailable(
                 provider_id=self.provider_id,
@@ -162,5 +162,5 @@ class AnthropicProvider(HostedProvider):
                 provider_id=self.provider_id,
                 model_name=request.model_name,
                 reason=UnavailabilityReason.UNAVAILABLE,
-                detail=f"حدث خطأ أثناء استدعاء واجهة برمجة تطبيقات أنثاروبك: {str(e)}",
+                detail=f"Erreur lors de l'appel à l'API Anthropic: {str(e)}",
             )

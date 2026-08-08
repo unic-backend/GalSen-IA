@@ -10,25 +10,26 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 ## Dernière session
 
-**Date** : 2026-08-06
+**Date** : 2026-08-08
 
-**En cours** : Rien. **VOLET 02 terminé, 10 chapitres sur 10.**
+**En cours** : réconciliation des deux branches — phase R.1 terminée, R.2 à faire.
 
 **Terminé dans cette session**
-- **ch. 10 (montée en charge) — ADR-009** : la plateforme tourne en **une seule
-  instance** et le dit à l'exécution (`/health` → `scaling`, `scope: "instance"`
-  sur les routes de clés). Quatre sous-systèmes cassent avec une 2ᵉ instance ;
-  ordre de réparation fixé : révocations → limiteur → fichiers → notifications.
-  Aucune infrastructure (Redis, files d'attente, réplicas) n'a été ajoutée.
-- **ch. 02 (frontend) — ADR-008** : tableau de bord sans étape de construction
-  sous `/ui`, vérifié dans un vrai navigateur.
-- Tests : **1008 passants**, 5 ignorés.
+- **VOLET 02 clos** (10/10) : ADR-008 (tableau de bord `/ui` sans build) et
+  ADR-009 (une seule instance, dite à l'exécution via `/health`).
+- **Protocole de phases** installé : une phase par tour, plan avant chaque VOLET
+  (`.claude/rules/phase-protocol.md`, chargé au démarrage).
+- **Merge de `feature/service-unit-tests`** : 12 conflits résolus. Arrivent les
+  services calendar/cloud/email, 5 stores SQLite de service, le SDK client,
+  `POST /agri/advice` et le serveur local Ollama (`serveur_cerveau.py`).
+- **Décision** : `src/frontend/` (Jinja2) est abandonné, `/ui` (ADR-008) reste.
+  La page « Conseil Agricole » sera portée dans `src/web/`.
 
 **Prochaine étape**
-Choisir le prochain VOLET. VOLET 03 (Development Manual) ou VOLET 04 (Roadmap)
-sont les suites naturelles ; VOLET 01 (Master Constitution) sert d'arbitrage.
+Phase R.2 : faire passer la suite complète après le merge — les tests des deux
+côtés n'ont jamais tourné ensemble. Puis R.3 (page agricole), R.4 (mémoire, PR).
 
 **Bloqué / à surveiller**
-- `/model/generate` répond 503 : il ne manque qu'une clé dans l'environnement.
-- Une clé révoquée n'est coupée que sur l'instance jointe (ADR-009).
+- `tests/test_agri_advice.py` attend peut-être des exceptions là où l'outil
+  retourne un statut : c'est la version « statut » qui a été gardée.
 - Perdre `GALSEN_ENCRYPTION_KEY` = perdre les données chiffrées, sans recours.
