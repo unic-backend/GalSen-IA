@@ -10,8 +10,8 @@ exécuter, et une seule.
 
 **VOLET en cours** : 16 — Authentication & Identity Engine
 **Phases** : 12
-**Phase courante** : 3.1 — en cours
-**Terminées** : 1.1, 2.1, 2.2
+**Phase courante** : 3.2 — en cours
+**Terminées** : 1.1, 2.1, 2.2, 3.1
 **Cadence** : VOLET entier demandé par l'utilisateur
 
 ```
@@ -23,7 +23,7 @@ Ch. 02  Architecture     → 2 phases
   2.2  ✅ ADR-010 acceptée : une clé appartient à un sujet, sans magasin de secrets
 
 Ch. 03  Lifecycle        → 2 phases
-  3.1  Enregistrement et stockage d'une identité
+  3.1  ✅ cloisonnement par sujet sur la mémoire — critère C2 atteint pour ce magasin
   3.2  Suspension, révocation, retrait — en réutilisant la révocation existante
 
 Ch. 04  Management       → 1 phase (indivisible)

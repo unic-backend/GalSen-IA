@@ -103,14 +103,18 @@ so CI stays green without secrets while the criterion stays honest.
 *Today:* 503. Four providers implemented, none configured. This is one environment
 variable away, not one project away.
 
-### C2 — A user exists, and their data is theirs
+### C2 — A user exists, and their data is theirs — **met for memory**
 
 An account can be created, and two accounts cannot see each other's memories, files or
 notifications.
 
-*Check:* a test where user A stores a memory and user B lists memories without seeing it.
-*Today:* impossible to write. API keys map to roles, not to people. Needs an ADR before
-any code (VOLET_16, Authentication & Identity).
+*Check:* `tests/test_identity.py::TestCritereC2` — one subject stores a memory, another
+gets 404 on it and nothing from a search that matches it.
+*Today:* **met for memory**, open for files and notifications. ADR-010 gives a key a
+subject; `/memory/store` takes its owner from the authenticated subject instead of the
+request body, `/memory/retrieve` answers 404 rather than 403 on someone else's data, and
+`/memory/search` filters. Files and notifications carry no owner yet, so the same
+treatment has to reach them before C2 is fully closed.
 
 ### C3 — Automation is demonstrated, not merely loadable
 

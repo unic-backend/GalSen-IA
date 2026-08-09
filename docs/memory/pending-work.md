@@ -11,11 +11,11 @@ gets re-argued at every review.
 
 ## P0 — Critical · nothing else is scheduled until these move
 
-- **Decide whether the platform has users.** API keys map to roles, not to people: no
-  account, no identity, no per-user data. Phase 2's workspace, Phase 3's collaboration
-  and every adoption metric rest on this.
-  *Deciding criterion:* strategic alignment — it gates more work than anything else in
-  this file, and it is a decision, not a build. Needs an ADR first (VOLET_16, Authentication & Identity).
+- **Scope files and notifications by subject**, as memory now is. ADR-010 gave a key a
+  subject and `/memory/*` enforces ownership, but `FileItem` and `Notification` carry no
+  owner: exit criterion C2 is met for one store out of three.
+  *Deciding criterion:* security implications — the identity exists now, so every store
+  that ignores it is a gap rather than an absence.
 
 - **Configure a model provider.** The proof now exists
   (`tests/test_generation_end_to_end.py`): it skips while no provider answers and runs the

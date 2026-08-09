@@ -57,6 +57,7 @@ from src.api.security_headers import (
 
 # Import du RBAC
 from src.api.rbac import (
+    ANONYMOUS_SUBJECT,
     RBACManager,
     Permission,
     RBACContext,
@@ -578,15 +579,58 @@ async def liveness_check():
     return {"status": "alive" if alive else "dead"}
 
 # Endpoints mémoire
+def _proprietaire_effectif(ctx: RBACContext, demande: Optional[str]) -> str:
+    """
+    Détermine à qui appartient une donnée écrite (ADR-010).
+
+    Args:
+        ctx: Contexte de la requête, porteur du sujet authentifié.
+        demande: Propriétaire réclamé dans le corps de la requête, s'il y en a un.
+
+    Returns:
+        Le sujet authentifié, sauf pour un administrateur qui peut en désigner
+        un autre explicitement.
+    """
+    if demande and ctx.has_permission(Permission.ADMIN_MANAGE):
+        return demande
+    return ctx.subject
+
+
+def _appartient_au_sujet(ctx: RBACContext, proprietaire: Optional[str]) -> bool:
+    """
+    Indique si l'appelant a le droit de voir une donnée.
+
+    Un administrateur voit tout : c'est ce qui rend l'exploitation possible.
+    Une donnée sans propriétaire est visible du sujet anonyme, ce qui préserve
+    le comportement des déploiements dont les clés ne nomment personne.
+    """
+    if ctx.has_permission(Permission.ADMIN_MANAGE):
+        return True
+    return (proprietaire or ANONYMOUS_SUBJECT) == ctx.subject
+
+
 @app.post("/memory/store", response_model=MemoryItemResponse, tags=["memory"],
-           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
-async def store_memory(item: MemoryItemCreate):
-    """Stocker un nouvel élément de mémoire."""
+           dependencies=[Depends(rate_limit_dependency)])
+async def store_memory(
+    item: MemoryItemCreate,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_WRITE)),
+):
+    """Stocker un nouvel élément de mémoire, au nom de l'appelant.
+
+    Le propriétaire est **le sujet authentifié**, pas un champ du corps de la
+    requête : sans cela, n'importe quel porteur de clé pouvait écrire dans la
+    mémoire d'un autre en déclarant son identifiant (ADR-010, critère C2).
+
+    Un administrateur peut désigner un autre propriétaire — c'est ce qui permet
+    d'amorcer des données ou d'en reprendre pour quelqu'un.
+    """
+    proprietaire = _proprietaire_effectif(ctx, item.user_id)
+
     # Créer un MemoryItem à partir des données reçues
     memory_item = MemoryItem(
         content=item.content,
         memory_type=item.memory_type,
-        user_id=item.user_id,
+        user_id=proprietaire,
         session_id=item.session_id,
         agent_id=item.agent_id,
         tags=item.tags,
@@ -617,11 +661,20 @@ async def store_memory(item: MemoryItemCreate):
     }
 
 @app.get("/memory/retrieve/{item_id}", response_model=MemoryItemResponse, tags=["memory"],
-           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def retrieve_memory(item_id: str):
-    """Récupérer un élément de mémoire par son ID."""
+           dependencies=[Depends(rate_limit_dependency)])
+async def retrieve_memory(
+    item_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Récupérer un élément de mémoire appartenant à l'appelant.
+
+    La mémoire d'autrui répond **404 et non 403** : distinguer « cela existe
+    mais ne vous appartient pas » de « cela n'existe pas » permettrait
+    d'énumérer les identifiants d'autres sujets. Même raisonnement que pour une
+    clé révoquée, qui reçoit le message d'une clé inconnue.
+    """
     item = memory_manager.get_memory(item_id)
-    if item is None:
+    if item is None or not _appartient_au_sujet(ctx, item.user_id):
         raise HTTPException(status_code=404, detail="Élément de mémoire non trouvé")
     return {
         "id": item.id,
@@ -642,9 +695,23 @@ async def retrieve_memory(item_id: str):
 
 @app.post("/memory/search", response_model=List[MemoryItemResponse], tags=["memory"],
             dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def search_memory(query: str, limit: int = 10):
-    """Rechercher des éléments de mémoire par similaire."""
+async def search_memory(
+    query: str,
+    limit: int = 10,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Rechercher dans la mémoire de l'appelant.
+
+    Le filtrage est appliqué **après** la recherche : le moteur de mémoire ne
+    connaît pas les sujets, et lui apprendre l'autorisation mélangerait deux
+    responsabilités. La conséquence est assumée : la limite porte sur les
+    résultats bruts, donc une recherche peut rendre moins d'éléments que
+    demandé.
+    """
     results = memory_manager.search_memory(query, limit=limit)
+    results = [
+        (item, score) for item, score in results if _appartient_au_sujet(ctx, item.user_id)
+    ]
     # Convertir les tuples (item, score) en objets de réponse
     response_items = []
     for item, score in results:

@@ -224,3 +224,101 @@ class TestRouteWhoami:
     def test_une_cle_absente_est_refusee(self, client):
         """La route n'a pas de permission propre, mais elle exige une identité."""
         assert client.get("/auth/whoami").status_code == 401
+
+
+class TestCritereC2:
+    """Le critère de sortie C2, tel qu'écrit dans la roadmap.
+
+    « Deux comptes ne peuvent pas voir les mémoires, fichiers ou notifications
+    l'un de l'autre. » Avant l'ADR-010 ce test était impossible à écrire : il n'y
+    avait pas de compte. Il porte ici sur la mémoire, la plus représentative des
+    trois — le propriétaire y était un champ du corps de la requête.
+    """
+
+    @pytest.fixture
+    def trois_sujets(self, monkeypatch):
+        """Deux usagers et un administrateur, sur l'application réelle."""
+        from fastapi.testclient import TestClient
+
+        import src.api.server as serveur
+        from src.api.rate_limiter import set_valid_api_key_digests
+
+        gestionnaire = serveur.rbac_manager
+        ancien = dict(gestionnaire._key_role_map)
+        anciennes = set(gestionnaire._revoked_digests)
+
+        monkeypatch.setenv(
+            "GALSEN_API_KEYS", "cle-awa:user:awa,cle-mo:user:moussa,cle-adm:admin:chef"
+        )
+        gestionnaire.reload()
+        set_valid_api_key_digests(gestionnaire.active_key_digests())
+
+        with TestClient(serveur.app) as client:
+            yield (
+                client,
+                {"X-API-Key": "cle-awa"},
+                {"X-API-Key": "cle-mo"},
+                {"X-API-Key": "cle-adm"},
+            )
+
+        gestionnaire._key_role_map = ancien
+        gestionnaire._revoked_digests = anciennes
+        set_valid_api_key_digests(gestionnaire.active_key_digests())
+
+    @staticmethod
+    def _ecrire(client, entetes, contenu="note privée", **extra):
+        """Écrit une mémoire et retourne la réponse."""
+        return client.post(
+            "/memory/store",
+            json={"content": contenu, "memory_type": "long_term", **extra},
+            headers=entetes,
+        )
+
+    def test_le_proprietaire_est_le_sujet_authentifie(self, trois_sujets):
+        """Réclamer l'identité d'un autre dans le corps ne doit rien changer.
+
+        C'était le trou : `user_id` venait de la requête, donc n'importe quel
+        porteur de clé pouvait écrire dans la mémoire d'autrui.
+        """
+        client, awa, _, _ = trois_sujets
+        reponse = self._ecrire(client, awa, user_id="moussa")
+        assert reponse.status_code == 200
+        assert reponse.json()["user_id"] == "awa"
+
+    def test_un_sujet_ne_lit_pas_la_memoire_d_un_autre(self, trois_sujets):
+        """La définition même de C2."""
+        client, awa, moussa, _ = trois_sujets
+        identifiant = self._ecrire(client, awa).json()["id"]
+
+        assert client.get(f"/memory/retrieve/{identifiant}", headers=awa).status_code == 200
+        assert client.get(f"/memory/retrieve/{identifiant}", headers=moussa).status_code == 404
+
+    def test_le_refus_est_indiscernable_d_une_absence(self, trois_sujets):
+        """404 et non 403 : un 403 permettrait d'énumérer les identifiants d'autrui."""
+        client, awa, moussa, _ = trois_sujets
+        identifiant = self._ecrire(client, awa).json()["id"]
+
+        refus = client.get(f"/memory/retrieve/{identifiant}", headers=moussa)
+        inexistant = client.get("/memory/retrieve/identifiant-invente", headers=moussa)
+        assert refus.status_code == inexistant.status_code == 404
+        assert refus.json()["detail"] == inexistant.json()["detail"]
+
+    def test_la_recherche_ne_traverse_pas_les_sujets(self, trois_sujets):
+        """Interdire la lecture directe ne sert à rien si la recherche fuit."""
+        client, awa, moussa, _ = trois_sujets
+        self._ecrire(client, awa, contenu="récolte arachide")
+
+        assert client.post("/memory/search?query=arachide", headers=moussa).json() == []
+        assert client.post("/memory/search?query=arachide", headers=awa).json()
+
+    def test_un_administrateur_voit_tout(self, trois_sujets):
+        """L'exploitation resterait impossible sans cette exception."""
+        client, awa, _, admin = trois_sujets
+        identifiant = self._ecrire(client, awa).json()["id"]
+        assert client.get(f"/memory/retrieve/{identifiant}", headers=admin).status_code == 200
+
+    def test_un_administrateur_peut_designer_un_proprietaire(self, trois_sujets):
+        """Amorcer des données ou en reprendre pour quelqu'un doit rester possible."""
+        client, _, _, admin = trois_sujets
+        reponse = self._ecrire(client, admin, user_id="moussa")
+        assert reponse.json()["user_id"] == "moussa"
