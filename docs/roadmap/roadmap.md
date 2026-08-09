@@ -122,14 +122,21 @@ lifecycle stage 2). Whoever sets `GALSEN_API_KEYS` asserts who each key belongs 
 nothing checks it — acceptable while that person and the operator are the same, and the
 trigger for a real directory when they are not (ADR-010).
 
-### C3 — Automation is demonstrated, not merely loadable
+### C3 — Automation is demonstrated, not merely loadable — **met**
 
 `workflows/workflows.yaml` declares **at least two** workflows, and a test executes one end
 to end producing a result that differs from `standard`.
 
-*Check:* the test.
-*Today:* exactly one workflow, named `standard`. A loader and a planner exist; that proves
-the mechanism, not the capability.
+*Check:* `tests/test_workflow_revue.py` (12 tests).
+*Today:* **met.** The `revue` workflow — `reviewer` then `security` — runs the full
+pipeline in 0.2 s and produces real output: 40 files reviewed, 26 findings, 0 security
+issues. It carries its own `execution` block, which is what lets two workflows use
+different strategies.
+
+Two properties made it testable rather than merely declared: it contains neither `tester`
+nor `deployment`, so running it inside the suite does not run the suite inside itself; and
+both agents are static analysis, so no model is required. The tests never execute
+`standard` for exactly that reason, and compare the two on their *plan* instead.
 
 ### C4 — The platform has been reached over a network
 
@@ -140,17 +147,21 @@ address.
 *Today:* never done. This is Phase 1's asterisk, and it stays open into Phase 2 because
 nothing else on this list can be validated in production without it.
 
-### C5 — Health is answerable without reading logs
+### C5 — Health is answerable without reading logs — **met**
 
 A route reports request count, error rate and latency, and `logs/application.log` is
 bounded.
 
-*Check:* the route returns non-zero counters after traffic; the log file stops growing
-without limit.
-*Today:* three probes (`/health`, `/ready`, `/live`) answer *what is configured*, not
-*what is happening*. The `metrics` tool exists (`increment`, `set_gauge`,
-`record_histogram`, `get_metrics`) and **nothing feeds it** from request handling. The log
-file is 6.5 MB with no rotation.
+*Check:* `GET /metrics` after traffic; `tests/test_log_rotation.py` (18 tests) writes
+enough to trigger several rotations and asserts the total stays under the ceiling.
+*Today:* **met.** `/metrics` reports request count, error rate, per-route latency and the
+authentication success rate. The log uses `RotatingFileHandler` — 5 MB × 3 archives, so
+20 MB maximum instead of unbounded growth; `GALSEN_LOG_MAX_BYTES` and
+`GALSEN_LOG_BACKUP_COUNT` adjust it, and an unreadable value falls back to the default
+rather than reopening the growth.
+
+What remains open is not the criterion but the target: nothing declares an acceptable
+latency, so `release_check.py` still refuses to tick *performance targets verified*.
 
 ### C6 — The suite stays the gate
 
@@ -173,11 +184,12 @@ Naming these matters as much as the criteria: without it, the phase never ends.
 
 ### Where the phase actually stands
 
-Met: **C2**, **C6**. Open: **C1, C3, C4, C5**.
+Met: **C2**, **C3**, **C5**, **C6**. Open: **C1, C4** — and both are an operator's move, not a build.
 
-C2 was the one with a decision in front of it rather than work; ADR-010 took it and the
-scoping followed. C1 and C4 are now the cheapest remaining, and between them they turn
-the platform from a test suite into something a person can use.
+What is left is no longer engineering. **C1** needs a model provider — `ollama serve`
+with a context of at least 8192 costs nothing — and **C4** needs the platform deployed
+somewhere reachable. Between them they turn a test suite into something a person can use,
+and neither can be done from inside the repository.
 
 
 ---
