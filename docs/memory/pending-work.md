@@ -40,22 +40,11 @@ gets re-argued at every review.
   *Deciding criterion:* strategic alignment — nothing else on this list can be validated
   in production until this is true.
 
-- **Log rotation** (second half of criterion C5). `logs/application.log` is 6.7 MB and
-  43 638 lines with nothing capping it. The metrics half is done: `GET /metrics` now
-  reports request count, error rate and per-route latency.
-  *Deciding criterion:* performance impact and a demonstrated failure — the unbounded log
-  already broke the monitor agent once.
-
 - **Declare a performance target.** `/metrics` makes latency observable; nothing says what
   an acceptable latency is, so the release checklist keeps refusing to tick "performance
   targets verified" — correctly.
   *Deciding criterion:* strategic alignment — a measurement with no threshold informs no
   decision.
-
-- **A second workflow, with an end-to-end test** (criterion C3). One workflow named
-  `standard` proves the loader, not the capability.
-  *Deciding criterion:* business value — workflow automation is a Phase 2 item that is
-  currently asserted rather than shown.
 
 - **Cover the hosted-provider generation path with tests.** `_call_api` is implemented for
   OpenAI, Anthropic and Google; only the no-credentials branch is tested. A successful

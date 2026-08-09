@@ -10,6 +10,20 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **Exit criterion C3 met — a second workflow, executed**. `workflows/workflows.yaml`
+  declares `revue` (`reviewer` then `security`), which runs the full pipeline in
+  0.2 s and produces real output: 40 files reviewed, 26 findings, 0 security
+  issues. It carries its own `execution` block, which is what lets two workflows
+  use different strategies. `tests/test_workflow_revue.py`: 12 tests, and they
+  never execute `standard` — it contains `tester`, which would run the suite
+  inside the suite
+- **Exit criterion C5 met — the log is bounded.** `RotatingFileHandler` replaces
+  `logging.FileHandler`: 5 MB × 3 archives, so 20 MB maximum instead of the
+  6.7 MB and 43 638 lines it had reached with nothing capping it.
+  `GALSEN_LOG_MAX_BYTES` and `GALSEN_LOG_BACKUP_COUNT` adjust it; an unreadable
+  value falls back to the default rather than reopening unbounded growth.
+  `tests/test_log_rotation.py`: 18 tests, which write enough to trigger several
+  rotations rather than inspecting the handler's type
 - **Identity (VOLET 16, ADR-010)** — a key belongs to a subject
   - `GALSEN_API_KEYS` gains an optional third field: `secret:role:subject`.
     `RBACContext` carries `subject`; a key without one is anonymous, so no

@@ -22,11 +22,13 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 - **Preuve de C1** écrite : s'ignore sans fournisseur, s'exécute dès qu'il y en a un.
 - `GET /metrics` (trafic + taux d'authentification), `GET /auth/whoami`,
   `scripts/release_check.py`, `src/version.py` source unique.
-- Tests : **1494 passants**, 7 ignorés.
+- **C3 et C5 fermés** : workflow `revue` exécuté de bout en bout, journal borné.
+- Tests : **1524 passants**, 7 ignorés.
 
 **Prochaine étape**
 Choisir le prochain VOLET et publier son plan de phases. Critères de sortie de
-Phase 2 : C2 et C6 atteints ; C1, C3, C4, C5 ouverts.
+Phase 2 : **C2, C3, C5 et C6 atteints** ; restent C1 et C4, qui ne dépendent
+plus du code.
 
 **Bloqué / à surveiller**
 - **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192.

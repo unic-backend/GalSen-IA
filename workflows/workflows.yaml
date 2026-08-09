@@ -29,6 +29,33 @@ workflows:
 
       - monitor
 
+  # Deuxième workflow, et il existe pour une raison : un seul pipeline ne
+  # démontre pas l'automatisation, il démontre le chargeur (critère C3).
+  # « revue » relit un changement sans rien exécuter ni déployer — les deux
+  # agents sont de l'analyse statique, donc aucun modèle n'est requis et il
+  # tourne en quelques secondes, ce qui le rend testable de bout en bout.
+  revue:
+    description: "Relecture d'un changement : conventions, puis secrets et appels dangereux"
+
+    pipeline:
+
+      - reviewer
+
+      - security
+
+    # Bloc propre au workflow : le planificateur lit `execution` dans le
+    # workflow, pas à la racine du fichier. C'est ce qui permet à deux
+    # workflows d'avoir des stratégies différentes.
+    execution:
+
+      parallel_agents: []
+
+      sequential_agents:
+
+        - reviewer
+
+        - security
+
 execution:
 
   parallel_agents:
