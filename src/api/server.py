@@ -42,6 +42,9 @@ from src.api.health import (
 # Import de l'inventaire d'état local au processus (VOLET 02 ch. 10, ADR-009)
 from src.api.scaling import instance_id, scaling_report
 
+# Import de la mesure du trafic réel (VOLET 04 ch. 09, critère C5)
+from src.api.metrics import RequestMetricsMiddleware, metrics_snapshot
+
 # Version de la plateforme — source unique (src/version.py)
 from src.version import __version__
 
@@ -220,6 +223,11 @@ app = FastAPI(
 
 # En-têtes de sécurité sur toutes les réponses
 app.add_middleware(SecurityHeadersMiddleware)
+
+# Mesure du trafic. Ajouté après la sécurité : Starlette exécute les
+# intergiciels dans l'ordre inverse de leur ajout, donc celui-ci enveloppe
+# l'autre et voit le code de statut réellement renvoyé.
+app.add_middleware(RequestMetricsMiddleware)
 
 # Origines croisées : aucune par défaut. `allow_origins=["*"]` avec
 # `allow_credentials=True` renvoyait l'origine de l'appelant quelle qu'elle
@@ -540,6 +548,22 @@ async def readiness_check():
         return {"status": "ready", "reason": reason}
     else:
         raise HTTPException(status_code=503, detail=reason)
+
+
+@app.get("/metrics", tags=["health"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def metrics():
+    """Ce que la plateforme a réellement fait : requêtes, erreurs, latences.
+
+    `/health` répond « qu'est-ce qui est configuré ». Cette route répond
+    « qu'est-ce qui se passe » — sans quoi la seule façon de le savoir est
+    d'ouvrir les journaux, ce que le chapitre 09 exclut.
+
+    Contrairement à `/health`, elle demande une clé : les volumes de trafic et
+    les taux d'erreur décrivent l'usage d'un déploiement, pas son architecture.
+    """
+    return metrics_snapshot()
 
 
 @app.get("/live", tags=["health"], dependencies=[Depends(rate_limit_dependency)])

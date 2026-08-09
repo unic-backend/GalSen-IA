@@ -10,6 +10,15 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **`GET /metrics` (VOLET 04 ch. 09, half of exit criterion C5)** — request count,
+  error rate and per-route latency. `/health` answers what is configured; this
+  answers what is happening. It feeds the `metrics` tool that already existed and
+  that nothing had ever called, rather than adding a second mechanism
+  - series are named by route template, so a URL scan cannot grow the collector
+  - a failed measurement never fails the measured request
+  - requires a key (read-only is enough); `/health` stays open
+  - the reading does not count itself, and the response states `scope: "instance"`
+  - `tests/test_api_metrics.py`: 12 tests
 - **Versioning and release procedure (VOLET 04 ch. 03)**
   - `src/version.py` is the single source for the version and the release type.
     The application imports it; the Dockerfile redeclares it as

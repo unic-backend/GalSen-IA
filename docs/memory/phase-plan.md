@@ -10,8 +10,8 @@ exécuter, et une seule.
 
 **VOLET en cours** : 04 — Roadmap
 **Phases** : 13
-**Phase courante** : 9.1 et 9.2 — en attente de confirmation
-**Terminées** : 1.1, 2.1, 2.2, 3.1, 3.2, 4.1, 5.1, 6.1, 7.1, 8.1
+**Phase courante** : 10.1 — en attente de confirmation (dernière du VOLET)
+**Terminées** : 1.1, 2.1, 2.2, 3.1, 3.2, 4.1, 5.1, 6.1, 7.1, 8.1, 9.1, 9.2
 **Cadence** : 2 phases par tour (demandé par l'utilisateur ; le défaut de
 `.claude/rules/phase-protocol.md` reste une phase)
 
@@ -43,15 +43,15 @@ Ch. 08  Long-Term Sustainability → 1 phase (indivisible)
   8.1  ✅ registre de 9 dettes mesurées, chacune avec son déclencheur
 
 Ch. 09  Success Metrics & KPIs  → 2 phases
-  9.1  ⏳ Choisir les métriques mesurables aujourd'hui, écarter les autres
-  9.2  Les rendre mesurables : un script ou une route qui les rapporte
+  9.1  ✅ 6 indicateurs sur 19 mesurables — les 13 autres bloqués par 3 faits, tous déjà P0/P1
+  9.2  ✅ GET /metrics + intergiciel alimentant l'outil `metrics` existant, 12 tests
 
 Ch. 10  Roadmap Governance      → 1 phase (indivisible)
-  10.1 Qui décide, comment une révision est enregistrée
+  10.1 ⏳ Qui décide, comment une révision est enregistrée
 ```
 
 **Total : 13 phases.** Ce VOLET ne produit du code qu'en 9.2. Partout ailleurs,
 la sortie est un document — le seul garde-fou contre les généralités est que
 chaque phase parte de l'état réel du dépôt et non du texte du manuel.
 
-**Prochaine action** : exécuter les phases 9.1 et 9.2, puis s'arrêter.
+**Prochaine action** : exécuter la phase 10.1 — dernière du VOLET 04.

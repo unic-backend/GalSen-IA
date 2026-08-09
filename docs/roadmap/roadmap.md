@@ -590,3 +590,80 @@ A temporary solution enters with its replacement trigger written down, in an ADR
 shapes the architecture and in this table otherwise. A trigger is a condition, not a date:
 *"when a second instance runs"*, *"when the interface outgrows one page"*. Dates on a
 one-maintainer project are wishes; conditions still mean something in a year.
+
+
+---
+
+## Metrics and KPIs
+
+Chapter 09 lists nineteen indicators across three groups. Adopting all nineteen would
+produce a dashboard of zeros, and *"metrics exist to improve decisions, not to optimise
+numbers"* is the chapter's own closing line. So each one was checked against what this
+platform can actually observe today.
+
+### What is measurable now
+
+| Indicator | Source | Value today |
+|-----------|--------|-------------|
+| System performance | `GET /metrics` — request count, error rate, per-route latency | live |
+| Test coverage | `pytest --cov=./src` | measured on demand |
+| Defect rate | fixes recorded in `CHANGELOG.md` under *Fixed* | countable |
+| Feature delivery rate | commits and changelog entries per period | countable |
+| Technical debt trend | the register above — nine entries, each with a trigger | 9 |
+| Security posture | four security suites in CI, plus the release check for tracked secrets | green |
+
+Six of nineteen. That is not a poor result: they cover the two questions worth asking
+before there are users — *does it work* and *is it getting harder to change*.
+
+### What is not measurable, and why
+
+| Indicator | Blocked by |
+|-----------|-----------|
+| User adoption, retention, satisfaction, customer feedback, active organizations | **no user exists** |
+| Platform availability, MTTR, deployment frequency, change failure rate | **nothing is deployed** (C4) |
+| AI response quality | **no provider configured** — generation answers 503 |
+| Regional expansion, partner integrations | no deployment, no partner |
+
+Thirteen of nineteen are blocked by exactly three facts, and all three are already P0 or P1
+in the backlog. Reporting zero against them quarter after quarter would create the
+appearance of measurement; naming the blocker is what actually moves them.
+
+### What `/metrics` reports
+
+`GET /metrics` answers *what is happening*, where `/health` answers *what is configured*.
+It feeds the `metrics` tool that already existed and that nothing had ever called:
+
+```
+{ "requests_total": 5,
+  "error_rate": 0.4,
+  "counters":   { "http.requests.total": 5, "http.requests.2xx": 3, "http.requests.4xx": 2 },
+  "latency_ms": { "http.latency.get.health": { "count": 2, "mean": 3.1, "max": 4.8 } },
+  "scope": "instance" }
+```
+
+Four decisions are worth stating because each one is a trap avoided:
+
+- **Series are named by route template, not by URL.** `/memory/retrieve/{item_id}` is one
+  series. Using the requested path would create one per identifier, so a URL scan would
+  turn the measurement into the outage. A test asserts four different identifiers produce
+  one series.
+- **A failed measurement never fails the request.** The middleware swallows its own errors
+  and logs them. Without that property, instrumenting every route would be reckless.
+- **`/metrics` requires a key; `/health` does not.** Traffic volumes and error rates
+  describe a deployment's usage; health describes its architecture. Read-only is enough —
+  a monitoring scraper has no business being an administrator.
+- **The reading does not count itself.** The middleware records after the response, so
+  `/metrics` reports the traffic that preceded it. Self-counting would produce a total
+  that grows every time someone looks at it.
+
+The counters live in process memory and the response says so (`scope: "instance"`). A
+restart loses them and a second instance would keep its own — the same constraint ADR-009
+already exposes, stated where it can mislead rather than left to be discovered.
+
+### What this does not cover
+
+The other half of criterion C5 — bounding `logs/application.log`, currently 6.7 MB and
+43 638 lines with no rotation — is untouched here and stays P1 in the backlog. And no
+performance *target* exists yet: `/metrics` makes latency observable, but nothing declares
+what an acceptable latency is. Until a target is set, the release checklist keeps refusing
+to tick *"performance targets verified"*, which remains the correct answer.
