@@ -8,58 +8,24 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : 16 — Authentication & Identity Engine
-**Phases** : 12
-**Phase courante** : 5.1 — en cours
-**Terminées** : 1.1, 2.1, 2.2, 3.1, 3.2, 4.1
-**Cadence** : VOLET entier demandé par l'utilisateur
+**VOLET en cours** : aucun — VOLET 16 terminé (10 chapitres, 12 phases)
+**Phase courante** : —
+**Terminées** : toutes
+**Cadence** : revenue au défaut d'une phase par tour
 
 ```
-Ch. 01  Vision           → 1 phase
-  1.1  ✅ 5 composants sur 7 existaient déjà ; seul l'annuaire manquait
-
-Ch. 02  Architecture     → 2 phases
-  2.1  ✅ tableau composant → code réel
-  2.2  ✅ ADR-010 acceptée : une clé appartient à un sujet, sans magasin de secrets
-
-Ch. 03  Lifecycle        → 2 phases
-  3.1  ✅ cloisonnement par sujet sur la mémoire — critère C2 atteint pour ce magasin
-  3.2  ✅ révocation et retrait déjà en place ; le cloisonnement les rend effectifs
-
-Ch. 04  Management       → 1 phase (indivisible)
-  4.1  ✅ /auth/whoami + inventaire des clés portant le sujet
-
-Ch. 05  Security         → 1 phase (indivisible)
-  5.1  Comment une identité prouve qui elle est, sans secret stocké en clair
-
-Ch. 06  Monitoring       → 1 phase (indivisible)
-  6.1  Les événements d'authentification dans le moteur d'audit et /metrics
-
-Ch. 07  Compliance       → 1 phase (indivisible)
-  7.1  Quelles données personnelles sont détenues, combien de temps, pourquoi
-
-Ch. 08  Governance       → 1 phase (indivisible)
-  8.1  Qui crée et retire une identité
-
-Ch. 09  Quality          → 1 phase (indivisible)
-  9.1  Ce qui est mesuré sur l'authentification
-
-Ch. 10  Governance (bis) → 1 phase (indivisible)
-  10.1 Le chapitre 10 porte le même titre que le 08 — à lire avant de décider
-       s'il ajoute quelque chose ou s'il faut le signaler comme doublon
+VOLET 16 — Authentication & Identity : terminé
+  Ch. 01-02  ADR-010 : une clé appartient à un sujet, sans magasin de secrets
+  Ch. 03-04  cycle de vie : 6 étapes sur 9 en place, la vérification est absente et nommée
+  Ch. 05     sécurité : aucun secret stocké, comparaison à temps constant
+  Ch. 06     supervision : taux de succès d'authentification dans /metrics
+  Ch. 07     conformité : inventaire des données personnelles — rétention absente
+  Ch. 08+10  gouvernance : chapitres en doublon, traités ensemble ; rôles = mécanismes
+  Ch. 09     qualité : 3 métriques sur 6 disponibles
 ```
 
-**Total : 12 phases.**
+**Acquis en chemin** : le critère de sortie C2 est **atteint** sur les trois
+magasins (mémoire, fichiers, notifications).
 
-**Ce VOLET n'est pas une construction à partir de rien.** La plateforme a déjà la
-moitié de ce chapitre : clés API hachées, 4 rôles, permissions, révocation,
-rotation à chaud, `hmac.compare_digest`. Ce qui manque est l'**identité** — une
-clé désigne un rôle, pas une personne. Le plan sert autant à éviter de
-reconstruire ce que `src/api/rbac.py` et l'ADR-004 font déjà qu'à ajouter ce qui
-manque.
-
-**Les phases 3.1 et suivantes dépendent de l'ADR-010 (phase 2.2).** Elles seront
-re-découpées si la décision les invalide — annoncer aujourd'hui le détail d'une
-implémentation dont la forme n'est pas décidée serait une prévision, pas un plan.
-
-**Prochaine action** : exécuter la phase 1.1, puis s'arrêter.
+**Prochaine action** : choisir le prochain VOLET, lire ses chapitres, publier le
+plan de phases, puis s'arrêter.

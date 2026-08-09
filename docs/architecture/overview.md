@@ -111,6 +111,18 @@ Router Engine / Agent Runtime
   the application for real — `TestClient(app)` without `with` does not run the lifespan,
   and that blind spot once let a non-starting API reach `main`.
 
+## Identity
+A key belongs to a **subject** (ADR-010): `GALSEN_API_KEYS="secret:role:subject"`. Writes
+take their owner from the authenticated subject rather than the request body, reads of
+another subject's data answer 404 rather than 403, and every listing filters — which is
+what closes exit criterion C2 on memory, files and notifications. `GET /auth/whoami` tells
+a caller who they are; `/metrics` reports the authentication success rate.
+
+No credential store exists and none is planned before self-service signup: the platform
+holds SHA-256 digests of keys supplied by the environment and no secret of its own. The
+gap that follows is stated rather than implied — **nothing verifies an identity**, the
+declaring party is trusted. Full picture: `docs/architecture/identity.md`.
+
 ## Scaling posture
 One instance, stated at runtime rather than assumed (ADR-009). `src/api/scaling.py`
 inventories every subsystem holding state, and `/health` carries the verdict:

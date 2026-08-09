@@ -23,6 +23,8 @@ os.environ.setdefault("GALSEN_RATE_LIMIT_ENABLED", "false")
 
 from src.api import server  # noqa: E402
 from src.api.metrics import (  # noqa: E402
+    AUTH_ECHEC,
+    AUTH_SUCCES,
     LATENCE,
     PAR_CLASSE,
     TOTAL,
@@ -182,3 +184,38 @@ class TestRobustesse:
     def test_le_compteur_total_a_un_nom_stable(self):
         """Une faute de frappe créerait un second compteur au lieu d'incrémenter."""
         assert TOTAL == "http.requests.total"
+
+
+class TestAuthentification:
+    """Taux de succès d'authentification (VOLET_16 ch. 06 et 09)."""
+
+    def test_les_deux_issues_sont_comptees(self, client, entetes):
+        """Un échec non compté rendrait le taux de succès toujours parfait."""
+        client.get("/auth/whoami", headers=entetes)
+        client.get("/auth/whoami", headers={"X-API-Key": "mauvaise"})
+
+        auth = client.get("/metrics", headers=entetes).json()["auth"]
+        assert auth["succeeded"] >= 1
+        assert auth["failed"] >= 1
+        assert auth["attempts"] == auth["succeeded"] + auth["failed"]
+
+    def test_taux_derive_et_borne(self, client, entetes):
+        """Le taux est calculé côté serveur, pas laissé à chaque consommateur."""
+        client.get("/auth/whoami", headers=entetes)
+        auth = client.get("/metrics", headers=entetes).json()["auth"]
+        assert 0.0 < auth["success_rate"] <= 1.0
+        assert auth["success_rate"] == round(auth["succeeded"] / auth["attempts"], 4)
+
+    def test_aucune_tentative_ne_donne_pas_zero(self):
+        """Sans tentative, le taux est `null` : zéro se lirait comme « tout échoue »."""
+        reset_metrics()
+        assert metrics_snapshot()["auth"]["success_rate"] is None
+
+    def test_les_compteurs_ne_nomment_personne(self, client, entetes):
+        """Compter par sujet ferait d'une mesure d'exploitation un suivi individuel."""
+        client.get("/auth/whoami", headers=entetes)
+        compteurs = client.get("/metrics", headers=entetes).json()["counters"]
+        assert AUTH_SUCCES in compteurs
+        assert all(CLE not in nom for nom in compteurs)
+        assert all(nom in (AUTH_SUCCES, AUTH_ECHEC) or not nom.startswith("auth.")
+                   for nom in compteurs)

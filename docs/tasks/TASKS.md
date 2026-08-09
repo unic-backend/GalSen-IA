@@ -1,4 +1,5 @@
 ## Done
+- [x] VOLET 16 — Authentication & Identity (ADR-010 : une clé appartient à un sujet ; critère C2 atteint sur mémoire, fichiers et notifications ; /auth/whoami ; taux d'authentification dans /metrics)
 - [x] VOLET 04 — Roadmap (10 chapitres, 13 phases : roadmap réelle, critères de sortie, versionnage, release_check, backlog P0–P3, registre de dette, /metrics, gouvernance)
 - [x] Reconciliation of the two development lines (4 phases: merge, green suite, Conseil Agricole on /ui, memory + ADRs)
 - [x] VOLET 02 ch. 10 — Scaling posture stated explicitly (ADR-009, `src/api/scaling.py`, `/health` scaling section) — closes VOLET 02

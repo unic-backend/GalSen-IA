@@ -10,6 +10,37 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **Identity (VOLET 16, ADR-010)** — a key belongs to a subject
+  - `GALSEN_API_KEYS` gains an optional third field: `secret:role:subject`.
+    `RBACContext` carries `subject`; a key without one is anonymous, so no
+    existing deployment breaks
+  - `GET /auth/whoami` tells a caller who they are — a misattributed key was
+    otherwise discovered by reading audit traces, too late
+  - `GET /metrics` reports the authentication success rate (`auth.attempts`,
+    `succeeded`, `failed`, `success_rate`), the metric VOLET 16 ch. 06 and 09
+    both ask for. The counters name no subject: per-person counting would turn
+    an operational measurement into individual tracking
+  - `docs/architecture/identity.md`: what the manual asks, what exists, and what
+    is deliberately absent with the trigger for each
+  - No credential store, and none planned before self-service signup. The
+    platform still holds no secret of its own
+
+### Security
+- **Exit criterion C2 met — data belongs to its subject.** Three stores leaked
+  the same way and now enforce ownership:
+  - `/memory/store` and `/file/upload` took their owner from the request body,
+    so any key holder could write in someone else's name. The owner is now the
+    authenticated subject; an administrator may still name another
+  - `/memory/retrieve`, `/file/{id}`: another subject's data answers **404, not
+    403** — a 403 confirms an id exists and belongs to somebody, which is enough
+    to enumerate it. A test asserts refusal and absence are indistinguishable
+  - `/memory/search`, `/file/list`, `/notification/list` filter by subject, and
+    an explicit filter naming someone else is not honoured
+  - `/notification/mark-all-read` accepted an arbitrary recipient: any key
+    holder could empty another subject's inbox
+  - Notifications are constrained on **reading**, not writing — `recipient` is
+    the addressee, and sending to someone else stays legitimate, which is what
+    the approval engine does when it asks an operator to decide
 - **Proof for exit criterion C1** (`tests/test_generation_end_to_end.py`) — the
   end-to-end generation tests skip with an actionable reason while no provider
   answers, and run unchanged the moment one does. The "runs" path is covered too:

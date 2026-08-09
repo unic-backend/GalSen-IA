@@ -43,7 +43,11 @@ from src.api.health import (
 from src.api.scaling import instance_id, scaling_report
 
 # Import de la mesure du trafic réel (VOLET 04 ch. 09, critère C5)
-from src.api.metrics import RequestMetricsMiddleware, metrics_snapshot
+from src.api.metrics import (
+    RequestMetricsMiddleware,
+    metrics_snapshot,
+    record_authentication,
+)
 
 # Version de la plateforme — source unique (src/version.py)
 from src.version import __version__
@@ -121,9 +125,15 @@ def require_auth(api_key: str = Security(api_key_header)) -> RBACContext:
         HTTPException 401 : clé manquante ou invalide.
     """
     try:
-        return rbac_manager.authenticate(api_key)
+        contexte = rbac_manager.authenticate(api_key)
     except PermissionError as e:
+        # Compté avant de lever : sans cela, la seule catégorie qui intéresse
+        # une enquête — les échecs — serait la seule absente des chiffres.
+        record_authentication(reussie=False)
         raise HTTPException(status_code=401, detail=str(e))
+
+    record_authentication(reussie=True)
+    return contexte
 
 
 def require_permission(permission: Permission):
