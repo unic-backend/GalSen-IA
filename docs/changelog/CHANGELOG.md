@@ -10,6 +10,11 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **Proof for exit criterion C1** (`tests/test_generation_end_to_end.py`) — the
+  end-to-end generation tests skip with an actionable reason while no provider
+  answers, and run unchanged the moment one does. The "runs" path is covered too:
+  a stub HTTP server speaking Ollama's protocol drives tool → manager → selector
+  → provider → HTTP, so the file cannot silently become vacuous
 - **`GET /metrics` (VOLET 04 ch. 09, half of exit criterion C5)** — request count,
   error rate and per-route latency. `/health` answers what is configured; this
   answers what is happening. It feeds the `metrics` tool that already existed and
@@ -65,6 +70,14 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
   `.claude/settings.json.bak` were removed from version control
 
 ### Fixed
+- **A reachable provider with a too-small model gave a dead-end message.** With
+  Ollama running and a 4096-context model, `/agri/advice` answered 503 with
+  "Aucun modèle sélectionnable" — the real reason (minimum context 8192) was
+  logged by `select_model_for_task()` and thrown away, and
+  `unavailability_reason()` only knew how to report "no provider at all". The
+  manager now keeps the selector's reason and returns it, clearing it on every
+  new selection so a stale explanation cannot outlive the configuration that
+  fixed it. This is the most likely local failure and it said nothing useful
 - **`POST /agri/advice` answered 200 with an empty answer** when no model
   provider is configured: only exceptions were translated to 503, and the tool
   reports unavailability as a status. Any non-`ready` status now yields 503
