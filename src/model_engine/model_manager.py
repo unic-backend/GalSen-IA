@@ -173,6 +173,10 @@ class ModelManagerImpl(ModelManager):
         Returns:
             Meilleur modèle pour la tâche ou None si aucun ne convient
         """
+        # Toute nouvelle sélection annule l'explication de la précédente : une
+        # raison périmée survivrait à la mise en service d'un modèle.
+        self._last_selection_failure = ""
+
         # Les modèles enregistrés explicitement priment sur le catalogue
         available_models = self.list_models(status=ModelStatus.ACTIVE.value)
 
@@ -185,6 +189,11 @@ class ModelManagerImpl(ModelManager):
         # annoncer une indisponibilité plutôt qu'un échec de génération.
         selection = self._provider_selector.select(task_requirements)
         if not selection.succeeded:
+            # La raison est conservée, pas seulement journalisée : c'est elle
+            # que l'appelant rendra à l'utilisateur. Sans cela, un serveur
+            # Ollama actif dont le modèle a un contexte trop court produisait
+            # un 503 « Aucun modèle sélectionnable », sans dire ce qui manque.
+            self._last_selection_failure = selection.reason
             self._logger.warning(f"Aucun modèle sélectionnable: {selection.reason}")
             return None
 
@@ -371,10 +380,20 @@ class ModelManagerImpl(ModelManager):
         """
         Explique pourquoi aucune génération n'est possible.
 
+        Deux causes distinctes, et la seconde était muette : ou bien aucun
+        fournisseur ne répond, ou bien un fournisseur répond mais aucun de ses
+        modèles ne satisfait les contraintes de la tâche. Le second cas est le
+        plus probable en local — un serveur Ollama actif avec un modèle à
+        contexte court — et c'est celui qui ne disait rien.
+
         Returns:
-            Un message actionnable, ou une chaîne vide si un fournisseur répond
+            Un message actionnable, ou une chaîne vide si la génération est
+            possible.
         """
-        return self._provider_registry.unavailability_summary()
+        resume = self._provider_registry.unavailability_summary()
+        if resume:
+            return resume
+        return getattr(self, "_last_selection_failure", "")
 
     def list_catalogue(self, available_only: bool = False) -> List[Dict[str, Any]]:
         """

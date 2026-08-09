@@ -17,12 +17,13 @@ gets re-argued at every review.
   *Deciding criterion:* strategic alignment — it gates more work than anything else in
   this file, and it is a decision, not a build. Needs an ADR first (VOLET_16, Authentication & Identity).
 
-- **Make generation provable end to end.** No provider is configured, so the platform's
-  only real feature answers 503 and exit criterion C1 cannot be checked. The task is the
-  test that runs when a key is present and skips otherwise — configuring a key is the
-  operator's move, writing the proof is ours.
-  *Deciding criterion:* user impact — without it the platform is a test suite, not a
-  product.
+- **Configure a model provider.** The proof now exists
+  (`tests/test_generation_end_to_end.py`): it skips while no provider answers and runs the
+  moment one does. What remains is the operator's move, and the free path needs no money:
+  `ollama serve` with a model whose context is **at least 8192** — a smaller one is
+  refused by the selector, and the API now says so.
+  *Deciding criterion:* user impact — this is the last step between a test suite and a
+  product, and exit criterion C1 falls the same day.
 
 ## P1 — High · a Phase 2 exit criterion depends on it, or it removes a demonstrated risk
 
