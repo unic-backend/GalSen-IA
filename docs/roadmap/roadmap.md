@@ -667,3 +667,86 @@ The other half of criterion C5 — bounding `logs/application.log`, currently 6.
 performance *target* exists yet: `/metrics` makes latency observable, but nothing declares
 what an acceptable latency is. Until a target is set, the release checklist keeps refusing
 to tick *"performance targets verified"*, which remains the correct answer.
+
+
+---
+
+## Governance
+
+Chapter 10 assigns five roles: Product Leadership defines direction, Architecture
+Leadership validates technical alignment, Engineering plans implementation, Stakeholders
+give feedback, Governance approves major changes.
+
+This project has **one person**. Writing those five roles as if they were staffed would be
+the clearest possible example of the failure this whole document has been avoiding: a
+structure that describes an organisation nobody has.
+
+### The roles exist — as mechanisms, not people
+
+What is interesting is that the separation the chapter wants is real here. It is enforced
+by artefacts rather than by job titles, which is why it survives a single maintainer:
+
+| Role | What plays it | Where |
+|------|---------------|-------|
+| Architecture Leadership | an ADR, with the rejected alternatives and why | `docs/architecture/decisions/` — nine |
+| Engineering planning | the phase plan: chapters split into verifiable phases | `docs/memory/phase-plan.md` |
+| Governance approval | the stop-and-confirm gate — one phase, then wait | `.claude/rules/phase-protocol.md` |
+| Release approval | eight automatic checks, two refused to a human | `scripts/release_check.py` |
+| Prioritisation | a rank that must name the criterion that set it | `docs/memory/pending-work.md` |
+| Product Leadership, Stakeholder | the maintainer, in person | — |
+
+The gate that matters most is the cheapest: **work stops at every phase boundary and waits
+for an explicit word.** One person cannot review their own decisions in bulk after the
+fact; they can review one phase at a time, before the next begins.
+
+### What has no mechanism
+
+Nobody reviews the roadmap on a schedule. The review is event-driven: a phase ends, and
+the state is re-checked against the repository. For a one-maintainer project that is the
+right trade — a calendar review is a meeting with oneself — but it has a failure mode
+worth naming: **a document nobody opens does not get corrected.**
+
+Three defects found during this VOLET were all of that kind, and none would have been
+caught by a test:
+
+- `vision.md` still claimed "no application code yet" while the platform ran 1400 tests.
+- `docs/architecture/` carries two contradictory numbering schemes, and two references
+  written from the wrong half were wrong.
+- The scaling inventory declared files and notifications process-local after a merge had
+  given them SQLite stores.
+
+The trigger is therefore not a date but a condition: **whenever a phase touches a document,
+that document is checked against the repository, not against memory.** Every section above
+was written that way, and each one found something.
+
+### When the manual and the repository disagree
+
+They did, repeatedly, and the rule the whole VOLET applied deserves to be stated:
+
+> **The manual sets the direction; the repository sets the facts. Where they conflict, the
+> deviation is recorded with its reason — never silently resolved in either direction.**
+
+Chapter 10 of VOLET_02 asked for queues, replicas and distributed caching; ADR-009
+recorded a single-instance posture and said why. Chapter 09 here asked for nineteen KPIs;
+six were adopted and thirteen were refused with their blocker named. Chapter 10 asks for
+five roles; they are mapped onto mechanisms and the gap is written down.
+
+None of those is disobedience — each is the chapter's final directive applied honestly.
+Pretending otherwise would produce documents that pass review and describe nothing.
+
+### Change control
+
+Git preserves the history, so the chapter's *"preserve historical versions"* needs no
+process. What needs one is revision without instability, and the pattern is already in use:
+
+- **An ADR is amended, not rewritten.** ADR-008 carries *Confirmed under pressure*, ADR-009
+  carries *Amended*. The original reasoning stays readable; the change is dated and
+  explained. Rewriting would erase why the first decision looked right.
+- **A superseded decision is marked, not deleted.** Nothing in this project has been
+  superseded yet; when it is, the ADR gets a status, not a `git rm`.
+- **This file changes with the repository, not ahead of it.** Every figure in it was
+  measured. That is what makes it worth opening.
+
+---
+
+*VOLET 04 complete — ten chapters, thirteen phases.*

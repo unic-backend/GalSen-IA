@@ -10,27 +10,25 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 ## Dernière session
 
-**Date** : 2026-08-08
+**Date** : 2026-08-09
 
-**En cours** : rien. Réconciliation terminée (4 phases), VOLET 02 clos (10/10).
+**En cours** : rien. **VOLET 04 terminé** (10 chapitres, 13 phases).
 
 **Terminé dans cette session**
-- **VOLET 02 clos** : ADR-008 (`/ui` sans build) et ADR-009 (une seule instance,
-  dite à l'exécution par `/health`).
-- **Protocole de phases** installé : une phase par tour, plan avant chaque VOLET.
-- **Deux branches réconciliées** : arrivent les services calendar/cloud/email,
-  5 magasins SQLite, le SDK client, `POST /agri/advice`. `src/frontend/` (Jinja2)
-  écarté ; la page « Conseil agricole » vit dans `/ui`.
-- **Trois défauts corrigés** : `/agri/advice` répondait 200 avec un conseil vide ;
-  la convention `src.` était de nouveau enfreinte et masquée par un `sys.path` ;
-  le rapport `scaling` ne suivait pas le backend de stockage.
-- Tests : **1405 passants**, 5 ignorés.
+- **VOLET 02 clos**, puis **réconciliation de deux branches parallèles** (12 conflits).
+- **VOLET 04 clos** : roadmap réelle, 6 critères de sortie de Phase 2, versionnage à
+  source unique, `release_check.py`, backlog P0–P3, registre de 9 dettes, `GET /metrics`.
+- Défauts trouvés en écrivant : `vision.md` mentait sur l'état du projet, deux
+  numérotations de VOLET se contredisent, la base de connaissances est **vide**,
+  `/agri/advice` répondait 200 avec un conseil vide.
+- Tests : **1450 passants**, 5 ignorés.
 
 **Prochaine étape**
-Choisir le prochain VOLET (03 Development Manual ou 04 Roadmap), publier son plan
-de phases, puis s'arrêter — protocole `.claude/rules/phase-protocol.md`.
+Choisir le prochain VOLET, publier son plan de phases, s'arrêter. VOLET 03
+(Development Manual) ou VOLET 16 (Authentication & Identity, dont dépend le P0).
 
 **Bloqué / à surveiller**
-- `/model/generate` et `/agri/advice` répondent 503 : il ne manque qu'une clé.
-- Trois façons d'écrire un fichier sur disque cohabitent (connecteur, magasin
-  SQLite, magasin fichier) — à arbitrer, c'est dans `pending-work.md`.
+- Deux P0 : la plateforme n'a **pas d'utilisateur** et **ne sait pas générer** (503).
+- Base de connaissances à 0 élément, alors que la vision dit de prioriser les
+  données africaines.
+- Log à 6,7 Mo sans rotation ; aucune cible de performance déclarée.
