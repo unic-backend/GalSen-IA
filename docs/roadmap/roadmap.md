@@ -222,6 +222,57 @@ the project to backward compatibility from that point on.
 ### Release notes
 
 `docs/changelog/CHANGELOG.md` is the release log. Until the first release it carries a
-single `[Unreleased]` section — which is accurate: **nothing has been released**. Cutting
-a version means moving that section under a dated heading and tagging the commit, and that
-procedure is phase 3.2's subject.
+single `[Unreleased]` section — which is accurate: **nothing has been released**.
+
+---
+
+## Cutting a release
+
+Chapter 03 lists five requirements before any official release: core features complete,
+critical defects resolved, security checks done, documentation updated, performance
+targets verified. A checklist nobody runs is a document, so this one runs:
+
+```
+python scripts/release_check.py
+```
+
+It exits non-zero when something blocks. Everything a machine can decide, it decides;
+everything needing judgement is **printed and never ticked automatically** — a box that
+ticks itself without being checked is worse than no box.
+
+### What it checks
+
+| Check | Chapter 03 requirement | Blocks on |
+|-------|------------------------|-----------|
+| Version | documentation updated | malformed number, Dockerfile drift, major ≥ 1 on a non-stable type |
+| Git tag | traceability | `v<version>` already exists |
+| Working tree | reproducibility | uncommitted files |
+| Secrets | security checks | any tracked `.env`, `*.sqlite`, `*.key`, `*.pem` |
+| Changelog | release notes | no `[Unreleased]` section, or an empty one |
+| Documentation | documentation updated | a required document missing or empty |
+| Startup | critical defects | the application does not boot, or `/health` is not 200 |
+| Test suite | critical defects | pytest fails |
+
+`--sans-tests` skips the suite for a quick pass. It reports a warning, never a success:
+skipping a check must not look like passing one.
+
+### What it refuses to decide
+
+Two of the chapter's five requirements need a person, and the script says so:
+
+- **Core features complete** — only whoever scoped the release can say whether what was
+  promised is delivered rather than started.
+- **Performance targets verified** — *no performance target exists for this project yet*.
+  Chapter 09 has to set them. Until it does, this requirement cannot be met, and marking
+  it verified would be a lie. It is listed precisely so the gap stays visible.
+
+### Cutting the version, once the checklist passes
+
+1. Move `[Unreleased]` under a dated `## [x.y.z] — YYYY-MM-DD` heading, leaving a fresh
+   empty `[Unreleased]` above it.
+2. Bump `src/version.py` — and `__release_type__` if the type changed.
+3. Commit, then tag `v<version>`.
+4. Push the tag; CI runs the suite on it.
+
+Step 2 before step 3 matters: the tag must point at the commit that declares the version,
+otherwise `/health` on a deployed build reports a number that does not match its tag.

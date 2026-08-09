@@ -10,8 +10,8 @@ exécuter, et une seule.
 
 **VOLET en cours** : 04 — Roadmap
 **Phases** : 13
-**Phase courante** : 3.2 — en attente de confirmation
-**Terminées** : 1.1, 2.1, 2.2, 3.1
+**Phase courante** : 4.1 — en attente de confirmation
+**Terminées** : 1.1, 2.1, 2.2, 3.1, 3.2
 
 ```
 Ch. 01  Product Vision          → 1 phase
@@ -23,10 +23,10 @@ Ch. 02  Development Phases      → 2 phases
 
 Ch. 03  Milestones & Releases   → 2 phases
   3.1  ✅ src/version.py source unique, type « prototype », garde-fou anti-divergence
-  3.2  ⏳ Liste de contrôle de publication, branchée sur la CI et le CHANGELOG réels
+  3.2  ✅ scripts/release_check.py — 8 contrôles exécutables, 2 points laissés à l'humain
 
 Ch. 04  Feature Prioritization  → 1 phase (indivisible)
-  4.1  Appliquer P0–P3 aux ~15 entrées réelles de pending-work.md
+  4.1  ⏳ Appliquer P0–P3 aux ~15 entrées réelles de pending-work.md
 
 Ch. 05  Strategic Objectives    → 1 phase (indivisible)
   5.1  Objectifs et piliers, rattachés à current-objectives.md
@@ -52,4 +52,4 @@ Ch. 10  Roadmap Governance      → 1 phase (indivisible)
 la sortie est un document — le seul garde-fou contre les généralités est que
 chaque phase parte de l'état réel du dépôt et non du texte du manuel.
 
-**Prochaine action** : exécuter la phase 3.2, puis s'arrêter.
+**Prochaine action** : exécuter la phase 4.1, puis s'arrêter.

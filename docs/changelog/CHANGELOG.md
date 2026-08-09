@@ -10,6 +10,18 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **Versioning and release procedure (VOLET 04 ch. 03)**
+  - `src/version.py` is the single source for the version and the release type.
+    The application imports it; the Dockerfile redeclares it as
+    `ARG GALSEN_VERSION` and `tests/test_version.py` fails if the two drift
+  - `scripts/release_check.py`: eight executable checks (version, git tag,
+    working tree, tracked secrets, changelog, documentation, startup, test
+    suite), non-zero exit when one blocks. The two requirements needing
+    judgement — features complete, performance targets verified — are printed
+    and never ticked automatically
+  - The release type is recorded as `prototype`; the series stays `0.x` while it
+    is prototype, alpha or beta, and a stable label is refused while `/health`
+    does not report healthy
 - **Scaling posture made explicit (VOLET 02 ch. 10, ADR-009)** — closes VOLET 02
   - `src/api/scaling.py`: inventory of every subsystem holding state, with where
     it lives, what a second instance would do to it, and whether that is a loss
