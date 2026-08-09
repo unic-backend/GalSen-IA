@@ -11,11 +11,12 @@ gets re-argued at every review.
 
 ## P0 — Critical · nothing else is scheduled until these move
 
-- **Scope files and notifications by subject**, as memory now is. ADR-010 gave a key a
-  subject and `/memory/*` enforces ownership, but `FileItem` and `Notification` carry no
-  owner: exit criterion C2 is met for one store out of three.
-  *Deciding criterion:* security implications — the identity exists now, so every store
-  that ignores it is a gap rather than an absence.
+- **Verify identities, or accept that nobody does.** ADR-010 closed C2, but stage 2 of
+  the chapter's lifecycle is absent: whoever writes `GALSEN_API_KEYS` asserts who each key
+  belongs to and nothing checks it. Fine while that person operates the platform; the
+  trigger for a real directory is the day they do not.
+  *Deciding criterion:* security implications — an unverified identity is still better
+  than none, but the gap must not be forgotten once it stops being acceptable.
 
 - **Configure a model provider.** The proof now exists
   (`tests/test_generation_end_to_end.py`): it skips while no provider answers and runs the

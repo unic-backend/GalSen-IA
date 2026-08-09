@@ -103,18 +103,24 @@ so CI stays green without secrets while the criterion stays honest.
 *Today:* 503. Four providers implemented, none configured. This is one environment
 variable away, not one project away.
 
-### C2 — A user exists, and their data is theirs — **met for memory**
+### C2 — A user exists, and their data is theirs — **met**
 
 An account can be created, and two accounts cannot see each other's memories, files or
 notifications.
 
 *Check:* `tests/test_identity.py::TestCritereC2` — one subject stores a memory, another
 gets 404 on it and nothing from a search that matches it.
-*Today:* **met for memory**, open for files and notifications. ADR-010 gives a key a
-subject; `/memory/store` takes its owner from the authenticated subject instead of the
-request body, `/memory/retrieve` answers 404 rather than 403 on someone else's data, and
-`/memory/search` filters. Files and notifications carry no owner yet, so the same
-treatment has to reach them before C2 is fully closed.
+*Today:* **met**, on all three stores. ADR-010 gives a key a subject; writes take their
+owner from the authenticated subject instead of the request body, reads of someone else's
+data answer 404 rather than 403, and every listing filters. Notifications differ by
+design: the constraint is on reading, not writing — `recipient` is the addressee, and
+sending to someone else stays legitimate, which is what the approval engine does when it
+asks an operator to decide.
+
+Still absent, and named rather than implied: **identity verification** (the chapter's
+lifecycle stage 2). Whoever sets `GALSEN_API_KEYS` asserts who each key belongs to and
+nothing checks it — acceptable while that person and the operator are the same, and the
+trigger for a real directory when they are not (ADR-010).
 
 ### C3 — Automation is demonstrated, not merely loadable
 
@@ -167,11 +173,11 @@ Naming these matters as much as the criteria: without it, the phase never ends.
 
 ### Where the phase actually stands
 
-Met: **C6**. Open: **C1, C2, C3, C4, C5**.
+Met: **C2**, **C6**. Open: **C1, C3, C4, C5**.
 
-C2 is the one with a decision in front of it rather than work: everything else is
-buildable today, while a user model needs an ADR first. C1 and C4 are the cheapest, and
-between them they turn the platform from a test suite into something a person can use.
+C2 was the one with a decision in front of it rather than work; ADR-010 took it and the
+scoping followed. C1 and C4 are now the cheapest remaining, and between them they turn
+the platform from a test suite into something a person can use.
 
 
 ---

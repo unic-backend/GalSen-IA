@@ -322,3 +322,115 @@ class TestCritereC2:
         client, _, _, admin = trois_sujets
         reponse = self._ecrire(client, admin, user_id="moussa")
         assert reponse.json()["user_id"] == "moussa"
+
+
+class TestCritereC2Complet:
+    """C2 sur les trois magasins que la roadmap nomme : mémoire, fichiers, notifications."""
+
+    @pytest.fixture
+    def trois_sujets(self, monkeypatch):
+        """Deux usagers et un administrateur, sur l'application réelle."""
+        from fastapi.testclient import TestClient
+
+        import src.api.server as serveur
+        from src.api.rate_limiter import set_valid_api_key_digests
+
+        gestionnaire = serveur.rbac_manager
+        ancien = dict(gestionnaire._key_role_map)
+        anciennes = set(gestionnaire._revoked_digests)
+
+        monkeypatch.setenv(
+            "GALSEN_API_KEYS", "cle-awa:user:awa,cle-mo:user:moussa,cle-adm:admin:chef"
+        )
+        gestionnaire.reload()
+        set_valid_api_key_digests(gestionnaire.active_key_digests())
+
+        with TestClient(serveur.app) as client:
+            yield (
+                client,
+                {"X-API-Key": "cle-awa"},
+                {"X-API-Key": "cle-mo"},
+                {"X-API-Key": "cle-adm"},
+            )
+
+        gestionnaire._key_role_map = ancien
+        gestionnaire._revoked_digests = anciennes
+        set_valid_api_key_digests(gestionnaire.active_key_digests())
+
+    @staticmethod
+    def _televerser(client, entetes, nom="note.txt", **extra):
+        """Téléverse un petit fichier et retourne la réponse."""
+        import base64
+
+        return client.post(
+            "/file/upload",
+            json={
+                "name": nom,
+                "content_type": "text/plain",
+                "data": base64.b64encode(b"contenu prive").decode(),
+                **extra,
+            },
+            headers=entetes,
+        )
+
+    def test_le_televerseur_est_le_sujet_authentifie(self, trois_sujets):
+        """`uploaded_by` venait du corps : n'importe qui pouvait déposer au nom d'un autre."""
+        client, awa, _, admin = trois_sujets
+        identifiant = self._televerser(client, awa, uploaded_by="moussa").json()["file_id"]
+        depose = client.get(f"/file/{identifiant}", headers=admin).json()
+        assert depose["uploaded_by"] == "awa"
+
+    def test_un_sujet_ne_lit_pas_le_fichier_d_un_autre(self, trois_sujets):
+        client, awa, moussa, _ = trois_sujets
+        identifiant = self._televerser(client, awa).json()["file_id"]
+        assert client.get(f"/file/{identifiant}", headers=awa).status_code == 200
+        assert client.get(f"/file/{identifiant}", headers=moussa).status_code == 404
+
+    def test_la_liste_de_fichiers_ne_traverse_pas_les_sujets(self, trois_sujets):
+        """Demander explicitement le filtre d'un autre ne doit pas l'accorder."""
+        client, awa, moussa, _ = trois_sujets
+        self._televerser(client, awa)
+        assert client.post("/file/list", json={"uploaded_by": "awa"}, headers=moussa).json()["total"] == 0
+        assert client.post("/file/list", json={}, headers=awa).json()["total"] >= 1
+
+    def test_les_notifications_d_autrui_restent_invisibles(self, trois_sujets):
+        """Ici la contrainte porte sur la lecture : `recipient` est le destinataire."""
+        client, awa, moussa, admin = trois_sujets
+        client.post(
+            "/notification/send",
+            json={"notification_type": "info", "title": "Bonjour", "message": "pour awa",
+                  "recipient": "awa"},
+            headers=admin,
+        )
+        assert client.post("/notification/list", json={}, headers=moussa).json()["total"] == 0
+        assert client.post("/notification/list", json={}, headers=awa).json()["total"] >= 1
+
+    def test_on_ne_vide_pas_la_boite_d_un_autre(self, trois_sujets):
+        """`mark-all-read` acceptait un destinataire arbitraire."""
+        client, awa, moussa, admin = trois_sujets
+        client.post(
+            "/notification/send",
+            json={"notification_type": "info", "title": "Bonjour", "message": "pour awa",
+                  "recipient": "awa"},
+            headers=admin,
+        )
+        client.post("/notification/mark-all-read?recipient=awa", headers=moussa)
+        restantes = client.post(
+            "/notification/list", json={"unread_only": True}, headers=awa
+        ).json()["total"]
+        assert restantes >= 1
+
+    def test_envoyer_a_autrui_reste_permis(self, trois_sujets):
+        """La contrainte ne doit pas casser la notification légitime.
+
+        Le moteur d'approbation sollicite un opérateur : lier le destinataire à
+        l'auteur rendrait cette fonction impossible.
+        """
+        client, _, _, admin = trois_sujets
+        reponse = client.post(
+            "/notification/send",
+            json={"notification_type": "approval_request", "title": "Validation",
+                  "message": "à valider", "recipient": "moussa"},
+            headers=admin,
+        )
+        assert reponse.status_code == 200

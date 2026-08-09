@@ -10,8 +10,8 @@ exécuter, et une seule.
 
 **VOLET en cours** : 16 — Authentication & Identity Engine
 **Phases** : 12
-**Phase courante** : 3.2 — en cours
-**Terminées** : 1.1, 2.1, 2.2, 3.1
+**Phase courante** : 5.1 — en cours
+**Terminées** : 1.1, 2.1, 2.2, 3.1, 3.2, 4.1
 **Cadence** : VOLET entier demandé par l'utilisateur
 
 ```
@@ -24,10 +24,10 @@ Ch. 02  Architecture     → 2 phases
 
 Ch. 03  Lifecycle        → 2 phases
   3.1  ✅ cloisonnement par sujet sur la mémoire — critère C2 atteint pour ce magasin
-  3.2  Suspension, révocation, retrait — en réutilisant la révocation existante
+  3.2  ✅ révocation et retrait déjà en place ; le cloisonnement les rend effectifs
 
 Ch. 04  Management       → 1 phase (indivisible)
-  4.1  Les routes : créer, lister, modifier une identité
+  4.1  ✅ /auth/whoami + inventaire des clés portant le sujet
 
 Ch. 05  Security         → 1 phase (indivisible)
   5.1  Comment une identité prouve qui elle est, sans secret stocké en clair

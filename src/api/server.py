@@ -1198,15 +1198,24 @@ async def send_notification(request: NotificationCreateRequest):
 
 
 @app.post("/notification/list", tags=["notification"],
-           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def list_notifications(request: NotificationListRequest):
-    """Liste les notifications avec filtres."""
+           dependencies=[Depends(rate_limit_dependency)])
+async def list_notifications(
+    request: NotificationListRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Liste les notifications adressées à l'appelant (ADR-010, critère C2).
+
+    Pour les notifications, la contrainte porte sur la **lecture** et non sur
+    l'écriture : `recipient` désigne le destinataire, pas l'auteur. Envoyer à
+    quelqu'un d'autre reste légitime — c'est ce que fait le moteur d'approbation
+    quand il sollicite un opérateur ; lire le courrier d'autrui ne l'est pas.
+    """
     notifications = notification_manager.list_notifications(
         limit=request.limit,
         offset=request.offset,
         unread_only=request.unread_only,
         notification_type=request.notification_type,
-        recipient=request.recipient,
+        recipient=_proprietaire_effectif(ctx, request.recipient),
         role=request.role,
     )
     return {
@@ -1216,9 +1225,17 @@ async def list_notifications(request: NotificationListRequest):
 
 
 @app.post("/notification/mark-read/{notification_id}", tags=["notification"],
-           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
-async def mark_notification_read(notification_id: str):
-    """Marque une notification comme lue."""
+           dependencies=[Depends(rate_limit_dependency)])
+async def mark_notification_read(
+    notification_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_WRITE)),
+):
+    """Marque comme lue une notification adressée à l'appelant."""
+    notification = notification_manager.get(notification_id)
+    if notification is not None and not _appartient_au_sujet(ctx, notification.recipient):
+        # 404 et non 403 : le refus doit être indiscernable d'une absence.
+        raise HTTPException(status_code=404, detail=f"Notification {notification_id} introuvable")
+
     success = notification_manager.mark_read(notification_id)
     if not success:
         raise HTTPException(status_code=404, detail=f"Notification {notification_id} introuvable")
@@ -1226,10 +1243,17 @@ async def mark_notification_read(notification_id: str):
 
 
 @app.post("/notification/mark-all-read", tags=["notification"],
-           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
-async def mark_all_read(recipient: Optional[str] = None):
-    """Marque toutes les notifications comme lues."""
-    count = notification_manager.mark_all_read(recipient=recipient)
+           dependencies=[Depends(rate_limit_dependency)])
+async def mark_all_read(
+    recipient: Optional[str] = None,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_WRITE)),
+):
+    """Marque comme lues les notifications de l'appelant.
+
+    Sans cette liaison, un porteur de clé pouvait vider la boîte de n'importe
+    qui en nommant son destinataire.
+    """
+    count = notification_manager.mark_all_read(recipient=_proprietaire_effectif(ctx, recipient))
     return {"marked_read": count}
 
 
@@ -1241,9 +1265,16 @@ async def notification_stats():
 
 
 @app.delete("/notification/{notification_id}", tags=["notification"],
-            dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_DELETE))])
-async def delete_notification(notification_id: str):
-    """Supprime une notification."""
+            dependencies=[Depends(rate_limit_dependency)])
+async def delete_notification(
+    notification_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_DELETE)),
+):
+    """Supprime une notification adressée à l'appelant."""
+    notification = notification_manager.get(notification_id)
+    if notification is not None and not _appartient_au_sujet(ctx, notification.recipient):
+        raise HTTPException(status_code=404, detail=f"Notification {notification_id} introuvable")
+
     success = notification_manager.delete(notification_id)
     if not success:
         raise HTTPException(status_code=404, detail=f"Notification {notification_id} introuvable")
@@ -1302,9 +1333,12 @@ import base64
 
 
 @app.post("/file/upload", tags=["file"],
-          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
-async def upload_file(request: FileUploadRequest):
-    """Téléverse un fichier sur la plateforme."""
+          dependencies=[Depends(rate_limit_dependency)])
+async def upload_file(
+    request: FileUploadRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_WRITE)),
+):
+    """Téléverse un fichier, au nom de l'appelant (ADR-010, critère C2)."""
     try:
         data = base64.b64decode(request.data)
     except Exception:
@@ -1316,7 +1350,7 @@ async def upload_file(request: FileUploadRequest):
         data=data,
         description=request.description,
         tags=request.tags,
-        uploaded_by=request.uploaded_by,
+        uploaded_by=_proprietaire_effectif(ctx, request.uploaded_by),
         source=request.source,
         metadata=request.metadata,
     )
@@ -1332,25 +1366,40 @@ async def upload_file(request: FileUploadRequest):
 
 
 @app.get("/file/{file_id}", tags=["file"],
-         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def get_file(file_id: str, include_data: bool = False):
-    """Retourne les métadonnées et le contenu d'un fichier."""
+         dependencies=[Depends(rate_limit_dependency)])
+async def get_file(
+    file_id: str,
+    include_data: bool = False,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Retourne un fichier appartenant à l'appelant.
+
+    Le fichier d'autrui répond 404 : distinguer « existe mais pas à vous » de
+    « n'existe pas » permettrait d'énumérer les fichiers des autres sujets.
+    """
     file = file_manager.get_file(file_id)
-    if file is None:
+    if file is None or not _appartient_au_sujet(ctx, file.uploaded_by):
         raise HTTPException(status_code=404, detail=f"Fichier {file_id} introuvable")
     return file.to_dict(include_data=include_data)
 
 
 @app.post("/file/list", tags=["file"],
-          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def list_files(request: FileListRequest):
-    """Liste les fichiers avec filtres."""
+          dependencies=[Depends(rate_limit_dependency)])
+async def list_files(
+    request: FileListRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Liste les fichiers de l'appelant.
+
+    Le filtre `uploaded_by` demandé n'est honoré que pour un administrateur :
+    sinon il permettrait de lister les fichiers de n'importe qui.
+    """
     files = file_manager.list_files(
         limit=request.limit,
         offset=request.offset,
         category=request.category,
         content_type=request.content_type,
-        uploaded_by=request.uploaded_by,
+        uploaded_by=_proprietaire_effectif(ctx, request.uploaded_by),
     )
     return {
         "files": [f.to_dict(include_data=False) for f in files],
