@@ -276,3 +276,57 @@ Two of the chapter's five requirements need a person, and the script says so:
 
 Step 2 before step 3 matters: the tag must point at the commit that declares the version,
 otherwise `/health` on a deployed build reports a number that does not match its tag.
+
+
+---
+
+## Prioritising
+
+Chapter 04 gives seven criteria (user impact, business value, technical feasibility,
+security implications, performance impact, maintenance cost, strategic alignment) and four
+levels (P0–P3), but not what makes something critical *here*. Without that, P0–P3 is a
+relabelling of the High / Medium / Low buckets it replaces, decided by feel.
+
+### What each level means for this project
+
+| Level | Meaning |
+|-------|---------|
+| **P0 — Critical** | The platform is unusable or unsafe without it, **or** it is a decision that blocks other work. Nothing else is scheduled until these move. |
+| **P1 — High** | A Phase 2 exit criterion depends on it, or it removes a risk that has already shown itself. |
+| **P2 — Medium** | Real value, but no criterion waits on it. |
+| **P3 — Low** | Worth doing; nothing waits on it. |
+
+Two properties matter more than the levels themselves.
+
+**Every entry names the criterion that decided it.** An item ranked without a stated
+reason gets re-argued at every review, and the argument is won by whoever spoke last. Most
+items score on two or three of the seven criteria, not all seven — pretending otherwise
+produces a scoring table nobody trusts.
+
+**A priority can carry a trigger instead of a date.** Sharing key revocations across
+instances is P3 today and becomes P0 the moment a second instance runs; persisting the
+audit trail is P2 and becomes P1 the day the platform is deployed. A trigger survives a
+change of circumstances; a date does not.
+
+### What the ranking produced
+
+Two P0s, both about the same thing from opposite ends: the platform has **no user** and
+**cannot generate**. Everything else is a Phase 2 criterion (P1), a real improvement
+nothing waits on (P2), or genuinely deferrable (P3).
+
+Two findings came out of ranking rather than out of the items:
+
+- **The single largest gap was not in the backlog at all.** Making generation provable end
+  to end — exit criterion C1, the difference between a test suite and a product — was
+  nowhere in `pending-work.md`. It is P0 now.
+- **One entry was ranked on a stale number.** The orchestration suite was recorded as
+  taking "~4 minutes"; measured, it takes 97 seconds. A backlog carrying wrong figures
+  ranks by fiction.
+
+### What is deliberately not ranked
+
+One entry — *"Create API / dataset / research templates"* — states no problem. The
+chapter's own decision framework opens with *"does it solve a real problem?"*, and this
+one cannot answer. It stays in the backlog **unranked and unscheduled** until someone
+names the problem: deleting it would lose the intent, ranking it would pretend the intent
+is understood.

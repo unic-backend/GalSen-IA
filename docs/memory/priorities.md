@@ -1,18 +1,23 @@
 # GalSen IA — Priorities
 
-## Current Ranking (highest first)
+The full ranked backlog lives in `pending-work.md` (P0–P3, with the criterion that decided
+each item). This file holds only what is **active** — what someone would pick up now.
 
-1. Keep all test suites green — no module is "done" while its tests fail
-2. **Finish the Conseil Agricole feature** — the API slice is delivered
-   (`AgriAdviceTool`, `POST /agri/advice`, 17 tests). What remains is the page
-   in the web dashboard, which after the reconciliation belongs in `src/web/`
-   (ADR-008), not in the abandoned `src/frontend/`
-3. **Choose the next VOLET** — VOLET 02 is closed (10/10 chapters)
-4. Test the hosted-provider generation path — ADR-004 is applied and `_call_api`
-   is implemented for the three vendors; only the no-credentials branch is covered
-5. Build on the first real feature for Senegalese users
+## Active ranking
+
+1. **Keep the suite green.** No module is done while its tests fail. This is exit
+   criterion C6 and the only one currently met.
+2. **Decide whether the platform has users** (P0). An ADR before any code — it gates
+   Phase 2's workspace, Phase 3's collaboration and every adoption metric.
+3. **Make generation provable end to end** (P0). The platform's only real feature answers
+   503; the task is the test that proves it works when a key is present.
+4. Finish VOLET 04 — the roadmap phases still open in `phase-plan.md`.
+
+Everything else is queued in `pending-work.md` and should not be started ahead of these
+without saying why.
 
 ## How to use this file
-- Always check this file before starting new work.
-- Update the ranking whenever priorities change.
-- Keep only the most important items at the top.
+- Check it before starting new work.
+- Keep it to what is active; the queue belongs in `pending-work.md`.
+- When the ranking changes, say what changed it — a ranking without a reason gets
+  re-argued at every review.
