@@ -178,8 +178,14 @@ Three model-related concepts exist and must not be collapsed:
 ### Provider state today
 | Provider | State | Reason |
 |----------|-------|--------|
-| OpenAI, Anthropic, Google | Catalogue declared, generation unavailable | Credential handling not decided yet — needs its own ADR |
+| OpenAI, Anthropic, Google | Implemented | Generate once their key is in the environment (ADR-004) |
 | Local (Ollama) | Fully implemented | Generates today if a server runs on `localhost:11434` |
+| OpenAI-compatible | Fully implemented | Any service speaking `/v1/models` and `/v1/chat/completions`: vLLM, LM Studio, llama.cpp, LocalAI, OpenRouter, Groq, or a rented GPU server. Inactive until `GALSEN_OPENAI_COMPATIBLE_URL` is declared |
+
+The compatible provider is what makes the trajectory *laptop → own server →
+hosted* cost nothing in code: only the URL changes. Its key is optional (a local
+server asks for none) and its catalogue is **discovered** through `/v1/models`
+rather than declared, so it stays truthful when the operator swaps models.
 
 ### Unavailability is a status, not a failure
 - `generate()` returns `status: UNAVAILABLE`, empty `text`, a machine-readable

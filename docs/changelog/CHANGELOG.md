@@ -10,6 +10,20 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **OpenAI-compatible provider** (`src/model_engine/providers/openai_compatible_provider.py`)
+  — one provider for every service speaking `/v1/models` and
+  `/v1/chat/completions`: vLLM, LM Studio, llama.cpp, LocalAI, OpenRouter, Groq,
+  Together, or a rented GPU server. Moving a model from a laptop to a server to
+  a host costs **no code**: only `GALSEN_OPENAI_COMPATIBLE_URL` changes
+  - the key is optional — a local server asks for none, and `HostedProvider`
+    refuses to work without credentials, which is why this is a distinct class
+  - the catalogue is **discovered**, not declared: a hard-coded list would lie
+    the moment the operator swaps models
+  - inactive until the URL is declared; it never guesses an address
+  - HTTP codes become distinct reasons — 401 asks for a key, 429 asks to wait,
+    and confusing them leaves the operator without a lead
+  - `tests/test_openai_compatible_provider.py`: 20 tests against a real HTTP
+    server speaking the protocol
 - **Exit criterion C3 met — a second workflow, executed**. `workflows/workflows.yaml`
   declares `revue` (`reviewer` then `security`), which runs the full pipeline in
   0.2 s and produces real output: 40 files reviewed, 26 findings, 0 security

@@ -16,6 +16,7 @@ from .anthropic_provider import AnthropicProvider
 from .base import ModelDescriptor, ModelProvider, ProviderInfo, ProviderStatus
 from .google_provider import GoogleProvider
 from .local_provider import LocalProvider
+from .openai_compatible_provider import OpenAICompatibleProvider
 from .openai_provider import OpenAIProvider
 
 
@@ -48,7 +49,16 @@ class ProviderRegistry:
 
     def _register_default_providers(self) -> None:
         """Enregistre les fournisseurs fournis avec le moteur."""
-        for provider_class in (OpenAIProvider, AnthropicProvider, GoogleProvider, LocalProvider):
+        # `OpenAICompatibleProvider` en dernier : il reste inactif tant que
+        # GALSEN_OPENAI_COMPATIBLE_URL n'est pas déclarée, donc son inscription
+        # ne change rien pour une installation qui ne s'en sert pas.
+        for provider_class in (
+            OpenAIProvider,
+            AnthropicProvider,
+            GoogleProvider,
+            LocalProvider,
+            OpenAICompatibleProvider,
+        ):
             try:
                 self.register(provider_class())
             except Exception as error:
