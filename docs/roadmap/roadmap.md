@@ -80,6 +80,91 @@ Two facts decide what comes next, and both are named above rather than left impl
    answer. This is one environment variable away, not one project away.
 2. **No user exists**, so half of Phase 2 and half of Phase 3 have nothing to attach to.
 
-Phase 2.2 defines what "Core Platform complete" means concretely. Until then, the current
-ranking of work stays in `docs/memory/priorities.md`, and the backlog in
+The current ranking of work stays in `docs/memory/priorities.md`, and the backlog in
 `docs/memory/pending-work.md`.
+
+---
+
+## Exit criteria for Phase 2 — Core Platform
+
+The chapter asks to *"validate each milestone"* and to *"complete one phase before
+expanding"*. Neither is possible while "Core Platform complete" is a feeling. Six
+conditions define it. Each one is written so that someone other than its author can check
+it and get a yes or a no — a command, a route, or a test. An item that cannot be checked
+is not a criterion, it is an intention.
+
+### C1 — The platform answers a real question
+
+`POST /agri/advice` returns **200** with a non-empty `answer` and a `model_used` naming a
+real model, against at least one configured provider.
+
+*Check:* a test that runs when a provider key is in the environment and skips otherwise —
+so CI stays green without secrets while the criterion stays honest.
+*Today:* 503. Four providers implemented, none configured. This is one environment
+variable away, not one project away.
+
+### C2 — A user exists, and their data is theirs
+
+An account can be created, and two accounts cannot see each other's memories, files or
+notifications.
+
+*Check:* a test where user A stores a memory and user B lists memories without seeing it.
+*Today:* impossible to write. API keys map to roles, not to people. Needs an ADR before
+any code (VOLET_13).
+
+### C3 — Automation is demonstrated, not merely loadable
+
+`workflows/workflows.yaml` declares **at least two** workflows, and a test executes one end
+to end producing a result that differs from `standard`.
+
+*Check:* the test.
+*Today:* exactly one workflow, named `standard`. A loader and a planner exist; that proves
+the mechanism, not the capability.
+
+### C4 — The platform has been reached over a network
+
+`/health` answers `status: healthy` from a machine that did not build it, at a documented
+address.
+
+*Check:* `curl https://<address>/health` from anywhere else.
+*Today:* never done. This is Phase 1's asterisk, and it stays open into Phase 2 because
+nothing else on this list can be validated in production without it.
+
+### C5 — Health is answerable without reading logs
+
+A route reports request count, error rate and latency, and `logs/application.log` is
+bounded.
+
+*Check:* the route returns non-zero counters after traffic; the log file stops growing
+without limit.
+*Today:* three probes (`/health`, `/ready`, `/live`) answer *what is configured*, not
+*what is happening*. The `metrics` tool exists (`increment`, `set_gauge`,
+`record_histogram`, `get_metrics`) and **nothing feeds it** from request handling. The log
+file is 6.5 MB with no rotation.
+
+### C6 — The suite stays the gate
+
+CI green on `main`, and the security suites — RBAC, security headers, key rotation,
+encryption at rest — all passing.
+
+*Check:* the CI run on the merge commit.
+*Today:* met. It is listed so it cannot regress silently while the other five are chased.
+
+### Deliberately not required to exit Phase 2
+
+Naming these matters as much as the criteria: without it, the phase never ends.
+
+| Excluded | Where it belongs |
+|----------|------------------|
+| Multi-instance readiness | deferred by ADR-009, triggered by a real deployment need |
+| Collaboration, advanced analytics | Phase 3 — and both wait on C2 anyway |
+| Internationalisation, multi-region | Phase 4 |
+| Generation proven on all three hosted vendors | one provider satisfies C1 |
+
+### Where the phase actually stands
+
+Met: **C6**. Open: **C1, C2, C3, C4, C5**.
+
+C2 is the one with a decision in front of it rather than work: everything else is
+buildable today, while a user model needs an ADR first. C1 and C4 are the cheapest, and
+between them they turn the platform from a test suite into something a person can use.

@@ -28,8 +28,14 @@
   one instance — not a date.
 
 ## Medium Priority
-- Add log rotation. `logs/application.log` reached 6 MB and had silently broken the
-  monitor agent before a `tail` operation was added. Nothing caps its growth.
+- Add log rotation and a metrics route — Phase 2 exit criterion C5.
+  `logs/application.log` is 6.5 MB and nothing caps its growth; the `metrics` tool works
+  but nothing feeds it from request handling, so `/health` reports what is configured and
+  never what is happening.
+- Declare a second workflow and cover it with an end-to-end test — criterion C3. One
+  workflow named `standard` proves the loader, not the capability.
+- Deploy the platform somewhere reachable — criterion C4. The Dockerfile, the compose
+  file and the CI exist; nobody has ever reached this API over a network.
 - Review the model catalogue periodically: context windows and prices are declared in
   code (`src/model_engine/providers/*_provider.py`) and drift as vendors change them
 - Move the 27 root `test_*.py` files into `tests/`, as `.claude/rules/testing.md`
