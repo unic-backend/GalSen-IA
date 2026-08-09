@@ -10,16 +10,16 @@ exécuter, et une seule.
 
 **VOLET en cours** : 04 — Roadmap
 **Phases** : 13
-**Phase courante** : 2.1 — en attente de confirmation
-**Terminées** : 1.1
+**Phase courante** : 2.2 — en attente de confirmation
+**Terminées** : 1.1, 2.1
 
 ```
 Ch. 01  Product Vision          → 1 phase
   1.1  ✅ vision.md réconciliée — et corrigée : elle annonçait encore « no application code yet »
 
 Ch. 02  Development Phases      → 2 phases
-  2.1  ⏳ Positionner honnêtement la plateforme sur les 4 macro-phases
-  2.2  Définir les critères de sortie de « Core Platform »
+  2.1  ✅ roadmap.md réécrite sur les 4 macro-phases — Phase 2 au tiers, 3 items de Phase 3 déjà faits
+  2.2  ⏳ Définir les critères de sortie de « Core Platform »
 
 Ch. 03  Milestones & Releases   → 2 phases
   3.1  Versionnage : ce que vaut v0.1.0, et quel type de version (prototype…)
@@ -52,4 +52,4 @@ Ch. 10  Roadmap Governance      → 1 phase (indivisible)
 la sortie est un document — le seul garde-fou contre les généralités est que
 chaque phase parte de l'état réel du dépôt et non du texte du manuel.
 
-**Prochaine action** : exécuter la phase 2.1, puis s'arrêter.
+**Prochaine action** : exécuter la phase 2.2, puis s'arrêter.

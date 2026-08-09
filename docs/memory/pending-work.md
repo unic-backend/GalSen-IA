@@ -1,6 +1,10 @@
 # GalSen IA — Pending Work
 
 ## High Priority
+- **Decide whether the platform has users.** API keys map to roles, not to people:
+  there is no account, no identity, no per-user data. The Phase 2 workspace,
+  collaboration, and every adoption metric rest on this. It needs an ADR before any
+  code — see `docs/roadmap/roadmap.md` and VOLET_13 (User Management Engine).
 - Cover the hosted-provider generation path with tests. ADR-004 is accepted and
   `_call_api` is implemented for OpenAI, Anthropic and Google, but only the
   no-credentials branch is tested: a successful generation and the 401 / 400 / 429
