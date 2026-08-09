@@ -330,3 +330,61 @@ chapter's own decision framework opens with *"does it solve a real problem?"*, a
 one cannot answer. It stays in the backlog **unranked and unscheduled** until someone
 names the problem: deleting it would lose the intent, ranking it would pretend the intent
 is understood.
+
+
+---
+
+## Strategic objectives and pillars
+
+Chapter 05 names six pillars and five measurable goals. Restated as a list they would be
+six words and five aspirations, so each pillar is answered here with what exists, the
+evidence, and the one next move. Measurement itself belongs to chapter 09; this section
+says what is being pursued, not how it is counted.
+
+| Pillar | Where it stands | Evidence | Next move |
+|--------|-----------------|----------|-----------|
+| **Product Excellence** | one real feature, unable to answer | *Conseil agricole* built end to end, returns 503 | exit criterion C1 |
+| **AI Innovation** | architecture done, capability idle | four providers behind one contract (ADR-003), none configured | same — C1 |
+| **Security and Trust** | the strongest pillar | keys hashed, CORS closed, security headers, encryption at rest, revocation and rotation, four suites in CI | keep it from regressing (C6) |
+| **Operational Efficiency** | partial | 1438 tests, CI, an executable release checklist | observability (C5) |
+| **Global Scalability** | deliberately deferred | single instance, stated at runtime (ADR-009) | nothing, until a deployment needs it |
+| **Knowledge Leadership** | **nothing** | knowledge base: **0 items, 0 indexed documents, 0 graph nodes** | see below |
+
+### The pillar with nothing behind it
+
+The knowledge base is empty. Not sparse — empty: `get_stats()` reports zero items, zero
+indexed documents, zero graph edges, and `docs/knowledge/` does not exist.
+
+That matters more than the other five rows put together, because the project's own vision
+says *"always prioritize African data, languages and use cases when possible"*. The
+Knowledge Engine, the RAG tool, the search service and the retrieval ranking are all
+built, tested, and retrieving from nothing. A platform for Senegalese contexts that knows
+nothing about Senegal is an engine without fuel.
+
+This is not a defect — no code is wrong — which is exactly why no test caught it and why
+it took a strategic review to surface. It is recorded as such rather than filed as a bug.
+
+### The measurable goals, honestly
+
+Chapter 05 lists five. Two can be pursued today, three cannot:
+
+| Goal | Pursuable now? |
+|------|----------------|
+| Increase platform reliability | yes — the suite and CI already measure it |
+| Reduce operational complexity | yes — the three-file-writing-paths decision is exactly this |
+| Accelerate feature delivery | yes, once there is a baseline (chapter 09) |
+| Improve user satisfaction | **no — there is no user** |
+| Strengthen ecosystem integrations | partly — connectors exist; no one integrates with them |
+
+Two of five rest on people who do not exist yet. Saying so is more useful than reporting
+zero against them quarter after quarter, and it points at the same P0 the backlog already
+carries: decide whether the platform has users.
+
+### Review cycle
+
+Chapter 05 asks for a regular review that adjusts on evidence. The mechanism already
+exists and is not duplicated here: `docs/memory/phase-plan.md` stops the work at every
+phase, `pending-work.md` carries the criterion behind every rank, and chapter 10 defines
+who may change the roadmap. What this section adds is the trigger — **a pillar with no
+evidence under it is the signal to re-plan**, and Knowledge Leadership is that signal
+today.

@@ -26,6 +26,13 @@ gets re-argued at every review.
 
 ## P1 — High · a Phase 2 exit criterion depends on it, or it removes a demonstrated risk
 
+- **Put something in the knowledge base.** It holds **0 items, 0 indexed documents, 0
+  graph nodes**, and `docs/knowledge/` does not exist. The Knowledge Engine, the RAG tool,
+  the search service and the retrieval ranking are all built and retrieving from nothing.
+  *Deciding criterion:* strategic alignment — the vision says to prioritise African data
+  and use cases, and the Knowledge Leadership pillar has no evidence under it at all. No
+  code is wrong, which is why no test caught this.
+
 - **Deploy the platform somewhere reachable** (criterion C4). The Dockerfile, the compose
   file and CI exist; nobody has ever reached this API over a network.
   *Deciding criterion:* strategic alignment — nothing else on this list can be validated
