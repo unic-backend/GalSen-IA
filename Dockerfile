@@ -39,10 +39,14 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # ---------------------------------------------------------------------------
 FROM python:3.11-slim AS production
 
+# Version de l'image. Docker ne peut pas importer src/version.py : la valeur est
+# donc redéclarée ici, et tests/test_version.py échoue si les deux s'écartent.
+ARG GALSEN_VERSION=0.1.0
+
 # Métadonnées de l'image
 LABEL org.opencontainers.image.title="GalSen IA" \
       org.opencontainers.image.description="Plateforme IA modulaire pour le Sénégal et l'Afrique" \
-      org.opencontainers.image.version="0.2.0" \
+      org.opencontainers.image.version="${GALSEN_VERSION}" \
       org.opencontainers.image.vendor="GalSen IA"
 
 # Empêcher la création de fichiers .pyc et le buffering des logs

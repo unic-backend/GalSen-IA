@@ -44,6 +44,11 @@ Rules for the plan:
 
 **One turn = one phase. Never two.**
 
+This is the default and the assistant may never widen it on its own. The *user*
+may: if they ask for two phases per turn, that is their call — record the agreed
+cadence in `docs/memory/phase-plan.md` so the plan and the rule do not diverge,
+and go back to one as soon as they say so.
+
 After finishing a phase:
 
 1. Verify it (it imports, its tests run and pass — `.claude/rules/verification.md`).

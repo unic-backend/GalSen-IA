@@ -3,10 +3,34 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog.
-This project follows Semantic Versioning.
+This project follows Semantic Versioning; the version lives in `src/version.py` and
+nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
+
+Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **`GET /metrics` (VOLET 04 ch. 09, half of exit criterion C5)** — request count,
+  error rate and per-route latency. `/health` answers what is configured; this
+  answers what is happening. It feeds the `metrics` tool that already existed and
+  that nothing had ever called, rather than adding a second mechanism
+  - series are named by route template, so a URL scan cannot grow the collector
+  - a failed measurement never fails the measured request
+  - requires a key (read-only is enough); `/health` stays open
+  - the reading does not count itself, and the response states `scope: "instance"`
+  - `tests/test_api_metrics.py`: 12 tests
+- **Versioning and release procedure (VOLET 04 ch. 03)**
+  - `src/version.py` is the single source for the version and the release type.
+    The application imports it; the Dockerfile redeclares it as
+    `ARG GALSEN_VERSION` and `tests/test_version.py` fails if the two drift
+  - `scripts/release_check.py`: eight executable checks (version, git tag,
+    working tree, tracked secrets, changelog, documentation, startup, test
+    suite), non-zero exit when one blocks. The two requirements needing
+    judgement — features complete, performance targets verified — are printed
+    and never ticked automatically
+  - The release type is recorded as `prototype`; the series stays `0.x` while it
+    is prototype, alpha or beta, and a stable label is refused while `/health`
+    does not report healthy
 - **Scaling posture made explicit (VOLET 02 ch. 10, ADR-009)** — closes VOLET 02
   - `src/api/scaling.py`: inventory of every subsystem holding state, with where
     it lives, what a second instance would do to it, and whether that is a loss
