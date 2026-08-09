@@ -3,7 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog.
-This project follows Semantic Versioning.
+This project follows Semantic Versioning; the version lives in `src/version.py` and
+nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
+
+Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added

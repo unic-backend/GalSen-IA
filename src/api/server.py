@@ -42,6 +42,9 @@ from src.api.health import (
 # Import de l'inventaire d'état local au processus (VOLET 02 ch. 10, ADR-009)
 from src.api.scaling import instance_id, scaling_report
 
+# Version de la plateforme — source unique (src/version.py)
+from src.version import __version__
+
 # Import de la posture de sécurité HTTP (VOLET 02 ch. 08)
 from src.api.security_headers import (
     SecurityHeadersMiddleware,
@@ -208,7 +211,7 @@ _docs_actives = docs_enabled()
 app = FastAPI(
     title="GalSen IA API",
     description="API exposant les fonctionnalités de la plateforme GalSen IA",
-    version="0.1.0",
+    version=__version__,
     lifespan=lifespan,
     docs_url="/docs" if _docs_actives else None,
     redoc_url="/redoc" if _docs_actives else None,

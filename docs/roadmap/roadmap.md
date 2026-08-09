@@ -168,3 +168,60 @@ Met: **C6**. Open: **C1, C2, C3, C4, C5**.
 C2 is the one with a decision in front of it rather than work: everything else is
 buildable today, while a user model needs an ADR first. C1 and C4 are the cheapest, and
 between them they turn the platform from a test suite into something a person can use.
+
+
+---
+
+## Versioning and release types
+
+Chapter 03 asks for semantic versioning, release notes, compatibility information and
+archived releases. Two things stood in the way, and both are settled here.
+
+### The version had two values
+
+`src/api/server.py` declared `0.1.0`; the Dockerfile labelled the image `0.2.0`. A version
+that depends on where you read it cannot answer *what is running*, which is the only
+question a version exists to answer.
+
+`src/version.py` is now the single source. The application imports it. The Dockerfile
+cannot import Python, so it redeclares the value as `ARG GALSEN_VERSION` — and
+`tests/test_version.py` fails if the two drift apart, along with any attempt to hard-code
+a version back into `FastAPI(...)`.
+
+### The release type is *prototype*
+
+Of the five types the chapter defines — prototype, alpha, beta, stable, LTS — this
+platform is a **prototype**, and `__release_type__` says so.
+
+Chapter 03 requires, before any official release: core features complete, critical defects
+resolved, security checks done, documentation updated, performance targets verified. Two
+of those five are met (security, documentation). The platform has never been deployed, has
+no user, its one real feature answers 503, and no performance target has ever been
+measured. Calling that an alpha would be a promise nothing keeps.
+
+The series stays at `0.x` while the type is prototype, alpha or beta — a test enforces it.
+In `0.x`, semantic versioning promises nothing about compatibility, which is the honest
+signal to send while the exit criteria above are open.
+
+### What moves the type forward
+
+Each step is an exit criterion from Phase 2, so the release type and the roadmap advance
+together instead of drifting:
+
+| Type | Requires | Missing today |
+|------|----------|---------------|
+| **prototype** *(current)* | it builds, it is tested | — |
+| **alpha** | C1 (generation answers) + C4 (reachable over a network) | both |
+| **beta** | C2 (users), C3 (automation), C5 (observability) | all three |
+| **stable — 1.0.0** | all six criteria, plus a deployment with real users | — |
+| **LTS** | a stable release someone depends on | — |
+
+`1.0.0` is therefore not a date. It is the moment the six criteria hold, and it commits
+the project to backward compatibility from that point on.
+
+### Release notes
+
+`docs/changelog/CHANGELOG.md` is the release log. Until the first release it carries a
+single `[Unreleased]` section — which is accurate: **nothing has been released**. Cutting
+a version means moving that section under a dated heading and tagging the commit, and that
+procedure is phase 3.2's subject.
