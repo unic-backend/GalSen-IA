@@ -29,6 +29,11 @@ from typing import Any, Dict, FrozenSet, List, Optional, Set
 
 logger = logging.getLogger(__name__)
 
+# Sujet attribué à une clé déclarée sans nom. C'est une valeur réelle et non
+# `None` : filtrer dessus a un sens, cela regroupe exactement les clés que
+# personne n'a attribuées (ADR-010).
+ANONYMOUS_SUBJECT = "anonymous"
+
 
 class Role(str, enum.Enum):
     """Rôles utilisateur dans la plateforme GalSen IA."""
@@ -147,36 +152,37 @@ def key_fingerprint(digest: str) -> str:
     return digest[:12]
 
 
-def parse_api_key_mappings() -> Dict[str, Role]:
+def parse_api_key_mappings() -> Dict[str, "KeyIdentity"]:
     """
-    Parse la variable d'environnement GALSEN_API_KEYS en un mapping
-    clé API → rôle.
+    Parse `GALSEN_API_KEYS` en un mapping clé API → identité.
 
-    Format attendu (après la virgule, après le deux-points) :
-        "sk-admin123:admin,sk-user456:user,sk-operator789:operator"
+    Format attendu, le sujet étant facultatif (ADR-010) :
+        "cle-admin:admin:awa, cle-terrain:user:moussa, cle-scrutin:readonly"
+         └ secret ┘ └ rôle ┘ └ sujet ┘
 
-    Une clé sans rôle explicite reçoit le rôle USER par défaut.
-    Une clé invalide (mauvais format) est ignorée avec un avertissement.
+    Une clé sans rôle explicite reçoit le rôle USER ; une clé sans sujet est
+    attribuée au sujet anonyme, de sorte qu'un déploiement existant continue de
+    fonctionner sans modification.
 
     Returns:
-        Dictionnaire {condensé de la clé: rôle}. La clé en clair n'est jamais
-        conservée : elle disparaît avec la variable locale.
+        Dictionnaire {condensé de la clé: identité}. La clé en clair n'est
+        jamais conservée : elle disparaît avec la variable locale.
     """
     raw = os.environ.get("GALSEN_API_KEYS", "").strip()
     if not raw:
         return {}
 
-    mappings: Dict[str, Role] = {}
+    mappings: Dict[str, "KeyIdentity"] = {}
     parts = [p.strip() for p in raw.split(",") if p.strip()]
 
     for part in parts:
-        if ":" in part:
-            key, role_name = part.split(":", 1)
-            key = key.strip()
-            role_name = role_name.strip().lower()
-        else:
-            key = part.strip()
-            role_name = "user"
+        # `split(":", 2)` et non `split(":", 1)` : le troisième champ est le
+        # sujet. Un secret contenant lui-même un « : » resterait mal découpé,
+        # mais c'était déjà vrai avant ce champ.
+        morceaux = [m.strip() for m in part.split(":", 2)]
+        key = morceaux[0]
+        role_name = (morceaux[1].lower() if len(morceaux) > 1 and morceaux[1] else "user")
+        subject = morceaux[2] if len(morceaux) > 2 and morceaux[2] else ANONYMOUS_SUBJECT
 
         if not key:
             continue
@@ -193,9 +199,27 @@ def parse_api_key_mappings() -> Dict[str, Role]:
             )
             role = Role.USER
 
-        mappings[hash_api_key(key)] = role
+        mappings[hash_api_key(key)] = KeyIdentity(role=role, subject=subject)
 
     return mappings
+
+
+@dataclass(frozen=True)
+class KeyIdentity:
+    """
+    Ce qu'une clé déclare : un rôle, et à qui elle appartient (ADR-010).
+
+    Le sujet est un identifiant stable, pas un secret : il apparaît dans les
+    traces d'audit et dans les réponses d'administration, jamais la clé.
+
+    Attributes:
+        role: Le rôle accordé par cette clé.
+        subject: L'identifiant de la personne ou du service porteur, ou
+            `ANONYMOUS_SUBJECT` quand la déclaration n'en nomme aucun.
+    """
+
+    role: "Role"
+    subject: str = ANONYMOUS_SUBJECT
 
 
 @dataclass
@@ -214,6 +238,9 @@ class RBACContext:
 
     key_fingerprint: str
     role: Role
+    # À qui appartient la clé (ADR-010). Une trace d'audit disant « awa a fait X »
+    # est exploitable ; « la clé 745df677f426 a fait X » ne l'est pas.
+    subject: str = ANONYMOUS_SUBJECT
     permissions: FrozenSet[Permission] = field(init=False)
 
     def __post_init__(self):
@@ -276,7 +303,7 @@ class RBACManager:
 
     def __init__(self):
         """Initialise le gestionnaire en parsant la variable d'environnement."""
-        self._key_role_map: Dict[str, Role] = {}
+        self._key_role_map: Dict[str, KeyIdentity] = {}
         self._revoked_digests: Set[str] = set()
         self.reload()
 
@@ -298,7 +325,7 @@ class RBACManager:
 
         self._revoked_digests &= apres
 
-        roles_present = set(self._key_role_map.values())
+        roles_present = {identite.role for identite in self._key_role_map.values()}
         logger.info(
             "RBAC chargé : %s clé(s) mappée(s) vers %s",
             len(self._key_role_map),
@@ -351,10 +378,11 @@ class RBACManager:
             (
                 {
                     "fingerprint": key_fingerprint(digest),
-                    "role": role.value,
+                    "role": identite.role.value,
+                    "subject": identite.subject,
                     "revoked": digest in self._revoked_digests,
                 }
-                for digest, role in self._key_role_map.items()
+                for digest, identite in self._key_role_map.items()
             ),
             key=lambda entree: entree["fingerprint"],
         )
@@ -385,7 +413,7 @@ class RBACManager:
 
         # La recherche dans le dictionnaire suffirait, mais elle n'est pas à
         # temps constant : la comparaison explicite ferme cette mesure de temps.
-        for connu, role in self._key_role_map.items():
+        for connu, identite in self._key_role_map.items():
             if not hmac.compare_digest(connu, digest):
                 continue
 
@@ -398,7 +426,11 @@ class RBACManager:
                 )
                 raise PermissionError("Clé API invalide.")
 
-            return RBACContext(key_fingerprint=key_fingerprint(digest), role=role)
+            return RBACContext(
+                key_fingerprint=key_fingerprint(digest),
+                role=identite.role,
+                subject=identite.subject,
+            )
 
         raise PermissionError("Clé API invalide.")
 

@@ -16,6 +16,10 @@ Each engine lives in `src/` and exposes a single manager class as its entry poin
 - `src/tools/` → Concrete tools: `filesystem`, `terminal`, `git`, `github`, `web_search`, `browser`, `api`, `model`, `database`, `memory`, `rag`, `embeddings`, `ocr`, `pdf`, `email`, `calendar`, `docker`, `logging`, `metrics` (all tools declared in `tools/tools.yaml` are implemented)
 - `src/api/` → API Layer (RESTful API exposing platform functionality)
 
+## Identity and authentication
+`docs/architecture/identity.md` — what VOLET_16 asks, what exists, what is deliberately
+absent with its trigger. Decision: ADR-010 (a key belongs to a subject).
+
 ## Architecture Decision Records (ADRs)
 
 - ADR-001: Choose Python as the primary implementation language

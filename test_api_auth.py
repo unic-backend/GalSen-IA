@@ -1,20 +1,48 @@
 import os
 import sys
+
+import pytest
 from fastapi.testclient import TestClient
 
 # Ensure the application can be imported
 sys.path.insert(0, os.path.dirname(__file__))
 
-# Set environment variable for API keys before importing the app
 os.environ["GALSEN_API_KEYS"] = "test-key-123,another-key"
 
-from src.api.server import app, rbac_manager
-
-# S'assurer que le RBACManager est synchronisé avec la variable d'environnement
-# (nécessaire quand l'import a déjà eu lieu avec d'autres valeurs)
-rbac_manager.reload()
+import src.api.server as serveur
+from src.api.server import app
+from src.api.rate_limiter import set_valid_api_key_digests
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def cles_actives():
+    """Garantit les clés de ce fichier pendant chaque test, puis rend l'état.
+
+    Recharger à l'import ne suffit pas : le gestionnaire RBAC est partagé par
+    tout le processus, et n'importe quelle suite exécutée ensuite peut le
+    recharger avec d'autres clés. Ce fichier obtenait alors des 401 sur des
+    clés qu'il venait de déclarer — un échec qui n'apparaissait qu'en suite
+    complète, jamais isolément.
+    """
+    # `serveur.rbac_manager` et non le nom importé : `importlib.reload()` d'une
+    # autre suite remplace l'objet dans le module, et les routes consultent
+    # celui du module. Recharger l'ancien laissait l'application authentifier
+    # avec un gestionnaire que ce fichier ne configurait plus.
+    gestionnaire = serveur.rbac_manager
+    ancien_mapping = dict(gestionnaire._key_role_map)
+    anciennes_revocations = set(gestionnaire._revoked_digests)
+
+    os.environ["GALSEN_API_KEYS"] = "test-key-123,another-key"
+    gestionnaire.reload()
+    set_valid_api_key_digests(gestionnaire.active_key_digests())
+
+    yield
+
+    gestionnaire._key_role_map = ancien_mapping
+    gestionnaire._revoked_digests = anciennes_revocations
+    set_valid_api_key_digests(gestionnaire.active_key_digests())
 
 def test_health_endpoint_no_auth():
     """Le endpoint /health doit être accessible sans clé API."""

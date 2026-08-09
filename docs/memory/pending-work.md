@@ -11,11 +11,12 @@ gets re-argued at every review.
 
 ## P0 — Critical · nothing else is scheduled until these move
 
-- **Decide whether the platform has users.** API keys map to roles, not to people: no
-  account, no identity, no per-user data. Phase 2's workspace, Phase 3's collaboration
-  and every adoption metric rest on this.
-  *Deciding criterion:* strategic alignment — it gates more work than anything else in
-  this file, and it is a decision, not a build. Needs an ADR first (VOLET_16, Authentication & Identity).
+- **Verify identities, or accept that nobody does.** ADR-010 closed C2, but stage 2 of
+  the chapter's lifecycle is absent: whoever writes `GALSEN_API_KEYS` asserts who each key
+  belongs to and nothing checks it. Fine while that person operates the platform; the
+  trigger for a real directory is the day they do not.
+  *Deciding criterion:* security implications — an unverified identity is still better
+  than none, but the gap must not be forgotten once it stops being acceptable.
 
 - **Configure a model provider.** The proof now exists
   (`tests/test_generation_end_to_end.py`): it skips while no provider answers and runs the

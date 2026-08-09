@@ -12,23 +12,24 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-09
 
-**En cours** : rien. **VOLET 04 terminé** (10 chapitres, 13 phases).
+**En cours** : rien. **VOLET 16 terminé** (10 chapitres, 12 phases).
 
 **Terminé dans cette session**
-- **VOLET 02 clos**, puis **réconciliation de deux branches parallèles** (12 conflits).
-- **VOLET 04 clos** : roadmap réelle, 6 critères de sortie de Phase 2, versionnage à
-  source unique, `release_check.py`, backlog P0–P3, registre de 9 dettes, `GET /metrics`.
-- Défauts trouvés en écrivant : `vision.md` mentait sur l'état du projet, deux
-  numérotations de VOLET se contredisent, la base de connaissances est **vide**,
-  `/agri/advice` répondait 200 avec un conseil vide.
-- Tests : **1450 passants**, 5 ignorés.
+- **VOLET 02, VOLET 04 et VOLET 16 clos.**
+- **ADR-010** : une clé appartient à un sujet, sans magasin de secrets.
+- **Critère C2 atteint** sur les trois magasins — l'écriture prenait son
+  propriétaire dans le corps de la requête, la lecture ne filtrait rien.
+- **Preuve de C1** écrite : s'ignore sans fournisseur, s'exécute dès qu'il y en a un.
+- `GET /metrics` (trafic + taux d'authentification), `GET /auth/whoami`,
+  `scripts/release_check.py`, `src/version.py` source unique.
+- Tests : **1494 passants**, 7 ignorés.
 
 **Prochaine étape**
-Choisir le prochain VOLET, publier son plan de phases, s'arrêter. VOLET 03
-(Development Manual) ou VOLET 16 (Authentication & Identity, dont dépend le P0).
+Choisir le prochain VOLET et publier son plan de phases. Critères de sortie de
+Phase 2 : C2 et C6 atteints ; C1, C3, C4, C5 ouverts.
 
 **Bloqué / à surveiller**
-- Deux P0 : la plateforme n'a **pas d'utilisateur** et **ne sait pas générer** (503).
-- Base de connaissances à 0 élément, alors que la vision dit de prioriser les
-  données africaines.
-- Log à 6,7 Mo sans rotation ; aucune cible de performance déclarée.
+- **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192.
+- **C4 dépend de toi** : rien n'est déployé, personne n'a joint l'API par le réseau.
+- Rien ne vérifie une identité : celui qui écrit `GALSEN_API_KEYS` est cru sur parole.
+- Base de connaissances toujours vide ; log à 6,7 Mo sans rotation.

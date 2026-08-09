@@ -35,6 +35,13 @@ TOTAL = "http.requests.total"
 PAR_CLASSE = "http.requests.{classe}"
 LATENCE = "http.latency.{methode}.{route}"
 
+# Issues d'authentification (VOLET_16 ch. 06 et 09). Le taux de succès est la
+# métrique que les deux chapitres demandent, et elle ne coûte que deux
+# compteurs. Aucun sujet n'y figure : compter par personne transformerait une
+# mesure d'exploitation en suivi individuel.
+AUTH_SUCCES = "auth.success"
+AUTH_ECHEC = "auth.failure"
+
 # Chemin retenu quand aucune route ne correspond. Utiliser l'URL brute ferait
 # exploser le nombre de compteurs : un scan d'URL en créerait un par tentative.
 ROUTE_INCONNUE = "unmatched"
@@ -120,6 +127,22 @@ class RequestMetricsMiddleware(BaseHTTPMiddleware):
             logger.warning("Métrique non enregistrée : %s", erreur)
 
 
+def record_authentication(reussie: bool) -> None:
+    """
+    Compte une tentative d'authentification.
+
+    Args:
+        reussie: True si la clé a été reconnue et n'était pas révoquée.
+
+    Une mesure ratée ne doit pas empêcher une authentification : l'erreur est
+    journalisée et avalée, comme dans l'intergiciel.
+    """
+    try:
+        get_shared_metrics().execute("increment", AUTH_SUCCES if reussie else AUTH_ECHEC)
+    except Exception as erreur:
+        logger.warning("Métrique d'authentification non enregistrée : %s", erreur)
+
+
 def metrics_snapshot() -> Dict[str, Any]:
     """
     Retourne l'état des compteurs, avec le taux d'erreur déjà calculé.
@@ -141,8 +164,20 @@ def metrics_snapshot() -> Dict[str, Any]:
         if nom in (PAR_CLASSE.format(classe="4xx"), PAR_CLASSE.format(classe="5xx"))
     )
 
+    succes = compteurs.get(AUTH_SUCCES, 0)
+    echecs = compteurs.get(AUTH_ECHEC, 0)
+    tentatives = succes + echecs
+
     return {
         "requests_total": total,
+        # Le chapitre 06 du VOLET_16 demande « taux de succès » et « taux
+        # d'échec » : le second se déduit du premier, une seule valeur suffit.
+        "auth": {
+            "attempts": tentatives,
+            "succeeded": succes,
+            "failed": echecs,
+            "success_rate": round(succes / tentatives, 4) if tentatives else None,
+        },
         # Arrondi à quatre décimales : au-delà, le chiffre suggère une précision
         # que quelques centaines de requêtes ne portent pas.
         "error_rate": round(erreurs / total, 4) if total else 0.0,

@@ -43,7 +43,11 @@ from src.api.health import (
 from src.api.scaling import instance_id, scaling_report
 
 # Import de la mesure du trafic réel (VOLET 04 ch. 09, critère C5)
-from src.api.metrics import RequestMetricsMiddleware, metrics_snapshot
+from src.api.metrics import (
+    RequestMetricsMiddleware,
+    metrics_snapshot,
+    record_authentication,
+)
 
 # Version de la plateforme — source unique (src/version.py)
 from src.version import __version__
@@ -57,6 +61,7 @@ from src.api.security_headers import (
 
 # Import du RBAC
 from src.api.rbac import (
+    ANONYMOUS_SUBJECT,
     RBACManager,
     Permission,
     RBACContext,
@@ -120,9 +125,15 @@ def require_auth(api_key: str = Security(api_key_header)) -> RBACContext:
         HTTPException 401 : clé manquante ou invalide.
     """
     try:
-        return rbac_manager.authenticate(api_key)
+        contexte = rbac_manager.authenticate(api_key)
     except PermissionError as e:
+        # Compté avant de lever : sans cela, la seule catégorie qui intéresse
+        # une enquête — les échecs — serait la seule absente des chiffres.
+        record_authentication(reussie=False)
         raise HTTPException(status_code=401, detail=str(e))
+
+    record_authentication(reussie=True)
+    return contexte
 
 
 def require_permission(permission: Permission):
@@ -578,15 +589,58 @@ async def liveness_check():
     return {"status": "alive" if alive else "dead"}
 
 # Endpoints mémoire
+def _proprietaire_effectif(ctx: RBACContext, demande: Optional[str]) -> str:
+    """
+    Détermine à qui appartient une donnée écrite (ADR-010).
+
+    Args:
+        ctx: Contexte de la requête, porteur du sujet authentifié.
+        demande: Propriétaire réclamé dans le corps de la requête, s'il y en a un.
+
+    Returns:
+        Le sujet authentifié, sauf pour un administrateur qui peut en désigner
+        un autre explicitement.
+    """
+    if demande and ctx.has_permission(Permission.ADMIN_MANAGE):
+        return demande
+    return ctx.subject
+
+
+def _appartient_au_sujet(ctx: RBACContext, proprietaire: Optional[str]) -> bool:
+    """
+    Indique si l'appelant a le droit de voir une donnée.
+
+    Un administrateur voit tout : c'est ce qui rend l'exploitation possible.
+    Une donnée sans propriétaire est visible du sujet anonyme, ce qui préserve
+    le comportement des déploiements dont les clés ne nomment personne.
+    """
+    if ctx.has_permission(Permission.ADMIN_MANAGE):
+        return True
+    return (proprietaire or ANONYMOUS_SUBJECT) == ctx.subject
+
+
 @app.post("/memory/store", response_model=MemoryItemResponse, tags=["memory"],
-           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
-async def store_memory(item: MemoryItemCreate):
-    """Stocker un nouvel élément de mémoire."""
+           dependencies=[Depends(rate_limit_dependency)])
+async def store_memory(
+    item: MemoryItemCreate,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_WRITE)),
+):
+    """Stocker un nouvel élément de mémoire, au nom de l'appelant.
+
+    Le propriétaire est **le sujet authentifié**, pas un champ du corps de la
+    requête : sans cela, n'importe quel porteur de clé pouvait écrire dans la
+    mémoire d'un autre en déclarant son identifiant (ADR-010, critère C2).
+
+    Un administrateur peut désigner un autre propriétaire — c'est ce qui permet
+    d'amorcer des données ou d'en reprendre pour quelqu'un.
+    """
+    proprietaire = _proprietaire_effectif(ctx, item.user_id)
+
     # Créer un MemoryItem à partir des données reçues
     memory_item = MemoryItem(
         content=item.content,
         memory_type=item.memory_type,
-        user_id=item.user_id,
+        user_id=proprietaire,
         session_id=item.session_id,
         agent_id=item.agent_id,
         tags=item.tags,
@@ -617,11 +671,20 @@ async def store_memory(item: MemoryItemCreate):
     }
 
 @app.get("/memory/retrieve/{item_id}", response_model=MemoryItemResponse, tags=["memory"],
-           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def retrieve_memory(item_id: str):
-    """Récupérer un élément de mémoire par son ID."""
+           dependencies=[Depends(rate_limit_dependency)])
+async def retrieve_memory(
+    item_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Récupérer un élément de mémoire appartenant à l'appelant.
+
+    La mémoire d'autrui répond **404 et non 403** : distinguer « cela existe
+    mais ne vous appartient pas » de « cela n'existe pas » permettrait
+    d'énumérer les identifiants d'autres sujets. Même raisonnement que pour une
+    clé révoquée, qui reçoit le message d'une clé inconnue.
+    """
     item = memory_manager.get_memory(item_id)
-    if item is None:
+    if item is None or not _appartient_au_sujet(ctx, item.user_id):
         raise HTTPException(status_code=404, detail="Élément de mémoire non trouvé")
     return {
         "id": item.id,
@@ -642,9 +705,23 @@ async def retrieve_memory(item_id: str):
 
 @app.post("/memory/search", response_model=List[MemoryItemResponse], tags=["memory"],
             dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def search_memory(query: str, limit: int = 10):
-    """Rechercher des éléments de mémoire par similaire."""
+async def search_memory(
+    query: str,
+    limit: int = 10,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Rechercher dans la mémoire de l'appelant.
+
+    Le filtrage est appliqué **après** la recherche : le moteur de mémoire ne
+    connaît pas les sujets, et lui apprendre l'autorisation mélangerait deux
+    responsabilités. La conséquence est assumée : la limite porte sur les
+    résultats bruts, donc une recherche peut rendre moins d'éléments que
+    demandé.
+    """
     results = memory_manager.search_memory(query, limit=limit)
+    results = [
+        (item, score) for item, score in results if _appartient_au_sujet(ctx, item.user_id)
+    ]
     # Convertir les tuples (item, score) en objets de réponse
     response_items = []
     for item, score in results:
@@ -922,6 +999,24 @@ def _sync_rate_limiter() -> None:
     set_valid_api_key_digests(rbac_manager.active_key_digests())
 
 
+@app.get("/auth/whoami", tags=["auth"],
+         dependencies=[Depends(rate_limit_dependency)])
+async def whoami(ctx: RBACContext = Depends(require_auth)):
+    """Dit qui appelle : sujet, rôle et permissions (ADR-010).
+
+    Aucune permission particulière n'est exigée — la route ne révèle que ce que
+    l'appelant possède déjà. Elle existe parce qu'une clé mal attribuée est
+    invisible autrement : on découvre son identité en lisant les traces d'audit,
+    trop tard.
+    """
+    return {
+        "subject": ctx.subject,
+        "role": ctx.role.value,
+        "fingerprint": ctx.key_fingerprint,
+        "permissions": sorted(p.value for p in ctx.permissions),
+    }
+
+
 @app.get("/auth/keys", tags=["auth"],
          dependencies=[Depends(rate_limit_dependency),
                        Depends(require_permission(Permission.ADMIN_MANAGE))])
@@ -1113,15 +1208,24 @@ async def send_notification(request: NotificationCreateRequest):
 
 
 @app.post("/notification/list", tags=["notification"],
-           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def list_notifications(request: NotificationListRequest):
-    """Liste les notifications avec filtres."""
+           dependencies=[Depends(rate_limit_dependency)])
+async def list_notifications(
+    request: NotificationListRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Liste les notifications adressées à l'appelant (ADR-010, critère C2).
+
+    Pour les notifications, la contrainte porte sur la **lecture** et non sur
+    l'écriture : `recipient` désigne le destinataire, pas l'auteur. Envoyer à
+    quelqu'un d'autre reste légitime — c'est ce que fait le moteur d'approbation
+    quand il sollicite un opérateur ; lire le courrier d'autrui ne l'est pas.
+    """
     notifications = notification_manager.list_notifications(
         limit=request.limit,
         offset=request.offset,
         unread_only=request.unread_only,
         notification_type=request.notification_type,
-        recipient=request.recipient,
+        recipient=_proprietaire_effectif(ctx, request.recipient),
         role=request.role,
     )
     return {
@@ -1131,9 +1235,17 @@ async def list_notifications(request: NotificationListRequest):
 
 
 @app.post("/notification/mark-read/{notification_id}", tags=["notification"],
-           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
-async def mark_notification_read(notification_id: str):
-    """Marque une notification comme lue."""
+           dependencies=[Depends(rate_limit_dependency)])
+async def mark_notification_read(
+    notification_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_WRITE)),
+):
+    """Marque comme lue une notification adressée à l'appelant."""
+    notification = notification_manager.get(notification_id)
+    if notification is not None and not _appartient_au_sujet(ctx, notification.recipient):
+        # 404 et non 403 : le refus doit être indiscernable d'une absence.
+        raise HTTPException(status_code=404, detail=f"Notification {notification_id} introuvable")
+
     success = notification_manager.mark_read(notification_id)
     if not success:
         raise HTTPException(status_code=404, detail=f"Notification {notification_id} introuvable")
@@ -1141,10 +1253,17 @@ async def mark_notification_read(notification_id: str):
 
 
 @app.post("/notification/mark-all-read", tags=["notification"],
-           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
-async def mark_all_read(recipient: Optional[str] = None):
-    """Marque toutes les notifications comme lues."""
-    count = notification_manager.mark_all_read(recipient=recipient)
+           dependencies=[Depends(rate_limit_dependency)])
+async def mark_all_read(
+    recipient: Optional[str] = None,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_WRITE)),
+):
+    """Marque comme lues les notifications de l'appelant.
+
+    Sans cette liaison, un porteur de clé pouvait vider la boîte de n'importe
+    qui en nommant son destinataire.
+    """
+    count = notification_manager.mark_all_read(recipient=_proprietaire_effectif(ctx, recipient))
     return {"marked_read": count}
 
 
@@ -1156,9 +1275,16 @@ async def notification_stats():
 
 
 @app.delete("/notification/{notification_id}", tags=["notification"],
-            dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_DELETE))])
-async def delete_notification(notification_id: str):
-    """Supprime une notification."""
+            dependencies=[Depends(rate_limit_dependency)])
+async def delete_notification(
+    notification_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_DELETE)),
+):
+    """Supprime une notification adressée à l'appelant."""
+    notification = notification_manager.get(notification_id)
+    if notification is not None and not _appartient_au_sujet(ctx, notification.recipient):
+        raise HTTPException(status_code=404, detail=f"Notification {notification_id} introuvable")
+
     success = notification_manager.delete(notification_id)
     if not success:
         raise HTTPException(status_code=404, detail=f"Notification {notification_id} introuvable")
@@ -1217,9 +1343,12 @@ import base64
 
 
 @app.post("/file/upload", tags=["file"],
-          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
-async def upload_file(request: FileUploadRequest):
-    """Téléverse un fichier sur la plateforme."""
+          dependencies=[Depends(rate_limit_dependency)])
+async def upload_file(
+    request: FileUploadRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_WRITE)),
+):
+    """Téléverse un fichier, au nom de l'appelant (ADR-010, critère C2)."""
     try:
         data = base64.b64decode(request.data)
     except Exception:
@@ -1231,7 +1360,7 @@ async def upload_file(request: FileUploadRequest):
         data=data,
         description=request.description,
         tags=request.tags,
-        uploaded_by=request.uploaded_by,
+        uploaded_by=_proprietaire_effectif(ctx, request.uploaded_by),
         source=request.source,
         metadata=request.metadata,
     )
@@ -1247,25 +1376,40 @@ async def upload_file(request: FileUploadRequest):
 
 
 @app.get("/file/{file_id}", tags=["file"],
-         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def get_file(file_id: str, include_data: bool = False):
-    """Retourne les métadonnées et le contenu d'un fichier."""
+         dependencies=[Depends(rate_limit_dependency)])
+async def get_file(
+    file_id: str,
+    include_data: bool = False,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Retourne un fichier appartenant à l'appelant.
+
+    Le fichier d'autrui répond 404 : distinguer « existe mais pas à vous » de
+    « n'existe pas » permettrait d'énumérer les fichiers des autres sujets.
+    """
     file = file_manager.get_file(file_id)
-    if file is None:
+    if file is None or not _appartient_au_sujet(ctx, file.uploaded_by):
         raise HTTPException(status_code=404, detail=f"Fichier {file_id} introuvable")
     return file.to_dict(include_data=include_data)
 
 
 @app.post("/file/list", tags=["file"],
-          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def list_files(request: FileListRequest):
-    """Liste les fichiers avec filtres."""
+          dependencies=[Depends(rate_limit_dependency)])
+async def list_files(
+    request: FileListRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Liste les fichiers de l'appelant.
+
+    Le filtre `uploaded_by` demandé n'est honoré que pour un administrateur :
+    sinon il permettrait de lister les fichiers de n'importe qui.
+    """
     files = file_manager.list_files(
         limit=request.limit,
         offset=request.offset,
         category=request.category,
         content_type=request.content_type,
-        uploaded_by=request.uploaded_by,
+        uploaded_by=_proprietaire_effectif(ctx, request.uploaded_by),
     )
     return {
         "files": [f.to_dict(include_data=False) for f in files],

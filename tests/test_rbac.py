@@ -84,8 +84,8 @@ class TestParseApiKeyMappings:
         with patch.dict(os.environ, {"GALSEN_API_KEYS": "key1,key2"}, clear=False):
             from src.api.rbac import hash_api_key, parse_api_key_mappings
             mappings = parse_api_key_mappings()
-            assert mappings[hash_api_key("key1")].value == "user"
-            assert mappings[hash_api_key("key2")].value == "user"
+            assert mappings[hash_api_key("key1")].role.value == "user"
+            assert mappings[hash_api_key("key2")].role.value == "user"
 
     def test_keys_with_explicit_roles(self):
         """Clés avec rôle explicite dans le format 'key:role'."""
@@ -96,8 +96,8 @@ class TestParseApiKeyMappings:
         ):
             from src.api.rbac import hash_api_key, parse_api_key_mappings
             mappings = parse_api_key_mappings()
-            assert mappings[hash_api_key("admin-key")].value == "admin"
-            assert mappings[hash_api_key("read-key")].value == "readonly"
+            assert mappings[hash_api_key("admin-key")].role.value == "admin"
+            assert mappings[hash_api_key("read-key")].role.value == "readonly"
             assert len(mappings) == 2
 
     def test_mixed_format(self):
@@ -109,9 +109,9 @@ class TestParseApiKeyMappings:
         ):
             from src.api.rbac import hash_api_key, parse_api_key_mappings
             mappings = parse_api_key_mappings()
-            assert mappings[hash_api_key("admin-key")].value == "admin"
-            assert mappings[hash_api_key("plain-key")].value == "user"
-            assert mappings[hash_api_key("op-key")].value == "operator"
+            assert mappings[hash_api_key("admin-key")].role.value == "admin"
+            assert mappings[hash_api_key("plain-key")].role.value == "user"
+            assert mappings[hash_api_key("op-key")].role.value == "operator"
 
     def test_invalid_role_defaults_to_user(self):
         """Rôle invalide → 'user' par défaut avec un avertissement log."""
@@ -122,7 +122,7 @@ class TestParseApiKeyMappings:
         ):
             from src.api.rbac import hash_api_key, parse_api_key_mappings
             mappings = parse_api_key_mappings()
-            assert mappings[hash_api_key("key1")].value == "user"
+            assert mappings[hash_api_key("key1")].role.value == "user"
 
 
 class TestRBACManager:

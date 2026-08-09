@@ -601,14 +601,19 @@ class TestRateLimitAuthCompatibility:
         response = client.get("/secure")
         assert response.status_code == 429, f"Attendu 429, reçu {response.status_code}"
 
-    def test_invalid_api_key_treated_as_unauthenticated(self):
-        """Une clé API invalide doit être traitée comme non authentifiée pour le rate limiting."""
+    def test_invalid_api_key_treated_as_unauthenticated(self, monkeypatch):
+        """Une clé API invalide doit être traitée comme non authentifiée pour le rate limiting.
+
+        `monkeypatch` et non `os.environ` : la variable était laissée modifiée
+        pour tout le processus, et une suite exécutée ensuite recevait des 401
+        sur ses propres clés — un échec qui ne dépendait que de l'ordre.
+        """
         import src.api.rate_limiter as rl_module
 
-        os.environ["GALSEN_API_KEYS"] = "only-valid-key"
-        os.environ["GALSEN_RATE_LIMIT_ENABLED"] = "true"
-        os.environ["GALSEN_RATE_LIMIT_UNAUTHENTICATED_RPM"] = "2"
-        os.environ["GALSEN_RATE_LIMIT_BURST_MULTIPLIER"] = "1.0"
+        monkeypatch.setenv("GALSEN_API_KEYS", "only-valid-key")
+        monkeypatch.setenv("GALSEN_RATE_LIMIT_ENABLED", "true")
+        monkeypatch.setenv("GALSEN_RATE_LIMIT_UNAUTHENTICATED_RPM", "2")
+        monkeypatch.setenv("GALSEN_RATE_LIMIT_BURST_MULTIPLIER", "1.0")
 
         set_valid_api_key_digests({hash_api_key("only-valid-key")})
         rl_module._rate_limiter = None
