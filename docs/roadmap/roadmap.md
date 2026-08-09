@@ -63,7 +63,7 @@ collaboration and analytics both wait on the same missing user model as Phase 2.
 |------|-------|
 | Multi-language support | absent — *Conseil agricole* accepts `fr`/`wo`, which is one feature's parameter, not platform internationalisation. The interface is French only |
 | Multi-region deployment | absent — single instance by design today (ADR-009) |
-| Country-specific modules | absent — see VOLET_08 |
+| Country-specific modules | absent — the authority is VOLET_01 ch. 05, not a dedicated manual |
 | Enterprise capabilities | absent |
 | Large-scale performance optimization | absent — no load has ever been measured |
 
@@ -110,7 +110,7 @@ notifications.
 
 *Check:* a test where user A stores a memory and user B lists memories without seeing it.
 *Today:* impossible to write. API keys map to roles, not to people. Needs an ADR before
-any code (VOLET_13).
+any code (VOLET_16, Authentication & Identity).
 
 ### C3 — Automation is demonstrated, not merely loadable
 
@@ -473,3 +473,120 @@ Chapter 06 lists seven areas. Ranked by what this platform would gain today:
 - **Security** — the strongest pillar; innovation here means keeping it, not extending it.
 - **Performance** — nothing to optimise until something is measured (chapter 09).
 - **UX** — one dashboard, no user to observe using it.
+
+
+---
+
+## Global expansion
+
+Chapter 07 asks for a strategy to reach several countries and markets while keeping one
+platform: keep a global core, localise without fragmenting it, respect regional law, reuse
+common modules, validate each market before expanding.
+
+None of it is actionable yet — the platform has no user, is deployed nowhere, and its one
+feature cannot answer. Writing a market-entry plan in that state would be fiction. What
+this section does instead is record the two things that *are* decidable now, and one
+defect the chapter exposed.
+
+### What is already decided, and holds
+
+Two properties the chapter asks for exist, and they were not built for expansion — they
+came from other constraints, which is why they are trustworthy:
+
+- **One global core.** Every provider, connector and store sits behind a contract
+  (ADR-003, ADR-005, ADR-007). A country-specific integration enters as another
+  implementation, not as a fork.
+- **Configuration, not code, per deployment.** Credentials, storage backend, CORS origins,
+  connector settings and the instance identity all come from the environment (ADR-004).
+  Two countries are two environments, not two branches.
+
+The consequence worth stating: **the localisation that would be expensive is the one
+nobody has started** — language. `Conseil agricole` takes `fr`/`wo` as a parameter of one
+feature; the interface, the API messages and the error details are French only. That is a
+per-string cost across the whole platform, and it grows with every string added between
+now and the day it matters.
+
+### What the chapter cannot get yet
+
+Market research, regulatory assessment, pilot deployment, user feedback, full rollout: all
+five steps require users and a deployment. They are recorded as unaddressed rather than
+answered with a plan nobody could execute. The trigger is the same C4 the rest of this
+document keeps meeting.
+
+### A defect this chapter uncovered
+
+`docs/architecture/` carries **two contradictory numbering schemes**. Twenty-five folders
+are named after subjects (`Country Expansion. Vôet 8`, `User Management Engine. V13`,
+`Connectors & Partners. Volet 7`) and twenty-five `VOLET_NN.md` files carry the same
+numbers with **different subjects**:
+
+| Number | Folder claims | The file actually contains |
+|--------|---------------|----------------------------|
+| 7 | Connectors & Partners | Memory Engine Manual |
+| 8 | Country Expansion | Workflow Engine Manual |
+| 13 | User Management Engine | Notification Engine Manual |
+
+The folder contents match the files, not the folder names — `User Management Engine. V13/`
+holds the Notification Engine manual. So the **folder names are the wrong half**, and any
+reference written from them points at the wrong document.
+
+This is not theoretical: two references in this repository were written from the folder
+names and were wrong. The user-model decision pointed at "VOLET_13 (User Management
+Engine)" when the manual it needs is **VOLET_16, Authentication & Identity**; country
+modules pointed at "VOLET_08" when the only authority on country expansion is **VOLET_01
+chapter 05**. Both are corrected.
+
+There is no dedicated country-expansion manual among the numbered files. Chapter 07 of
+this VOLET and VOLET_01 chapter 05 are the whole of it, and that is enough for a platform
+that has not left one country yet.
+
+
+---
+
+## Technical debt register
+
+Chapter 08 asks to *"minimise technical debt"* and to *"replace temporary solutions with
+robust implementations"*. A list of principles would not survive contact with this
+repository, so this is the actual register: every debt currently carried, what it costs,
+and what triggers paying it. Measured, not recalled.
+
+| Debt | Measured | What it costs | Trigger to pay |
+|------|----------|---------------|----------------|
+| **Unbounded log** | `logs/application.log`: 6.7 MB, 43 638 lines, no rotation | already broke the monitor agent once, before a `tail` was added | P1 — criterion C5 |
+| **No metrics fed** | the `metrics` tool works; nothing calls it from request handling | `/health` reports what is *configured*, never what is *happening* | P1 — criterion C5 |
+| **Three ways to write a file** | `LocalDiskStorageConnector`, `SQLiteFileStore`, `FileSystemCloudStore` | a caller has no way to choose; every future change touches three implementations | P1 — decided, not scheduled |
+| **27 test files at the repository root** | 27 `test_*.py` outside `tests/` | contradicts `.claude/rules/testing.md`; they are collected and green | P3 — cosmetic while green |
+| **Slow orchestration suite** | `test_integration.py`: 97 s, three tests at 31 s | slows every full run; the tester agent runs real suites inside the pipeline | P2 |
+| **JavaScript untested** | `dashboard.js`, `api-client.js`: no unit runner | three rendering defects were caught only by driving a browser | accepted by ADR-008; the trigger is the interface outgrowing one page |
+| **Hand-maintained scaling inventory** | `src/api/scaling.py`, 7 entries | a new store added without an entry makes `/health` lie | accepted by ADR-009; a test catches removal, not omission |
+| **Single-instance state** | revocations and rate-limit counters in process memory | a revoked key still opens another instance | P3 → **P0 the moment a second instance runs** |
+| **Two numbering schemes in `docs/architecture/`** | 25 folders vs 25 `VOLET_NN.md`, contradicting on at least 3 numbers | two references in this repository were written wrong from it | unscheduled — see chapter 07 above |
+
+### What this register says about the project
+
+Nine debts, and the shape matters more than the count:
+
+- **None of them is a shortcut taken to ship faster.** The usual origin of debt — "we will
+  clean it up after the deadline" — is absent, because there has been no deadline and no
+  ship. They come instead from *merging two branches*, from *deferring deliberately*
+  (ADR-008, ADR-009), and from *growth without maintenance* (the log).
+- **Three are accepted rather than owed.** The JavaScript gap, the hand-maintained
+  inventory and the single-instance state are recorded in ADRs with their trigger. An
+  accepted debt with a named trigger is a decision; the same debt undocumented is a trap.
+- **The two most expensive are the cheapest to fix.** Log rotation and feeding the metrics
+  tool are both small, and both are criterion C5.
+
+### The debt this register cannot show
+
+Chapter 08 also asks to *"preserve critical knowledge"* and *"invest in documentation"*.
+By that measure the largest liability is not in the table: **the knowledge base is empty**
+and the platform's domain — Senegalese agriculture, and whatever follows — exists nowhere
+in the repository. That is not debt in the usual sense; nothing has to be undone. It is
+simply an asset the project claims to have and does not.
+
+### Rule going forward
+
+A temporary solution enters with its replacement trigger written down, in an ADR when it
+shapes the architecture and in this table otherwise. A trigger is a condition, not a date:
+*"when a second instance runs"*, *"when the interface outgrows one page"*. Dates on a
+one-maintainer project are wishes; conditions still mean something in a year.

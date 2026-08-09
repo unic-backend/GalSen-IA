@@ -15,7 +15,7 @@ gets re-argued at every review.
   account, no identity, no per-user data. Phase 2's workspace, Phase 3's collaboration
   and every adoption metric rest on this.
   *Deciding criterion:* strategic alignment — it gates more work than anything else in
-  this file, and it is a decision, not a build. Needs an ADR first (VOLET_13).
+  this file, and it is a decision, not a build. Needs an ADR first (VOLET_16, Authentication & Identity).
 
 - **Make generation provable end to end.** No provider is configured, so the platform's
   only real feature answers 503 and exit criterion C1 cannot be checked. The task is the

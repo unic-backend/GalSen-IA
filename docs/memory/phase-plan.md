@@ -10,8 +10,10 @@ exécuter, et une seule.
 
 **VOLET en cours** : 04 — Roadmap
 **Phases** : 13
-**Phase courante** : 7.1 — en attente de confirmation
-**Terminées** : 1.1, 2.1, 2.2, 3.1, 3.2, 4.1, 5.1, 6.1
+**Phase courante** : 9.1 et 9.2 — en attente de confirmation
+**Terminées** : 1.1, 2.1, 2.2, 3.1, 3.2, 4.1, 5.1, 6.1, 7.1, 8.1
+**Cadence** : 2 phases par tour (demandé par l'utilisateur ; le défaut de
+`.claude/rules/phase-protocol.md` reste une phase)
 
 ```
 Ch. 01  Product Vision          → 1 phase
@@ -35,13 +37,13 @@ Ch. 06  Innovation Roadmap      → 1 phase (indivisible)
   6.1  ✅ mode d'échec nommé (fabrication, 4 cas), 3 conditions d'entrée, étape « pilote » manquante
 
 Ch. 07  Global Expansion        → 1 phase (indivisible)
-  7.1  ⏳ Stratégie d'expansion — pointer vers le VOLET 08, ne pas le dupliquer
+  7.1  ✅ expansion : 2 propriétés déjà acquises ; 2 numérotations contradictoires découvertes
 
 Ch. 08  Long-Term Sustainability → 1 phase (indivisible)
-  8.1  Registre de dette technique réel (les 4 dettes constatées, pas des principes)
+  8.1  ✅ registre de 9 dettes mesurées, chacune avec son déclencheur
 
 Ch. 09  Success Metrics & KPIs  → 2 phases
-  9.1  Choisir les métriques mesurables aujourd'hui, écarter les autres
+  9.1  ⏳ Choisir les métriques mesurables aujourd'hui, écarter les autres
   9.2  Les rendre mesurables : un script ou une route qui les rapporte
 
 Ch. 10  Roadmap Governance      → 1 phase (indivisible)
@@ -52,4 +54,4 @@ Ch. 10  Roadmap Governance      → 1 phase (indivisible)
 la sortie est un document — le seul garde-fou contre les généralités est que
 chaque phase parte de l'état réel du dépôt et non du texte du manuel.
 
-**Prochaine action** : exécuter la phase 7.1, puis s'arrêter.
+**Prochaine action** : exécuter les phases 9.1 et 9.2, puis s'arrêter.

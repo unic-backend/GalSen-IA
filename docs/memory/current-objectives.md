@@ -9,7 +9,7 @@ phase → `docs/roadmap/roadmap.md`.
 
 1. **Keep the suite green.** Exit criterion C6, and the only one currently met.
 2. **Decide whether the platform has users** (P0). An ADR before any code: Phase 2's
-   workspace, Phase 3's collaboration and every adoption metric depend on it.
+   workspace, Phase 3's collaboration and every adoption metric depend on it. The manual is VOLET_16 (Authentication & Identity).
 3. **Make generation provable end to end** (P0, criterion C1). The platform's only real
    feature answers 503; the deliverable is the test that proves it works once a provider
    key exists.
