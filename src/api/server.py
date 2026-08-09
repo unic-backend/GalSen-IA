@@ -922,6 +922,24 @@ def _sync_rate_limiter() -> None:
     set_valid_api_key_digests(rbac_manager.active_key_digests())
 
 
+@app.get("/auth/whoami", tags=["auth"],
+         dependencies=[Depends(rate_limit_dependency)])
+async def whoami(ctx: RBACContext = Depends(require_auth)):
+    """Dit qui appelle : sujet, rôle et permissions (ADR-010).
+
+    Aucune permission particulière n'est exigée — la route ne révèle que ce que
+    l'appelant possède déjà. Elle existe parce qu'une clé mal attribuée est
+    invisible autrement : on découvre son identité en lisant les traces d'audit,
+    trop tard.
+    """
+    return {
+        "subject": ctx.subject,
+        "role": ctx.role.value,
+        "fingerprint": ctx.key_fingerprint,
+        "permissions": sorted(p.value for p in ctx.permissions),
+    }
+
+
 @app.get("/auth/keys", tags=["auth"],
          dependencies=[Depends(rate_limit_dependency),
                        Depends(require_permission(Permission.ADMIN_MANAGE))])

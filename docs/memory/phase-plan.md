@@ -10,17 +10,17 @@ exécuter, et une seule.
 
 **VOLET en cours** : 16 — Authentication & Identity Engine
 **Phases** : 12
-**Phase courante** : 1.1 — en attente de confirmation
-**Terminées** : —
-**Cadence** : une phase par tour (défaut)
+**Phase courante** : 3.1 — en cours
+**Terminées** : 1.1, 2.1, 2.2
+**Cadence** : VOLET entier demandé par l'utilisateur
 
 ```
 Ch. 01  Vision           → 1 phase
-  1.1  Confronter le chapitre à l'existant : ce qui est déjà là, ce qui manque
+  1.1  ✅ 5 composants sur 7 existaient déjà ; seul l'annuaire manquait
 
 Ch. 02  Architecture     → 2 phases
-  2.1  Les 7 composants du chapitre face au code réel
-  2.2  ADR-010 — la plateforme a-t-elle des utilisateurs ? (le P0)
+  2.1  ✅ tableau composant → code réel
+  2.2  ✅ ADR-010 acceptée : une clé appartient à un sujet, sans magasin de secrets
 
 Ch. 03  Lifecycle        → 2 phases
   3.1  Enregistrement et stockage d'une identité
