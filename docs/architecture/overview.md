@@ -1,7 +1,7 @@
 # GalSen IA — Architecture Overview
 
 ## Current Status
-The platform runs. Eleven engines are registered in `EngineRegistry`, reachable through a
+The platform runs. Fourteen engines and services are registered in `EngineRegistry`, reachable through a
 REST API (`src/api/server.py`, 60 routes behind API-key authentication and RBAC) and
 covered by their own test suites. Persistence exists: memory, model, knowledge and the
 notification, calendar, email, cloud and file services select a SQLite store through
@@ -15,8 +15,8 @@ keys, with no build step and nothing to install. A dependency-free Python client
 
 Not there yet: no configured model provider — generation reports `unavailable` until a
 key is present in the environment. The platform also runs as a **single instance**
-(ADR-009): six subsystems keep state in the process, and `/health` says so rather than
-leaving it to be discovered in production.
+(ADR-009): every subsystem holding state keeps it in the process under the default
+backend, and `/health` says so rather than leaving it to be discovered in production.
 
 ## High-Level Vision
 GalSen IA will be a modular AI platform composed of several systems:
@@ -62,7 +62,7 @@ learns about another one.
 Router Engine / Agent Runtime
         │  creates one AgentContext per request
         ▼
-   AgentContext ──────► EngineRegistry ──────► the 11 engines
+   AgentContext ──────► EngineRegistry ──────► the 14 engines
         │                (lazy, shared)
         │  passed to every agent by AgentDispatcher
         ▼
