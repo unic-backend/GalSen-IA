@@ -41,6 +41,13 @@ conclusion.
 - Weakening an assertion to match wrong output
 - Catching an exception to hide it
 - Mocking the very thing under test
+- **Pinning a fabricated value.** A test asserting the output of something that
+  does not really work makes the fabrication permanent. Four such tests have
+  already reached `main` here — `test_calendar_tool.py` asserted
+  `result[0]["title"] == "Réunion d'équipe"` for a meeting nobody scheduled.
+  An unfinished capability reports a status; it never returns a plausible
+  answer. Full reasoning → `docs/roadmap/roadmap.md`, *How something new enters
+  the platform*.
 
 A failing test is information. Removing it destroys the information and keeps
 the bug.

@@ -388,3 +388,88 @@ phase, `pending-work.md` carries the criterion behind every rank, and chapter 10
 who may change the roadmap. What this section adds is the trigger — **a pillar with no
 evidence under it is the signal to re-plan**, and Knowledge Leadership is that signal
 today.
+
+
+---
+
+## How something new enters the platform
+
+Chapter 06 asks for continuous innovation that does not cost reliability, and gives a
+six-step process: research, prototype, evaluation, pilot deployment, full integration,
+continuous review. Adopting it wholesale would be easy and useless — this project has
+already run that loop several times without naming it, and has already failed it in one
+specific, repeated way.
+
+### The failure mode is fabrication, not instability
+
+Four experiments reached `main` behaving as if they were finished, and `completed-work.md`
+records each removal:
+
+| What it did | What it returned |
+|-------------|------------------|
+| Calendar tool | two invented meetings, and `status: success` on a create that created nothing |
+| RAG tool | relevance scores computed as `1.0 - rank × 0.05`, while the indexer's real score was discarded |
+| Face detector | always an empty list — a photo of ten people got "no faces detected" |
+| Model router | `"Réponse simulée du modèle X"` returned as a model's answer |
+
+None of these destabilised anything. Every one passed its tests — `test_calendar_tool.py`
+asserted `result[0]["title"] == "Réunion d'équipe"`, so the suite *protected* the
+invention. That is what makes this failure mode dangerous and why the chapter's generic
+"experiment safely" needs a project-specific meaning.
+
+### So an experiment must be able to say it is one
+
+The rule this project needs is not "prototype in a branch". It is:
+
+> **An unfinished capability reports its state; it never returns a plausible answer.**
+
+The platform already implements this and it is the single most valuable thing it does:
+`generate()` returns `status: UNAVAILABLE` with an empty string and an actionable reason;
+`generate_text()` is typed `-> str` and therefore *raises* rather than substituting;
+connectors distinguish `not_configured` from `unreachable` from `unauthorized`;
+`/agri/advice` turns a non-ready status into 503 rather than a 200 with an empty answer.
+
+Empty output with a status is detectable downstream. A plausible sentence nobody generated
+is not, which is why it is worse than no answer at all.
+
+### What entry actually looks like here
+
+The chapter's six steps map onto mechanisms that already exist, except one:
+
+| Step | Mechanism | State |
+|------|-----------|-------|
+| Research | read the VOLET, measure the repository | in use |
+| Prototype | behind an existing interface — provider, connector, store, tool | in use |
+| Evaluation | an ADR, with the alternatives that were rejected and why | in use — nine of them |
+| Pilot deployment | — | **impossible today: nothing is deployed (C4)** |
+| Full integration | registered in the registry, reachable, covered | in use |
+| Continuous review | phase plan, backlog with a stated criterion, chapter 10 | in use |
+
+Pilot deployment is the missing step, and its absence is not cosmetic: without it, "full
+integration" and "pilot" are the same event, so every experiment goes straight from a test
+suite to `main`. That is precisely how four fabrications got in.
+
+### The three conditions
+
+Before anything new becomes the default path:
+
+1. **It sits behind an interface that already exists.** New providers, connectors, stores
+   and tools all have a contract. Something that needs a new contract needs an ADR first.
+2. **It reports honestly when it cannot work.** Unconfigured is a status, not a crash and
+   not a fake success. This is the condition the four fabrications broke.
+3. **Its test asserts the honest behaviour, not the convenient one.** A test that pins a
+   fabricated value makes the fabrication permanent — that is a mistake this repository
+   has made and can name.
+
+### Where innovation would land
+
+Chapter 06 lists seven areas. Ranked by what this platform would gain today:
+
+- **Knowledge Management** — the largest gap: the knowledge base is empty.
+- **AI** — four providers built, none configured; the capability is one key away.
+- **Developer Productivity** — the release checklist and the phase protocol are recent
+  wins here; the orchestration suite at 97 s is the next.
+- **Automation** — one declared workflow, so the area is unexplored rather than mature.
+- **Security** — the strongest pillar; innovation here means keeping it, not extending it.
+- **Performance** — nothing to optimise until something is measured (chapter 09).
+- **UX** — one dashboard, no user to observe using it.

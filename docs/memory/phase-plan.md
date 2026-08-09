@@ -10,8 +10,8 @@ exécuter, et une seule.
 
 **VOLET en cours** : 04 — Roadmap
 **Phases** : 13
-**Phase courante** : 6.1 — en attente de confirmation
-**Terminées** : 1.1, 2.1, 2.2, 3.1, 3.2, 4.1, 5.1
+**Phase courante** : 7.1 — en attente de confirmation
+**Terminées** : 1.1, 2.1, 2.2, 3.1, 3.2, 4.1, 5.1, 6.1
 
 ```
 Ch. 01  Product Vision          → 1 phase
@@ -32,10 +32,10 @@ Ch. 05  Strategic Objectives    → 1 phase (indivisible)
   5.1  ✅ 6 piliers confrontés au réel — base de connaissances vide, 2 objectifs sur 5 impossibles
 
 Ch. 06  Innovation Roadmap      → 1 phase (indivisible)
-  6.1  ⏳ Comment une nouveauté entre dans la plateforme sans la déstabiliser
+  6.1  ✅ mode d'échec nommé (fabrication, 4 cas), 3 conditions d'entrée, étape « pilote » manquante
 
 Ch. 07  Global Expansion        → 1 phase (indivisible)
-  7.1  Stratégie d'expansion — pointer vers le VOLET 08, ne pas le dupliquer
+  7.1  ⏳ Stratégie d'expansion — pointer vers le VOLET 08, ne pas le dupliquer
 
 Ch. 08  Long-Term Sustainability → 1 phase (indivisible)
   8.1  Registre de dette technique réel (les 4 dettes constatées, pas des principes)
@@ -52,4 +52,4 @@ Ch. 10  Roadmap Governance      → 1 phase (indivisible)
 la sortie est un document — le seul garde-fou contre les généralités est que
 chaque phase parte de l'état réel du dépôt et non du texte du manuel.
 
-**Prochaine action** : exécuter la phase 6.1, puis s'arrêter.
+**Prochaine action** : exécuter la phase 7.1, puis s'arrêter.
