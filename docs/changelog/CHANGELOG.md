@@ -6,6 +6,15 @@ The format is based on Keep a Changelog.
 This project follows Semantic Versioning.
 
 ## [Unreleased]
+### Security
+- **`require_auth_jwt` ne se replie plus sur la clé API quand un Bearer est
+  invalide ou expiré** (`src/api/server.py`). L'ancien comportement masquait les
+  sessions expirées et permettait une escalade de privilèges : un token
+  utilisateur expiré accompagné d'une clé API admin accordait silencieusement
+  les droits admin. Un Bearer fourni fait désormais autorité — s'il échoue, la
+  requête est refusée (401). Le fallback vers `X-API-Key` ne s'applique que si
+  aucun Bearer n'est présenté.
+
 ### Added
 - **Priorité #7 — Conseil Agricole (première feature réelle)** : outil
   `AgriAdviceTool` réparé (passage à l'API synchrone `select_model_for_task()` +

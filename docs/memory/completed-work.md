@@ -56,3 +56,14 @@
 - Implemented the Database tool with French comments and ensured compliance with coding conventions (comments in French, clear method names, proper docstrings). Updated related tests pass.
 - Implemented the Embeddings tool for generating text embeddings using sentence-transformers models, with French comments and ensured compliance with coding conventions. Updated related tests pass.
 - Implemented the Memory tool with French comments and ensured compliance with coding conventions (comments in French, clear method names, proper docstrings). Updated related tests pass.
+### 2026-08-10
+- Phase 1.5 du plan d'intégration Open WebUI (auth) terminée — 133 tests verts
+  (`tests/test_auth_jwt.py`, `test_auth_oauth.py`, `test_auth_hybrid.py`).
+- Faille corrigée dans `require_auth_jwt` (`src/api/server.py`) — un Bearer invalide
+  ou expiré ne se replie plus sur `X-API-Key` : un token utilisateur expiré + clé
+  admin donnait un accès admin silencieux. Décision utilisateur : refus strict (401).
+- `SQLiteUserStore` (`src/storage/sqlite_user_store.py`) — les bases `:memory:`
+  utilisaient toutes `file::memory:?cache=shared`, donc une seule base partagée par
+  processus ; nom unique par instance ajouté. Corrigeait 4 tests pollués.
+- `UserManager.delete_user()` ajouté (`src/auth/user_manager.py`) — le *Delete* du
+  CRUD exigé par le plan manquait.

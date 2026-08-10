@@ -7,11 +7,14 @@ Expose les fonctionnalités du noyau via une API RESTful.
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security.api_key import APIKeyHeader
+from fastapi.security.http import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional
+import logging
 import time
 import uuid
 import os
+import secrets
 
 # Import des moteurs existants
 from src.memory_engine.memory_manager import MemoryManager
@@ -63,6 +66,18 @@ APP_START_TIME = time.time()
 # API Key security
 API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+# JWT Bearer security
+bearer_scheme = HTTPBearer(auto_error=False)
+
+# Gestionnaires d'authentification JWT et utilisateurs
+from src.auth.jwt_handler import JWTHandler  # noqa: E402
+from src.auth.user_manager import UserManager  # noqa: E402
+
+jwt_handler = JWTHandler()
+user_manager = UserManager()
+
+logger = logging.getLogger(__name__)
 
 # Gestionnaire RBAC — charge le mapping clé API → rôle depuis GALSEN_API_KEYS
 # Format attendu : "sk-admin123:admin,sk-user456:user,sk-operator789:operator"
@@ -118,6 +133,67 @@ def require_permission(permission: Permission):
             )
         return ctx
     return _check_permission
+
+
+def require_auth_jwt(
+    api_key: str = Security(api_key_header),
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(bearer_scheme),
+) -> RBACContext:
+    """Dépendance FastAPI : auth hybride JWT + API Key.
+
+    Vérifie d'abord un token JWT Bearer, puis fait un fallback vers
+    la clé API traditionnelle (X-API-Key). Cette dépendance permet
+    d'ajouter l'auth JWT sans casser les 47+ endpoints existants qui
+    utilisent ``require_auth``.
+
+    Args:
+        api_key: Clé API transmise dans l'en-tête X-API-Key.
+        credentials: Token JWT Bearer (optionnel).
+
+    Returns:
+        Contexte RBAC avec la méthode d'auth et l'user_id le cas échéant.
+
+    Raises:
+        HTTPException 401: Aucune méthode d'auth valide fournie.
+    """
+    # Un token Bearer fourni fait autorité : s'il est invalide ou expiré, on
+    # refuse. Retomber sur la clé API masquerait une session expirée au client
+    # et laisserait un token révoqué se comporter comme un token valide.
+    if credentials and credentials.credentials:
+        try:
+            payload = jwt_handler.verify_access_token(credentials.credentials)
+        except Exception as e:
+            logger.warning("Échec vérification JWT : %s", e)
+            raise HTTPException(
+                status_code=401,
+                detail="Token JWT invalide ou expiré.",
+            )
+
+        user_id = payload.get("sub", "")
+        role = payload.get("role", "user")
+        # Valider le rôle contre l'enum Role
+        from src.api.rbac import Role as RBACRole
+        try:
+            role_enum = RBACRole(role)
+        except ValueError:
+            role_enum = RBACRole.USER
+        return RBACContext(
+            api_key="jwt:" + user_id[:8],
+            role=role_enum,
+            auth_method="jwt",
+            user_id=user_id,
+        )
+
+    # Aucun token Bearer fourni : fallback vers la clé API traditionnelle
+    try:
+        ctx = rbac_manager.authenticate(api_key)
+        return ctx
+    except PermissionError:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentification requise. Fournissez un token JWT Bearer ou une clé API (X-API-Key).",
+        )
+
 
 # Initialisation de l'application FastAPI
 app = FastAPI(
@@ -194,6 +270,36 @@ class MemoryItemResponse(MemoryItemBase):
     priority: str = Field(..., description="Niveau de priorité")
     status: str = Field(..., description="Statut actuel")
     version: int = Field(..., description="Numéro de version")
+
+# =========================================================================
+# Modèles Pydantic — Authentification JWT & OAuth
+# =========================================================================
+
+class LoginRequest(BaseModel):
+    """Requête de connexion par email / mot de passe."""
+    email: str = Field(..., description="Adresse email de l'utilisateur")
+    password: str = Field(..., description="Mot de passe en clair")
+
+
+class RegisterRequest(BaseModel):
+    """Requête d'inscription d'un nouvel utilisateur."""
+    email: str = Field(..., description="Adresse email")
+    name: str = Field(..., description="Nom complet")
+    password: str = Field(..., description="Mot de passe (min 8 caractères)")
+
+
+class RefreshRequest(BaseModel):
+    """Requête de rafraîchissement de token."""
+    refresh_token: str = Field(..., description="Refresh token JWT")
+
+
+class TokenResponse(BaseModel):
+    """Réponse contenant les tokens JWT."""
+    access_token: str = Field(..., description="Access token JWT")
+    refresh_token: str = Field(..., description="Refresh token JWT")
+    token_type: str = Field("bearer", description="Type de token")
+    expires_in: int = Field(..., description="Durée de validité en secondes")
+
 
 class ModelGenerateRequest(BaseModel):
     prompt: str = Field(..., description="Prompt pour la génération")
@@ -739,18 +845,22 @@ async def reject_request(request_id: str, decision: ApprovalDecisionRequest):
 
 # Endpoints RBAC
 @app.get("/auth/me", tags=["auth"],
-          dependencies=[Depends(rate_limit_dependency), Depends(require_auth)])
-async def auth_me(ctx: RBACContext = Depends(require_auth)):
+          dependencies=[Depends(rate_limit_dependency), Depends(require_auth_jwt)])
+async def auth_me(ctx: RBACContext = Depends(require_auth_jwt)):
     """Retourne les informations d'authentification et le rôle de l'utilisateur.
 
     Utile pour qu'un client vérifie son rôle et ses permissions sans effectuer
-    d'opération.
+    d'opération. Expose la méthode d'auth (api_key, jwt, oauth) et l'user_id.
     """
-    return {
+    result = {
         "authenticated": True,
         "role": ctx.role.value,
+        "auth_method": ctx.auth_method,
         "permissions": sorted(p.value for p in ctx.permissions),
     }
+    if ctx.user_id:
+        result["user_id"] = ctx.user_id
+    return result
 
 
 @app.get("/auth/roles", tags=["auth"],
@@ -762,6 +872,217 @@ async def list_roles():
         role.value: sorted(p.value for p in get_permissions_for_role(role))
         for role in Role
     }
+
+
+# =========================================================================
+# Endpoints — Authentification JWT & OAuth
+# =========================================================================
+
+@app.post(
+    "/auth/login",
+    tags=["auth"],
+    dependencies=[Depends(rate_limit_dependency)],
+    response_model=TokenResponse,
+)
+async def login(request: LoginRequest):
+    """Connecte un utilisateur avec email et mot de passe.
+
+    Retourne une paire de tokens JWT (access + refresh).
+    L'access token s'utilise dans l'en-tête ``Authorization: Bearer <token>``.
+    Le refresh token permet d'obtenir un nouvel access token sans se reconnecter.
+    """
+    user = user_manager.authenticate_user(request.email, request.password)
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Email ou mot de passe invalide.",
+        )
+
+    if not getattr(user, "is_active", True):
+        raise HTTPException(
+            status_code=403,
+            detail="Ce compte est désactivé. Contactez un administrateur.",
+        )
+
+    access_token = jwt_handler.create_access_token(
+        user_id=user.id,
+        role=user.role,
+        name=user.name,
+    )
+    refresh_token = jwt_handler.create_refresh_token(user_id=user.id)
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=jwt_handler._access_expiry,
+    )
+
+
+@app.post(
+    "/auth/register",
+    tags=["auth"],
+    dependencies=[Depends(rate_limit_dependency)],
+    response_model=TokenResponse,
+    status_code=201,
+)
+async def register(request: RegisterRequest):
+    """Crée un nouveau compte utilisateur.
+
+    Le mot de passe doit faire au moins 8 caractères.
+    Le rôle par défaut est 'user'. Seul un administrateur peut élever un rôle.
+    """
+    if len(request.password) < 8:
+        raise HTTPException(
+            status_code=422,
+            detail="Le mot de passe doit contenir au moins 8 caractères.",
+        )
+
+    try:
+        user = user_manager.create_user(
+            email=request.email,
+            password=request.password,
+            name=request.name,
+            role="user",
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+    access_token = jwt_handler.create_access_token(
+        user_id=user.id,
+        role=user.role,
+        name=user.name,
+    )
+    refresh_token = jwt_handler.create_refresh_token(user_id=user.id)
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=jwt_handler._access_expiry,
+    )
+
+
+@app.post(
+    "/auth/refresh",
+    tags=["auth"],
+    dependencies=[Depends(rate_limit_dependency)],
+    response_model=TokenResponse,
+)
+async def refresh_token(request: RefreshRequest):
+    """Rafraîchit un access token à partir d'un refresh token valide.
+
+    L'ancien refresh token reste valide jusqu'à expiration.
+    """
+    try:
+        payload = jwt_handler.verify_refresh_token(request.refresh_token)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+    user_id = payload.get("sub", "")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Refresh token invalide : pas de 'sub'.")
+
+    # Récupérer le rôle depuis le user store pour avoir le rôle à jour
+    user = user_manager.get_user(user_id)
+    role = user.role if user else "user"
+
+    access_token = jwt_handler.create_access_token(
+        user_id=user_id,
+        role=role,
+    )
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=request.refresh_token,
+        token_type="bearer",
+        expires_in=jwt_handler._access_expiry,
+    )
+
+
+@app.get("/auth/oauth/{provider}/login", tags=["auth"])
+async def oauth_login(provider: str):
+    """Redirige vers le fournisseur OAuth pour authentification.
+
+    Providers supportés : google, github, microsoft.
+    """
+    from urllib.parse import urlencode
+
+    oauth = _get_oauth_provider_or_404(provider)
+    state = secrets.token_urlsafe(32)
+    auth_url = oauth.get_authorization_url(state=state)
+    return {"authorization_url": auth_url, "state": state}
+
+
+@app.get("/auth/oauth/{provider}/callback", tags=["auth"], response_model=TokenResponse)
+async def oauth_callback(
+    provider: str,
+    code: str,
+    state: str = "",
+    redirect_uri: Optional[str] = None,
+):
+    """Callback OAuth — échange le code d'autorisation contre des tokens JWT.
+
+    Crée automatiquement un compte utilisateur s'il n'existe pas encore.
+    """
+    oauth = _get_oauth_provider_or_404(provider)
+
+    try:
+        oauth_user = oauth.exchange_code(code, redirect_uri=redirect_uri)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=f"Échec OAuth : {e}")
+
+    # Chercher ou créer l'utilisateur
+    user = user_manager.get_user_by_email(oauth_user.email)
+    if user is None:
+        try:
+            user = user_manager.create_oauth_user(
+                email=oauth_user.email,
+                name=oauth_user.name,
+                provider=provider,
+                oauth_id=oauth_user.provider_id,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=409, detail=str(e))
+    else:
+        # Lier le compte OAuth s'il n'était pas encore lié
+        if not getattr(user, "oauth_provider", None):
+            user.oauth_provider = provider
+            user.oauth_id = oauth_user.provider_id
+            user_manager.update_user(user)
+
+    access_token = jwt_handler.create_access_token(
+        user_id=user.id,
+        role=user.role,
+        name=user.name,
+    )
+    refresh_token = jwt_handler.create_refresh_token(user_id=user.id)
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=jwt_handler._access_expiry,
+    )
+
+
+def _get_oauth_provider_or_404(provider: str):
+    """Récupère une instance de fournisseur OAuth ou lève HTTP 404."""
+    from src.auth.oauth_providers import get_oauth_provider
+
+    oauth = get_oauth_provider(provider)
+    if oauth is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Fournisseur OAuth inconnu : '{provider}'. "
+                    f"Utilisez : google, github, microsoft.",
+        )
+    if not oauth.is_configured:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Le fournisseur OAuth '{provider}' n'est pas configuré. "
+                    f"Définissez les variables d'environnement requises.",
+        )
+    return oauth
 
 
 # =========================================================================

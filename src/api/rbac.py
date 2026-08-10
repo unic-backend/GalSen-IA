@@ -16,7 +16,7 @@ import enum
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Dict, FrozenSet, Optional, Set
+from typing import Dict, FrozenSet, Literal, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -160,10 +160,17 @@ class RBACContext:
     Porté par chaque requête authentifiée, il permet aux dépendances
     FastAPI de vérifier rapidement si l'utilisateur a le droit d'effectuer
     une action.
+
+    Prend en charge trois méthodes d'authentification :
+    - api_key : clé API traditionnelle (X-API-Key)
+    - jwt : token JWT Bearer
+    - oauth : compte OAuth2 (Google, GitHub, Microsoft)
     """
 
     api_key: str
     role: Role
+    auth_method: Literal["api_key", "jwt", "oauth"] = "api_key"
+    user_id: Optional[str] = None
     permissions: FrozenSet[Permission] = field(init=False)
 
     def __post_init__(self):
@@ -253,7 +260,7 @@ class RBACManager:
         if role is None:
             raise PermissionError("Clé API invalide.")
 
-        return RBACContext(api_key=api_key, role=role)
+        return RBACContext(api_key=api_key, role=role, auth_method="api_key")
 
     def get_valid_keys(self) -> Set[str]:
         """

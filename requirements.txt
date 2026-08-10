@@ -27,3 +27,8 @@ anthropic>=0.30.0
 
 # Client OpenAI (hosted provider)
 openai>=1.0.0
+
+# Authentification JWT / OAuth2 (ADR-007)
+PyJWT>=2.8.0
+bcrypt>=5.0.0
+requests>=2.31.0

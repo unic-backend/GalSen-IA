@@ -40,3 +40,6 @@ temp/
 *.tmp
 # Added by code-review-graph
 .code-review-graph/
+
+# Bases SQLite generees a l execution (donnees utilisateurs, residus de tests)
+data/*.sqlite
