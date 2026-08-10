@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 
 from src.knowledge_engine.types import (
     KnowledgeItem, KnowledgeSource, KnowledgeType, ContentType,
-    Language, SourceCategory, KnowledgePriority,
+    Language, SourceCategory, KnowledgePriority, KnowledgeDomain,
 )
 from src.knowledge_engine.interfaces import KnowledgeStore
 from src.storage.encryption import decrypt, encrypt
@@ -29,7 +29,7 @@ class SQLiteKnowledgeStore(KnowledgeStore):
     # Colonnes de la table "knowledge_items" (l'ordre définit aussi le SELECT).
     _COLUMNS = (
         "id", "content", "summary", "knowledge_type", "content_type",
-        "language", "tags", "categories", "source_id", "source_type",
+        "language", "domain", "tags", "categories", "source_id", "source_type",
         "source_location", "source_accessed_at", "source_hash",
         "source_category", "source_title", "source_author", "source_url",
         "source_citation", "source_retrieved_at", "confidence", "version",
@@ -85,10 +85,22 @@ class SQLiteKnowledgeStore(KnowledgeStore):
         )
         with self._get_connection() as conn:
             conn.execute(f"CREATE TABLE IF NOT EXISTS knowledge_items ({columns})")
+            self._add_missing_columns(conn)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_kn_type ON knowledge_items (knowledge_type)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_kn_language ON knowledge_items (language)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_kn_priority ON knowledge_items (priority)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_kn_updated ON knowledge_items (updated_at)")
+
+    def _add_missing_columns(self, conn: sqlite3.Connection) -> None:
+        """Ajoute les colonnes absentes d'une base créée par une version antérieure.
+
+        Migration additive uniquement : aucune colonne n'est renommée ni supprimée,
+        les lignes existantes reçoivent NULL et sont relues comme « non classé ».
+        """
+        present = {row[1] for row in conn.execute("PRAGMA table_info(knowledge_items)")}
+        for col in self._COLUMNS:
+            if col not in present:
+                conn.execute(f"ALTER TABLE knowledge_items ADD COLUMN {col} {self._sql_type(col)}")
 
     @staticmethod
     def _sql_type(col: str) -> str:
@@ -128,6 +140,7 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             "knowledge_type": knowledge.knowledge_type.value,
             "content_type": knowledge.content_type.value,
             "language": knowledge.language.value,
+            "domain": knowledge.domain.value,
             "tags": json.dumps(knowledge.tags),
             "categories": json.dumps(knowledge.categories),
             "confidence": knowledge.confidence,
@@ -163,6 +176,8 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             knowledge_type=KnowledgeType(data["knowledge_type"]),
             content_type=ContentType(data["content_type"]),
             language=Language(data["language"]),
+            # Une base écrite avant l'ajout du domaine renvoie NULL : non classé.
+            domain=KnowledgeDomain(data["domain"]) if data.get("domain") else KnowledgeDomain.UNSPECIFIED,
             tags=json.loads(data["tags"] or "[]"),
             categories=json.loads(data["categories"] or "[]"),
             source=source,
@@ -258,6 +273,11 @@ class SQLiteKnowledgeStore(KnowledgeStore):
                             break
                     elif key == "language":
                         if knowledge.language.value != value:
+                            match = False
+                            break
+                    elif key == "domain":
+                        wanted = value.value if hasattr(value, "value") else value
+                        if knowledge.domain.value != wanted:
                             match = False
                             break
                     elif key == "tags":

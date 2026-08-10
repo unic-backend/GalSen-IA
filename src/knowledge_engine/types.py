@@ -45,6 +45,28 @@ class Language(Enum):
     AM = "am"
 
 
+class KnowledgeDomain(Enum):
+    """Domaines de connaissance définis par le VOLET 05 (chapitres 01 et 02).
+
+    Le chapitre 02 exige que la connaissance soit organisée avant d'être
+    consommée : le domaine est le premier niveau de cette organisation, au-dessus
+    des catégories libres. Il est fermé volontairement — un domaine que personne
+    ne peut nommer ne peut pas non plus recevoir un propriétaire ni un cycle de
+    revue (chapitre 06).
+
+    UNSPECIFIED est la valeur par défaut : elle dit « pas encore classé », et ne
+    doit jamais être confondue avec un classement réel.
+    """
+    BUSINESS = "business"
+    TECHNICAL = "technical"
+    OPERATIONAL = "operational"
+    LEGAL = "legal"
+    AI = "ai"
+    USER_DOCUMENTATION = "user_documentation"
+    PROJECT_DOCUMENTATION = "project_documentation"
+    UNSPECIFIED = "unspecified"
+
+
 class ConfidenceLevel(Enum):
     """Niveaux de confiance."""
     VERY_LOW = 0.0
@@ -131,6 +153,7 @@ class KnowledgeItem:
     knowledge_type: KnowledgeType = KnowledgeType.FACT
     content_type: ContentType = ContentType.TEXT
     language: Language = Language.FR
+    domain: KnowledgeDomain = KnowledgeDomain.UNSPECIFIED
     tags: List[str] = field(default_factory=list)
     categories: List[str] = field(default_factory=list)
     source: KnowledgeSource = field(default_factory=lambda: KnowledgeSource(id="unknown", type="unknown", location="unknown"))
@@ -167,6 +190,7 @@ class KnowledgeItem:
             knowledge_type=self.knowledge_type,
             content_type=self.content_type,
             language=self.language,
+            domain=self.domain,
             tags=self.tags.copy(),
             categories=self.categories.copy(),
             source=source or self.source,

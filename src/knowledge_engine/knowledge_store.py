@@ -80,6 +80,11 @@ class InMemoryKnowledgeStore(KnowledgeStore):
                         if knowledge.language.value != value:
                             match = False
                             break
+                    elif key == "domain":
+                        wanted = value.value if hasattr(value, "value") else value
+                        if knowledge.domain.value != wanted:
+                            match = False
+                            break
                     elif key == "tags":
                         if isinstance(value, str):
                             if value not in knowledge.tags:

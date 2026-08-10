@@ -50,12 +50,29 @@ Six modules already depend on the engine and therefore already retrieve nothing:
 Seven agents declare `knowledge` among their capabilities (`docs/architecture/overview.md`):
 `planner`, `researcher`, `coder`, `reviewer`, `security`, `documentation`, `deployment`.
 
-## Two gaps the vision names and the code does not close
+## Organization (chapter 02), against the code
 
-- **The seven knowledge domains** the chapter lists — Business, Technical, Operational,
-  Legal, AI, User Documentation, Project Documentation — exist nowhere. `KnowledgeItem`
-  carries a free `categories: List[str]`, and **no call site in `src/` sets it.**
-  A domain that is never assigned cannot be governed, reviewed or owned.
+The chapter names seven structural levels. Six were already carried by `KnowledgeItem`;
+the first one did not exist and was added in phase 2.1.
+
+| Level | What carries it | State |
+|-------|-----------------|-------|
+| Domains | `KnowledgeDomain` — the chapter's seven values plus `UNSPECIFIED` | **added (phase 2.1)** |
+| Categories | `categories: List[str]`, free-form | present, **no call site sets it** |
+| Topics | — | folded into tags and categories; no separate level |
+| Documents | one `KnowledgeItem` per loaded document | present |
+| Tags | `tags: List[str]`, filterable | present |
+| References | `source` (11 fields) and `relations: List[str]` | present |
+| Versions | `version: int` — a number, not a history (see below) | partial |
+
+`KnowledgeDomain` is a **closed** enum: an unknown domain raises rather than being
+accepted, because a domain nobody can name cannot receive an owner or a review cycle
+(chapter 06). `UNSPECIFIED` is the default and means "not classified yet" — it is never
+a classification. Both stores filter on `domain`, by enum or by value; `SQLiteKnowledgeStore`
+persists it and migrates a base written before the column existed, whose rows read back
+as `UNSPECIFIED` rather than being guessed.
+
+## The gap the vision names and the code does not close
 
 - **"Information must be versioned"** is half true. `KnowledgeItem.version` is an integer,
   `update_content()` increments it, and both stores refuse to overwrite a newer version.
