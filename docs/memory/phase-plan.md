@@ -8,31 +8,41 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 03 terminé (10 chapitres, 12 phases)
-**Phase courante** : —
-**Terminées** : toutes
+**VOLET en cours** : 06 — AI Orchestration
+**Phases** : 12
+**Phase courante** : 1.1 — en attente de confirmation
+**Terminées** : aucune
 **Cadence** : **2 à 3 phases par tour**, demandé par l'utilisateur le 2026-08-10.
 Revenir au défaut d'une phase par tour dès qu'il le dit.
 
 ```
-VOLET 03 — Development Manual : terminé
-  Ch. 01  standards     : 13 fichiers de règles, 4 mécanismes seulement s'exécutent
-  Ch. 02  conventions   : 98 % docstrings, 88 % de types de retour, 100 % snake_case
-  Ch. 03  structure     : 27 tests déplacés dans tests/, 20 chemins réparés
-  Ch. 04  tests         : 4 niveaux sur 5 ; couverture réelle 81 %
-  Ch. 05  déploiement   : validation des variables au démarrage ; retour arrière prouvé
-  Ch. 06  version       : 73/100 commits conformes ; aucun tag
-  Ch. 07  documentation : 6 paquets sur 18 ne documentaient rien
-  Ch. 08  performance   : cibles déclarées et vérifiées — le P1 le plus ancien
-  Ch. 09  maintenance   : registre de dette re-mesuré, 4 payées sur 9
-  Ch. 10  cycle de dév. : clôture, mémoire et CHANGELOG
+VOLET 06 — AI Orchestration
+10 chapitres → 12 phases
+
+Ch. 01  Vision            → 1 phase   1.1  ce que l'orchestrateur fait vraiment, mesuré
+Ch. 02  Architecture      → 2 phases  2.1  les 7 composants du manuel face au code
+                                      2.2  le flux en 8 étapes, de la requête au résultat
+Ch. 03  Intention & plan  → 1 phase   3.1  détection d'intention : règles ou modèle ?
+Ch. 04  Sélection d'agent → 1 phase   4.1  correspondance capacité/tâche, 10 agents déclarés
+Ch. 05  Multi-agents      → 2 phases  5.1  ce que les agents se transmettent réellement
+                                      5.2  exécution parallèle vs séquentielle, mesurée
+Ch. 06  Exécution         → 1 phase   6.1  reprise sur échec et retour arrière
+Ch. 07  Réponse           → 1 phase   7.1  agrégation et validation des sorties
+Ch. 08  Supervision       → 1 phase   8.1  ce qu'on voit d'une exécution en cours
+Ch. 09  Performance       → 1 phase   9.1  la suite d'orchestration à 105 s (dette P2)
+Ch. 10  Gouvernance       → 1 phase  10.1  clôture du VOLET, mémoire et CHANGELOG
+
+Total : 12 phases.
 ```
 
-**Ce que le VOLET n'a pas fait, et le dit** : aucun linter ni vérificateur de
-types n'a été ajouté (entré au backlog, P3 tant qu'il y a un contributeur) ;
-aucun tag de version n'a été posé ; la latence de bout en bout n'est pas ciblée
-tant que rien n'est déployé.
+**Pourquoi ce VOLET** : l'ordre numérique. Il porte le cœur du produit — 10 agents
+déclarés, 2 710 lignes dans `src/router/` et `src/agent/` — et une dette P2 mesurée
+la veille : la suite d'orchestration prend **105 s**, dont trois tests à ~34 s
+parce que l'agent `tester` lance de vraies suites à l'intérieur du pipeline.
 
-**Prochaine action** : choisir le prochain VOLET, lire ses chapitres, publier le
-plan de phases, puis s'arrêter. Par ordre numérique, le suivant est le **VOLET
-06 — AI Orchestration Manual**. Restent ensuite : 07 à 13, 15, 17 à 25.
+**Deux garde-fous pour ce VOLET** :
+1. **Ne pas exécuter le workflow `standard` dans les tests** — il contient l'agent
+   `tester`, qui relancerait la suite à l'intérieur d'elle-même.
+2. L'analyse d'intention est le point où l'invention est la plus tentante : si la
+   détection est faite par règles, le dire, et ne jamais présenter un score de
+   confiance qu'aucun modèle n'a produit (`.claude/rules/verification.md`).
