@@ -91,6 +91,65 @@ Step 6 is the one the manual asks for twice (chapters 02 and 06) and the one not
 implements: no query, latency or empty-result rate is kept. `execution_time_ms` is
 computed per response and thrown away with it.
 
+## Lifecycle (chapter 03), against the code
+
+Nine stages. Six exist, one was wired in phase 4.1, two are absent.
+
+| Stage | Where it happens | State |
+|-------|------------------|-------|
+| 1. Content Collection | 7 knowledge loaders | present |
+| 2. Data Validation | `KnowledgeValidatorImpl` on every write | present |
+| 3. Index Creation | `_rebuild_index()` at construction, incremental on each write | present |
+| 4. Query Processing | `_tokenize()` | minimal |
+| 5. Result Ranking | ranker, then per-source weights | present |
+| 6. Response Delivery | `SearchResponse`, `KnowledgeSearchProvider` | **wired in phase 4.1** |
+| 7. Usage Analytics | — | **absent** (chapter 06's job) |
+| 8. Index Maintenance | `check_integrity()` reports; **no scheduled rebuild** | partial (phase 5.1) |
+| 9. Archive and Secure Deletion | `delete()` removes from index, store, graph and cache | present, not "secure" |
+
+Stage 9 deletes; it does not overwrite or prove erasure. Calling that "secure deletion"
+would be a claim nothing backs, so it is recorded as ordinary deletion.
+
+## Source registration (chapter 04) — the wiring
+
+`KnowledgeSearchProvider` (`src/services/search/providers.py`) is the first real provider.
+It adapts the knowledge engine to the service contract and re-implements nothing: the
+engine's own rules, access control included, still decide what comes back.
+
+**Searching does not grant reading.** `SearchQuery` now carries `role`, `POST /search`
+fills it from the caller's `RBACContext`, and `_build_provider_query()` copies it when it
+rebuilds the per-source query — dropping it there would have made every unified search
+anonymous, which is precisely the bypass this wiring could have introduced.
+
+Memory, document and vision remain declared in `SearchSource` with no provider. A test
+asserts that gap rather than leaving it to be rediscovered.
+
+## Index types (chapter 05), against the code
+
+| Type the manual names | State |
+|-----------------------|-------|
+| Full-text indexes | built — inverted index, term → document ids |
+| Metadata indexes | **partial**: filtering happens in the store, not in an index; every item is scanned |
+| Semantic indexes | **absent** |
+| Vector indexes | **absent** — `EmbeddingsTool` exists and nothing indexes what it produces |
+| Hybrid indexes | **absent** — needs the two missing halves first |
+
+One of five is built. The embeddings tool is worth naming: the platform can already turn
+text into vectors and has nowhere to put them, which is why "semantic search" is a wiring
+and modelling job rather than a research one.
+
+### Index integrity (chapter 05, quality controls)
+
+`check_integrity()` compares the index to the store it indexes and names three
+divergences, each with a test that provokes it:
+
+- **missing** — in the store, absent from the index (a direct store write)
+- **orphaned** — indexed, gone from the store (a delete that bypassed the index)
+- **stale** — present in both, but the indexed terms no longer match the content
+
+Lists are capped at 50 identifiers; past that the count is what decides a rebuild.
+Nothing schedules that rebuild yet — the check reports, the operator acts.
+
 ### What the query processor actually does
 
 Measured on one indexed sentence — *"La pluviométrie à Kaolack conditionne la récolte

@@ -48,18 +48,27 @@ class _FournisseurFactice:
         )]
 
 
-def test_aucun_fournisseur_n_est_enregistre_dans_le_depot():
-    """Constat mesuré : rien dans `src/` n'implémente `SearchProvider`."""
-    assert server_module.search_manager.registered_sources() == []
+def test_la_route_rapporte_l_indisponibilite_au_lieu_de_zero_resultat(cle, monkeypatch):
+    """Sans fournisseur, 503 avec une raison — jamais un `total: 0` trompeur.
 
-
-def test_la_route_rapporte_l_indisponibilite_au_lieu_de_zero_resultat(cle):
-    """Sans fournisseur, 503 avec une raison — jamais un `total: 0` trompeur."""
+    C'est l'état dans lequel se trouvait le dépôt avant la phase 4.1 : le service
+    était instancié et aucun fournisseur n'était enregistré. La source
+    connaissance est branchée depuis, mais un déploiement qui la perdrait doit
+    encore le dire au lieu de rendre une réponse vide crédible.
+    """
+    monkeypatch.setattr(server_module, "search_manager", SearchManagerImpl())
     with TestClient(app) as client:
         reponse = client.post("/search", json={"query": "agriculture"},
                               headers={"X-API-Key": cle})
     assert reponse.status_code == 503
     assert "branchée" in reponse.json()["detail"]
+
+
+def test_les_sources_declarees_depassent_les_sources_branchees():
+    """Mémoire, document et vision sont déclarées et n'ont aucun fournisseur."""
+    branchees = set(server_module.search_manager.registered_sources())
+    assert SearchSource.KNOWLEDGE in branchees
+    assert {SearchSource.MEMORY, SearchSource.DOCUMENT, SearchSource.VISION} & branchees == set()
 
 
 def test_la_route_repond_des_qu_une_source_est_branchee(cle, monkeypatch):

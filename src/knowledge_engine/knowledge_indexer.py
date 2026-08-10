@@ -165,6 +165,47 @@ class InMemoryKnowledgeIndexer(KnowledgeIndexer):
             self._index.clear()
             self._doc_terms.clear()
 
+    def check_integrity(self) -> dict:
+        """
+        Compare l'index au magasin qu'il indexe (VOLET 14, chapitre 05).
+
+        Le chapitre exige de « vérifier l'intégrité de l'index ». Un index qui
+        diverge du magasin ne se voit pas : la recherche rend simplement moins,
+        ou pointe vers des documents disparus.
+
+        Returns:
+            Un dictionnaire portant `consistent` (booléen), les identifiants
+            présents dans le magasin mais absents de l'index (`missing`), ceux
+            présents dans l'index sans exister dans le magasin (`orphaned`), et
+            les documents dont les termes ne correspondent plus à leur contenu
+            (`stale`). Les listes sont bornées : au-delà de 50 identifiants, le
+            compte suffit à décider d'une reconstruction.
+        """
+        with self._lock:
+            documents = {k.id: k for k in self._store.list_items(limit=100000)}
+            indexes = set(self._doc_terms)
+
+            manquants = sorted(set(documents) - indexes)
+            orphelins = sorted(indexes - set(documents))
+
+            perimes = []
+            for doc_id in sorted(indexes & set(documents)):
+                attendu = set(self._tokenize(documents[doc_id].content))
+                if attendu != self._doc_terms.get(doc_id, set()):
+                    perimes.append(doc_id)
+
+            return {
+                "consistent": not (manquants or orphelins or perimes),
+                "indexed_documents": len(indexes),
+                "stored_documents": len(documents),
+                "missing": manquants[:50],
+                "missing_count": len(manquants),
+                "orphaned": orphelins[:50],
+                "orphaned_count": len(orphelins),
+                "stale": perimes[:50],
+                "stale_count": len(perimes),
+            }
+
     def get_stats(self) -> dict:
         """Retourne des statistiques sur l'index."""
         with self._lock:

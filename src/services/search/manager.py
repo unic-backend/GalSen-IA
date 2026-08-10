@@ -115,6 +115,9 @@ class SearchManagerImpl(SearchManager):
             sort=SearchSort.RELEVANCE,
             min_score=None,
             filters=query.filters,
+            # Le rôle doit survivre à la reconstruction : l'oublier ici rendrait
+            # toute recherche anonyme aux yeux des fournisseurs.
+            role=query.role,
         )
 
     def search(self, query: SearchQuery) -> SearchResponse:

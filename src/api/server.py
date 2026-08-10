@@ -81,6 +81,7 @@ from src.connectors import (
 from src.services.notification.manager import NotificationManagerImpl
 from src.services.notification.types import NotificationType, NotificationPriority
 from src.services.search.manager import SearchManagerImpl
+from src.services.search.providers import KnowledgeSearchProvider
 from src.services.search.types import SearchQuery, SearchSource, SearchSort
 from src.services.file.manager import FileManagerImpl
 
@@ -290,6 +291,10 @@ approval_manager = ApprovalManagerImpl()
 # Services backend (VOLET 02, Phase 2)
 notification_manager = NotificationManagerImpl()
 search_manager = SearchManagerImpl()
+# Sans cet enregistrement, la recherche unifiée n'a aucune source et ne peut rien
+# trouver (VOLET 14, ch. 04). La connaissance est la seule source réellement
+# indexée à ce jour ; mémoire, document et vision restent déclarées, non branchées.
+search_manager.register_provider(KnowledgeSearchProvider(knowledge_manager))
 file_manager = FileManagerImpl()
 
 # Services d'intégration externe (VOLET 02, Phase 3)
@@ -1337,8 +1342,9 @@ def _resolve_search_source(raw: str) -> Optional[SearchSource]:
 
 
 @app.post("/search", tags=["search"],
-          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.KNOWLEDGE_SEARCH))])
-async def unified_search(request: SearchRequest):
+          dependencies=[Depends(rate_limit_dependency)])
+async def unified_search(request: SearchRequest,
+                         ctx: RBACContext = Depends(require_permission(Permission.KNOWLEDGE_SEARCH))):
     """Recherche unifiée sur toutes les sources disponibles.
 
     Répond 503 tant qu'aucune source n'est branchée. Sans cela, la route rendait
@@ -1372,6 +1378,10 @@ async def unified_search(request: SearchRequest):
               else SearchSort.DATE_ASC,
         min_score=request.min_score,
         filters=request.filters,
+        # Chercher n'autorise pas à lire : le rôle suit la requête jusqu'aux
+        # fournisseurs, sinon la recherche unifiée contournerait le contrôle
+        # d'accès appliqué à `/knowledge/search`.
+        role=ctx.role.value,
     )
 
     # Exécuter la recherche

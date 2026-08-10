@@ -53,6 +53,10 @@ class SearchQuery:
     sort: SearchSort = SearchSort.RELEVANCE
     min_score: Optional[float] = None
     filters: Dict[str, Any] = field(default_factory=dict)
+    # Rôle de l'appelant, porté jusqu'aux fournisseurs : chercher n'autorise pas
+    # à lire. Sans rôle, un fournisseur ne rend que ce qui est public
+    # (VOLET 05 ch. 07, VOLET 14 ch. 07).
+    role: Optional[str] = None
 
 
 @dataclass
