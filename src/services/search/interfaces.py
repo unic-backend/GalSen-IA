@@ -47,6 +47,16 @@ class SearchManager(ABC):
         """Enregistre un fournisseur de recherche."""
 
     @abstractmethod
+    def registered_sources(self) -> List[SearchSource]:
+        """
+        Retourne les sources réellement branchées.
+
+        Une liste vide signifie que le service ne peut rien trouver : sans cette
+        distinction, une recherche sans fournisseur rend « aucun résultat », ce
+        qui se lit comme une base vide au lieu d'un composant absent.
+        """
+
+    @abstractmethod
     def search(self, query: SearchQuery) -> SearchResponse:
         """
         Exécute une recherche sur toutes les sources disponibles.

@@ -10,9 +10,10 @@ exécuter, et une seule.
 
 **VOLET en cours** : 14 — Search Engine
 **Phases** : 12
-**Phase courante** : 1.1 — en attente de confirmation
-**Terminées** : aucune
-**Cadence** : une phase par tour (défaut)
+**Phase courante** : 3.1 — en attente de confirmation
+**Terminées** : 1.1, 2.1, 2.2 (→ `docs/architecture/search.md`, 503 sur `/search`)
+**Cadence** : **2 à 3 phases par tour**, demandé par l'utilisateur le 2026-08-10.
+Revenir au défaut d'une phase par tour dès qu'il le dit.
 
 ```
 VOLET 14 — Search Engine

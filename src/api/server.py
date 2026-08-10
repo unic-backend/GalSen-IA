@@ -1339,7 +1339,21 @@ def _resolve_search_source(raw: str) -> Optional[SearchSource]:
 @app.post("/search", tags=["search"],
           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.KNOWLEDGE_SEARCH))])
 async def unified_search(request: SearchRequest):
-    """Recherche unifiée sur toutes les sources disponibles."""
+    """Recherche unifiée sur toutes les sources disponibles.
+
+    Répond 503 tant qu'aucune source n'est branchée. Sans cela, la route rendait
+    `total: 0` pour toute requête — indiscernable d'une base vide, alors que
+    c'est le service qui n'a aucun fournisseur (VOLET 14, ch. 02 : une capacité
+    inachevée rapporte son état).
+    """
+    sources_branchees = search_manager.registered_sources()
+    if not sources_branchees:
+        raise HTTPException(
+            status_code=503,
+            detail=("Aucune source de recherche n'est branchée : le service ne peut "
+                    "rien trouver. Utilisez /knowledge/search en attendant."),
+        )
+
     # Résoudre les sources
     sources = []
     for raw in request.sources:

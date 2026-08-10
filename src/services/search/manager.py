@@ -46,6 +46,10 @@ class SearchManagerImpl(SearchManager):
                 "Échec de l'enregistrement du fournisseur : %s", error
             )
 
+    def registered_sources(self) -> List[SearchSource]:
+        """Retourne les sources réellement branchées, dans l'ordre d'enregistrement."""
+        return list(self._providers)
+
     def _get_score_weight(self, source: SearchSource) -> float:
         """Retourne le poids de score pour une source donnée."""
         weights = {
