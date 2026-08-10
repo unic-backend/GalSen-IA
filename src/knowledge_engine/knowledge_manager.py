@@ -114,9 +114,56 @@ class KnowledgeManagerImpl(KnowledgeManager):
 
             # Si on veut mettre en cache l'élément récemment ajouté
             self._cache.set(f"knowledge:{kid}", knowledge)
+            self._invalidate_query_cache()
 
             self._logger.debug(f"Knowledge added with ID: {kid}")
             return kid
+
+    # Préfixe des entrées de cache portant un résultat de recherche.
+    _QUERY_CACHE_PREFIX = "query:"
+
+    def _cached_search(self, cle: str, producteur) -> List[Tuple[KnowledgeItem, float]]:
+        """
+        Sert un résultat de recherche depuis le cache, ou le produit et le garde.
+
+        Répond à « Cache frequent queries » (chapitre 05, PERFORMANCE). Le
+        producteur n'est appelé qu'en cas d'absence : tout ce qu'il coûte — y
+        compris la lecture complète du magasin — n'est payé qu'une fois.
+        """
+        cached = self._cache.get(cle)
+        if cached is not None:
+            return list(cached)
+
+        resultats = [(k, s) for k, s in producteur() if k is not None]
+        self._cache.set(cle, list(resultats))
+        return resultats
+
+    def _search_index(self, query: str, limit: int) -> List[Tuple[KnowledgeItem, float]]:
+        """Interroge l'index. La clé porte la limite : deux limites ne partagent
+        pas un résultat tronqué."""
+        return self._cached_search(
+            f"{self._QUERY_CACHE_PREFIX}index:{limit}:{query}",
+            lambda: self._indexer.search(query, limit=limit),
+        )
+
+    def _retrieve_relevant(self, prompt: str, limit: int) -> List[Tuple[KnowledgeItem, float]]:
+        """Passe par le récupérateur injecté — remplaçable — avec le même cache."""
+        return self._cached_search(
+            f"{self._QUERY_CACHE_PREFIX}rag:{limit}:{prompt}",
+            lambda: self._retriever.retrieve_relevant(
+                prompt, self._store.list_items(limit=10000), limit=limit),
+        )
+
+    def _invalidate_query_cache(self) -> None:
+        """
+        Vide les résultats de recherche mis en cache.
+
+        Appelé à chaque écriture : un résultat périmé est pire qu'un cache vide,
+        il fait disparaître une connaissance qui vient d'être ajoutée.
+        """
+        for cle in self._cache.keys():
+            if cle.startswith(self._QUERY_CACHE_PREFIX):
+                self._cache.delete(cle)
 
     def get_store(self):
         """
@@ -186,6 +233,7 @@ class KnowledgeManagerImpl(KnowledgeManager):
 
             # Mettre à jour le cache
             self._cache.set(f"knowledge:{knowledge.id}", knowledge)
+            self._invalidate_query_cache()
 
             # Incrémenter la version est déjà dans l'objet knowledge
             self._logger.debug(f"Knowledge updated: {knowledge.id}")
@@ -295,6 +343,7 @@ class KnowledgeManagerImpl(KnowledgeManager):
 
             # Supprimer du cache
             self._cache.delete(f"knowledge:{knowledge_id}")
+            self._invalidate_query_cache()
 
             self._logger.debug(f"Knowledge deleted: {knowledge_id}")
             return True
@@ -307,14 +356,11 @@ class KnowledgeManagerImpl(KnowledgeManager):
             Liste de connaissances pertinentes
         """
         with self._lock:
-            results_with_scores = self._indexer.search(query, limit=limit)
-            # Récupérer les connaissances complètes (elles sont déjà dans le tuple)
             results = []
-            for knowledge, score in results_with_scores:
-                if knowledge is not None:
-                    results.append(knowledge)
-                    # Incrémenter le compteur d'accès pour chaque résultat
-                    self._increment_access_count(knowledge.id)
+            for knowledge, score in self._search_index(query, limit):
+                results.append(knowledge)
+                # Incrémenter le compteur d'accès pour chaque résultat
+                self._increment_access_count(knowledge.id)
             return results
 
     def search_knowledge_with_scores(
@@ -334,9 +380,7 @@ class KnowledgeManagerImpl(KnowledgeManager):
         """
         with self._lock:
             results: List[Tuple[KnowledgeItem, float]] = []
-            for knowledge, score in self._indexer.search(query, limit=limit):
-                if knowledge is None:
-                    continue
+            for knowledge, score in self._search_index(query, limit):
                 results.append((knowledge, score))
                 self._increment_access_count(knowledge.id)
             return results
@@ -360,12 +404,9 @@ class KnowledgeManagerImpl(KnowledgeManager):
         """
         with self._lock:
             autorises = frozenset(statuses) if statuses is not None else None
-            # Utiliser le récupérateur pour obtenir les connaissances pertinentes
-            # Nous passons toutes les connaissances du magasin comme contexte de recherche
-            all_knowledge = self._store.list_items(limit=10000)  # pourrait être optimisé
             # Élargir la recherche avant filtrage : sinon un résultat retiré
             # consomme une place et la réponse rend moins que demandé.
-            results = self._retriever.retrieve_relevant(prompt, all_knowledge, limit=max_items * 3)
+            results = self._retrieve_relevant(prompt, max_items * 3)
             # Extraire juste les connaissances (sans les scores)
             knowledge_items = [item for item, _ in results if is_retrievable(item, autorises)][:max_items]
             # Incrémenter les compteurs d'accès
@@ -397,8 +438,7 @@ class KnowledgeManagerImpl(KnowledgeManager):
         with self._lock:
             threshold = min_priority if min_priority is not None else KnowledgePriority.P4
             threshold_value = threshold.value if hasattr(threshold, "value") else int(threshold)
-            all_knowledge = self._store.list_items(limit=10000)
-            results = self._retriever.retrieve_relevant(prompt, all_knowledge, limit=max_items * 3)
+            results = self._retrieve_relevant(prompt, max_items * 3)
 
             autorises = frozenset(statuses) if statuses is not None else None
             reliable_items = []

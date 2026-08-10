@@ -197,6 +197,35 @@ not silently consume a slot in the answer.
 Step 2 remains absent and is not faked: nothing analyses intent, and the ranking score is
 term overlap from the indexer — never a value derived from rank position.
 
+## Ranking and cache (chapter 05), measured
+
+Measured on 500 items, 200 identical searches, in-memory backend:
+
+| Path | Before phase 5.2 | After |
+|------|------------------|-------|
+| `search_knowledge_with_scores` | 0.50 ms per call | **0.234 ms** |
+| `retrieve_for_prompt` (RAG) | same index walk per call | **0.226 ms** |
+| Cache counters over the run | **0 hits, 0 misses** | 398 hits, 2 misses |
+
+The cache existed and was never consulted by any search: it only held
+`knowledge:{id}` entries for reads by ID. `_cached_search()` now covers both paths, and
+the producer runs only on a miss — including `list_items(limit=10000)`, which the RAG
+path used to pay on every call.
+
+**Invalidation is the part that matters.** Every write — add, update, delete, and
+therefore every status transition — drops all `query:` entries. A cached result that
+outlives a write hides a knowledge item that was just added; that is worse than no cache.
+Index and RAG entries carry distinct keys, so the RAG policy filter never leaks into the
+exhaustive search.
+
+Ranking is unchanged and honest about what it is: `KnowledgeRankerImpl` orders by
+priority, confidence and recency, and the relevance score is term overlap from the
+indexer. **Semantic search does not exist** — chapter 05 asks for "semantic and keyword
+search together" and only the keyword half is built.
+
+What still costs, and is not addressed here: `_increment_access_count()` writes to the
+store for every result of every search, which is now the dominant cost of a cached query.
+
 ## The gap the vision names and the code does not close
 
 - **"Information must be versioned"** is half true. `KnowledgeItem.version` is an integer,

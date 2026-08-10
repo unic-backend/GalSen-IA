@@ -10,10 +10,10 @@ exécuter, et une seule.
 
 **VOLET en cours** : 05 — Knowledge Engine
 **Phases** : 12
-**Phase courante** : 5.2 — en attente de confirmation
+**Phase courante** : 6.1 — en attente de confirmation
 **Terminées** : 1.1 (→ `docs/architecture/knowledge.md`), 2.1 (`KnowledgeDomain`),
 2.2 (`KnowledgeSensitivity`, `KnowledgeStatus`), 3.1 (`knowledge_lifecycle.py`, `set_status`),
-4.1 (revalidation périodique), 5.1 (filtrage par politique à la récupération)
+4.1 (revalidation périodique), 5.1 (filtrage par politique à la récupération), 5.2 (cache de requêtes, mesuré)
 **Cadence** : une phase par tour (défaut)
 
 ```
