@@ -1,5 +1,28 @@
 """
-Document Intelligence Engine for GalSen IA.
+Moteur documentaire : lit un fichier et en extrait un contenu exploitable.
+
+Responsabilités
+    Charger un document selon son format, valider ce qui a été lu, en extraire
+    le texte et les métadonnées. Le moteur n'interprète pas le contenu : il le
+    rend disponible aux autres moteurs.
+
+Interfaces publiques
+    `DocumentManagerImpl` est le point d'entrée. Un chargeur par format
+    (`pdf_loader`, `docx_loader`, `xlsx_loader`, `pptx_loader`, `ocr_loader`,
+    `markdown_loader`, `text_loader`), sélectionné par fabrique.
+
+Dépendances
+    Optionnelles, une par format : PyPDF2, python-docx, openpyxl, python-pptx,
+    pytesseract (`requirements-optional.txt`). Elles sont importées à l'usage —
+    leur absence désactive un format, elle ne casse pas le moteur.
+
+Configuration
+    Aucune variable d'environnement propre.
+
+Limites connues
+    Les chargeurs sont couverts à 18-25 % par les tests, faute des dépendances
+    optionnelles dans l'environnement de test. Un format dont la bibliothèque
+    manque rapporte son indisponibilité plutôt qu'un contenu vide.
 """
 
 from .basic_document_validator import DocumentValidatorImpl

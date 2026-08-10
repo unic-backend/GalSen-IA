@@ -10,11 +10,13 @@ exécuter, et une seule.
 
 **VOLET en cours** : 03 — Development Manual
 **Phases** : 12
-**Phase courante** : 5.2 — en attente de confirmation
+**Phase courante** : 8.1 — en attente de confirmation
 **Terminées** : 1.1, 2.1 (→ `docs/architecture/development.md`), 3.1 (27 tests déplacés
 dans `tests/`, chemins corrigés, garde-fou `test_project_structure.py`),
 4.1 (5 niveaux de test : 4 existent, performance à 0), 4.2 (couverture mesurée : 81 %),
-5.1 (`src/config/environment.py`, 8 variables non documentées ajoutées)
+5.1 (`src/config/environment.py`, 8 variables non documentées ajoutées),
+5.2 (compatibilité descendante des bases prouvée), 6.1 (branches et commits mesurés),
+7.1 (6 paquets redocumentés, garde-fou)
 **Cadence** : **2 à 3 phases par tour**, demandé par l'utilisateur le 2026-08-10.
 Revenir au défaut d'une phase par tour dès qu'il le dit.
 

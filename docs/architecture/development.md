@@ -156,3 +156,64 @@ something the platform does not have.** The model engine's ranking, validation a
 management run only when a provider answers — exit criterion C1, still open. The document
 loaders need the optional dependencies of `requirements-optional.txt`. This is not
 neglect; it is the same gap showing up in a different measurement.
+
+## Rollback (chapter 05)
+
+Rolling back this platform means redeploying an earlier image over the **same** SQLite
+files. The code goes back on its own — `docker compose` and a versioned image handle
+that. The question the chapter actually raises is data integrity: *does a database written
+by the newer version stay readable by the older one?*
+
+It does, for one reason: **migrations are additive and reads name their columns.**
+`_add_missing_columns()` only ever runs `ALTER TABLE ... ADD COLUMN`; nothing is renamed
+or dropped, and every `SELECT` lists the columns it wants, so a version that predates a
+column simply never asks for it.
+
+`tests/test_storage_rollback.py` proves both directions rather than asserting them: an
+older reader on a newer base, a newer reader on an older base, a full
+migrate → roll back → re-migrate cycle that keeps all five rows, and a check that
+migration never removes or renames a column.
+
+What is **not** covered: there is no documented operational procedure and no release tag
+in the repository (`git tag` is empty), so "roll back to the previous version" currently
+means "redeploy the previous image", identified by hand. That belongs with exit criterion
+C4 — nothing is deployed yet.
+
+## Version control (chapter 06), measured
+
+| What the manual asks | What the repository does |
+|----------------------|--------------------------|
+| Protect `main` | never pushed to directly; work happens on a branch and merges by PR |
+| Branch strategy (`feature/`, `fix/`, `release/`, `hotfix/`) | **not followed**: two branches exist, `main` and the current working branch |
+| Conventional commits | **73 of the last 100** match `type: subject` |
+| Review before merge | PRs are used; the reviewer is the author |
+| Tag official releases | **no tag exists** |
+| Never commit secrets | `release_check.py` scans for tracked secrets |
+
+Of the 27 non-conforming commits, 24 are GitHub's own merge commits — unavoidable and not
+a deviation. **Three are real**: `merge: reconcile the two development lines`, `Update
+session-state.md` (the GitHub web editor's default message) and one commit whose message
+is a single word, `diop`.
+
+The absent branch strategy is honest rather than sloppy: `develop`, `release/` and
+`hotfix/` describe a team shipping to production, and this repository has one contributor
+and nothing deployed. Adopting the ceremony now would produce empty branches. The tags are
+different — semantic versioning is already decided (`src/version.py`), `release_check.py`
+checks for a tag, and **the first tag is simply overdue**.
+
+## Module documentation (chapter 07)
+
+The chapter asks each major module to document six things: purpose, responsibilities,
+public interfaces, dependencies, configuration and known limitations.
+
+Measured across the 18 packages of `src/`: **three had no module docstring at all**
+(`memory_engine`, `router`, `tool`) and three more said nothing beyond their own name
+("Package du moteur de connaissances GalSen IA."). All six were written to the chapter's
+structure, including their *known limitations* — which is the field that makes such a
+docstring worth reading and the one always omitted.
+
+`tests/test_package_documentation.py` guards it: every package must have a docstring, no
+docstring may be shorter than eight words, and the six rewritten packages must keep the
+chapter's headings. The remaining twelve are not forced to the full structure — demanding
+six headings from all of them at once would produce twelve docstrings written to satisfy
+a test.
