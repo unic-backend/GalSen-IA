@@ -858,11 +858,18 @@ async def execute_tool(request: ToolExecuteRequest):
 
 # Endpoints connaissances
 @app.post("/knowledge/search", response_model=KnowledgeSearchResponse, tags=["knowledge"],
-            dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.KNOWLEDGE_SEARCH))])
-async def search_knowledge(request: KnowledgeSearchRequest):
-    """Rechercher des connaissances par similarité."""
+            dependencies=[Depends(rate_limit_dependency)])
+async def search_knowledge(request: KnowledgeSearchRequest,
+                           ctx: RBACContext = Depends(require_permission(Permission.KNOWLEDGE_SEARCH))):
+    """Rechercher des connaissances par similarité.
+
+    Le rôle de l'appelant filtre les résultats par sensibilité (VOLET 05,
+    chapitre 07) : une connaissance confidentielle n'apparaît pas à un rôle qui
+    n'a pas le droit de la lire, et rien ne signale son existence.
+    """
     try:
-        results = knowledge_manager.search_knowledge(request.query, limit=request.limit)
+        results = knowledge_manager.search_knowledge(request.query, limit=request.limit,
+                                                     role=ctx.role.value)
         # Convertir les KnowledgeItem en dictionnaires
         result_dicts = []
         for item in results:

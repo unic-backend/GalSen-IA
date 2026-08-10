@@ -258,6 +258,38 @@ limit ADR-010 accepted for identity — the platform has no directory. Approval 
 blocked on a domain having an owner: that would freeze every base where nobody has
 configured the variable yet. The gap is reported instead of enforced.
 
+## Security (chapter 07), against the code
+
+The chapter asks for least-privilege access and restricted sensitive knowledge. Phase 7.1
+maps the sensitivity of chapter 02 onto the platform's roles — the mapping promised there
+instead of a second audience field.
+
+| Role | Reads |
+|------|-------|
+| `readonly` | public |
+| `user` | public, internal |
+| `operator` | public, internal, confidential |
+| `admin` | everything, including restricted |
+
+Four properties hold, each with a test:
+
+- **Refusal is the default.** No role, an empty role or an unknown role reads public only.
+  An internal call that forgets to pass a role loses access, it does not gain it.
+- **Filtering is silent.** Nothing reports "3 results hidden" — saying so would disclose
+  the existence of what is protected.
+- **Every retrieval path enforces it**: `search_knowledge`, `search_knowledge_with_scores`,
+  `retrieve_for_prompt` and `retrieve_reliable`, plus `POST /knowledge/search`, which now
+  passes the caller's role from its `RBACContext`.
+- **The tables cannot drift.** `test_les_roles_de_la_plateforme_sont_tous_couverts` fails
+  if a role exists in `src/api/rbac.py` and not in `READABLE_BY_ROLE`.
+
+`knowledge_security.py` names roles by string rather than importing `Role`: the engine
+must not depend on the API layer. The test above is what keeps that decoupling honest.
+
+The chapter's other requirements were already met elsewhere and are not re-implemented:
+encryption at rest (`src/storage/encryption.py`, applied to knowledge content), audit of
+significant events (audit engine), and authentication before access (ADR-010).
+
 ## The gap the vision names and the code does not close
 
 - **"Information must be versioned"** is half true. `KnowledgeItem.version` is an integer,

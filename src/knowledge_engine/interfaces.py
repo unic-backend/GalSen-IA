@@ -217,13 +217,18 @@ class KnowledgeManager(ABC):
         pass
 
     @abstractmethod
-    def search_knowledge(self, query: str, limit: int = 10) -> List[KnowledgeItem]:
-        """Recherche des connaissances par texte."""
+    def search_knowledge(self, query: str, limit: int = 10,
+                         role: Optional[str] = None) -> List[KnowledgeItem]:
+        """Recherche des connaissances par texte.
+
+        `role` filtre par sensibilité (chapitre 07) : sans rôle, seules les
+        connaissances publiques sont retournées.
+        """
         pass
 
     @abstractmethod
     def search_knowledge_with_scores(
-        self, query: str, limit: int = 10
+        self, query: str, limit: int = 10, role: Optional[str] = None
     ) -> List[Tuple[KnowledgeItem, float]]:
         """
         Recherche des connaissances en conservant leur score de pertinence.
@@ -240,7 +245,8 @@ class KnowledgeManager(ABC):
 
     @abstractmethod
     def retrieve_for_prompt(self, prompt: str, max_items: int = 5,
-                            statuses: Optional[Iterable[KnowledgeStatus]] = None) -> List[KnowledgeItem]:
+                            statuses: Optional[Iterable[KnowledgeStatus]] = None,
+                            role: Optional[str] = None) -> List[KnowledgeItem]:
         """Récupère des connaissances pertinentes pour enrichir un prompt (RAG).
 
         `statuses` restreint les statuts acceptés ; par défaut, les connaissances
@@ -252,7 +258,8 @@ class KnowledgeManager(ABC):
     def retrieve_reliable(self, prompt: str, max_items: int = 5,
                           min_priority: Optional[KnowledgePriority] = None,
                           min_confidence: float = 0.5,
-                          statuses: Optional[Iterable[KnowledgeStatus]] = None) -> Dict[str, Any]:
+                          statuses: Optional[Iterable[KnowledgeStatus]] = None,
+                          role: Optional[str] = None) -> Dict[str, Any]:
         """Récupère uniquement des connaissances fiables.
 
         Si aucune connaissance ne satisfait les seuils de priorité et de

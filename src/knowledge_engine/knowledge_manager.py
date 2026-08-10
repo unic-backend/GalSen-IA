@@ -6,6 +6,7 @@ from typing import Iterable, List, Dict, Any, Optional, Tuple
 from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority, KnowledgeStatus
 from .knowledge_lifecycle import check_transition, is_due_for_revalidation, is_retrievable
 from .knowledge_governance import governance_report
+from .knowledge_security import can_read
 from .interfaces import (
     KnowledgeStore, KnowledgeLoader, KnowledgeIndexer,
     KnowledgeRetriever, KnowledgeValidator, KnowledgeGraph,
@@ -361,9 +362,16 @@ class KnowledgeManagerImpl(KnowledgeManager):
             self._logger.debug(f"Knowledge deleted: {knowledge_id}")
             return True
 
-    def search_knowledge(self, query: str, limit: int = 10) -> List[KnowledgeItem]:
+    def search_knowledge(self, query: str, limit: int = 10,
+                         role: Optional[str] = None) -> List[KnowledgeItem]:
         """
         Recherche des connaissances par texte.
+
+        Args:
+            query: texte recherché
+            limit: nombre maximum de résultats
+            role: rôle de l'appelant. Sans rôle, seules les connaissances
+                publiques sont retournées (chapitre 07).
 
         Returns:
             Liste de connaissances pertinentes
@@ -371,13 +379,15 @@ class KnowledgeManagerImpl(KnowledgeManager):
         with self._lock:
             results = []
             for knowledge, score in self._search_index(query, limit):
+                if not can_read(role, knowledge):
+                    continue
                 results.append(knowledge)
                 # Incrémenter le compteur d'accès pour chaque résultat
                 self._increment_access_count(knowledge.id)
             return results
 
     def search_knowledge_with_scores(
-        self, query: str, limit: int = 10
+        self, query: str, limit: int = 10, role: Optional[str] = None
     ) -> List[Tuple[KnowledgeItem, float]]:
         """
         Recherche des connaissances en conservant leur score de pertinence.
@@ -394,23 +404,30 @@ class KnowledgeManagerImpl(KnowledgeManager):
         with self._lock:
             results: List[Tuple[KnowledgeItem, float]] = []
             for knowledge, score in self._search_index(query, limit):
+                if not can_read(role, knowledge):
+                    continue
                 results.append((knowledge, score))
                 self._increment_access_count(knowledge.id)
             return results
 
     def retrieve_for_prompt(self, prompt: str, max_items: int = 5,
-                            statuses: Optional[Iterable[KnowledgeStatus]] = None) -> List[KnowledgeItem]:
+                            statuses: Optional[Iterable[KnowledgeStatus]] = None,
+                            role: Optional[str] = None) -> List[KnowledgeItem]:
         """
         Récupère des connaissances pertinentes pour enrichir un prompt (RAG).
 
         Applique l'étape 5 du pipeline du chapitre 05 : ce qui a été retiré de
-        l'usage — archivé ou déprécié — ne nourrit pas un raisonnement.
+        l'usage — archivé ou déprécié — ne nourrit pas un raisonnement, et ce que
+        l'appelant n'a pas le droit de lire ne lui est pas retourné.
 
         Args:
             prompt: la requête
             max_items: nombre maximum de connaissances retournées
             statuses: statuts explicitement acceptés (par exemple, approuvés
                 seulement). Par défaut, tout sauf les statuts retirés.
+            role: rôle de l'appelant (chapitre 07). Sans rôle, seules les
+                connaissances publiques sont retournées — le défaut d'un contrôle
+                d'accès est le refus.
 
         Returns:
             Liste de connaissances à inclure dans le contexte
@@ -421,7 +438,10 @@ class KnowledgeManagerImpl(KnowledgeManager):
             # consomme une place et la réponse rend moins que demandé.
             results = self._retrieve_relevant(prompt, max_items * 3)
             # Extraire juste les connaissances (sans les scores)
-            knowledge_items = [item for item, _ in results if is_retrievable(item, autorises)][:max_items]
+            knowledge_items = [
+                item for item, _ in results
+                if is_retrievable(item, autorises) and can_read(role, item)
+            ][:max_items]
             # Incrémenter les compteurs d'accès
             for kid in [k.id for k in knowledge_items]:
                 self._increment_access_count(kid)
@@ -430,7 +450,8 @@ class KnowledgeManagerImpl(KnowledgeManager):
     def retrieve_reliable(self, prompt: str, max_items: int = 5,
                           min_priority: Optional[KnowledgePriority] = None,
                           min_confidence: float = 0.5,
-                          statuses: Optional[Iterable[KnowledgeStatus]] = None) -> Dict[str, Any]:
+                          statuses: Optional[Iterable[KnowledgeStatus]] = None,
+                          role: Optional[str] = None) -> Dict[str, Any]:
         """
         Récupère uniquement des connaissances fiables pour une requête.
 
@@ -458,8 +479,9 @@ class KnowledgeManagerImpl(KnowledgeManager):
             best_priority = 4
             best_confidence = 0.0
             for item, _ in results:
-                # Étape 5 du pipeline : ce qui est retiré de l'usage ne sert pas.
-                if not is_retrievable(item, autorises):
+                # Étape 5 du pipeline : ce qui est retiré de l'usage, ou que
+                # l'appelant n'a pas le droit de lire, ne sert pas.
+                if not is_retrievable(item, autorises) or not can_read(role, item):
                     continue
                 priority_value = item.priority.value if hasattr(item.priority, "value") else int(item.priority)
                 if priority_value > threshold_value:
