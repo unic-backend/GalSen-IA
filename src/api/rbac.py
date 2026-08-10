@@ -25,7 +25,7 @@ import hmac
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, FrozenSet, List, Optional, Set
+from typing import Any, Dict, FrozenSet, List, Literal, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -339,6 +339,16 @@ class RBACContext:
     # À qui appartient la clé (ADR-010). Une trace d'audit disant « awa a fait X »
     # est exploitable ; « la clé 745df677f426 a fait X » ne l'est pas.
     subject: str = ANONYMOUS_SUBJECT
+    # Par quel moyen l'appelant s'est authentifié. `api_key` est le seul chemin
+    # actif aujourd'hui ; `jwt` et `oauth` n'existent que sur cette branche, et
+    # ADR-010 refuse pour l'instant le magasin d'identifiants qu'ils supposent.
+    # Le champ est déclaré ici parce qu'une trace d'audit qui ne dit pas
+    # **comment** quelqu'un est entré ne permet pas de révoquer le bon chemin.
+    auth_method: Literal["api_key", "jwt", "oauth"] = "api_key"
+    # Identifiant du compte, quand il y en a un. Distinct de `subject` : le
+    # sujet est ce qu'une clé **déclare**, l'identifiant est ce qu'un annuaire
+    # **vérifie**. Les confondre ferait passer une déclaration pour une preuve.
+    user_id: Optional[str] = None
     permissions: FrozenSet[Permission] = field(init=False)
 
     def __post_init__(self):
@@ -528,6 +538,7 @@ class RBACManager:
                 key_fingerprint=key_fingerprint(digest),
                 role=identite.role,
                 subject=identite.subject,
+                auth_method="api_key",
             )
 
         raise PermissionError("Clé API invalide.")
