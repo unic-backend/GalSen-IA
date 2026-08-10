@@ -8,24 +8,37 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 16 terminé (10 chapitres, 12 phases)
-**Phase courante** : —
-**Terminées** : toutes
-**Cadence** : revenue au défaut d'une phase par tour
+**VOLET en cours** : 05 — Knowledge Engine
+**Phases** : 12
+**Phase courante** : 1.1 — en attente de confirmation
+**Terminées** : aucune
+**Cadence** : une phase par tour (défaut)
 
 ```
-VOLET 16 — Authentication & Identity : terminé
-  Ch. 01-02  ADR-010 : une clé appartient à un sujet, sans magasin de secrets
-  Ch. 03-04  cycle de vie : 6 étapes sur 9 en place, la vérification est absente et nommée
-  Ch. 05     sécurité : aucun secret stocké, comparaison à temps constant
-  Ch. 06     supervision : taux de succès d'authentification dans /metrics
-  Ch. 07     conformité : inventaire des données personnelles — rétention absente
-  Ch. 08+10  gouvernance : chapitres en doublon, traités ensemble ; rôles = mécanismes
-  Ch. 09     qualité : 3 métriques sur 6 disponibles
+VOLET 05 — Knowledge Engine
+10 chapitres → 12 phases
+
+Ch. 01  Vision            → 1 phase   1.1  inventaire mesuré du moteur face à la vision
+Ch. 02  Organisation      → 2 phases  2.1  structure (domaines → versions) vs `types.py`
+                                      2.2  classification (source, fiabilité, sensibilité, statut)
+Ch. 03  Cycle de vie      → 1 phase   3.1  les 8 étapes : lesquelles existent, laquelle manque
+Ch. 04  Validation        → 1 phase   4.1  niveaux Draft → Deprecated vs `knowledge_validator.py`
+Ch. 05  Récupération      → 2 phases  5.1  pipeline en 6 étapes (intention, index, filtre)
+                                      5.2  classement et cache, mesurés et non supposés
+Ch. 06  Gouvernance       → 1 phase   6.1  propriétaire par domaine, rôles = mécanismes
+Ch. 07  Sécurité          → 1 phase   7.1  permissions et sensibilité à la lecture
+Ch. 08  Intégration       → 1 phase   8.1  qui consomme réellement le moteur (RAG, search, mémoire)
+Ch. 09  Qualité           → 1 phase   9.1  métriques de qualité réellement calculables
+Ch. 10  Gouvernance moteur→ 1 phase  10.1  clôture du VOLET, mémoire et CHANGELOG
+
+Total : 12 phases.
 ```
 
-**Acquis en chemin** : le critère de sortie C2 est **atteint** sur les trois
-magasins (mémoire, fichiers, notifications).
+**Pourquoi ce VOLET** : le P1 le plus haut de `pending-work.md` — la base de
+connaissances contient 0 élément, 0 document indexé, 0 nœud de graphe, et
+`docs/knowledge/` n'existe pas. Le moteur (12 modules, 2372 lignes) et la
+recherche récupèrent dans le vide.
 
-**Prochaine action** : choisir le prochain VOLET, lire ses chapitres, publier le
-plan de phases, puis s'arrêter.
+**Garde-fou** : chaque phase part de l'état réel du dépôt, chaque chiffre est
+mesuré et non rappelé. Une capacité inachevée rapporte un statut, jamais une
+réponse plausible (`.claude/rules/verification.md`).
