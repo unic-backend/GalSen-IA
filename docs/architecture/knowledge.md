@@ -101,6 +101,38 @@ someone says otherwise, and rewriting the content sends it back to `DRAFT` — a
 belongs to the text that was approved. Sensitivity, which belongs to the subject rather
 than to the wording, is kept across versions.
 
+## Lifecycle (chapter 03), against the code
+
+The chapter names eight stages. Six are operations that already existed, one was added in
+phase 3.1, and one is absent by decision.
+
+| Stage | Where it happens | State |
+|-------|------------------|-------|
+| 1. Creation | `add_knowledge()`, the 7 loaders | present |
+| 2. Review | `set_status(… UNDER_REVIEW …)` | **added (phase 3.1)** |
+| 3. Validation | `KnowledgeValidatorImpl`, run on add and update | present |
+| 4. Approval | `set_status(… APPROVED …)`, reachable only through review | **added (phase 3.1)** |
+| 5. Publication | — | **not a stage here**: retrieval filters on status, nothing is "published" |
+| 6. Maintenance | `update_knowledge()` — a rewrite returns the item to `DRAFT` | present |
+| 7. Archiving | `set_status(… ARCHIVED …)`, reason required | **added (phase 3.1)** |
+| 8. Retirement | `set_status(… DEPRECATED …)`, terminal; `delete_knowledge()` erases | **added (phase 3.1)** |
+
+`knowledge_lifecycle.py` holds the permitted transitions and nothing else. Three rules
+it enforces:
+
+- **Review cannot be skipped.** `DRAFT → APPROVED` raises `InvalidStatusTransition`, and
+  the message lists what was reachable instead.
+- **Retirement is terminal.** Nothing leaves `DEPRECATED`; what must no longer be cited
+  becomes citable again only by being rewritten, which is a new revision.
+- **Every transition is a revision.** The version increments, and
+  `metadata["status_history"]` records who moved it, from where, to where, when and why.
+  `actor` is mandatory — a transition nobody signed cannot be governed (chapter 06) — and
+  a reason is mandatory for archiving and retirement.
+
+Who *may* perform a transition is not decided here: `set_status` records the actor it is
+given and trusts it, exactly as ADR-010 trusts whoever declares a key. Binding it to
+roles belongs to chapters 06 and 07.
+
 ## The gap the vision names and the code does not close
 
 - **"Information must be versioned"** is half true. `KnowledgeItem.version` is an integer,

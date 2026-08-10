@@ -3,7 +3,8 @@ Gestionnaire principal du moteur de connaissances GalSen IA.
 """
 
 from typing import List, Dict, Any, Optional, Tuple
-from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority
+from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority, KnowledgeStatus
+from .knowledge_lifecycle import check_transition
 from .interfaces import (
     KnowledgeStore, KnowledgeLoader, KnowledgeIndexer,
     KnowledgeRetriever, KnowledgeValidator, KnowledgeGraph,
@@ -17,6 +18,8 @@ from .knowledge_validator import KnowledgeValidatorImpl
 from .knowledge_graph import InMemoryKnowledgeGraph
 from .knowledge_cache import TTLCache
 from .knowledge_ranker import KnowledgeRankerImpl
+import copy
+import datetime
 import logging
 import threading
 import os
@@ -187,6 +190,62 @@ class KnowledgeManagerImpl(KnowledgeManager):
             # Incrémenter la version est déjà dans l'objet knowledge
             self._logger.debug(f"Knowledge updated: {knowledge.id}")
             return True
+
+    def set_status(self, knowledge_id: str, target: KnowledgeStatus,
+                   actor: str, reason: Optional[str] = None) -> Optional[KnowledgeItem]:
+        """
+        Fait passer une connaissance au statut demandé (VOLET 05, chapitre 03).
+
+        La transition est refusée si le cycle de vie ne la permet pas. Chaque
+        passage est enregistré dans `metadata["status_history"]` : le chapitre
+        exige de conserver l'historique de revue et de tracer les révisions.
+
+        Args:
+            knowledge_id: identifiant de la connaissance
+            target: statut visé
+            actor: qui opère la transition — jamais déduit, toujours fourni
+            reason: motif, obligatoire pour un retrait ou un archivage
+
+        Returns:
+            La connaissance dans son nouveau statut, ou None si elle n'existe pas.
+
+        Raises:
+            InvalidStatusTransition: si la transition n'est pas permise
+            ValueError: si l'acteur est vide, ou si un motif est requis et absent
+        """
+        if not actor or not actor.strip():
+            raise ValueError("L'acteur d'une transition de statut est obligatoire")
+
+        retraits = (KnowledgeStatus.ARCHIVED, KnowledgeStatus.DEPRECATED)
+        if target in retraits and not (reason and reason.strip()):
+            raise ValueError(f"Un motif est obligatoire pour passer en {target.value}")
+
+        with self._lock:
+            existing = self._store.get(knowledge_id)
+            if not existing:
+                return None
+
+            check_transition(existing.status, target)
+
+            # Une transition est une révision : nouvelle version, contenu inchangé.
+            nouveau = copy.deepcopy(existing)
+            nouveau.status = target
+            nouveau.version = existing.version + 1
+            nouveau.updated_at = datetime.datetime.now(datetime.timezone.utc)
+            nouveau.metadata.setdefault("status_history", []).append({
+                "from": existing.status.value,
+                "to": target.value,
+                "actor": actor,
+                "reason": reason,
+                "at": nouveau.updated_at.isoformat(),
+            })
+
+            if not self.update_knowledge(nouveau):
+                return None
+            self._logger.info(
+                f"Knowledge {knowledge_id}: {existing.status.value} -> {target.value} by {actor}"
+            )
+            return nouveau
 
     def delete_knowledge(self, knowledge_id: str) -> bool:
         """
