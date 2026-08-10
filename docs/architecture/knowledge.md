@@ -72,6 +72,35 @@ a classification. Both stores filter on `domain`, by enum or by value; `SQLiteKn
 persists it and migrates a base written before the column existed, whose rows read back
 as `UNSPECIFIED` rather than being guessed.
 
+## Classification (chapter 02), against the code
+
+The chapter classifies knowledge on five axes. Two existed, two were added in phase 2.2,
+and one is deliberately not a field.
+
+| Axis | What carries it | State |
+|------|-----------------|-------|
+| Source | `KnowledgeSource` — 11 fields, and `SourceCategory` | present |
+| Reliability | `KnowledgePriority` P1–P4 (VOLET_01 ch. 04) and `confidence` | present |
+| Sensitivity | `KnowledgeSensitivity` — public, internal, confidential, restricted | **added (phase 2.2)** |
+| Status | `KnowledgeStatus` — draft, under review, reviewed, approved, archived, deprecated | **added (phase 2.2)** |
+| Audience | — | **not a field, by decision** |
+
+**Status is one axis for two chapters.** Chapter 02 lists Draft / Reviewed / Approved /
+Archived, chapter 04 lists Draft / Under Review / Verified / Approved / Deprecated: the
+same progression under two vocabularies. `REVIEWED` carries what chapter 04 calls
+*Verified*, and there is no `verified` value. Two enums for one progression would be the
+duplication chapter 02 forbids.
+
+**Audience is not a field** because it would restate the same fact twice: sensitivity says
+what must be protected, and the platform's roles (`src/api/rbac.py`) say who may read.
+Phase 7.1 maps one onto the other; an independent audience list would be a second,
+divergent answer to the same question.
+
+Defaults protect nothing and validate nothing: an item is `PUBLIC` and `DRAFT` until
+someone says otherwise, and rewriting the content sends it back to `DRAFT` — an approval
+belongs to the text that was approved. Sensitivity, which belongs to the subject rather
+than to the wording, is kept across versions.
+
 ## The gap the vision names and the code does not close
 
 - **"Information must be versioned"** is half true. `KnowledgeItem.version` is an integer,

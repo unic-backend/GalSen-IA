@@ -67,6 +67,41 @@ class KnowledgeDomain(Enum):
     UNSPECIFIED = "unspecified"
 
 
+class KnowledgeSensitivity(Enum):
+    """Sensibilité d'une connaissance (VOLET 05, chapitre 02 — classification).
+
+    Répond à « qu'est-ce qui doit être protégé », pas à « qui y a droit » : la
+    correspondance entre sensibilité et rôles appartient au chapitre 07.
+    PUBLIC est la valeur par défaut — une connaissance dont personne n'a déclaré
+    la sensibilité ne doit pas être traitée comme protégée par accident.
+    """
+    PUBLIC = "public"
+    INTERNAL = "internal"
+    CONFIDENTIAL = "confidential"
+    RESTRICTED = "restricted"
+
+
+class KnowledgeStatus(Enum):
+    """Statut d'une connaissance dans son cycle de vie (VOLET 05, chapitres 02 et 04).
+
+    Un seul axe pour les deux chapitres, qui nomment la même progression avec des
+    mots différents : le chapitre 02 liste Draft, Reviewed, Approved, Archived ;
+    le chapitre 04 liste Draft, Under Review, Verified, Approved, Deprecated.
+    REVIEWED porte ce que le chapitre 04 appelle « Verified ». Deux énumérations
+    pour une même progression seraient la duplication que le chapitre 02 interdit.
+
+    ARCHIVED et DEPRECATED ne sont pas synonymes : une connaissance archivée est
+    retirée de l'usage courant mais reste vraie, une connaissance dépréciée ne
+    doit plus être utilisée comme référence.
+    """
+    DRAFT = "draft"
+    UNDER_REVIEW = "under_review"
+    REVIEWED = "reviewed"
+    APPROVED = "approved"
+    ARCHIVED = "archived"
+    DEPRECATED = "deprecated"
+
+
 class ConfidenceLevel(Enum):
     """Niveaux de confiance."""
     VERY_LOW = 0.0
@@ -154,6 +189,8 @@ class KnowledgeItem:
     content_type: ContentType = ContentType.TEXT
     language: Language = Language.FR
     domain: KnowledgeDomain = KnowledgeDomain.UNSPECIFIED
+    sensitivity: KnowledgeSensitivity = KnowledgeSensitivity.PUBLIC
+    status: KnowledgeStatus = KnowledgeStatus.DRAFT
     tags: List[str] = field(default_factory=list)
     categories: List[str] = field(default_factory=list)
     source: KnowledgeSource = field(default_factory=lambda: KnowledgeSource(id="unknown", type="unknown", location="unknown"))
@@ -191,6 +228,10 @@ class KnowledgeItem:
             content_type=self.content_type,
             language=self.language,
             domain=self.domain,
+            sensitivity=self.sensitivity,
+            # Un contenu réécrit n'est plus celui qui avait été revu : il repart en
+            # brouillon et devra repasser par le cycle du chapitre 03.
+            status=KnowledgeStatus.DRAFT,
             tags=self.tags.copy(),
             categories=self.categories.copy(),
             source=source or self.source,

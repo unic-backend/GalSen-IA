@@ -4,7 +4,8 @@ Package du moteur de connaissances GalSen IA.
 
 from .types import (
     KnowledgeItem, KnowledgeSource, KnowledgeType, ContentType, Language,
-    ConfidenceLevel, SourceCategory, KnowledgePriority, KnowledgeDomain
+    ConfidenceLevel, SourceCategory, KnowledgePriority, KnowledgeDomain,
+    KnowledgeSensitivity, KnowledgeStatus
 )
 from .interfaces import (
     KnowledgeStore, KnowledgeLoader, KnowledgeIndexer, KnowledgeRetriever,
@@ -24,6 +25,8 @@ __all__ = [
     "SourceCategory",
     "KnowledgePriority",
     "KnowledgeDomain",
+    "KnowledgeSensitivity",
+    "KnowledgeStatus",
     # Interfaces
     "KnowledgeStore",
     "KnowledgeLoader",

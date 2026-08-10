@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional
 from src.knowledge_engine.types import (
     KnowledgeItem, KnowledgeSource, KnowledgeType, ContentType,
     Language, SourceCategory, KnowledgePriority, KnowledgeDomain,
+    KnowledgeSensitivity, KnowledgeStatus,
 )
 from src.knowledge_engine.interfaces import KnowledgeStore
 from src.storage.encryption import decrypt, encrypt
@@ -29,7 +30,8 @@ class SQLiteKnowledgeStore(KnowledgeStore):
     # Colonnes de la table "knowledge_items" (l'ordre définit aussi le SELECT).
     _COLUMNS = (
         "id", "content", "summary", "knowledge_type", "content_type",
-        "language", "domain", "tags", "categories", "source_id", "source_type",
+        "language", "domain", "sensitivity", "status", "tags", "categories",
+        "source_id", "source_type",
         "source_location", "source_accessed_at", "source_hash",
         "source_category", "source_title", "source_author", "source_url",
         "source_citation", "source_retrieved_at", "confidence", "version",
@@ -141,6 +143,8 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             "content_type": knowledge.content_type.value,
             "language": knowledge.language.value,
             "domain": knowledge.domain.value,
+            "sensitivity": knowledge.sensitivity.value,
+            "status": knowledge.status.value,
             "tags": json.dumps(knowledge.tags),
             "categories": json.dumps(knowledge.categories),
             "confidence": knowledge.confidence,
@@ -178,6 +182,8 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             language=Language(data["language"]),
             # Une base écrite avant l'ajout du domaine renvoie NULL : non classé.
             domain=KnowledgeDomain(data["domain"]) if data.get("domain") else KnowledgeDomain.UNSPECIFIED,
+            sensitivity=KnowledgeSensitivity(data["sensitivity"]) if data.get("sensitivity") else KnowledgeSensitivity.PUBLIC,
+            status=KnowledgeStatus(data["status"]) if data.get("status") else KnowledgeStatus.DRAFT,
             tags=json.loads(data["tags"] or "[]"),
             categories=json.loads(data["categories"] or "[]"),
             source=source,
@@ -278,6 +284,16 @@ class SQLiteKnowledgeStore(KnowledgeStore):
                     elif key == "domain":
                         wanted = value.value if hasattr(value, "value") else value
                         if knowledge.domain.value != wanted:
+                            match = False
+                            break
+                    elif key == "sensitivity":
+                        wanted = value.value if hasattr(value, "value") else value
+                        if knowledge.sensitivity.value != wanted:
+                            match = False
+                            break
+                    elif key == "status":
+                        wanted = value.value if hasattr(value, "value") else value
+                        if knowledge.status.value != wanted:
                             match = False
                             break
                     elif key == "tags":

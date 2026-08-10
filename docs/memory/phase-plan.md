@@ -10,8 +10,9 @@ exécuter, et une seule.
 
 **VOLET en cours** : 05 — Knowledge Engine
 **Phases** : 12
-**Phase courante** : 2.2 — en attente de confirmation
-**Terminées** : 1.1 (→ `docs/architecture/knowledge.md`), 2.1 (`KnowledgeDomain`)
+**Phase courante** : 3.1 — en attente de confirmation
+**Terminées** : 1.1 (→ `docs/architecture/knowledge.md`), 2.1 (`KnowledgeDomain`),
+2.2 (`KnowledgeSensitivity`, `KnowledgeStatus`)
 **Cadence** : une phase par tour (défaut)
 
 ```
