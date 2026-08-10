@@ -333,6 +333,27 @@ item then failed every enum comparison in the retrieval filters — present in t
 invisible to every search. `_convert_classification()` closes it, and an invalid value is
 now refused instead of stored.
 
+## Quality metrics (chapter 09), against the code
+
+Six metrics are named. Four are computed by `quality_report()` from the base's real
+content; two are declared unavailable **inside the report itself**, with the reason.
+
+| Metric | Computed as | State |
+|--------|-------------|-------|
+| Completeness | share of items with a classified domain, a traceable source, a summary | computed |
+| Freshness | median and oldest `updated_at` age, plus stale approvals (phase 4.1) | computed |
+| Duplicate rate | identical content hashes: groups and redundant items | computed |
+| Validation coverage | share of items reviewed or approved, and the full status breakdown | computed |
+| Accuracy rate | — | **unavailable**: no ground truth. The platform knows a source's declared reliability (P1–P4), not whether the content is true |
+| User feedback | — | **unavailable**: no feedback mechanism exists |
+
+The two unavailable metrics carry no number, not even a placeholder — `accuracy_rate` is
+absent from the report and named in `unavailable`, so a caller cannot mistake a default
+for a measurement. A test asserts that no numeric key exists for either.
+
+On an empty base every ratio is `0.0`, never `1.0`: "nothing to fault" is not "everything
+is good", and a fresh deployment must not read as perfect quality.
+
 ## The gap the vision names and the code does not close
 
 - **"Information must be versioned"** is half true. `KnowledgeItem.version` is an integer,

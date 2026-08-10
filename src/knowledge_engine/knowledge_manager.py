@@ -7,6 +7,7 @@ from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority, KnowledgeS
 from .knowledge_lifecycle import check_transition, is_due_for_revalidation, is_retrievable
 from .knowledge_governance import governance_report
 from .knowledge_security import can_read
+from .knowledge_quality import quality_report
 from .interfaces import (
     KnowledgeStore, KnowledgeLoader, KnowledgeIndexer,
     KnowledgeRetriever, KnowledgeValidator, KnowledgeGraph,
@@ -308,6 +309,18 @@ class KnowledgeManagerImpl(KnowledgeManager):
         """
         with self._lock:
             return governance_report(self._store)
+
+    def quality_report(self) -> Dict[str, Any]:
+        """
+        Rapporte les métriques de qualité mesurables (chapitre 09).
+
+        Returns:
+            Complétude, fraîcheur, taux de doublons et couverture de validation,
+            plus les métriques que la plateforme ne sait pas calculer et la
+            raison de chacune.
+        """
+        with self._lock:
+            return quality_report(self._store)
 
     def list_due_for_revalidation(self, max_age_days: Optional[int] = None,
                                   limit: int = 100) -> List[KnowledgeItem]:
