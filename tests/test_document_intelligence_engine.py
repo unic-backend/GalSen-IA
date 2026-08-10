@@ -12,7 +12,7 @@ import zipfile
 from pathlib import Path
 
 # Add the src directory to the path so we can import the modules
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.document_intelligence_engine.document_manager import DocumentManagerImpl
 from src.document_intelligence_engine.document_loader_factory import DocumentLoaderFactory

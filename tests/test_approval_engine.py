@@ -19,7 +19,7 @@ import pytest
 
 # La racine du projet est ajoutée pour importer le paquet `src` : les imports
 # relatifs internes (ex. `..approval_engine`) exigent ce niveau de paquetage.
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 from src.approval_engine.approval_manager import ApprovalManagerImpl
 from src.approval_engine.approval_store import InMemoryApprovalStore

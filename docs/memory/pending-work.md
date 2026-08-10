@@ -122,9 +122,12 @@ gets re-argued at every review.
   until one exists.
   *Deciding criterion:* user impact — nobody uses the calendar tool today.
 
-- **Move the 27 root `test_*.py` files into `tests/`**, as `.claude/rules/testing.md`
-  requires. They are collected and green; only their location differs.
-  *Deciding criterion:* maintenance cost, low.
+- **No linter, formatter or type checker is configured.** No `setup.cfg`,
+  `pyproject.toml`, `.flake8` or pre-commit hook exists; the conventions in
+  `.claude/rules/coding-conventions.md` hold because one author applies them, not because
+  anything checks. Return type hints are the weakest at 88 % of functions.
+  *Deciding criterion:* maintenance cost — the cost of adding one is low, and it only
+  starts paying the day a second contributor arrives.
 
 - **Review the model catalogue periodically.** Context windows and prices are declared in
   `src/model_engine/providers/*_provider.py` and drift as vendors change them.

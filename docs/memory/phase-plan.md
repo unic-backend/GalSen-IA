@@ -10,8 +10,9 @@ exécuter, et une seule.
 
 **VOLET en cours** : 03 — Development Manual
 **Phases** : 12
-**Phase courante** : 1.1 — en attente de confirmation
-**Terminées** : aucune
+**Phase courante** : 4.1 — en attente de confirmation
+**Terminées** : 1.1, 2.1 (→ `docs/architecture/development.md`), 3.1 (27 tests déplacés
+dans `tests/`, chemins corrigés, garde-fou `test_project_structure.py`)
 **Cadence** : **2 à 3 phases par tour**, demandé par l'utilisateur le 2026-08-10.
 Revenir au défaut d'une phase par tour dès qu'il le dit.
 

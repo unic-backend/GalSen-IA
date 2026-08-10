@@ -15,7 +15,7 @@ import sys
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.tool.tool_engine import ToolEngine
 
@@ -27,7 +27,7 @@ NETWORK_ERROR_MARKERS = ("timed out", "urlopen error", "Failed to fetch", "Conne
 
 def build_engine() -> ToolEngine:
     """Instancie le moteur d'outils à partir du registre du projet."""
-    registry_path = os.path.join(os.path.dirname(__file__), 'tools', 'tools.yaml')
+    registry_path = os.path.join(os.path.dirname(__file__), '..', 'tools', 'tools.yaml')
     return ToolEngine(registry_path)
 
 

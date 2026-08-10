@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 # Ensure the application can be imported
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 os.environ["GALSEN_API_KEYS"] = "test-key-123,another-key"
 

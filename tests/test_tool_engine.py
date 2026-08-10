@@ -11,7 +11,7 @@ import asyncio
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.tool.tool_engine import ToolEngine
 
@@ -21,7 +21,7 @@ IMPLEMENTED_TOOLS = ("filesystem", "terminal", "git", "github", "web_search", "b
 
 def build_engine() -> ToolEngine:
     """Instancie le moteur d'outils à partir du registre du projet."""
-    registry_path = os.path.join(os.path.dirname(__file__), 'tools', 'tools.yaml')
+    registry_path = os.path.join(os.path.dirname(__file__), '..', 'tools', 'tools.yaml')
     return ToolEngine(registry_path)
 
 

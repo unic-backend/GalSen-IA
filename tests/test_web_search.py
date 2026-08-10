@@ -7,7 +7,7 @@ import sys
 import os
 
 # Add the src directory to the Python path
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.tool.tool_engine import ToolEngine
 
@@ -15,7 +15,7 @@ def main():
     """Main function to test the ToolEngine with web search."""
     print("Initializing the ToolEngine...")
     # Use the path to the tools registry relative to the project root
-    registry_path = os.path.join(os.path.dirname(__file__), 'tools', 'tools.yaml')
+    registry_path = os.path.join(os.path.dirname(__file__), '..', 'tools', 'tools.yaml')
     engine = ToolEngine(registry_path)
 
     print("\n--- Tool Engine Info ---")
