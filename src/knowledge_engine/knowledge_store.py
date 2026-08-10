@@ -167,8 +167,18 @@ class InMemoryKnowledgeStore(KnowledgeStore):
             return results
 
     def count(self, **filters) -> int:
-        """Compte les connaissances correspondant aux filtres."""
-        return len(self.list_items(limit=10000, **filters))
+        """
+        Compte les connaissances correspondant aux filtres.
+
+        Le compte n'est jamais plafonné : il portait auparavant la limite de
+        10 000 de `list_items`, si bien qu'un magasin de 10 050 éléments en
+        rapportait 10 000 sans le dire. Un compte faux est pire qu'un compte
+        absent — rien ne permet de s'en apercevoir.
+        """
+        if not filters:
+            with self._lock:
+                return len(self._data)
+        return len(self.list_items(limit=len(self._data), **filters))
 
     def cleanup_old_versions(self, keep_latest: int = 1) -> int:
         """Nettoie les anciennes versions, en gardant seulement les plus récentes.

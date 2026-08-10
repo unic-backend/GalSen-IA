@@ -10,10 +10,12 @@ exécuter, et une seule.
 
 **VOLET en cours** : 14 — Search Engine
 **Phases** : 12
-**Phase courante** : 5.2 — en attente de confirmation
+**Phase courante** : 8.1 — en attente de confirmation
 **Terminées** : 1.1, 2.1, 2.2 (→ `docs/architecture/search.md`, 503 sur `/search`),
 3.1 (9 étapes du cycle), 4.1 (`KnowledgeSearchProvider` branché, rôle propagé),
-5.1 (types d'index mesurés, `check_integrity()`)
+5.1 (types d'index mesurés, `check_integrity()`), 5.2 (perf mesurée, deux troncatures
+silencieuses corrigées), 6.1 (analytique de recherche dans `/metrics`),
+7.1 (l'index ne fuit pas ce qu'il filtre)
 **Cadence** : **2 à 3 phases par tour**, demandé par l'utilisateur le 2026-08-10.
 Revenir au défaut d'une phase par tour dès qu'il le dit.
 

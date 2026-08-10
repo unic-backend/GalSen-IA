@@ -368,8 +368,19 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             return results
 
     def count(self, **filters) -> int:
-        """Compte les connaissances correspondant aux filtres."""
-        return len(self.list_items(limit=10000, **filters))
+        """
+        Compte les connaissances correspondant aux filtres.
+
+        Sans filtre, le compte vient de SQL et ne parcourt rien. Avec filtres, il
+        réplique le filtrage de `list_items` sans plafond : un compte tronqué à
+        10 000, comme c'était le cas, se lit comme un magasin plus petit qu'il
+        n'est.
+        """
+        if not filters:
+            with self._lock:
+                with self._get_connection() as conn:
+                    return conn.execute("SELECT COUNT(*) FROM knowledge_items").fetchone()[0]
+        return len(self.list_items(limit=self.count(), **filters))
 
     def cleanup_old_versions(self, keep_latest: int = 1) -> int:
         """

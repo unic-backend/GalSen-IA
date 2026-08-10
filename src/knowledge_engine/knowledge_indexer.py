@@ -2,6 +2,7 @@
 Indexeur de connaissances pour recherche plein texte rapide.
 """
 
+import logging
 import re
 from typing import Dict, Set, List, Optional
 from .types import KnowledgeItem
@@ -11,6 +12,13 @@ import threading
 
 class InMemoryKnowledgeIndexer(KnowledgeIndexer):
     """Indexeur en mémoire utilisant un index inversé simple."""
+
+    # Nombre maximal de documents lus lors d'une reconstruction complète.
+    # La limite existait déjà, dispersée et muette : au-delà, les documents
+    # excédentaires n'étaient jamais indexés et devenaient introuvables sans
+    # qu'aucun signal ne l'indique. Elle est désormais nommée, partagée avec la
+    # vérification d'intégrité, et son atteinte est rapportée.
+    MAX_INDEXABLE_DOCUMENTS = 100000
 
     def __init__(self, store: KnowledgeStore):
         """
@@ -80,10 +88,19 @@ class InMemoryKnowledgeIndexer(KnowledgeIndexer):
             self._doc_terms.clear()
             # Utilise l'interface publique du stockage pour fonctionner aussi
             # avec un stockage SQLite (ADR-005), pas seulement en mémoire.
-            for knowledge in self._store.list_items(limit=10000):
+            documents = self._store.list_items(limit=self.MAX_INDEXABLE_DOCUMENTS)
+            for knowledge in documents:
                 text = knowledge.content
                 terms = self._tokenize(text)
                 self._add_to_index(knowledge.id, terms)
+            if len(documents) >= self.MAX_INDEXABLE_DOCUMENTS:
+                # Au-delà, la recherche est incomplète : le taire reviendrait à
+                # rendre « aucun résultat » pour des documents bien présents.
+                logging.getLogger(__name__).warning(
+                    "Index tronqué à %d documents : le magasin en contient davantage, "
+                    "les suivants sont introuvables par la recherche.",
+                    self.MAX_INDEXABLE_DOCUMENTS,
+                )
 
     def add(self, knowledge: KnowledgeItem) -> None:
         """Ajoute une connaissance à l'index."""
@@ -182,7 +199,8 @@ class InMemoryKnowledgeIndexer(KnowledgeIndexer):
             compte suffit à décider d'une reconstruction.
         """
         with self._lock:
-            documents = {k.id: k for k in self._store.list_items(limit=100000)}
+            documents = {k.id: k for k in self._store.list_items(limit=self.MAX_INDEXABLE_DOCUMENTS)}
+            tronque = self._store.count() > self.MAX_INDEXABLE_DOCUMENTS
             indexes = set(self._doc_terms)
 
             manquants = sorted(set(documents) - indexes)
@@ -195,9 +213,10 @@ class InMemoryKnowledgeIndexer(KnowledgeIndexer):
                     perimes.append(doc_id)
 
             return {
-                "consistent": not (manquants or orphelins or perimes),
+                "consistent": not (manquants or orphelins or perimes or tronque),
+                "truncated": tronque,
                 "indexed_documents": len(indexes),
-                "stored_documents": len(documents),
+                "stored_documents": self._store.count(),
                 "missing": manquants[:50],
                 "missing_count": len(manquants),
                 "orphaned": orphelins[:50],

@@ -11,22 +11,22 @@ Three mechanisms carry the word "search", and they do not know about each other.
 
 | Mechanism | Where | State |
 |-----------|-------|-------|
-| Knowledge index | `InMemoryKnowledgeIndexer` (178 lines) | works: inverted index, term-overlap score |
-| Unified search service | `src/services/search/` (410 lines), `POST /search` | **answers nothing — see below** |
+| Knowledge index | `InMemoryKnowledgeIndexer` | works: inverted index, term-overlap score |
+| Unified search service | `src/services/search/`, `POST /search` | answered nothing before phase 4.1 — see below |
 | Web search tool | `src/tools/web_search/` | separate path, not part of this engine |
 
-The chapter's six strategic capabilities, measured:
+The chapter's six strategic capabilities, at the state this VOLET leaves them:
 
 | Capability | State |
 |------------|-------|
 | Full-text search | built (keyword, inverted index) |
 | Intelligent ranking | built (`KnowledgeRankerImpl`: priority, confidence, recency) |
-| Search analytics | **absent** — no query is recorded anywhere |
-| Multi-source indexing | **declared, never wired** |
+| Search analytics | **added (phase 6.1)** — volume, latency, empty rate in `/metrics` |
+| Multi-source indexing | **one source of four wired** (knowledge, phase 4.1) |
 | Semantic search | **absent** |
 | Personalised search | **absent** — no per-caller signal is kept |
 
-## The finding: `POST /search` cannot return a result
+## The finding: `POST /search` could not return a result
 
 `SearchManagerImpl` merges results from registered providers. **No provider is ever
 registered**, anywhere in `src/`:
@@ -61,14 +61,14 @@ that answers plausibly while being unable to answer at all.
 |----------------------------|---------------|-------|
 | Data Sources | knowledge, memory, document, vision — declared in `SearchSource` | declared |
 | Indexing Engine | `InMemoryKnowledgeIndexer`, knowledge only | partial |
-| Search Orchestrator | `SearchManagerImpl` | built, **no provider** |
+| Search Orchestrator | `SearchManagerImpl` | built; **one provider since phase 4.1** |
 | Ranking Engine | `KnowledgeRankerImpl` + per-source weights in the merge | built |
 | Query Processor | `_tokenize()` — lowercase, French stop-words, length > 1 | minimal |
 | Search API | `POST /search`, `POST /knowledge/search` | built |
-| Analytics Module | — | **absent** |
+| Analytics Module | `record_search()` + the `search` block of `/metrics` | **added (phase 6.1)** |
 
-Five of seven exist in some form. The orchestrator has nothing to orchestrate, and the
-analytics module has no code at all.
+Five of seven existed when the VOLET opened; the orchestrator had nothing to orchestrate
+and the analytics module had no code at all. Both were closed in phases 4.1 and 6.1.
 
 **The per-source weights are a hazard worth naming.** `_get_score_weight()` multiplies
 knowledge by 1.0, memory by 0.9, document by 0.85, vision by 0.8 — constants nothing
@@ -85,11 +85,11 @@ chose deliberately.
 | 3. Process queries | `_tokenize()` | minimal |
 | 4. Rank results | ranker, then per-source weights | present |
 | 5. Return responses | `SearchResponse.to_dict()` | present |
-| 6. Record analytics | — | **absent** |
+| 6. Record analytics | `record_search()` | **added (phase 6.1)** |
 
 Step 6 is the one the manual asks for twice (chapters 02 and 06) and the one nothing
-implements: no query, latency or empty-result rate is kept. `execution_time_ms` is
-computed per response and thrown away with it.
+implemented: no query, latency or empty-result rate was kept, and `execution_time_ms` was
+computed per response and thrown away with it. See *Search analytics* below.
 
 ## Lifecycle (chapter 03), against the code
 
@@ -103,7 +103,7 @@ Nine stages. Six exist, one was wired in phase 4.1, two are absent.
 | 4. Query Processing | `_tokenize()` | minimal |
 | 5. Result Ranking | ranker, then per-source weights | present |
 | 6. Response Delivery | `SearchResponse`, `KnowledgeSearchProvider` | **wired in phase 4.1** |
-| 7. Usage Analytics | — | **absent** (chapter 06's job) |
+| 7. Usage Analytics | `record_search()`, `/metrics` | **added (phase 6.1)** |
 | 8. Index Maintenance | `check_integrity()` reports; **no scheduled rebuild** | partial (phase 5.1) |
 | 9. Archive and Secure Deletion | `delete()` removes from index, store, graph and cache | present, not "secure" |
 
@@ -150,6 +150,32 @@ divergences, each with a test that provokes it:
 Lists are capped at 50 identifiers; past that the count is what decides a rebuild.
 Nothing schedules that rebuild yet — the check reports, the operator acts.
 
+### Index performance and freshness (phase 5.2), measured
+
+On 1 000 documents, in-memory backend:
+
+| Operation | Cost |
+|-----------|------|
+| Full index build | 8.0 ms (1 030 unique terms, 7 990 postings) |
+| `check_integrity()` | 6.8 ms |
+| Incremental indexing | 0.011 ms per document |
+
+Freshness is not a delay: indexing is synchronous with the write, so a knowledge item is
+searchable on the call that follows its creation, and integrity holds after an add and
+after a delete. There is no queue to fall behind.
+
+**Two silent truncations were found at 10 000 documents and fixed:**
+
+- `count()` returned `list_items(limit=10000)`'s length in both stores. A store holding
+  10 050 items reported **10 000** — a wrong count nothing could detect. It is now a real
+  count: `len` of the dictionary in memory, `SELECT COUNT(*)` in SQLite.
+- `_rebuild_index()` read the same 10 000. Past that, documents were **never indexed and
+  never findable**, with no signal at all. The bound is now a named constant shared with
+  the integrity check, reaching it logs a warning, and `check_integrity()` reports
+  `truncated: true` and refuses to call the index consistent.
+
+Measured after the fix: 10 050 stored, 10 050 indexed, consistent.
+
 ### What the query processor actually does
 
 Measured on one indexed sentence — *"La pluviométrie à Kaolack conditionne la récolte
@@ -170,3 +196,41 @@ Wolof, English or Arabic keeps its own filler words as search terms.
 The score is the share of query terms present in the document, and nothing else: no term
 frequency, no document length, no field weighting. Two documents matching the same terms
 score identically, however different their content.
+
+## Search analytics (chapters 02, 06 and 09)
+
+Step 6 of the data flow existed nowhere: no query, latency or empty-result rate was kept,
+and `execution_time_ms` was computed per response and thrown away with it.
+
+`record_search()` feeds the collector `/metrics` already uses — no second mechanism — and
+`GET /metrics` gains a `search` block:
+
+```json
+"search": { "queries": 42, "empty": 7, "empty_rate": 0.1667 }
+```
+
+Plus one latency histogram per source queried (`search.latency.knowledge`).
+
+**What is measured is behaviour, never content.** A query is what someone wanted to know;
+storing it would turn an operational measurement into a log of everyone's questions. A
+test searches for a distinctive string and asserts it appears nowhere in `/metrics`.
+
+`empty_rate` is `null` rather than `0.0` when no search has run — the chapter 09 quality
+metric that can be computed without a human jury is *how often the platform found
+nothing*, and zero searches must not read as perfect coverage.
+
+## Search security (chapter 07)
+
+An index is built **before** any access control: everything is in it, including what a
+given caller may not read. Filtering therefore has to hold on every path out, and the
+tests check each one:
+
+- the **results** exclude what the role cannot read (phase 4.1);
+- the **total** counts permitted results only — a total of 2 next to a single result
+  would announce the existence of a hidden document;
+- **exact terms** from a restricted document return nothing, so the index cannot be
+  probed word by word;
+- the **response body** contains no fragment of restricted content, not even its
+  sensitivity label;
+- a search **without a role** reads public only — forgetting the role loses access rather
+  than granting it.

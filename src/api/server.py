@@ -47,6 +47,7 @@ from src.api.metrics import (
     RequestMetricsMiddleware,
     metrics_snapshot,
     record_authentication,
+    record_search,
 )
 
 # Version de la plateforme — source unique (src/version.py)
@@ -1387,6 +1388,9 @@ async def unified_search(request: SearchRequest,
     # Exécuter la recherche
     try:
         response = search_manager.search(query)
+        # Étape 6 du flux du VOLET 14 : enregistrer l'usage. Le contenu de la
+        # requête n'est pas mesuré, seulement le comportement de la recherche.
+        record_search(response.sources_used, response.total, response.execution_time_ms)
         return response.to_dict()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la recherche : {str(e)}")
