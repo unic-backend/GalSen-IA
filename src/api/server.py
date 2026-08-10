@@ -52,6 +52,7 @@ from src.api.metrics import (
 
 # Version de la plateforme — source unique (src/version.py)
 from src.version import __version__
+from src.config import log_environment_problems
 
 # Import de la posture de sécurité HTTP (VOLET 02 ch. 08)
 from src.api.security_headers import (
@@ -179,6 +180,11 @@ async def lifespan(_app: FastAPI):
     cette fonction ne s'exécute qu'au démarrage, jamais à l'import.
     """
     global tool_engine
+    # Une variable présente et inexploitable est signalée ici, jamais plus tard :
+    # `GALSEN_STORAGE_BACKEND=sqllite` repartait en mémoire sans rien dire
+    # (VOLET 03, ch. 05). Le démarrage n'est pas interrompu pour autant.
+    log_environment_problems(logger)
+
     try:
         tool_engine = ToolEngine(tool_loader.registry_path)
         logger.info(

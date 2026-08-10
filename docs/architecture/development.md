@@ -72,3 +72,87 @@ immediately — it caught `test_approval_engine.py`, which used
 `dirname(abspath(__file__))` and had escaped the bulk rewrite. The suite still passed,
 because pytest inserts the rootdir anyway; the file's own intent was broken, and only an
 explicit check could see it.
+
+## Testing levels (chapter 04), measured
+
+**1 604 tests in 87 files** in `tests/`, classified by what they exercise:
+
+| Level the manual names | Tests | Where |
+|------------------------|-------|-------|
+| Unit | 1 293 | the bulk of the suite |
+| Integration | 156 + 46 | API routes (`test_api_*`), pipelines (`test_integration`, `test_workflow_revue`) |
+| End-to-end | included above | `test_generation_end_to_end` (9), skips while no provider answers |
+| Security | 109 | `test_rbac` (28), `test_scaling` (23), `test_storage_encryption` (21), `test_api_security_headers` (17), `test_api_auth` (7), `test_knowledge_security` (8), `test_search_security` (5) |
+| **Performance** | **0** | nothing measures a duration and asserts on it |
+
+Four levels of five exist. **Performance testing is the one absent**, and it is absent
+for a reason that chapter 08 names: no target has ever been declared, so a performance
+test would have nothing to assert against. Phase 8.1 is where that gets settled — writing
+timing tests before there is a threshold would produce assertions chosen to pass.
+
+The measurements taken during VOLETs 05 and 14 (0.234 ms per cached search, 8.0 ms to
+build a 1 000-document index) live in documentation, not in the suite: they are
+observations, and nothing fails when they drift.
+
+## Startup configuration (chapter 05)
+
+The chapter asks, in one line, to "validate environment variables at startup". Nothing
+did, and the failure mode is quiet: `GALSEN_STORAGE_BACKEND=sqllite` fell back to
+in-memory storage, so a deployment that believed it was persisting was not.
+
+`src/config/environment.py` checks the variables that are **present** and cannot be
+applied — 11 of them today, each with the consequence of ignoring it, not just the rule
+it breaks. It runs in the API lifespan and **reports without blocking**: a platform that
+refuses to boot over a malformed rate limit is less useful than one that boots and says
+so. An absent variable is never a complaint: most are optional and their absence disables
+a capability cleanly.
+
+Secrets are never echoed — `to_dict()` masks any variable whose name contains `KEY`,
+`TOKEN`, `PASSWORD` or `SECRET`, because a validation warning ends up in a log.
+
+**Eight variables were read by the code and documented nowhere**, three of them added the
+same day by VOLETs 05 and 14 — `GALSEN_DATA_DIR`, `GALSEN_INSTANCE_ID`,
+`GALSEN_LOG_MAX_BYTES`, `GALSEN_LOG_BACKUP_COUNT`, `GALSEN_GITHUB_TOKEN`,
+`GALSEN_KNOWLEDGE_OWNERS`, `GALSEN_SEARCH_OWNERS`,
+`GALSEN_KNOWLEDGE_REVALIDATION_DAYS`. All are now in `.env.example`, and a test fails if
+a variable read by `src/` is missing from it — documenting after the fact is exactly what
+never gets done.
+
+## Coverage (chapter 04), measured
+
+`python -m pytest --cov=src` over the whole suite: **81 % of 15 397 statements**, 2 926
+uncovered, across 237 modules. 89 modules are at 100 %.
+
+`.claude/rules/testing.md` sets two thresholds. The general one — 80 % for new code — is
+met. The second asks **95 % on critical paths** (authentication, security, data
+validation), and that one is worth checking rather than assuming:
+
+| Critical module | Coverage |
+|-----------------|----------|
+| `src/api/rbac.py` | **99 %** |
+| `src/api/rate_limiter.py` | **96 %** |
+| `src/knowledge_engine/knowledge_manager.py` | **95 %** |
+| `src/storage/encryption.py` | 94 % |
+| `src/api/server.py` | 77 % |
+
+Three of five meet it, encryption is one point short, and `server.py` — 676 statements of
+route wiring — is the outlier. Its uncovered part is mostly error branches on routes whose
+happy path is tested.
+
+**Where coverage actually collapses is the model engine.** Excluding the vision engine
+(whose optional OpenCV dependencies make it a known case), the worst modules are:
+
+| Module | Coverage |
+|--------|----------|
+| `src/model_engine/response_ranker.py` | 14 % |
+| `src/model_engine/model_context_manager.py` | 17 % |
+| `src/model_engine/response_validator.py` | 17 % |
+| `src/tools/api/tool.py` | 17 % |
+| `src/document_intelligence_engine/{xlsx,pptx,docx,pdf}_loader.py` | 18–20 % |
+| `src/knowledge_engine/knowledge_loader.py` | 41 % |
+
+The pattern is consistent and explains itself: **the untested code is the code that needs
+something the platform does not have.** The model engine's ranking, validation and context
+management run only when a provider answers — exit criterion C1, still open. The document
+loaders need the optional dependencies of `requirements-optional.txt`. This is not
+neglect; it is the same gap showing up in a different measurement.
