@@ -10,6 +10,29 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **VOLET 03 — Development Manual, 10 chapters in 12 phases.** Measured state →
+  `docs/architecture/development.md`
+  - **Performance targets** (`docs/standards/performance.md`): the oldest P1 in the
+    backlog. Derived from same-day measurements, not round numbers — ≤ 50 ms for liveness,
+    ≤ 200 ms for reads and search, ≤ 500 ms for writes, at p95. End-to-end latency is
+    deliberately **not** targeted while nothing is deployed
+  - **The fifth testing level** (`tests/test_performance_targets.py`), which was absent
+    for a legitimate reason: without a declared target, a timing assertion is a number
+    chosen to pass. It also asserts that search does not degrade with base size
+  - **`release_check.py`** gains a ninth automated check and no longer leaves
+    "performance targets verified" to a human
+  - **Startup configuration validation** (`src/config/environment.py`): 11 variables that
+    are present and unusable are reported with the consequence of ignoring each.
+    `GALSEN_STORAGE_BACKEND=sqllite` used to fall back to in-memory storage silently
+  - **Eight environment variables** read by the code and documented nowhere are now in
+    `.env.example`, with a test that fails if another one goes missing
+  - **Backward-compatible storage proved both ways** (`tests/test_storage_rollback.py`):
+    an older reader on a newer base, a newer reader on an older base, and a full
+    roll-back cycle that loses nothing
+  - **Six of eighteen packages documented**: three had no docstring at all, three repeated
+    their own name. Rewritten to the chapter's structure, known limitations included
+  - 32 new tests; full suite 1 687 passing, 7 skipped
+
 - **VOLET 14 — Search Engine, 10 chapters in 12 phases.** Full measured state →
   `docs/architecture/search.md`
   - **`POST /search` could not return a result**: no class implemented `SearchProvider`
@@ -27,13 +50,6 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
     with a test that provokes it
   - 33 new tests; full suite 1655 passing, 7 skipped
 
-### Fixed
-- **Two silent truncations at 10 000 items.** `count()` returned the length of
-  `list_items(limit=10000)` in both knowledge stores, so a store holding 10 050 items
-  reported 10 000 with nothing able to detect it; `_rebuild_index()` read the same bound,
-  leaving every document past it **unindexed and unfindable without any signal**. Counting
-  is now real (`len`, `SELECT COUNT(*)`), the index bound is a named constant shared with
-  the integrity check, and reaching it is logged and reported as `truncated`
 - **VOLET 05 — Knowledge Engine, 10 chapters in 12 phases.** The engine was built and the
   base was empty (0 items, 0 indexed terms, 0 graph nodes); the VOLET added the discipline
   around the content. Full measured state → `docs/architecture/knowledge.md`
@@ -55,6 +71,21 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
     Accuracy rate and user feedback carry **no number** and are named as unavailable with
     their reason
   - 78 new tests; full suite 1622 passing, 7 skipped
+
+### Changed
+- **The 27 root `test_*.py` files now live in `tests/`**, as `.claude/rules/testing.md`
+  requires. The move broke 20 path expressions that computed the repository root as
+  `dirname(__file__)`; all were rewritten, and `tests/test_project_structure.py` now fails
+  if a test file reappears at the root or points `sys.path` at its own directory
+- **The debt register in `docs/roadmap/roadmap.md` was re-measured**: four of nine debts
+  are paid, three were missing, and the orchestration suite grew from 97 s to 105 s
+### Fixed
+- **Two silent truncations at 10 000 items.** `count()` returned the length of
+  `list_items(limit=10000)` in both knowledge stores, so a store holding 10 050 items
+  reported 10 000 with nothing able to detect it; `_rebuild_index()` read the same bound,
+  leaving every document past it **unindexed and unfindable without any signal**. Counting
+  is now real (`len`, `SELECT COUNT(*)`), the index bound is a named constant shared with
+  the integrity check, and reaching it is logged and reported as `truncated`
 - **OpenAI-compatible provider** (`src/model_engine/providers/openai_compatible_provider.py`)
   — one provider for every service speaking `/v1/models` and
   `/v1/chat/completions`: vLLM, LM Studio, llama.cpp, LocalAI, OpenRouter, Groq,

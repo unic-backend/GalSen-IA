@@ -8,45 +8,31 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : 03 — Development Manual
-**Phases** : 12
-**Phase courante** : 8.1 — en attente de confirmation
-**Terminées** : 1.1, 2.1 (→ `docs/architecture/development.md`), 3.1 (27 tests déplacés
-dans `tests/`, chemins corrigés, garde-fou `test_project_structure.py`),
-4.1 (5 niveaux de test : 4 existent, performance à 0), 4.2 (couverture mesurée : 81 %),
-5.1 (`src/config/environment.py`, 8 variables non documentées ajoutées),
-5.2 (compatibilité descendante des bases prouvée), 6.1 (branches et commits mesurés),
-7.1 (6 paquets redocumentés, garde-fou)
+**VOLET en cours** : aucun — VOLET 03 terminé (10 chapitres, 12 phases)
+**Phase courante** : —
+**Terminées** : toutes
 **Cadence** : **2 à 3 phases par tour**, demandé par l'utilisateur le 2026-08-10.
 Revenir au défaut d'une phase par tour dès qu'il le dit.
 
 ```
-VOLET 03 — Development Manual
-10 chapitres → 12 phases
-
-Ch. 01  Standards de dév.  → 1 phase   1.1  ce que le dépôt impose vraiment vs ce qu'il déclare
-Ch. 02  Conventions        → 1 phase   2.1  type hints, docstrings, commentaires FR : mesurés
-Ch. 03  Structure projet   → 1 phase   3.1  les 27 `test_*.py` à la racine (P3 du backlog)
-Ch. 04  Tests              → 2 phases  4.1  les 5 niveaux de test : lesquels existent
-                                       4.2  couverture réelle, mesurée et non estimée
-Ch. 05  Déploiement        → 2 phases  5.1  environnements et validation des variables au démarrage
-                                       5.2  retour arrière : procédure et intégrité des données
-Ch. 06  Contrôle de version→ 1 phase   6.1  stratégie de branches vs ce que fait le dépôt
-Ch. 07  Documentation      → 1 phase   7.1  les 6 champs exigés par module : lesquels manquent
-Ch. 08  Performance        → 1 phase   8.1  **déclarer une cible de performance** (P1 du backlog)
-Ch. 09  Maintenance        → 1 phase   9.1  dette : registre existant vs dette réelle
-Ch. 10  Cycle de dév.      → 1 phase  10.1  clôture du VOLET, mémoire et CHANGELOG
-
-Total : 12 phases.
+VOLET 03 — Development Manual : terminé
+  Ch. 01  standards     : 13 fichiers de règles, 4 mécanismes seulement s'exécutent
+  Ch. 02  conventions   : 98 % docstrings, 88 % de types de retour, 100 % snake_case
+  Ch. 03  structure     : 27 tests déplacés dans tests/, 20 chemins réparés
+  Ch. 04  tests         : 4 niveaux sur 5 ; couverture réelle 81 %
+  Ch. 05  déploiement   : validation des variables au démarrage ; retour arrière prouvé
+  Ch. 06  version       : 73/100 commits conformes ; aucun tag
+  Ch. 07  documentation : 6 paquets sur 18 ne documentaient rien
+  Ch. 08  performance   : cibles déclarées et vérifiées — le P1 le plus ancien
+  Ch. 09  maintenance   : registre de dette re-mesuré, 4 payées sur 9
+  Ch. 10  cycle de dév. : clôture, mémoire et CHANGELOG
 ```
 
-**Pourquoi ce VOLET** : l'ordre numérique, et il porte deux entrées du backlog —
-**déclarer une cible de performance** (P1 : `/metrics` mesure la latence, rien ne
-dit ce qui est acceptable, donc `release_check.py` refuse de cocher la case) et
-les **27 fichiers de test à la racine** (P3).
+**Ce que le VOLET n'a pas fait, et le dit** : aucun linter ni vérificateur de
+types n'a été ajouté (entré au backlog, P3 tant qu'il y a un contributeur) ;
+aucun tag de version n'a été posé ; la latence de bout en bout n'est pas ciblée
+tant que rien n'est déployé.
 
-**Risque propre à ce VOLET, à tenir** : c'est un volet de standards, et
-`.claude/rules/` en couvre déjà une partie. Le piège est d'écrire dix documents
-qui répètent des règles existantes. Chaque phase part donc du **dépôt mesuré**,
-pas du manuel : ce qui est déjà écrit ailleurs est cité, jamais recopié
-(`.claude/rules/documentation.md` : ne jamais dupliquer, mettre à jour l'existant).
+**Prochaine action** : choisir le prochain VOLET, lire ses chapitres, publier le
+plan de phases, puis s'arrêter. Par ordre numérique, le suivant est le **VOLET
+06 — AI Orchestration Manual**. Restent ensuite : 07 à 13, 15, 17 à 25.

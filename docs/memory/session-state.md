@@ -12,29 +12,28 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-10
 
-**En cours** : rien. **VOLET 05 et VOLET 14 terminés** dans cette session.
+**En cours** : rien. **VOLETs 05, 14 et 03 terminés** dans cette session.
 
 **Terminé dans cette session**
-- **VOLET 05 — Knowledge Engine** : domaines, sensibilité, statut, cycle de vie tracé,
-  filtrage par politique et par rôle, cache de requêtes, rapports de gouvernance et
-  de qualité. Détail → `docs/architecture/knowledge.md`.
-- **VOLET 14 — Search Engine** : `POST /search` **ne pouvait rien rendre** (aucun
-  `SearchProvider` dans le dépôt) — 503 explicite puis source connaissance branchée,
-  rôle propagé, analytique de recherche, `GET /search/status`.
-  Détail → `docs/architecture/search.md`.
-- **Trois défauts silencieux corrigés** : aller-retour RAG qui détruisait une
-  connaissance ; `count()` plafonné à 10 000 (magasin qui ment sur sa taille) ;
-  index tronqué à 10 000 rendant des documents introuvables sans signal.
-- Tests : **1655 passants**, 7 ignorés (111 ajoutés dans la session).
+- **VOLET 05 — Knowledge Engine** → `docs/architecture/knowledge.md`
+- **VOLET 14 — Search Engine** → `docs/architecture/search.md`
+- **VOLET 03 — Development Manual** → `docs/architecture/development.md`
+- **Une cible de performance existe enfin** (`docs/standards/performance.md`), dérivée de
+  mesures : le P1 le plus ancien du backlog est payé, et `release_check.py` ne laisse
+  plus ce point à un humain.
+- **Cinq défauts silencieux corrigés** : aller-retour RAG qui détruisait une connaissance,
+  `count()` plafonné à 10 000, index tronqué à 10 000, `/search` qui répondait « aucun
+  résultat » sans aucune source branchée, `GALSEN_STORAGE_BACKEND` mal écrit qui repartait
+  en mémoire sans le dire.
+- Tests : **1687 passants**, 7 ignorés (143 ajoutés dans la session), couverture 81 %.
   Branche `claude/galsen-ia-phases-ukwz7p`.
 
 **Prochaine étape**
-Choisir le prochain VOLET et publier son plan de phases. Restent : 03, 06 à 13, 15,
-17 à 25. Cadence convenue : **2 à 3 phases par tour**.
+Ouvrir le **VOLET 06 — AI Orchestration** (ordre numérique) et publier son plan de
+phases. Restent ensuite : 07 à 13, 15, 17 à 25. Cadence : **2 à 3 phases par tour**.
 
 **Bloqué / à surveiller**
-- **La base de connaissances est toujours vide** : tout ce qui a été bâti dans les
-  deux VOLETs décrit 0 élément. P1 le plus haut, ne dépend plus du code.
+- **La base de connaissances est toujours vide** : P1 le plus haut, ne dépend plus du code.
 - **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192.
-- **C4 dépend de toi** : rien n'est déployé, personne n'a joint l'API par le réseau.
-- Recherche sémantique absente : `EmbeddingsTool` produit des vecteurs que rien n'indexe.
+- **C4 dépend de toi** : rien n'est déployé ; aucun tag de version n'existe.
+- Recherche sémantique absente ; aucun linter ni vérificateur de types.

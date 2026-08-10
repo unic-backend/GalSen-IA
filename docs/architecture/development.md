@@ -217,3 +217,53 @@ docstring may be shorter than eight words, and the six rewritten packages must k
 chapter's headings. The remaining twelve are not forced to the full structure — demanding
 six headings from all of them at once would produce twelve docstrings written to satisfy
 a test.
+
+## Performance targets (chapter 08)
+
+The single largest thing this VOLET closes. `release_check.py` had been refusing to tick
+"performance targets verified" for an honest reason: **no target existed**, and a
+measurement with no threshold informs no decision.
+
+Targets now live in `docs/standards/performance.md`, derived from measurements taken the
+same day (100 calls per route, rate limiter disabled, 200 knowledge items):
+
+| Class | Target (p95) | Current p95 |
+|-------|--------------|-------------|
+| Liveness and metrics | ≤ 50 ms | 2.2–2.3 ms |
+| Read and search | ≤ 200 ms | 2.9–3.6 ms |
+| Write | ≤ 500 ms | not yet isolated |
+| Model generation | none — provider-dominated | — |
+
+The multiples are deliberately large: a threshold set at twice the current figure fails on
+a loaded CI runner and gets disabled within a month. End-to-end latency is **not**
+targeted, because nothing is deployed (C4) and a figure invented before the first
+deployment sets the bar in the wrong place.
+
+This also fills the fifth testing level. `tests/test_performance_targets.py` asserts the
+two measurable classes and checks that search **does not degrade with base size** —
+ten times the documents must not cost five times the time, which is what an inverted index
+is for. Writing those tests earlier would have meant choosing assertions that pass;
+writing them now means asserting a declared target.
+
+`release_check.py` gains a ninth automated check: the targets document and its tests must
+both exist and the document must declare targets. It fails if either disappears — never
+because a human forgot to tick a box.
+
+## Technical debt (chapter 09), re-measured
+
+The register in `docs/roadmap/roadmap.md` held nine debts. Checking each against the
+repository rather than against memory:
+
+- **Four are paid**: log rotation (the file is at 3.5 MB under a 5 MB × 3 policy), the
+  metrics tool now fed by request handling, the 27 root test files, and the performance
+  target.
+- **Three were missing**: no linter or type checker, no release tag, and — until this
+  VOLET — no performance target at all.
+- **One grew**: the orchestration suite was recorded at 97 s and now takes **105 s**, with
+  three tests at ~34 s each.
+- **One is unchanged and still real**: three implementations still write a file to disk
+  (`LocalDiskStorageConnector`, `SQLiteFileStore`, `FileSystemCloudStore`), and nothing
+  says which a caller should use.
+
+A register nobody re-measures drifts both ways: it keeps debts that are settled and misses
+the ones that appeared. That is the finding of this phase, more than any individual line.

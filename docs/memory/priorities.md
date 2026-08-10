@@ -11,7 +11,8 @@ each item). This file holds only what is **active** — what someone would pick 
    Phase 2's workspace, Phase 3's collaboration and every adoption metric.
 3. **Make generation provable end to end** (P0). The platform's only real feature answers
    503; the task is the test that proves it works when a key is present.
-4. Finish VOLET 04 — the roadmap phases still open in `phase-plan.md`.
+4. **Put content in the knowledge base.** Four VOLETs have now built discipline around
+   content that does not exist; every governance and quality report describes 0 items.
 
 Everything else is queued in `pending-work.md` and should not be started ahead of these
 without saying why.

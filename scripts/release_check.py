@@ -224,13 +224,27 @@ CONFIRMATIONS_HUMAINES = [
         "Les fonctionnalités annoncées pour cette version sont livrées, "
         "pas seulement commencées.",
     ),
-    (
-        "Cibles de performance vérifiées",
-        "Aucune cible de performance n'est encore définie pour ce projet — "
-        "le chapitre 09 (métriques) doit les fixer. Tant qu'elles n'existent pas, "
-        "ce point ne peut pas être tenu : le déclarer vérifié serait faux.",
-    ),
 ]
+
+
+def controler_cibles_performance() -> Resultat:
+    """Les cibles de performance existent et sont vérifiées par la suite.
+
+    Ce point est resté longtemps « non tenable » faute de cible : une mesure sans
+    seuil n'informe aucune décision. Les cibles sont désormais écrites dans
+    `docs/standards/performance.md` et `tests/test_performance_targets.py` les
+    vérifie — ce contrôle échoue donc si l'un des deux disparaît, jamais parce
+    qu'un humain a oublié de cocher.
+    """
+    relatifs = ("docs/standards/performance.md", "tests/test_performance_targets.py")
+    manquants = [c for c in relatifs if not os.path.exists(os.path.join(RACINE, *c.split("/")))]
+    if manquants:
+        return Resultat(ECHEC, "absent : " + ", ".join(manquants))
+
+    contenu = _lire(os.path.join(RACINE, "docs", "standards", "performance.md"))
+    if "## Targets" not in contenu:
+        return Resultat(ECHEC, "docs/standards/performance.md ne déclare aucune cible")
+    return Resultat(OK, "cibles déclarées et couvertes par tests/test_performance_targets.py")
 
 
 def controles(sans_tests: bool) -> List[Controle]:
@@ -243,6 +257,8 @@ def controles(sans_tests: bool) -> List[Controle]:
         Controle("Journal des changements", "notes de version", controler_changelog),
         Controle("Documentation", "documentation à jour", controler_documentation),
         Controle("Démarrage", "défauts critiques", controler_demarrage),
+        Controle("Cibles de performance", "cibles de performance vérifiées",
+                 controler_cibles_performance),
         Controle("Suite de tests", "défauts critiques", lambda: controler_suite(sans_tests)),
     ]
 

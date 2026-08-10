@@ -62,11 +62,9 @@ gets re-argued at every review.
   *Deciding criterion:* strategic alignment — nothing else on this list can be validated
   in production until this is true.
 
-- **Declare a performance target.** `/metrics` makes latency observable; nothing says what
-  an acceptable latency is, so the release checklist keeps refusing to tick "performance
-  targets verified" — correctly.
-  *Deciding criterion:* strategic alignment — a measurement with no threshold informs no
-  decision.
+- **Tag the first release.** `git tag` is empty while `release_check.py` expects `v0.1.0`
+  and semantic versioning is already decided. A rollback target has to be nameable.
+  *Deciding criterion:* maintenance cost — cheap, and criterion C4 needs it.
 
 - **Cover the hosted-provider generation path with tests.** `_call_api` is implemented for
   OpenAI, Anthropic and Google; only the no-credentials branch is tested. A successful
@@ -103,11 +101,10 @@ gets re-argued at every review.
   *Deciding criterion:* performance impact — the read path writes, which also makes a
   read-only deployment impossible.
 
-- **Speed up the orchestration suite.** `test_integration.py` takes **97 s**, of which
-  three tests take 31 s each because the tester agent runs real suites inside the
-  pipeline.
-  *Deciding criterion:* performance impact on the development loop. Previously recorded
-  as "~4 minutes", which was stale by a factor of two and distorted its rank.
+- **Speed up the orchestration suite.** `tests/test_integration.py` takes **105 s**, of
+  which three tests take ~34 s each because the tester agent runs real suites inside the
+  pipeline. Re-measured 2026-08-10: it was recorded at 97 s and has grown.
+  *Deciding criterion:* performance impact on the development loop.
 
 ## P3 — Low · worth doing, nothing waits on it
 
