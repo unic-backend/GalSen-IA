@@ -5,6 +5,7 @@ Gestionnaire principal du moteur de connaissances GalSen IA.
 from typing import Iterable, List, Dict, Any, Optional, Tuple
 from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority, KnowledgeStatus
 from .knowledge_lifecycle import check_transition, is_due_for_revalidation, is_retrievable
+from .knowledge_governance import governance_report
 from .interfaces import (
     KnowledgeStore, KnowledgeLoader, KnowledgeIndexer,
     KnowledgeRetriever, KnowledgeValidator, KnowledgeGraph,
@@ -294,6 +295,18 @@ class KnowledgeManagerImpl(KnowledgeManager):
                 f"Knowledge {knowledge_id}: {existing.status.value} -> {target.value} by {actor}"
             )
             return nouveau
+
+    def governance_report(self) -> Dict[str, Any]:
+        """
+        Rapporte l'état de la gouvernance des connaissances (chapitre 06).
+
+        Returns:
+            Par domaine utilisé : le nombre de connaissances, leur répartition
+            par statut et le propriétaire déclaré ; plus les domaines sans
+            propriétaire et le nombre de connaissances non classées.
+        """
+        with self._lock:
+            return governance_report(self._store)
 
     def list_due_for_revalidation(self, max_age_days: Optional[int] = None,
                                   limit: int = 100) -> List[KnowledgeItem]:

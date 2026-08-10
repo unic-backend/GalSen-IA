@@ -226,6 +226,38 @@ search together" and only the keyword half is built.
 What still costs, and is not addressed here: `_increment_access_count()` writes to the
 store for every result of every search, which is now the dominant cost of a cached query.
 
+## Governance (chapter 06), against the code
+
+The chapter opens with "assign an owner to every knowledge domain". Ownership is declared
+in the environment, exactly as API keys are (ADR-010):
+
+```
+GALSEN_KNOWLEDGE_OWNERS="legal:aissatou,technical:moussa"
+```
+
+`governance_report()` answers who owns what from the base's real content: per domain in
+use, the item count, the status breakdown and the declared owner; plus the domains in use
+with **no** owner and the count of unclassified items. A malformed entry, an unknown
+domain or an empty subject is skipped rather than guessed — the domain then shows up as
+unowned, which is the truth. Domains nobody uses are not claimed: a reproach without an
+object is noise.
+
+The chapter's five roles map onto mechanisms that already exist rather than onto new ones:
+
+| Role in the manual | Mechanism |
+|--------------------|-----------|
+| Knowledge Owner | `GALSEN_KNOWLEDGE_OWNERS`, reported per domain |
+| Knowledge Reviewer | the `actor` recorded on every `UNDER_REVIEW → REVIEWED` transition |
+| Knowledge Contributor | `KNOWLEDGE_WRITE` permission (`src/api/rbac.py`) |
+| System Administrator | the `admin` role |
+| AI Orchestrator (consumer only) | reads through `retrieve_for_prompt()`; no write path |
+
+**Nothing is verified**, and that is deliberate: whoever writes `GALSEN_KNOWLEDGE_OWNERS`
+asserts the ownership, and `set_status` records the actor it is handed. This is the same
+limit ADR-010 accepted for identity — the platform has no directory. Approval is *not*
+blocked on a domain having an owner: that would freeze every base where nobody has
+configured the variable yet. The gap is reported instead of enforced.
+
 ## The gap the vision names and the code does not close
 
 - **"Information must be versioned"** is half true. `KnowledgeItem.version` is an integer,
