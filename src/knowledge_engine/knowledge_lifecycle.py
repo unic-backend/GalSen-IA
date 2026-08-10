@@ -86,6 +86,31 @@ def check_transition(current: KnowledgeStatus, target: KnowledgeStatus) -> None:
         raise InvalidStatusTransition(current, target)
 
 
+# Statuts retirés de l'usage courant. Le chapitre 04 interdit de citer une
+# connaissance dépréciée ; le chapitre 03 retire l'archivée de la circulation
+# sans la déclarer fausse. Ni l'une ni l'autre ne doit nourrir un raisonnement.
+WITHDRAWN_STATUSES: FrozenSet[KnowledgeStatus] = frozenset({
+    KnowledgeStatus.ARCHIVED,
+    KnowledgeStatus.DEPRECATED,
+})
+
+
+def is_retrievable(knowledge: KnowledgeItem,
+                   statuses: Optional[FrozenSet[KnowledgeStatus]] = None) -> bool:
+    """Indique si une connaissance peut alimenter un raisonnement (chapitre 05, étape 5).
+
+    Args:
+        knowledge: la connaissance candidate
+        statuses: statuts explicitement acceptés. Par défaut, tout sauf les
+            statuts retirés — exiger l'approbation par défaut rendrait invisible
+            une base dont rien n'est encore approuvé, ce qui est un mensonge
+            différent mais un mensonge quand même.
+    """
+    if statuses is not None:
+        return knowledge.status in statuses
+    return knowledge.status not in WITHDRAWN_STATUSES
+
+
 def revalidation_days() -> int:
     """Âge maximal d'une approbation, en jours, avant revalidation.
 

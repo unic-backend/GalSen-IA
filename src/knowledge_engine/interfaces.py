@@ -4,7 +4,7 @@ Interfaces pour le moteur de connaissances GalSen IA.
 
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Tuple, Iterable
-from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority
+from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority, KnowledgeStatus
 import datetime
 
 
@@ -239,14 +239,20 @@ class KnowledgeManager(ABC):
         pass
 
     @abstractmethod
-    def retrieve_for_prompt(self, prompt: str, max_items: int = 5) -> List[KnowledgeItem]:
-        """Récupère des connaissances pertinentes pour enrichir un prompt (RAG)."""
+    def retrieve_for_prompt(self, prompt: str, max_items: int = 5,
+                            statuses: Optional[Iterable[KnowledgeStatus]] = None) -> List[KnowledgeItem]:
+        """Récupère des connaissances pertinentes pour enrichir un prompt (RAG).
+
+        `statuses` restreint les statuts acceptés ; par défaut, les connaissances
+        retirées de l'usage (archivées, dépréciées) sont écartées.
+        """
         pass
 
     @abstractmethod
     def retrieve_reliable(self, prompt: str, max_items: int = 5,
                           min_priority: Optional[KnowledgePriority] = None,
-                          min_confidence: float = 0.5) -> Dict[str, Any]:
+                          min_confidence: float = 0.5,
+                          statuses: Optional[Iterable[KnowledgeStatus]] = None) -> Dict[str, Any]:
         """Récupère uniquement des connaissances fiables.
 
         Si aucune connaissance ne satisfait les seuils de priorité et de

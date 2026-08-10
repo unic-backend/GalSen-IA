@@ -2,9 +2,9 @@
 Gestionnaire principal du moteur de connaissances GalSen IA.
 """
 
-from typing import List, Dict, Any, Optional, Tuple
+from typing import Iterable, List, Dict, Any, Optional, Tuple
 from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority, KnowledgeStatus
-from .knowledge_lifecycle import check_transition, is_due_for_revalidation
+from .knowledge_lifecycle import check_transition, is_due_for_revalidation, is_retrievable
 from .interfaces import (
     KnowledgeStore, KnowledgeLoader, KnowledgeIndexer,
     KnowledgeRetriever, KnowledgeValidator, KnowledgeGraph,
@@ -341,20 +341,33 @@ class KnowledgeManagerImpl(KnowledgeManager):
                 self._increment_access_count(knowledge.id)
             return results
 
-    def retrieve_for_prompt(self, prompt: str, max_items: int = 5) -> List[KnowledgeItem]:
+    def retrieve_for_prompt(self, prompt: str, max_items: int = 5,
+                            statuses: Optional[Iterable[KnowledgeStatus]] = None) -> List[KnowledgeItem]:
         """
         Récupère des connaissances pertinentes pour enrichir un prompt (RAG).
+
+        Applique l'étape 5 du pipeline du chapitre 05 : ce qui a été retiré de
+        l'usage — archivé ou déprécié — ne nourrit pas un raisonnement.
+
+        Args:
+            prompt: la requête
+            max_items: nombre maximum de connaissances retournées
+            statuses: statuts explicitement acceptés (par exemple, approuvés
+                seulement). Par défaut, tout sauf les statuts retirés.
 
         Returns:
             Liste de connaissances à inclure dans le contexte
         """
         with self._lock:
+            autorises = frozenset(statuses) if statuses is not None else None
             # Utiliser le récupérateur pour obtenir les connaissances pertinentes
             # Nous passons toutes les connaissances du magasin comme contexte de recherche
             all_knowledge = self._store.list_items(limit=10000)  # pourrait être optimisé
-            results = self._retriever.retrieve_relevant(prompt, all_knowledge, limit=max_items)
+            # Élargir la recherche avant filtrage : sinon un résultat retiré
+            # consomme une place et la réponse rend moins que demandé.
+            results = self._retriever.retrieve_relevant(prompt, all_knowledge, limit=max_items * 3)
             # Extraire juste les connaissances (sans les scores)
-            knowledge_items = [item for item, _ in results]
+            knowledge_items = [item for item, _ in results if is_retrievable(item, autorises)][:max_items]
             # Incrémenter les compteurs d'accès
             for kid in [k.id for k in knowledge_items]:
                 self._increment_access_count(kid)
@@ -362,13 +375,16 @@ class KnowledgeManagerImpl(KnowledgeManager):
 
     def retrieve_reliable(self, prompt: str, max_items: int = 5,
                           min_priority: Optional[KnowledgePriority] = None,
-                          min_confidence: float = 0.5) -> Dict[str, Any]:
+                          min_confidence: float = 0.5,
+                          statuses: Optional[Iterable[KnowledgeStatus]] = None) -> Dict[str, Any]:
         """
         Récupère uniquement des connaissances fiables pour une requête.
 
         Applique la hiérarchie de fiabilité du chapitre 04 de la Constitution :
         seules les connaissances dont la priorité est suffisamment bonne
         (<= min_priority) et dont la confiance dépasse le seuil sont retournées.
+        Les connaissances retirées de l'usage sont écartées avant ce calcul ;
+        `statuses` permet d'exiger un statut précis, par exemple l'approbation.
 
         Returns:
             Dictionnaire contenant :
@@ -384,10 +400,14 @@ class KnowledgeManagerImpl(KnowledgeManager):
             all_knowledge = self._store.list_items(limit=10000)
             results = self._retriever.retrieve_relevant(prompt, all_knowledge, limit=max_items * 3)
 
+            autorises = frozenset(statuses) if statuses is not None else None
             reliable_items = []
             best_priority = 4
             best_confidence = 0.0
             for item, _ in results:
+                # Étape 5 du pipeline : ce qui est retiré de l'usage ne sert pas.
+                if not is_retrievable(item, autorises):
+                    continue
                 priority_value = item.priority.value if hasattr(item.priority, "value") else int(item.priority)
                 if priority_value > threshold_value:
                     continue

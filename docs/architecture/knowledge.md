@@ -169,6 +169,34 @@ is recorded, validation history is preserved, a rewrite returns the item to `DRA
 is revalidated after a significant change, and superseded knowledge is archived rather
 than deleted.
 
+## Retrieval pipeline (chapter 05), against the code
+
+| Step | Where it happens | State |
+|------|------------------|-------|
+| 1. Receive request | `retrieve_for_prompt()`, `retrieve_reliable()`, `search_knowledge()` | present |
+| 2. Analyse user intent | — | **absent**: the query is tokenised, not interpreted |
+| 3. Search indexed knowledge | `InMemoryKnowledgeIndexer.search()` — term overlap | present |
+| 4. Rank candidates | `KnowledgeRankerImpl`, priority / confidence / recency | present |
+| 5. Filter by policy | `is_retrievable()` on the RAG paths | **added (phase 5.1)** |
+| 6. Return most relevant | present | present |
+
+Step 5 withdraws what the lifecycle withdrew: `ARCHIVED` and `DEPRECATED` never feed a
+reasoning path, however well they match the query. Two decisions shape it:
+
+- **The default excludes withdrawal, not non-approval.** Requiring `APPROVED` by default
+  would make an entire base invisible until someone approves it — a different falsehood,
+  but a falsehood. `statuses=[KnowledgeStatus.APPROVED]` is available for callers that
+  want it, and `statuses=[KnowledgeStatus.DEPRECATED]` for an audit.
+- **`search_knowledge()` stays exhaustive.** It is explicit exploration by an operator,
+  not a reasoning path; hiding drafts from it would hide the base from the person
+  curating it.
+
+The RAG path over-fetches (`max_items * 3`) before filtering, so a withdrawn match does
+not silently consume a slot in the answer.
+
+Step 2 remains absent and is not faked: nothing analyses intent, and the ranking score is
+term overlap from the indexer — never a value derived from rank position.
+
 ## The gap the vision names and the code does not close
 
 - **"Information must be versioned"** is half true. `KnowledgeItem.version` is an integer,
