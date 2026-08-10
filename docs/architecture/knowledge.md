@@ -290,6 +290,49 @@ The chapter's other requirements were already met elsewhere and are not re-imple
 encryption at rest (`src/storage/encryption.py`, applied to knowledge content), audit of
 significant events (audit engine), and authentication before access (ADR-010).
 
+## Integration (chapter 08), against the code
+
+The chapter lists six internal integrations. Measured against the repository, three exist,
+two are indirect, and one has no consumer at all.
+
+| Integration the manual names | Real consumer | State |
+|------------------------------|---------------|-------|
+| AI Orchestrator | `src/agent/context.py` — `search_knowledge()`, used by 7 agents | direct |
+| Search Engine | `src/tools/rag/tool.py` — search, RAG, reliable retrieval | direct |
+| User Management | `src/api/rbac.py` — roles gate reads (phase 7.1) | direct |
+| Memory Engine | none — both are engines behind the same registry, neither calls the other | **indirect** |
+| Workflow Engine | reaches knowledge only through an agent's context | **indirect** |
+| Analytics Services | none — no consumer reads the knowledge base | **absent** |
+
+The chapter's five-step data flow, end to end:
+
+| Step | Where it happens |
+|------|------------------|
+| 1. Request received | `POST /knowledge/search`, RAG tool, agent context |
+| 2. Permissions verified | `require_permission(KNOWLEDGE_SEARCH)`, then the role filter |
+| 3. Knowledge retrieved | manager, through the cached index |
+| 4. Results enriched | `domain`, `sensitivity` and `status` now travel with every result |
+| 5. Response delivered | route, tool or agent, per caller |
+
+Step 4 was broken by the earlier phases of this VOLET: three fields had been added to the
+model and none of them crossed the module boundary, so a caller received content without
+knowing whether it was approved or who owns it. Both serialisers now carry them.
+
+**Backward compatibility**, which the chapter asks for explicitly: `AgentContext` passes
+`role` only when one is given, and reads the new fields with a fallback to `None`. A
+knowledge engine or an item predating this VOLET keeps working; an absent field reads as
+unknown rather than as a guessed value. This was found by a regression — the fake engine
+in `test_audit_engine.py` failed on the new keyword argument, which is exactly the failure
+a third-party implementation would have hit.
+
+A second regression came from the same change and is worth recording: serialising the
+three fields without writing the inverse conversion made a **read-modify-write round trip
+through the RAG tool silently destroy a knowledge item**. The tool returned
+`status: "draft"` as a string, `KnowledgeItem(**item_dict)` accepted the string, and the
+item then failed every enum comparison in the retrieval filters — present in the store,
+invisible to every search. `_convert_classification()` closes it, and an invalid value is
+now refused instead of stored.
+
 ## The gap the vision names and the code does not close
 
 - **"Information must be versioned"** is half true. `KnowledgeItem.version` is an integer,

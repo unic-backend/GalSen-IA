@@ -195,13 +195,16 @@ class AgentContext:
     # ------------------------------------------------------------------
     # Moteur de connaissances
     # ------------------------------------------------------------------
-    def search_knowledge(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+    def search_knowledge(self, query: str, limit: int = 5,
+                         role: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Interroge la base de connaissances.
 
         Args:
             query: Termes recherchés
             limit: Nombre maximum de connaissances retournées
+            role: Rôle de l'appelant (VOLET 05, chapitre 07). Sans rôle, un agent
+                ne lit que les connaissances publiques.
 
         Returns:
             Liste de connaissances pertinentes
@@ -217,7 +220,12 @@ class AgentContext:
             return []
 
         try:
-            items = knowledge.search_knowledge(query, limit=limit)
+            # `role` n'est transmis que s'il est demandé : un moteur de
+            # connaissances antérieur au chapitre 07 n'accepte pas ce paramètre,
+            # et un agent ne doit pas échouer parce qu'un composant est plus ancien
+            # que lui. Sans rôle, la lecture reste publique de toute façon.
+            items = (knowledge.search_knowledge(query, limit=limit, role=role) if role
+                     else knowledge.search_knowledge(query, limit=limit))
             self.record_audit(
                 AuditEventType.KNOWLEDGE,
                 "search_knowledge",
@@ -232,6 +240,12 @@ class AgentContext:
                     "content": item.content,
                     "confidence": item.confidence,
                     "tags": item.tags,
+                    # Un agent qui cite une connaissance doit pouvoir dire d'où
+                    # elle vient et si elle est approuvée (chapitre 08, étape 4).
+                    # None quand le moteur ne porte pas l'information : mieux vaut
+                    # « inconnu » qu'un domaine ou un statut supposé.
+                    "domain": getattr(getattr(item, "domain", None), "value", None),
+                    "status": getattr(getattr(item, "status", None), "value", None),
                 }
                 for item in items
             ]
