@@ -8,41 +8,29 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : 05 — Knowledge Engine
-**Phases** : 12
-**Phase courante** : 10.1 — en attente de confirmation (dernière phase du VOLET)
-**Terminées** : 1.1 (→ `docs/architecture/knowledge.md`), 2.1 (`KnowledgeDomain`),
-2.2 (`KnowledgeSensitivity`, `KnowledgeStatus`), 3.1 (`knowledge_lifecycle.py`, `set_status`),
-4.1 (revalidation périodique), 5.1 (filtrage par politique à la récupération), 5.2 (cache de requêtes, mesuré), 6.1 (propriétaires de domaine, rapport de gouvernance),
-7.1 (lecture par rôle selon la sensibilité), 8.1 (flux d'intégration : rôle propagé,
-résultats enrichis, deux régressions corrigées), 9.1 (métriques de qualité)
+**VOLET en cours** : aucun — VOLET 05 terminé (10 chapitres, 12 phases)
+**Phase courante** : —
+**Terminées** : toutes
 **Cadence** : une phase par tour (défaut)
 
 ```
-VOLET 05 — Knowledge Engine
-10 chapitres → 12 phases
-
-Ch. 01  Vision            → 1 phase   1.1  inventaire mesuré du moteur face à la vision
-Ch. 02  Organisation      → 2 phases  2.1  structure (domaines → versions) vs `types.py`
-                                      2.2  classification (source, fiabilité, sensibilité, statut)
-Ch. 03  Cycle de vie      → 1 phase   3.1  les 8 étapes : lesquelles existent, laquelle manque
-Ch. 04  Validation        → 1 phase   4.1  niveaux Draft → Deprecated vs `knowledge_validator.py`
-Ch. 05  Récupération      → 2 phases  5.1  pipeline en 6 étapes (intention, index, filtre)
-                                      5.2  classement et cache, mesurés et non supposés
-Ch. 06  Gouvernance       → 1 phase   6.1  propriétaire par domaine, rôles = mécanismes
-Ch. 07  Sécurité          → 1 phase   7.1  permissions et sensibilité à la lecture
-Ch. 08  Intégration       → 1 phase   8.1  qui consomme réellement le moteur (RAG, search, mémoire)
-Ch. 09  Qualité           → 1 phase   9.1  métriques de qualité réellement calculables
-Ch. 10  Gouvernance moteur→ 1 phase  10.1  clôture du VOLET, mémoire et CHANGELOG
-
-Total : 12 phases.
+VOLET 05 — Knowledge Engine : terminé
+  Ch. 01  vision       : moteur bâti (12 modules, 2372 lignes), base à 0 élément
+  Ch. 02  organisation : domaine ajouté (1er niveau absent), sensibilité + statut
+  Ch. 03  cycle de vie : transitions permises, tracées, revue non contournable
+  Ch. 04  validation   : 3 contrôles sur 6 automatisables, revalidation périodique
+  Ch. 05  récupération : filtrage par politique + cache de requêtes (0,50 → 0,234 ms)
+  Ch. 06  gouvernance  : propriétaire par domaine, domaines orphelins rapportés
+  Ch. 07  sécurité     : lecture par rôle selon la sensibilité, refus par défaut
+  Ch. 08  intégration  : rôle propagé, résultats enrichis, 2 régressions corrigées
+  Ch. 09  qualité      : 4 métriques calculées, 2 déclarées indisponibles
+  Ch. 10  gouvernance moteur : /knowledge/governance et /knowledge/quality
 ```
 
-**Pourquoi ce VOLET** : le P1 le plus haut de `pending-work.md` — la base de
-connaissances contient 0 élément, 0 document indexé, 0 nœud de graphe, et
-`docs/knowledge/` n'existe pas. Le moteur (12 modules, 2372 lignes) et la
-recherche récupèrent dans le vide.
+**Ce que le VOLET n'a pas fait, et le dit** : la recherche sémantique et
+l'analyse d'intention n'existent pas ; l'exactitude et le retour utilisateur ne
+sont pas mesurables ; correction technique, pertinence métier et clarté relèvent
+de la revue humaine. Aucun de ces manques n'a reçu de valeur de remplacement.
 
-**Garde-fou** : chaque phase part de l'état réel du dépôt, chaque chiffre est
-mesuré et non rappelé. Une capacité inachevée rapporte un statut, jamais une
-réponse plausible (`.claude/rules/verification.md`).
+**Prochaine action** : choisir le prochain VOLET, lire ses chapitres, publier le
+plan de phases, puis s'arrêter. Reste ouverts : VOLET 03, 06 à 15, 17 à 25.

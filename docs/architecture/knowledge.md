@@ -354,6 +354,24 @@ for a measurement. A test asserts that no numeric key exists for either.
 On an empty base every ratio is `0.0`, never `1.0`: "nothing to fault" is not "everything
 is good", and a fresh deployment must not read as perfect quality.
 
+## Engine governance (chapter 10), against the code
+
+The chapter asks for documented policies, approval of major changes, monitored quality
+metrics, audit trails and published governance metrics.
+
+| Requirement | Where it lives |
+|-------------|----------------|
+| Documented policies | this file, plus the transition table in `knowledge_lifecycle.py` |
+| Approve major changes | the lifecycle: nothing reaches `APPROVED` without passing review |
+| Monitor quality metrics | `GET /knowledge/quality` |
+| Publish governance metrics | `GET /knowledge/governance` |
+| Audit trails | `metadata["status_history"]` per item, plus the audit engine on agent reads |
+| Periodic review | `list_due_for_revalidation()`, 180 days by default |
+
+Both routes require `ADMIN_AUDIT` — operator and admin. A `readonly` key can search the
+base but cannot read who owns it or how healthy it is; those figures describe a
+deployment's operation, not its architecture, the same line `/metrics` draws.
+
 ## The gap the vision names and the code does not close
 
 - **"Information must be versioned"** is half true. `KnowledgeItem.version` is an integer,

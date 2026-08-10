@@ -13,10 +13,10 @@ phase → `docs/roadmap/roadmap.md`.
 3. **Make generation provable end to end** (P0, criterion C1). The platform's only real
    feature answers 503; the deliverable is the test that proves it works once a provider
    key exists.
-4. **Put something in the knowledge base.** It holds **zero items**, while the vision
-   says to prioritise African data and use cases. The Knowledge Engine, the RAG tool and
-   the search service all retrieve from nothing.
-5. **Finish VOLET 04** — the phases still open in `phase-plan.md`.
+4. **Put something in the knowledge base.** It still holds **zero items**, while the
+   vision says to prioritise African data and use cases. VOLET 05 built the discipline
+   around the content — domains, lifecycle, governance, quality — and none of it can be
+   observed until there is content. This is now the objective's whole remainder.
 
 The full ranked queue is in `pending-work.md`; nothing there should start ahead of these
 without a stated reason.

@@ -10,6 +10,27 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **VOLET 05 — Knowledge Engine, 10 chapters in 12 phases.** The engine was built and the
+  base was empty (0 items, 0 indexed terms, 0 graph nodes); the VOLET added the discipline
+  around the content. Full measured state → `docs/architecture/knowledge.md`
+  - **Organisation**: `KnowledgeDomain` (the chapter's 7 domains, closed), plus
+    `KnowledgeSensitivity` and `KnowledgeStatus`. Both stores filter and persist them, and
+    SQLite migrates an older base additively — pre-existing rows read as unclassified
+    rather than guessed
+  - **Lifecycle** (`knowledge_lifecycle.py`): review cannot be skipped, retirement is
+    terminal, and every transition is a revision recorded with actor, reason and time.
+    Rewriting content returns an item to `DRAFT`
+  - **Retrieval policy**: archived and deprecated knowledge never feeds a reasoning path;
+    `search_knowledge()` stays exhaustive for operators
+  - **Query cache**: repeated searches went from 0.50 ms to 0.234 ms; every write drops
+    the cached results, so nothing outlives the data it describes
+  - **Security**: reads are gated by role against sensitivity — no role, empty role or
+    unknown role reads public only, and filtering is silent
+  - **Reports**: `GET /knowledge/governance` (owners per domain, orphan domains) and
+    `GET /knowledge/quality` (completeness, freshness, duplicates, validation coverage).
+    Accuracy rate and user feedback carry **no number** and are named as unavailable with
+    their reason
+  - 78 new tests; full suite 1622 passing, 7 skipped
 - **OpenAI-compatible provider** (`src/model_engine/providers/openai_compatible_provider.py`)
   — one provider for every service speaking `/v1/models` and
   `/v1/chat/completions`: vLLM, LM Studio, llama.cpp, LocalAI, OpenRouter, Groq,

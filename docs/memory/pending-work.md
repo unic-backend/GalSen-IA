@@ -31,9 +31,18 @@ gets re-argued at every review.
 - **Put something in the knowledge base.** It holds **0 items, 0 indexed documents, 0
   graph nodes**, and `docs/knowledge/` does not exist. The Knowledge Engine, the RAG tool,
   the search service and the retrieval ranking are all built and retrieving from nothing.
+  VOLET 05 added the surrounding discipline (domains, lifecycle, role-gated reads,
+  governance and quality reports) — every one of those reports currently describes an
+  empty base.
   *Deciding criterion:* strategic alignment — the vision says to prioritise African data
   and use cases, and the Knowledge Leadership pillar has no evidence under it at all. No
   code is wrong, which is why no test caught this.
+
+- **Semantic search does not exist.** Chapter 05 of VOLET_05 asks for "semantic and
+  keyword search together"; only the keyword half is built, and nothing analyses intent
+  (step 2 of the retrieval pipeline). The ranking score is term overlap.
+  *Deciding criterion:* user impact — retrieval quality caps out at exact term matching,
+  which matters the day the base holds real documents, not before.
 
 - **Deploy the platform somewhere reachable** (criterion C4). The Dockerfile, the compose
   file and CI exist; nobody has ever reached this API over a network.
@@ -75,6 +84,11 @@ gets re-argued at every review.
 - **Deployment documentation.** Pairs with C4: a deployment nobody can reproduce is a
   one-off.
   *Deciding criterion:* maintenance cost.
+
+- **`_increment_access_count()` writes to the store on every search result**, which is now
+  the dominant cost of a cached query (measured in VOLET 05 phase 5.2).
+  *Deciding criterion:* performance impact — the read path writes, which also makes a
+  read-only deployment impossible.
 
 - **Speed up the orchestration suite.** `test_integration.py` takes **97 s**, of which
   three tests take 31 s each because the tester agent runs real suites inside the

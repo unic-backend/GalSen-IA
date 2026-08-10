@@ -890,6 +890,32 @@ async def search_knowledge(request: KnowledgeSearchRequest,
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la recherche: {str(e)}")
 
+@app.get("/knowledge/governance", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.ADMIN_AUDIT))])
+async def knowledge_governance():
+    """Qui possède quel domaine, et ce que personne ne possède (VOLET 05, ch. 06 et 10).
+
+    Le chapitre 10 demande de publier les métriques de gouvernance : sans cette
+    route, l'attribution des domaines n'est lisible que dans une variable
+    d'environnement, et les domaines orphelins ne se voient nulle part.
+    """
+    return knowledge_manager.governance_report()
+
+
+@app.get("/knowledge/quality", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.ADMIN_AUDIT))])
+async def knowledge_quality():
+    """Complétude, fraîcheur, doublons et couverture de validation (VOLET 05, ch. 09 et 10).
+
+    Les deux métriques que la plateforme ne sait pas calculer — exactitude et
+    retour utilisateur — sont nommées dans `unavailable` avec leur raison, et ne
+    portent aucun chiffre.
+    """
+    return knowledge_manager.quality_report()
+
+
 # Endpoints d'approbation humaine (ADR-006)
 # Un agent peut suspendre une action dans l'état `requires_approval` ; un
 # opérateur humain consulte la file d'attente et approuve ou refuse chaque
