@@ -10,6 +10,30 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **VOLET 14 — Search Engine, 10 chapters in 12 phases.** Full measured state →
+  `docs/architecture/search.md`
+  - **`POST /search` could not return a result**: no class implemented `SearchProvider`
+    and nothing called `register_provider()`, so the route answered `total: 0` to every
+    query — indistinguishable from an empty base. It now answers 503 with a reason while
+    nothing is wired, and `KnowledgeSearchProvider` wires the knowledge source for real
+  - **Searching does not grant reading**: `SearchQuery` carries the caller's role through
+    the merge down to each provider
+  - **Search analytics** (`record_search`): volume, per-source latency and empty-result
+    rate in `/metrics`. Query *contents* are never recorded
+  - **`GET /search/status`**: declared versus wired sources, their owner
+    (`GALSEN_SEARCH_OWNERS`), index integrity and search counters. Precision, recall and
+    user satisfaction are named as unmeasurable with their reason
+  - **Index integrity** (`check_integrity`): missing, orphaned and stale documents, each
+    with a test that provokes it
+  - 33 new tests; full suite 1655 passing, 7 skipped
+
+### Fixed
+- **Two silent truncations at 10 000 items.** `count()` returned the length of
+  `list_items(limit=10000)` in both knowledge stores, so a store holding 10 050 items
+  reported 10 000 with nothing able to detect it; `_rebuild_index()` read the same bound,
+  leaving every document past it **unindexed and unfindable without any signal**. Counting
+  is now real (`len`, `SELECT COUNT(*)`), the index bound is a named constant shared with
+  the integrity check, and reaching it is logged and reported as `truncated`
 - **VOLET 05 — Knowledge Engine, 10 chapters in 12 phases.** The engine was built and the
   base was empty (0 items, 0 indexed terms, 0 graph nodes); the VOLET added the discipline
   around the content. Full measured state → `docs/architecture/knowledge.md`

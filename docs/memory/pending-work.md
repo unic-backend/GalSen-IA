@@ -38,11 +38,24 @@ gets re-argued at every review.
   and use cases, and the Knowledge Leadership pillar has no evidence under it at all. No
   code is wrong, which is why no test caught this.
 
-- **Semantic search does not exist.** Chapter 05 of VOLET_05 asks for "semantic and
-  keyword search together"; only the keyword half is built, and nothing analyses intent
-  (step 2 of the retrieval pipeline). The ranking score is term overlap.
+- **Semantic search does not exist.** Only the keyword half is built, nothing analyses
+  intent, and the ranking score is term overlap. VOLET 14 measured what it would take:
+  `EmbeddingsTool` already turns text into vectors and **nothing indexes them** — this is
+  a wiring and modelling job, not research. One of the five index types in the manual is
+  built.
   *Deciding criterion:* user impact — retrieval quality caps out at exact term matching,
   which matters the day the base holds real documents, not before.
+
+- **The query processor ignores accents and plurals.** `pluviometrie` finds nothing when
+  `pluviométrie` is indexed, and `arachides` misses `arachide`; stop-words are French only.
+  *Deciding criterion:* strategic alignment — unaccented typing is the norm on a Senegalese
+  deployment, so this is a relevance defect before it is a linguistic one.
+
+- **Three search sources of four have no provider** (memory, document, vision), and the
+  per-source merge weights (1.0 / 0.9 / 0.85 / 0.8) come from no measurement. They are
+  inert while one source is wired and will silently reorder results once a second is.
+  *Deciding criterion:* maintenance cost — the numbers must be justified or removed before
+  they matter.
 
 - **Deploy the platform somewhere reachable** (criterion C4). The Dockerfile, the compose
   file and CI exist; nobody has ever reached this API over a network.

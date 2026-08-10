@@ -234,3 +234,44 @@ tests check each one:
   sensitivity label;
 - a search **without a role** reads public only — forgetting the role loses access rather
   than granting it.
+
+## Source governance and search quality (chapters 08 and 09)
+
+Both chapters answer the same practical question — *what do we search, and does it work* —
+so one report carries them: `GET /search/status`, restricted to `ADMIN_AUDIT`.
+
+Ownership is declared in the environment, as elsewhere on this platform:
+
+```
+GALSEN_SEARCH_OWNERS="knowledge:aissatou,memory:moussa"
+```
+
+The report separates **declared** from **wired** — three of the four sources in
+`SearchSource` still have no provider, and a declared source must never read as available.
+Only wired sources are claimed as unowned: demanding a responsible party for a source that
+does not exist is noise.
+
+It also carries the index integrity check (chapter 05) and the search counters
+(chapter 06), so an operator reads one page rather than three.
+
+**Relevance is not scored.** Precision, recall and user satisfaction are named in
+`unavailable_metrics` with their reason: precision and recall need a query set with
+expected results judged by a human, and none exists in this repository; a recall figure
+without that denominator would be arbitrary. What *is* measured without a jury is the
+empty-result rate — how often the platform found nothing — and index integrity.
+
+## What this VOLET did not do
+
+- **Semantic and vector search remain absent.** `EmbeddingsTool` produces vectors and
+  nothing stores or queries them. This is a wiring and modelling job, and it is the single
+  largest gap left in the engine.
+- **Intent analysis (pipeline step 2) is still nothing.** Queries are tokenised, not
+  interpreted.
+- **Accents and stemming.** `pluviometrie` finds nothing when `pluviométrie` is indexed,
+  and `arachides` misses `arachide`. On a Senegalese deployment, unaccented typing is the
+  norm — this is a relevance defect before it is a linguistic one.
+- **Memory, document and vision have no provider.** One source of four is wired.
+- **No scheduled index rebuild.** `check_integrity()` reports; a human acts.
+- **Stage 9 is deletion, not secure deletion.** Nothing overwrites or proves erasure.
+
+None of these received a placeholder value or a plausible-looking score.

@@ -83,6 +83,7 @@ from src.services.notification.manager import NotificationManagerImpl
 from src.services.notification.types import NotificationType, NotificationPriority
 from src.services.search.manager import SearchManagerImpl
 from src.services.search.providers import KnowledgeSearchProvider
+from src.services.search.governance import governance_report as search_governance_report
 from src.services.search.types import SearchQuery, SearchSource, SearchSort
 from src.services.file.manager import FileManagerImpl
 
@@ -1394,6 +1395,24 @@ async def unified_search(request: SearchRequest,
         return response.to_dict()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la recherche : {str(e)}")
+
+
+@app.get("/search/status", tags=["search"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.ADMIN_AUDIT))])
+async def search_status():
+    """Sur quoi la plateforme cherche, qui en répond, et si ça marche.
+
+    Réunit ce que les chapitres 08 et 09 du VOLET 14 demandent : les sources
+    déclarées et réellement branchées avec leur responsable, l'intégrité de
+    l'index, les compteurs de recherche — et la liste de ce qui n'est pas
+    mesurable ici, précision et rappel en tête, faute de jugements de référence.
+    """
+    return search_governance_report(
+        search_manager,
+        indexer=getattr(knowledge_manager, "_indexer", None),
+        metrics=metrics_snapshot(),
+    )
 
 
 # =========================================================================

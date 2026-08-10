@@ -8,44 +8,31 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : 14 — Search Engine
-**Phases** : 12
-**Phase courante** : 8.1 — en attente de confirmation
-**Terminées** : 1.1, 2.1, 2.2 (→ `docs/architecture/search.md`, 503 sur `/search`),
-3.1 (9 étapes du cycle), 4.1 (`KnowledgeSearchProvider` branché, rôle propagé),
-5.1 (types d'index mesurés, `check_integrity()`), 5.2 (perf mesurée, deux troncatures
-silencieuses corrigées), 6.1 (analytique de recherche dans `/metrics`),
-7.1 (l'index ne fuit pas ce qu'il filtre)
+**VOLET en cours** : aucun — VOLET 14 terminé (10 chapitres, 12 phases)
+**Phase courante** : —
+**Terminées** : toutes
 **Cadence** : **2 à 3 phases par tour**, demandé par l'utilisateur le 2026-08-10.
 Revenir au défaut d'une phase par tour dès qu'il le dit.
 
 ```
-VOLET 14 — Search Engine
-10 chapitres → 12 phases
-
-Ch. 01  Vision         → 1 phase   1.1  inventaire mesuré : ce que la plateforme cherche déjà
-Ch. 02  Architecture   → 2 phases  2.1  les 7 composants du manuel face au code réel
-                                   2.2  flux en 6 étapes, de la collecte aux analytiques
-Ch. 03  Cycle de vie   → 1 phase   3.1  les 9 étapes : lesquelles existent, laquelle manque
-Ch. 04  Gestion        → 1 phase   4.1  enregistrement des sources et politiques d'indexation
-Ch. 05  Indexation     → 2 phases  5.1  les 5 types d'index face à l'index par mots-clés
-                                   5.2  intégrité et fraîcheur de l'index, mesurées
-Ch. 06  Supervision    → 1 phase   6.1  métriques de recherche réellement observables
-Ch. 07  Sécurité       → 1 phase   7.1  accès indexé : ce qui est cherché n'est pas ce qui est lu
-Ch. 08  Gouvernance    → 1 phase   8.1  propriété des sources, journal des changements
-Ch. 09  Qualité        → 1 phase   9.1  pertinence : ce qui se mesure sans jury humain
-Ch. 10  Gouvernance moteur → 1 phase 10.1  clôture du VOLET, mémoire et CHANGELOG
-
-Total : 12 phases.
+VOLET 14 — Search Engine : terminé
+  Ch. 01  vision       : 3 mécanismes de recherche qui s'ignorent, 2 capacités sur 6
+  Ch. 02  architecture : `/search` ne pouvait rien rendre — 503 puis branchement réel
+  Ch. 03  cycle de vie : 6 étapes sur 9 ; suppression non « sécurisée », dit comme tel
+  Ch. 04  gestion      : `KnowledgeSearchProvider`, rôle propagé jusqu'aux fournisseurs
+  Ch. 05  indexation   : 1 type d'index sur 5 ; `check_integrity()` ; 2 troncatures muettes
+  Ch. 06  supervision  : analytique de recherche dans `/metrics`, sans le contenu des requêtes
+  Ch. 07  sécurité     : l'index contient tout, le filtrage tient sur chaque sortie
+  Ch. 08  gouvernance  : sources déclarées vs branchées, responsable par source
+  Ch. 09  qualité      : taux de vides et intégrité ; précision et rappel non mesurables
+  Ch. 10  gouvernance moteur : `GET /search/status`
 ```
 
-**Pourquoi ce VOLET** : le VOLET 05 a laissé deux manques nommés au backlog qui
-appartiennent tous deux à celui-ci — **la recherche sémantique n'existe pas** et
-**rien n'analyse l'intention** ; le score de pertinence est un recouvrement de
-termes. Deux implémentations coexistent déjà sans que rien ne dise laquelle
-sert : `InMemoryKnowledgeIndexer` et `src/services/search/`.
+**Ce que le VOLET n'a pas fait, et le dit** : sémantique et vectoriel absents
+(`EmbeddingsTool` produit des vecteurs que rien n'indexe), pas d'analyse
+d'intention, pas de gestion des accents ni de racinisation, 3 sources sur 4 sans
+fournisseur, aucune reconstruction d'index planifiée. Aucun de ces manques n'a
+reçu de valeur de remplacement.
 
-**Garde-fou** : chaque phase part de l'état réel du dépôt, chaque chiffre est
-mesuré et non rappelé. Une capacité inachevée rapporte un statut, jamais un
-score plausible (`.claude/rules/verification.md`) — la pertinence est
-précisément l'endroit où un chiffre inventé passe inaperçu.
+**Prochaine action** : choisir le prochain VOLET, lire ses chapitres, publier le
+plan de phases, puis s'arrêter. Restent ouverts : VOLET 03, 06 à 13, 15, 17 à 25.
