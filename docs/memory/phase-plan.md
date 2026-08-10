@@ -8,31 +8,40 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 14 terminé (10 chapitres, 12 phases)
-**Phase courante** : —
-**Terminées** : toutes
+**VOLET en cours** : 03 — Development Manual
+**Phases** : 12
+**Phase courante** : 1.1 — en attente de confirmation
+**Terminées** : aucune
 **Cadence** : **2 à 3 phases par tour**, demandé par l'utilisateur le 2026-08-10.
 Revenir au défaut d'une phase par tour dès qu'il le dit.
 
 ```
-VOLET 14 — Search Engine : terminé
-  Ch. 01  vision       : 3 mécanismes de recherche qui s'ignorent, 2 capacités sur 6
-  Ch. 02  architecture : `/search` ne pouvait rien rendre — 503 puis branchement réel
-  Ch. 03  cycle de vie : 6 étapes sur 9 ; suppression non « sécurisée », dit comme tel
-  Ch. 04  gestion      : `KnowledgeSearchProvider`, rôle propagé jusqu'aux fournisseurs
-  Ch. 05  indexation   : 1 type d'index sur 5 ; `check_integrity()` ; 2 troncatures muettes
-  Ch. 06  supervision  : analytique de recherche dans `/metrics`, sans le contenu des requêtes
-  Ch. 07  sécurité     : l'index contient tout, le filtrage tient sur chaque sortie
-  Ch. 08  gouvernance  : sources déclarées vs branchées, responsable par source
-  Ch. 09  qualité      : taux de vides et intégrité ; précision et rappel non mesurables
-  Ch. 10  gouvernance moteur : `GET /search/status`
+VOLET 03 — Development Manual
+10 chapitres → 12 phases
+
+Ch. 01  Standards de dév.  → 1 phase   1.1  ce que le dépôt impose vraiment vs ce qu'il déclare
+Ch. 02  Conventions        → 1 phase   2.1  type hints, docstrings, commentaires FR : mesurés
+Ch. 03  Structure projet   → 1 phase   3.1  les 27 `test_*.py` à la racine (P3 du backlog)
+Ch. 04  Tests              → 2 phases  4.1  les 5 niveaux de test : lesquels existent
+                                       4.2  couverture réelle, mesurée et non estimée
+Ch. 05  Déploiement        → 2 phases  5.1  environnements et validation des variables au démarrage
+                                       5.2  retour arrière : procédure et intégrité des données
+Ch. 06  Contrôle de version→ 1 phase   6.1  stratégie de branches vs ce que fait le dépôt
+Ch. 07  Documentation      → 1 phase   7.1  les 6 champs exigés par module : lesquels manquent
+Ch. 08  Performance        → 1 phase   8.1  **déclarer une cible de performance** (P1 du backlog)
+Ch. 09  Maintenance        → 1 phase   9.1  dette : registre existant vs dette réelle
+Ch. 10  Cycle de dév.      → 1 phase  10.1  clôture du VOLET, mémoire et CHANGELOG
+
+Total : 12 phases.
 ```
 
-**Ce que le VOLET n'a pas fait, et le dit** : sémantique et vectoriel absents
-(`EmbeddingsTool` produit des vecteurs que rien n'indexe), pas d'analyse
-d'intention, pas de gestion des accents ni de racinisation, 3 sources sur 4 sans
-fournisseur, aucune reconstruction d'index planifiée. Aucun de ces manques n'a
-reçu de valeur de remplacement.
+**Pourquoi ce VOLET** : l'ordre numérique, et il porte deux entrées du backlog —
+**déclarer une cible de performance** (P1 : `/metrics` mesure la latence, rien ne
+dit ce qui est acceptable, donc `release_check.py` refuse de cocher la case) et
+les **27 fichiers de test à la racine** (P3).
 
-**Prochaine action** : choisir le prochain VOLET, lire ses chapitres, publier le
-plan de phases, puis s'arrêter. Restent ouverts : VOLET 03, 06 à 13, 15, 17 à 25.
+**Risque propre à ce VOLET, à tenir** : c'est un volet de standards, et
+`.claude/rules/` en couvre déjà une partie. Le piège est d'écrire dix documents
+qui répètent des règles existantes. Chaque phase part donc du **dépôt mesuré**,
+pas du manuel : ce qui est déjà écrit ailleurs est cité, jamais recopié
+(`.claude/rules/documentation.md` : ne jamais dupliquer, mettre à jour l'existant).
