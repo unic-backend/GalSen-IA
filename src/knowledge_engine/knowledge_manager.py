@@ -4,7 +4,7 @@ Gestionnaire principal du moteur de connaissances GalSen IA.
 
 from typing import List, Dict, Any, Optional, Tuple
 from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority, KnowledgeStatus
-from .knowledge_lifecycle import check_transition
+from .knowledge_lifecycle import check_transition, is_due_for_revalidation
 from .interfaces import (
     KnowledgeStore, KnowledgeLoader, KnowledgeIndexer,
     KnowledgeRetriever, KnowledgeValidator, KnowledgeGraph,
@@ -246,6 +246,29 @@ class KnowledgeManagerImpl(KnowledgeManager):
                 f"Knowledge {knowledge_id}: {existing.status.value} -> {target.value} by {actor}"
             )
             return nouveau
+
+    def list_due_for_revalidation(self, max_age_days: Optional[int] = None,
+                                  limit: int = 100) -> List[KnowledgeItem]:
+        """
+        Liste les connaissances approuvées dont l'approbation a vieilli.
+
+        Répond à l'étape 5 du processus de revue du chapitre 04 (« periodic
+        revalidation ») : sans cette liste, une connaissance approuvée une fois
+        reste approuvée indéfiniment.
+
+        Args:
+            max_age_days: âge maximal accepté ; par défaut, la valeur configurée
+                par `GALSEN_KNOWLEDGE_REVALIDATION_DAYS` (180 jours).
+            limit: nombre maximal de connaissances examinées
+
+        Returns:
+            Les connaissances à remettre en revue, des plus anciennes approbations
+            aux plus récentes.
+        """
+        with self._lock:
+            approuvees = self._store.list_items(limit=limit, status=KnowledgeStatus.APPROVED)
+            a_revoir = [k for k in approuvees if is_due_for_revalidation(k, max_age_days)]
+            return sorted(a_revoir, key=lambda k: k.updated_at)
 
     def delete_knowledge(self, knowledge_id: str) -> bool:
         """

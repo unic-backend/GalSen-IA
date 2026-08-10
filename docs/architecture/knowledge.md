@@ -133,6 +133,42 @@ Who *may* perform a transition is not decided here: `set_status` records the act
 given and trusts it, exactly as ADR-010 trusts whoever declares a key. Binding it to
 roles belongs to chapters 06 and 07.
 
+## Validation (chapter 04), against the code
+
+The chapter's five **validation levels** are the statuses of chapter 02 under other names
+(see above). What it adds is six **quality checks** and a five-step review process.
+
+| Quality check | What runs it | State |
+|---------------|--------------|-------|
+| Source credibility | rule 10 of `KnowledgeValidatorImpl` — P1/P2 require a traceable source | automated |
+| Version consistency | rules 8 and the duplicate/priority warnings in `check_consistency()` | automated |
+| Completeness | rules 1–2 — content length bounds, summary not longer than content | automated, minimal |
+| Technical correctness | — | **human, by nature** |
+| Business relevance | — | **human, by nature** |
+| Clarity | — | **human, by nature** |
+
+Three of the six cannot be computed, and the platform does not pretend otherwise: no
+clarity score is fabricated. They are what the `UNDER_REVIEW` stage is for, and
+`status_history` records who performed it.
+
+| Review step | Where it happens |
+|-------------|------------------|
+| 1. Initial validation | `KnowledgeValidatorImpl`, on `add_knowledge()` and `update_knowledge()` |
+| 2. Peer review | `set_status(… UNDER_REVIEW → REVIEWED …)`, actor recorded |
+| 3. Expert approval | `set_status(… → APPROVED …)`, reachable only from `REVIEWED` |
+| 4. Publication | not a step (see chapter 03) |
+| 5. Periodic revalidation | `list_due_for_revalidation()` | **added (phase 4.1)** |
+
+Revalidation reads the last `→ approved` entry in `status_history`; an item approved with
+no history falls back to `updated_at`, the only real date available. The threshold is
+`GALSEN_KNOWLEDGE_REVALIDATION_DAYS`, 180 days by default; an unreadable or zero value
+falls back to the default rather than silently switching revalidation off.
+
+The chapter's four governance requirements are met by phase 3.1: the validator's identity
+is recorded, validation history is preserved, a rewrite returns the item to `DRAFT` so it
+is revalidated after a significant change, and superseded knowledge is archived rather
+than deleted.
+
 ## The gap the vision names and the code does not close
 
 - **"Information must be versioned"** is half true. `KnowledgeItem.version` is an integer,
