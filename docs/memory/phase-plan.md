@@ -8,24 +8,27 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 24 terminé
+**VOLET en cours** : aucun — **VOLET 25 terminé, série close**
 **Phase courante** : —
-**Terminées** : toutes (5 phases)
+**Terminées** : toutes
 **Cadence** : **une phase par tour** (défaut).
 
 ```
-VOLET 24 — Integration Engine (second manuel) : terminé
-                                   → docs/architecture/integration.md
-  Défaut trouvé : deux magasins du service Cloud — disque et S3 — étaient
-  implémentés, exportés et testés, et **aucune configuration ne pouvait les
-  choisir**. Le gestionnaire ne connaissait que la mémoire et SQLite.
-  `GALSEN_CLOUD_BACKEND` les rend atteignables ; le défaut n'a pas changé, une
-  valeur inconnue est signalée et non devinée, et le test écrit puis relit
-  réellement par le magasin disque.
-  Absents et assumés : bus d'événements, courtier de messages, moteur de
-  transformation, moteur de synchronisation.
+VOLET 25 — Enterprise Governance & Global Architecture : terminé
+                                   → docs/architecture/enterprise.md
+  Défaut le plus grave de la série : **chaque moteur existait en deux
+  exemplaires**. `server.py` construisait les siens, `EngineRegistry` ceux des
+  agents — une alerte levée par un agent n'apparaissait pas sur la route que
+  l'utilisateur consulte, et une mémoire écrite par l'API restait invisible aux
+  agents. Invisible avec SQLite (fichier partagé), le défaut ne mordait que sur
+  la configuration **par défaut**, celle que tout le monde lance en premier.
+  Corrigé : l'API prend ses moteurs du registre partagé ; le secours reste
+  possible mais il est journalisé.
 ```
 
-**Reste** : le VOLET 25. Le VOLET 01 n'a jamais eu de plan de phases formel.
+**Restant** : le VOLET 01 (Master Constitution) n'a jamais eu de plan de phases
+formel. C'est le seul reliquat de la série.
 
-**Prochaine action** : **VOLET 25** — vérifier son titre réel dans le fichier.
+**Prochaine action** : proposer le VOLET 01, ou reprendre le backlog — les deux
+P1 les plus hauts (`tester` dans le pipeline, base de connaissances vide) ne
+dépendent plus du code.

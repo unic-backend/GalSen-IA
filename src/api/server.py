@@ -340,30 +340,65 @@ if not _origines:
     )
 
 # Initialisation des moteurs (singleton pour la durée de vie de l'application)
-memory_manager = MemoryManager()
-model_manager = ModelManagerImpl()
-knowledge_manager = KnowledgeManagerImpl()
+#
+# Les moteurs viennent du **registre partagé**, celui-là même que les agents
+# utilisent à travers `AgentContext`. Ils étaient auparavant construits ici une
+# seconde fois, si bien que la plateforme faisait tourner deux exemplaires de
+# chaque moteur : une alerte levée par un agent n'apparaissait pas sur
+# `/notification/list`, et une mémoire écrite par l'API restait invisible aux
+# agents (VOLET 25, ch. 02 — « chaque moteur communique par des interfaces
+# normalisées »). Le défaut ne se voyait pas avec `GALSEN_STORAGE_BACKEND=sqlite`,
+# les deux exemplaires partageant alors le même fichier ; en mémoire, le défaut
+# par défaut, il coupait la plateforme en deux.
+_registre_moteurs = get_shared_registry()
+
+
+def _moteur_partage(nom: str, secours):
+    """Retourne le moteur du registre, ou un exemplaire de secours.
+
+    Le registre construit paresseusement et peut échouer (dépendance absente).
+    Dans ce cas l'API garde un exemplaire à elle plutôt que de perdre la route :
+    la duplication redevient possible, mais elle est alors journalisée et non
+    silencieuse.
+
+    Args:
+        nom: nom du moteur dans le registre.
+        secours: fabrique appelée si le registre ne peut pas le fournir.
+    """
+    instance = _registre_moteurs.try_get(nom)
+    if instance is not None:
+        return instance
+    logger.warning(
+        "Moteur '%s' indisponible dans le registre : l'API en construit un "
+        "exemplaire séparé, non partagé avec les agents.", nom,
+    )
+    return secours()
+
+
+memory_manager = _moteur_partage("memory", MemoryManager)
+model_manager = _moteur_partage("model", ModelManagerImpl)
+knowledge_manager = _moteur_partage("knowledge", KnowledgeManagerImpl)
 # Le chargeur ne sert plus qu'à localiser le registre : le ToolEngine construit
 # son propre chargeur et son propre exécuteur à partir de ce chemin (lifespan).
 tool_loader = ToolLoader()
 tool_engine = None  # sera initialisé au démarrage, par lifespan()
 # File d'attente d'approbation humaine : les agents qui demandent une décision
 # soumettent ici leur action, et un opérateur la valide ou la refuse (ADR-006).
-approval_manager = ApprovalManagerImpl()
+approval_manager = _moteur_partage("approval", ApprovalManagerImpl)
 
 # Services backend (VOLET 02, Phase 2)
-notification_manager = NotificationManagerImpl()
-search_manager = SearchManagerImpl()
+notification_manager = _moteur_partage("notification", NotificationManagerImpl)
+search_manager = _moteur_partage("search", SearchManagerImpl)
 # Sans cet enregistrement, la recherche unifiée n'a aucune source et ne peut rien
 # trouver (VOLET 14, ch. 04). La connaissance est la seule source réellement
 # indexée à ce jour ; mémoire, document et vision restent déclarées, non branchées.
 search_manager.register_provider(KnowledgeSearchProvider(knowledge_manager))
-file_manager = FileManagerImpl()
+file_manager = _moteur_partage("file", FileManagerImpl)
 
 # Services d'intégration externe (VOLET 02, Phase 3)
-cloud_manager = CloudManagerImpl()
-calendar_manager = CalendarManagerImpl()
-email_manager = EmailManagerImpl()
+cloud_manager = _moteur_partage("cloud", CloudManagerImpl)
+calendar_manager = _moteur_partage("calendar", CalendarManagerImpl)
+email_manager = _moteur_partage("email", EmailManagerImpl)
 
 # Modèles Pydantic pour les requêtes/réponses
 class MemoryItemBase(BaseModel):

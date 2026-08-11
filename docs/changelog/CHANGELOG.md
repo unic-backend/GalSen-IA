@@ -9,6 +9,33 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Fixed
+- **VOLET 25 — every engine existed twice, and the two halves did not know about each
+  other.** Measured state → `docs/architecture/enterprise.md`
+  - Chapter 02's directive is one sentence: *every engine shall communicate through
+    standardized enterprise interfaces*. That interface exists — `EngineRegistry`, which
+    agents reach through `AgentContext` — and `server.py` did not use it. It built its own
+    `MemoryManager`, `NotificationManagerImpl`, `KnowledgeManagerImpl` and seven more,
+    while the registry built a second set for the agents. All ten were duplicated
+  - The consequence was not theoretical: an agent raising an alert put it in one inbox and
+    `/notification/list` read the other — **1 seen by agents, 0 seen by the API**. A memory
+    written through the API was invisible to every agent
+  - It went unnoticed because `GALSEN_STORAGE_BACKEND=sqlite` makes both copies open the
+    same file, hiding the split. It only bit on the **default** in-memory configuration —
+    the one every developer and every fresh deployment runs first
+  - `server.py` now takes its engines from the shared registry. If the registry cannot
+    build one — it constructs lazily and a missing dependency can fail — the API keeps its
+    own copy rather than losing the route, and logs it: an announced duplication can be
+    diagnosed, which is the whole difference with the one just removed
+  - Nine and a half of the manual's twelve global components exist. The Decision and
+    Learning engines stay absent on purpose — both are projects, both depend on exit
+    criterion C1. Of the master directive's ten commitments, three are blocked not by code
+    but by two operator actions: configure a provider (C1) and deploy (C4)
+  - `VOLET_25.md` is the most damaged file of the series: chapter 07 appears twice,
+    chapter 10 twice, and chapter 08 comes after the first chapter 10. Nothing was invented
+    to reconcile it
+  - 13 new tests; full suite 2 022 passing, 7 skipped
+
 ### Added
 - **VOLET 24 — two storage backends no configuration could select.** Measured state →
   `docs/architecture/integration.md`
