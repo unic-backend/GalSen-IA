@@ -9,6 +9,26 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Added
+- **The orchestration is reachable.** Measured state → `docs/architecture/orchestration.md`
+  - None of the API's routes ran a workflow or an agent: `RouterEngine` was instantiated
+    only by tests. The same defect as the cloud stores in VOLET 24 — a capability that
+    works and that nobody can turn on
+  - `POST /workflow/run` (`TOOL_EXECUTE`), `GET /workflow/list` and
+    `GET /workflow/history` (`HEALTH_VIEW`)
+  - `TOOL_EXECUTE` rather than a new permission: a workflow is a sequence of agents calling
+    tools, so it can do nothing `POST /tool/execute` cannot, and a wider permission would
+    have granted more than the thing it wraps
+  - The subject comes from the API key (ADR-010), never from the body — a `user_id` field
+    would let a caller act under someone else's name, and a test asserts it does not exist
+  - Execution is synchronous and says so: `execution_time_seconds` and `metadata.decision`
+    make the cost visible and attributable. A queue is a design change, not a route
+  - The engine is built on first use, so a deployment that never runs an agent does not pay
+    three registry loads at startup
+  - `GET /workflow/history` is the first route to serve the three measures added by
+    VOLETs 18 and 19: success rate per workflow version, time per agent, failing agents
+  - 9 new tests; full suite 2 062 passing, 7 skipped
+
 ### Changed
 - **Backlog P1 — the planner's decision now drives the pipeline.** Measured state →
   `docs/architecture/orchestration.md`

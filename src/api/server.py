@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 import logging
+import threading
 import time
 import uuid
 import os
@@ -400,6 +401,24 @@ cloud_manager = _moteur_partage("cloud", CloudManagerImpl)
 calendar_manager = _moteur_partage("calendar", CalendarManagerImpl)
 email_manager = _moteur_partage("email", EmailManagerImpl)
 
+# Orchestrateur d'agents. Construit à la première demande plutôt qu'au
+# démarrage : il charge trois registres et valide les workflows, ce qu'un
+# déploiement qui n'exécute jamais d'agent n'a pas à payer.
+_router_engine = None
+_router_engine_lock = threading.Lock()
+
+
+def get_router_engine():
+    """Retourne l'orchestrateur partagé du processus."""
+    global _router_engine
+    if _router_engine is None:
+        with _router_engine_lock:
+            if _router_engine is None:
+                from src.router.router_engine import RouterEngine
+                _router_engine = RouterEngine()
+    return _router_engine
+
+
 # Modèles Pydantic pour les requêtes/réponses
 class MemoryItemBase(BaseModel):
     content: Any = Field(..., description="Contenu de la mémoire")
@@ -447,6 +466,13 @@ class AgriAdviceResponse(BaseModel):
     answer: str = Field(..., description="Conseil agricole généré")
     language: str = Field(..., description="Langue de la réponse")
     model_used: str = Field(..., description="Modèle utilisé")
+
+class WorkflowRunRequest(BaseModel):
+    """Demande d'exécution d'un workflow."""
+    request: str = Field(..., min_length=1, description="La demande à traiter")
+    workflow_id: Optional[str] = Field(None, description="Workflow à utiliser ; le défaut sinon")
+    session_id: Optional[str] = Field(None, description="Session, pour relier plusieurs demandes")
+
 
 class ToolExecuteRequest(BaseModel):
     tool_id: str = Field(..., description="Identifiant de l'outil à exécuter")
@@ -974,6 +1000,104 @@ async def execute_tool(request: ToolExecuteRequest):
         )
     except Exception as e:
         raise erreur_interne("Erreur lors de l'exécution de l'outil", e)
+
+# Endpoints workflows
+#
+# L'orchestration existait, était testée, et **aucune route ne l'atteignait** :
+# `RouterEngine` n'était instancié que par les tests. Même défaut que les
+# magasins cloud du VOLET 24 — une capacité qui fonctionne et que personne ne
+# peut allumer.
+@app.post("/workflow/run", tags=["workflow"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def run_workflow(
+    request: WorkflowRunRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Exécute un workflow d'agents sur une demande.
+
+    `TOOL_EXECUTE` est la permission requise, et c'est la bonne : un workflow
+    n'est qu'une suite d'agents qui appellent des outils, donc il ne peut rien
+    faire de plus que `POST /tool/execute`.
+
+    **L'exécution est synchrone et peut être longue** — le pipeline `standard`
+    mobilise jusqu'à dix agents, dont un qui exécute la suite de tests du
+    projet. La durée réelle est dans `execution_time_seconds`, et
+    `metadata.decision` dit quels agents ont été retenus et pourquoi.
+
+    Le sujet vient de la clé API (ADR-010), jamais du corps de la requête :
+    un appelant ne choisit pas l'identité au nom de laquelle il agit.
+    """
+    try:
+        moteur = get_router_engine()
+    except Exception as e:
+        raise erreur_interne("Orchestrateur indisponible", e)
+
+    if request.workflow_id and request.workflow_id not in moteur.workflow_loader.get_all_workflows():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Workflow '{request.workflow_id}' introuvable",
+        )
+
+    try:
+        return moteur.process_request(
+            request.request,
+            user_id=ctx.subject,
+            session_id=request.session_id,
+            workflow_id=request.workflow_id,
+        )
+    except ValueError as e:
+        # Workflow inexécutable : la cause est dans la déclaration, pas dans la
+        # plateforme. L'appelant peut la corriger, donc il la reçoit.
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise erreur_interne("Erreur lors de l'exécution du workflow", e)
+
+
+@app.get("/workflow/list", tags=["workflow"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def list_workflows():
+    """Workflows déclarés, avec leur version et leur exécutabilité.
+
+    Un workflow qui ne peut pas s'exécuter est annoncé comme tel, avec ses
+    défauts : le découvrir au moment de l'appel coûte une requête pour rien.
+    """
+    moteur = get_router_engine()
+    declares = moteur.workflow_loader.get_all_workflows()
+    return {
+        "default": moteur.workflow_loader.get_default_workflow(),
+        "workflows": [
+            {
+                "id": nom,
+                "description": definition.get("description"),
+                "version": moteur.workflow_loader.get_version(nom),
+                "owner": definition.get("owner"),
+                "pipeline": definition.get("pipeline", []),
+                "agent_selection": (definition.get("execution") or {}).get("agent_selection"),
+                "executable": moteur.workflow_loader.is_executable(nom),
+                "problems": [p.to_dict() for p in moteur.workflow_loader.get_problems(nom)],
+            }
+            for nom, definition in declares.items()
+        ],
+    }
+
+
+@app.get("/workflow/history", tags=["workflow"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def workflow_history(workflow_id: Optional[str] = None, limit: int = 20):
+    """Exécutions récentes et ce qu'elles apprennent.
+
+    Taux de succès ventilé par version du workflow, temps passé par agent et
+    agents en échec — les trois mesures que les VOLETs 18 et 19 ont ajoutées et
+    qu'aucune route ne servait.
+    """
+    moteur = get_router_engine()
+    return {
+        "stats": moteur.history.stats(workflow_id),
+        "recent": moteur.history.recent(limit=limit, workflow_id=workflow_id),
+    }
+
 
 # Endpoints connaissances
 @app.post("/knowledge/search", response_model=KnowledgeSearchResponse, tags=["knowledge"],

@@ -406,3 +406,38 @@ while the recommendation was ignored became consequential:
 is the speed-over-truth the constitution rejects (VOLET 01, ch. 04), and the deployment
 agent already reads that verdict — it reports `test_state.known: false` without it. So a
 deployment request pays the full suite, and that is the one place where it should.
+
+---
+
+# The orchestration is reachable (2026-08-11)
+
+Measured while taking the backlog's P1: none of the API's routes ran a workflow or an
+agent. `RouterEngine` was instantiated only by tests. The same defect as the cloud stores
+in VOLET 24 — a capability that works and that nobody can turn on.
+
+Three routes close it:
+
+| Route | Permission | Ce qu'elle sert |
+|-------|-----------|-----------------|
+| `POST /workflow/run` | `TOOL_EXECUTE` | exécute un workflow sur une demande |
+| `GET /workflow/list` | `HEALTH_VIEW` | workflows déclarés, version, exécutabilité, défauts |
+| `GET /workflow/history` | `HEALTH_VIEW` | taux par version, temps par agent, agents en échec |
+
+Four decisions worth keeping:
+
+- **`TOOL_EXECUTE`, not a new permission.** A workflow is a sequence of agents calling
+  tools, so it can do nothing that `POST /tool/execute` cannot. Inventing a wider
+  permission would have granted more than the thing it wraps.
+- **The subject comes from the API key** (ADR-010), never from the body. A `user_id` field
+  accepted here would let a caller act under someone else's name; a test asserts the field
+  does not exist.
+- **Synchronous, and it says so.** The `standard` pipeline can take tens of seconds. The
+  route returns `execution_time_seconds` and `metadata.decision`, so the cost is visible
+  and attributable rather than mysterious. A queue would be a real design change, not a
+  route.
+- **The engine is built on first use.** It loads three registries and validates the
+  workflows; a deployment that never runs an agent should not pay for that at startup.
+
+`GET /workflow/history` is also the first route to serve the three measures added by
+VOLETs 18 and 19 — success rate per workflow version, time per agent, and the agents that
+failed. They existed and nothing exposed them.
