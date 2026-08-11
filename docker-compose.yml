@@ -47,6 +47,11 @@ services:
       # Sécurité API
       - GALSEN_API_KEYS=${GALSEN_API_KEYS}
 
+      # Instance unique (ADR-013). Le service `api-dev` est sous profil pour la
+      # même raison : deux instances sur le même répertoire de données, c'est
+      # une clé révoquée sur l'une qui continue d'ouvrir l'autre.
+      - GALSEN_ALLOW_MULTI_INSTANCE=${GALSEN_ALLOW_MULTI_INSTANCE:-false}
+
       # Proxys dont les en-têtes X-Forwarded-* sont acceptés. Le réseau bridge
       # par défaut de Docker Compose ; sans cette déclaration, l'application
       # ignore les en-têtes et compte toutes les requêtes comme venant de

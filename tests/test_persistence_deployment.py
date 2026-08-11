@@ -17,6 +17,7 @@ from pathlib import Path
 import pytest
 
 from scripts.backup import VERROU, lister, restaurer, sauvegarder
+from src.api import instance_lock
 from src.storage.paths import declared_backend, prepare_connection, storage_backend
 
 
@@ -247,15 +248,38 @@ def test_la_restauration_remet_l_etat_sauvegarde(deploiement):
 
 def test_la_restauration_refuse_de_marcher_sur_une_instance_vivante(deploiement):
     """
-    Écraser une base ouverte perd ce qu'on voulait sauver. Le verrou d'instance
-    est posé par le chantier 3 ; la sauvegarde le respecte déjà.
+    Écraser une base ouverte perd ce qu'on voulait sauver.
+
+    L'instance vivante est simulée en **prenant réellement le verrou** : depuis
+    le chantier 3, `instance_en_cours()` interroge le verrou et non la présence
+    du fichier, pour qu'un fichier laissé par un arrêt brutal ne bloque pas la
+    manœuvre qui répare l'incident.
     """
     _ecrire_memoire("état")
     cible, _ = sauvegarder()
-    (deploiement / VERROU).write_text("instance-de-test", encoding="utf-8")
 
-    with pytest.raises(RuntimeError, match="instance"):
-        restaurer(cible.name)
+    instance_lock.release()
+    instance_lock.acquire()
+    try:
+        assert (deploiement / VERROU).exists()
+        with pytest.raises(RuntimeError, match="instance"):
+            restaurer(cible.name)
+    finally:
+        instance_lock.release()
+
+
+def test_un_verrou_orphelin_ne_bloque_pas_la_restauration(deploiement):
+    """
+    Le contre-test : un fichier verrou sans instance derrière doit être ignoré.
+
+    Refuser sur la seule présence du fichier interdirait la restauration après
+    exactement l'événement qui la rend nécessaire — un arrêt brutal.
+    """
+    _ecrire_memoire("état")
+    cible, _ = sauvegarder()
+    (deploiement / VERROU).write_text('{"instance": "morte"}', encoding="utf-8")
+
+    assert restaurer(cible.name) == ["memory.sqlite"]
 
 
 def test_les_sauvegardes_se_listent_de_la_plus_recente(deploiement):

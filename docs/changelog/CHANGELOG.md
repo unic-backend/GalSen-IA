@@ -32,6 +32,31 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
     and raises one threat instead of twelve invisible ones
 
 ### Added
+- **One authoritative instance, enforced.** `src/api/instance_lock.py` + ADR-013
+  (`docs/architecture/decisions/013-single-authoritative-instance.md`)
+  - ADR-009 stated the single-instance posture and `scaling_report()` published the
+    verdict, but **nothing enforced it** — `docker compose up` started a second instance
+    by itself. The consequence was already written down: "a compromised key revoked on one
+    instance keeps opening the others"
+  - At startup the application takes an exclusive `flock` on the data directory. A second
+    instance on the same directory refuses to start and names the one holding the place.
+    `flock` rather than a PID file on purpose: the kernel releases it however the process
+    dies, so there is no stale-lock heuristic to get wrong — and getting it wrong in the
+    permissive direction is exactly the outcome being prevented. In containers every PID
+    heuristic fails that way: each container has its own PID namespace and PID 1 always exists
+  - `scripts/backup.py` now asks the lock instead of testing the file's presence. A lock
+    file left by a crash must not forbid the restore the crash made necessary
+  - `GALSEN_ALLOW_MULTI_INSTANCE=true` is the rollback, logged as a warning at startup.
+    `/health` reports `scaling.instance_lock` — held, enforced, allowed — without the path
+    or the holder's PID, since that endpoint is unauthenticated
+  - **Redis was not introduced**, and ADR-013 records the trigger that would reverse that:
+    while there is one instance, process memory *is* the single source of truth. Redis buys
+    nothing yet and costs a service with no default authentication, plus a failure mode with
+    no good answer — refuse all traffic, or fall back to memory and lose the guarantee silently
+  - `tests/test_instance_lock.py` — 13 tests. TEST 5 is proven end to end: a child process
+    running the API's full lifespan on a locked data directory exits with
+    `InstanceAlreadyRunning`. TEST 4: a revoked key is refused on the next request. TEST 3:
+    100 concurrent requests against a 40-token bucket yield 40 grants, not more
 - **TLS termination, and one way in.** `Caddyfile` + `caddy` service in `docker-compose.yml`
   - `Internet → HTTPS → Caddy → api:8000`. Certificates, renewal and the HTTP→HTTPS redirect
     are Caddy's, not the application's. `caddy_data` persists certificates and private keys;

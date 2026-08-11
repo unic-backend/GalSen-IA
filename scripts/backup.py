@@ -33,6 +33,10 @@ import sys
 from pathlib import Path
 from typing import List, Tuple
 
+# Exécuté en script, `sys.path[0]` est `scripts/` : la racine du dépôt doit être
+# ajoutée pour que `src.api.instance_lock` soit importable.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 # Le répertoire de données et celui des sauvegardes suivent la configuration.
 DATA_DIR_VARIABLE = "GALSEN_DATA_DIR"
 BACKUP_DIR_VARIABLE = "GALSEN_BACKUP_DIR"
@@ -113,8 +117,16 @@ def lister(racine: Path = None) -> List[Path]:
 
 
 def instance_en_cours(source: Path) -> bool:
-    """Indique si une instance tient le verrou du répertoire de données."""
-    return (source / VERROU).exists()
+    """
+    Indique si une instance tient le verrou du répertoire de données.
+
+    La question est posée au verrou lui-même, pas à la présence du fichier : un
+    arrêt brutal laisse un fichier derrière, et refuser la restauration pour un
+    fichier orphelin bloquerait la seule manœuvre qui répare l'incident.
+    """
+    from src.api.instance_lock import is_running
+
+    return is_running(str(source / VERROU))
 
 
 def restaurer(nom: str, racine: Path = None) -> List[str]:

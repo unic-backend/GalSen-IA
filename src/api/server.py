@@ -48,6 +48,9 @@ from src.api.health import (
 # Import de l'inventaire d'état local au processus (VOLET 02 ch. 10, ADR-009)
 from src.api.scaling import instance_id, scaling_report
 
+# Une seule instance par répertoire de données (ADR-013)
+from src.api import instance_lock
+
 # Import de la mesure du trafic réel (VOLET 04 ch. 09, critère C5)
 from src.api.metrics import (
     RequestMetricsMiddleware,
@@ -236,6 +239,13 @@ async def lifespan(_app: FastAPI):
     # (VOLET 03, ch. 05). Le démarrage n'est pas interrompu pour autant.
     log_environment_problems(logger)
 
+    # Une seule instance par répertoire de données (ADR-013). C'est la seule
+    # chose que l'on refuse au démarrage : les révocations de clés et les
+    # compteurs de quota vivent dans ce processus, donc une deuxième instance
+    # ne dégrade pas le service — elle défait une garantie de sécurité, en
+    # silence. Le refus est bruyant par nécessité.
+    instance_lock.acquire()
+
     try:
         tool_engine = ToolEngine(tool_loader.registry_path)
         logger.info(
@@ -254,8 +264,10 @@ async def lifespan(_app: FastAPI):
 
     yield
 
-    # Rien à libérer aujourd'hui : les moteurs sont en mémoire et les connexions
-    # SQLite sont ouvertes et refermées par opération.
+    # Les moteurs sont en mémoire et les connexions SQLite sont ouvertes et
+    # refermées par opération : seul le verrou d'instance survit au processus,
+    # et il doit partir, sinon une restauration de sauvegarde se croira bloquée.
+    instance_lock.release()
 
 
 def _register_builtin_connectors() -> None:

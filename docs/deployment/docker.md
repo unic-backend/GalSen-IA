@@ -98,6 +98,48 @@ curl -k https://localhost/health
 docker compose logs -f caddy
 ```
 
+## Single Instance
+
+L'application prend un **verrou exclusif sur le répertoire de données** au démarrage.
+Une deuxième instance sur le même répertoire refuse de démarrer, en nommant celle
+qui tient la place. Raisonnement complet → `docs/architecture/decisions/013-single-authoritative-instance.md`.
+
+La raison est une garantie de sécurité, pas une limite technique : les révocations
+de clés et les compteurs de quota vivent dans la mémoire du processus. Deux
+instances, c'est deux vérités, et la plus permissive gagne — **une clé révoquée
+sur l'une continue d'ouvrir l'autre.**
+
+```
+InstanceAlreadyRunning: Une autre instance tient le répertoire de données :
+« galsen-01 » depuis 2026-08-11T20:35:51Z (verrou /app/data/instance.lock).
+```
+
+Ce message signifie l'une de ces trois choses :
+
+| Cause | Geste |
+|---|---|
+| Une instance tourne réellement | `docker compose ps`, l'arrêter avant d'en démarrer une autre |
+| Deux services montent le même volume | Leur donner des volumes distincts — c'est ce que fait `api-dev` |
+| Sous Windows, fichier laissé par un arrêt brutal | Supprimer `data/instance.lock` après avoir vérifié qu'aucune instance ne tourne |
+
+Sous Linux — donc en conteneur — un arrêt brutal ne laisse **pas** de verrou actif :
+le noyau relâche `flock` à la mort du processus, et le fichier restant est repris
+au démarrage suivant, avec un avertissement dans le journal.
+
+`GALSEN_ALLOW_MULTI_INSTANCE=true` lève le verrou. C'est le retour arrière de cette
+protection, et il coûte la garantie de révocation : à n'utiliser qu'en connaissance
+de cause. Un avertissement est journalisé au démarrage.
+
+L'état est visible sans authentification :
+
+```bash
+curl -s https://$GALSEN_DOMAIN/health | python -m json.tool | grep -A4 instance_lock
+```
+
+**Ce que le verrou ne répare pas** : une révocation ne survit pas à un redémarrage.
+`POST /auth/keys/{empreinte}/revoke` répond `persistent: false` pour cette raison.
+Couper une clé pour de bon, c'est la retirer de `GALSEN_API_KEYS` et redémarrer.
+
 ## Docker Compose Services
 
 ### `api` (Production)
@@ -140,6 +182,7 @@ docker compose --profile dev up api-dev
 | `GALSEN_TLS_EMAIL` | *(vide)* | Contact Let's Encrypt (avertissements d'expiration) |
 | `GALSEN_TRUSTED_PROXIES` | `172.16.0.0/12` | Sources dont les en-têtes `X-Forwarded-*` sont crus |
 | `GALSEN_BACKUP_DIR` | `data/backups` | Destination des sauvegardes `VACUUM INTO` |
+| `GALSEN_ALLOW_MULTI_INSTANCE` | `false` | `true` lève le verrou d'instance — et la garantie de révocation |
 | `GALSEN_RATE_LIMIT_ENABLED` | `true` | Active/désactive le limiteur de taux |
 | `GALSEN_RATE_LIMIT_AUTHENTICATED_RPM` | `60` | Requêtes/min (clients authentifiés) |
 | `GALSEN_RATE_LIMIT_UNAUTHENTICATED_RPM` | `30` | Requêtes/min (clients non authentifiés) |
