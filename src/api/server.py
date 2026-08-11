@@ -94,7 +94,7 @@ from src.connectors import (
 from src.services.notification.manager import NotificationManagerImpl
 from src.services.notification.types import NotificationType, NotificationPriority
 from src.services.search.manager import SearchManagerImpl
-from src.services.search.providers import KnowledgeSearchProvider
+from src.services.search.providers import KnowledgeSearchProvider, MemorySearchProvider
 from src.services.search.governance import governance_report as search_governance_report
 from src.services.search.types import SearchQuery, SearchSource, SearchSort
 from src.services.file.manager import FileManagerImpl
@@ -394,6 +394,10 @@ search_manager = _moteur_partage("search", SearchManagerImpl)
 # trouver (VOLET 14, ch. 04). La connaissance est la seule source réellement
 # indexée à ce jour ; mémoire, document et vision restent déclarées, non branchées.
 search_manager.register_provider(KnowledgeSearchProvider(knowledge_manager))
+# La mémoire est la deuxième source réellement branchée. Elle est possédée :
+# le fournisseur ne cherche que dans les souvenirs du sujet de la requête, et
+# ne cherche pas du tout sans sujet (ADR-010, critère C2).
+search_manager.register_provider(MemorySearchProvider(memory_manager))
 file_manager = _moteur_partage("file", FileManagerImpl)
 
 # Services d'intégration externe (VOLET 02, Phase 3)
@@ -1672,6 +1676,9 @@ async def unified_search(request: SearchRequest,
         # fournisseurs, sinon la recherche unifiée contournerait le contrôle
         # d'accès appliqué à `/knowledge/search`.
         role=ctx.role.value,
+        # Le rôle dit ce que l'appelant peut lire, le sujet dit de qui sont les
+        # données. La mémoire a besoin des deux.
+        subject=ctx.subject,
     )
 
     # Exécuter la recherche

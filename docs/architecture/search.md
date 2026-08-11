@@ -318,3 +318,48 @@ and an agent's context filled with unrelated memories presented as relevant. A z
 item is not a result; `list_items()` remains the way to get everything. Memories whose
 content is not text fall in the same case — a dictionary cannot be matched against a
 query, so it is not a search hit.
+
+---
+
+# Memory becomes the second source (backlog P1, 2026-08-11)
+
+Three of the four declared sources had no provider. Memory now has one — it became
+possible only after the fix above, since a source that returns everything regardless of the
+query is not a source.
+
+Wiring it raised a question knowledge never did: **memory is owned, not merely
+classified.** Every item belongs to a subject (ADR-010), and exit criterion C2 — already
+met — says a user's data is theirs. A role was not enough: an administrator may read a
+great deal, and still has no claim on someone else's memories.
+
+So `SearchQuery` now carries a `subject` alongside `role`, `/search` fills it from the API
+key, and `_build_provider_query` propagates it — forgetting it there would have made every
+provider subject-blind. `MemorySearchProvider` **does not search at all** without one:
+returning every subject's memories would be a leak, and returning some of them an
+invention.
+
+Verified end to end through the route: two administrators searching the same word each get
+only their own memory.
+
+## The weights, resolved by removing them
+
+The per-source weights were `1.0 / 0.9 / 0.85 / 0.8` and came from no measurement. They
+were inert while one source was wired, and the backlog recorded that they "will silently
+reorder results once a second is". That day arrived with this change.
+
+They are all `1.0` now. The reason is stronger than the missing measurement: **scores from
+two sources are not comparable.** The knowledge engine returns the proportion of query
+terms found in a document; memory returns a Jaccard similarity between two word sets.
+Weighting quantities that do not compare produces the appearance of a ranking.
+
+The response says so rather than leaving it implied:
+
+```json
+"ranking": {
+  "cross_source_comparable": false,
+  "detail": "… À l'intérieur d'une même source, l'ordre est fondé ; entre sources, il ne l'est pas."
+}
+```
+
+A test that pinned the 0.8 was rewritten. It had made an arbitrary constant permanent,
+which is the failure mode `.claude/rules/verification.md` names.

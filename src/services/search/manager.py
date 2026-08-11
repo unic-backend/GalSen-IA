@@ -51,14 +51,24 @@ class SearchManagerImpl(SearchManager):
         return list(self._providers)
 
     def _get_score_weight(self, source: SearchSource) -> float:
-        """Retourne le poids de score pour une source donnée."""
-        weights = {
-            SearchSource.KNOWLEDGE: 1.0,
-            SearchSource.MEMORY: 0.9,
-            SearchSource.DOCUMENT: 0.85,
-            SearchSource.VISION: 0.8,
-        }
-        return weights.get(source, 0.8)
+        """
+        Retourne le poids de score d'une source. **Toutes valent 1.0.**
+
+        Les poids étaient 1.0 / 0.9 / 0.85 / 0.8 et ne venaient d'aucune mesure.
+        Ils étaient inertes tant qu'une seule source était branchée ; brancher
+        la mémoire les rendait vivants, et ils auraient réordonné des résultats
+        sans que personne puisse dire pourquoi.
+
+        La raison de fond est plus forte que l'absence de mesure : les scores de
+        deux sources ne sont pas comparables. Le moteur de connaissances rend
+        une proportion de termes de la requête présents dans le document, la
+        mémoire une similarité de Jaccard entre deux ensembles de mots. Pondérer
+        des grandeurs qui ne se comparent pas produit un classement d'apparence.
+
+        Tant qu'aucune mesure ne justifie une préférence, aucune n'est appliquée,
+        et la réponse dit que le classement inter-sources n'est pas fondé.
+        """
+        return 1.0
 
     def _sort_results(
         self, results: List[SearchResultItem], sort: SearchSort
@@ -116,8 +126,11 @@ class SearchManagerImpl(SearchManager):
             min_score=None,
             filters=query.filters,
             # Le rôle doit survivre à la reconstruction : l'oublier ici rendrait
-            # toute recherche anonyme aux yeux des fournisseurs.
+            # toute recherche anonyme aux yeux des fournisseurs. Le sujet aussi,
+            # et pour une raison plus grave : un fournisseur de mémoire qui ne
+            # le reçoit pas ne peut plus distinguer les souvenirs de personne.
             role=query.role,
+            subject=query.subject,
         )
 
     def search(self, query: SearchQuery) -> SearchResponse:

@@ -9,6 +9,29 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Added
+- **Backlog P1 — memory becomes the second search source, and the arbitrary weights are
+  gone.** Measured state → `docs/architecture/search.md`
+  - Three of four declared sources had no provider. Memory now has one, which only became
+    possible after the retrieval fix: a source that returns everything regardless of the
+    query is not a source
+  - Wiring it raised a question knowledge never did — **memory is owned, not merely
+    classified**. `SearchQuery` now carries a `subject` alongside `role`, `/search` fills it
+    from the API key, and the per-source query propagates it. `MemorySearchProvider` **does
+    not search at all** without one: returning every subject's memories would be a leak,
+    returning some of them an invention. A role is not enough — an administrator may read a
+    great deal and still has no claim on someone else's memories (ADR-010, criterion C2)
+  - Verified end to end: two administrators searching the same word each get only their own
+    memory
+  - **The merge weights were removed, not justified.** `1.0 / 0.9 / 0.85 / 0.8` came from no
+    measurement and were inert while one source was wired; a second source would have made
+    them reorder results silently. All are `1.0`, and the reason is stronger than the
+    missing measurement: scores from two engines are not comparable — proportion of query
+    terms on one side, Jaccard similarity on the other. The response now carries a
+    `ranking` block saying cross-source order is not grounded
+  - A test that pinned the `0.8` was rewritten: it made an arbitrary constant permanent
+  - 10 new tests, 2 rewritten; full suite 2 092 passing, 7 skipped
+
 ### Fixed
 - **Backlog P1 — a search that ignored accents, and a memory search that returned
   everything.** Measured state → `docs/architecture/search.md`

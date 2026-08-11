@@ -46,11 +46,11 @@ gets re-argued at every review.
   *Deciding criterion:* user impact — retrieval quality caps out at exact term matching,
   which matters the day the base holds real documents, not before.
 
-- **Three search sources of four have no provider** (memory, document, vision), and the
-  per-source merge weights (1.0 / 0.9 / 0.85 / 0.8) come from no measurement. They are
-  inert while one source is wired and will silently reorder results once a second is.
-  *Deciding criterion:* maintenance cost — the numbers must be justified or removed before
-  they matter.
+- **Two search sources of four still have no provider** (document, vision). Memory was
+  wired on 2026-08-11, and the unjustified merge weights were **removed** rather than
+  justified: scores from two engines are not comparable, and the response now says so.
+  *Deciding criterion:* user impact — both remaining sources need their engine to produce
+  searchable text first, which neither does today.
 
 - **Deploy the platform somewhere reachable** (criterion C4). The Dockerfile, the compose
   file and CI exist; nobody has ever reached this API over a network.

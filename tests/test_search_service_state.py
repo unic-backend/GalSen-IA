@@ -65,10 +65,15 @@ def test_la_route_rapporte_l_indisponibilite_au_lieu_de_zero_resultat(cle, monke
 
 
 def test_les_sources_declarees_depassent_les_sources_branchees():
-    """Mémoire, document et vision sont déclarées et n'ont aucun fournisseur."""
+    """Document et vision sont déclarées et n'ont toujours aucun fournisseur.
+
+    La mémoire en a un depuis qu'elle filtre réellement ses résultats. Les deux
+    autres restent déclarées et vides : `/search/status` doit continuer de le
+    dire plutôt que de laisser croire à quatre sources.
+    """
     branchees = set(server_module.search_manager.registered_sources())
-    assert SearchSource.KNOWLEDGE in branchees
-    assert {SearchSource.MEMORY, SearchSource.DOCUMENT, SearchSource.VISION} & branchees == set()
+    assert {SearchSource.KNOWLEDGE, SearchSource.MEMORY} <= branchees
+    assert {SearchSource.DOCUMENT, SearchSource.VISION} & branchees == set()
 
 
 def test_la_route_repond_des_qu_une_source_est_branchee(cle, monkeypatch):

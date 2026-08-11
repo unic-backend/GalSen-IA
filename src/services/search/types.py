@@ -57,6 +57,12 @@ class SearchQuery:
     # à lire. Sans rôle, un fournisseur ne rend que ce qui est public
     # (VOLET 05 ch. 07, VOLET 14 ch. 07).
     role: Optional[str] = None
+    # À qui appartient la recherche (ADR-010, critère de sortie C2). Le rôle dit
+    # ce que l'appelant a le droit de lire ; le sujet dit **de qui** sont les
+    # données. Les deux sont nécessaires : la mémoire est possédée, pas
+    # seulement classifiée, et une source de mémoire sans sujet rendrait les
+    # souvenirs de tout le monde à n'importe qui.
+    subject: Optional[str] = None
 
 
 @dataclass
@@ -131,4 +137,17 @@ class SearchResponse:
             "search_id": self.search_id,
             "execution_time_ms": self.execution_time_ms,
             "sources_used": self.sources_used,
+            # Ce que le classement ne dit pas. Les scores de deux sources ne
+            # sont pas comparables — proportion de termes ici, similarité de
+            # Jaccard là — donc l'ordre entre résultats de sources différentes
+            # n'est pas fondé. Le taire laisserait croire à un classement qui
+            # n'existe pas.
+            "ranking": {
+                "cross_source_comparable": False,
+                "detail": (
+                    "Les scores proviennent de moteurs différents et ne sont pas "
+                    "comparables entre eux. À l'intérieur d'une même source, "
+                    "l'ordre est fondé ; entre sources, il ne l'est pas."
+                ),
+            },
         }
