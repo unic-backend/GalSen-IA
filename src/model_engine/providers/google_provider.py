@@ -11,7 +11,7 @@ import urllib.request
 from typing import List
 
 from .base import ModelDescriptor, GenerationRequest, GenerationResponse, ProviderStatus, UnavailabilityReason
-from .hosted_provider import HostedProvider
+from .hosted_provider import HostedProvider, detail_avec_corps, read_error_body
 
 # Langues couvertes par les modèles Gemini retenus ici
 _SUPPORTED_LANGUAGES = ["en", "fr", "es", "de", "it", "pt", "ja", "ko", "zh", "ar", "sw"]
@@ -133,7 +133,7 @@ class GoogleProvider(HostedProvider):
                 latency_seconds=time.time() - started_at,
             )
         except urllib.error.HTTPError as e:
-            error_body = e.read().decode('utf-8') if e.read() else str(e)
+            error_body = read_error_body(e)
             if e.code == 400 and "API_KEY_INVALID" in error_body:
                 reason = UnavailabilityReason.UNAUTHORIZED
                 detail = "Clé API Google invalide ou absente"
@@ -141,8 +141,8 @@ class GoogleProvider(HostedProvider):
                 reason = UnavailabilityReason.QUOTA_EXCEEDED
                 detail = "Quota Google AI épuisé"
             else:
-                reason = UnavailabilityReason.UNAVAILABLE
-                detail = f"Erreur API Google: {e.code}"
+                reason = UnavailabilityReason.UNREACHABLE
+                detail = detail_avec_corps(f"Erreur API Google: {e.code}", error_body)
 
             return self._make_unavailable_response(
                 request.model_name,
@@ -152,7 +152,7 @@ class GoogleProvider(HostedProvider):
         except Exception as e:
             return self._make_unavailable_response(
                 request.model_name,
-                UnavailabilityReason.UNAVAILABLE,
+                UnavailabilityReason.UNREACHABLE,
                 f"Erreur lors de l'appel à l'API Google: {str(e)}"
             )
 

@@ -9,6 +9,32 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Fixed
+- **Backlog P1 — the hosted-provider path raised on every failure except 401 and 429.**
+  Measured state → `docs/architecture/models.md`
+  - The three hosted providers wrote `reason = UnavailabilityReason.UNAVAILABLE`, and
+    **that member does not exist**. The generic HTTP branch — 400, 403, 404, 500, 503 — and
+    the catch-all for network errors, timeouts and malformed JSON both raised
+    `AttributeError` **out of** `_call_api` instead of returning an unavailable response.
+    The first real API call that was neither a refused key nor an exceeded quota would have
+    crashed the caller. Six occurrences, now `UNREACHABLE`
+  - **The error body was read twice, so it was always empty.**
+    `e.read().decode() if e.read() else str(e)` consumes the stream in the condition. For
+    OpenAI and Anthropic the variable was then unused, so a 400 reported only its code while
+    the body explaining it was thrown away. For **Google it was used** —
+    `if e.code == 400 and "API_KEY_INVALID" in error_body` — so that detection could never
+    fire, and an invalid Google key was reported as a generic 400, sending the operator
+    looking in the wrong place
+  - `read_error_body()` reads once and truncates to 500 characters, since this text ends up
+    in an error message and API bodies run to kilobytes; `detail_avec_corps()` appends it
+  - `tests/test_hosted_providers_api.py` covers all three providers: successful generation,
+    key and model in the request, 429 as a quota rather than a failure, network errors
+    returning instead of raising, 401, Google's 400-with-`API_KEY_INVALID`, and the API's
+    own message reaching the operator. `urlopen` is replaced — request construction,
+    response parsing and error translation stay real
+  - Still not proven: that a real vendor accepts these payloads. That remains C1
+  - 22 new tests; full suite 2 114 passing, 7 skipped
+
 ### Added
 - **Backlog P1 — memory becomes the second search source, and the arbitrary weights are
   gone.** Measured state → `docs/architecture/search.md`

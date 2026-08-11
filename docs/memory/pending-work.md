@@ -61,12 +61,6 @@ gets re-argued at every review.
   and semantic versioning is already decided. A rollback target has to be nameable.
   *Deciding criterion:* maintenance cost — cheap, and criterion C4 needs it.
 
-- **Cover the hosted-provider generation path with tests.** `_call_api` is implemented for
-  OpenAI, Anthropic and Google; only the no-credentials branch is tested. A successful
-  generation and the 401 / 400 / 429 responses are not.
-  *Deciding criterion:* technical feasibility — untested vendor code is where a silent
-  break hides, and this is the path C1 depends on.
-
 - **Decide between three ways to write a file to disk.** `LocalDiskStorageConnector`
   (ADR-007), `SQLiteFileStore` and `FileSystemCloudStore` arrived from two branches, they
   overlap, and nothing says which one a caller should use.

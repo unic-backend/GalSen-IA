@@ -13,7 +13,7 @@ import urllib.request
 import urllib.error
 
 from .base import ModelDescriptor
-from .hosted_provider import HostedProvider
+from .hosted_provider import HostedProvider, detail_avec_corps, read_error_body
 from .base import GenerationRequest, GenerationResponse, ProviderStatus, UnavailabilityReason
 
 # Langues couvertes par les modèles Claude retenus ici
@@ -140,7 +140,7 @@ class AnthropicProvider(HostedProvider):
                 latency_seconds=time.time() - started_at,
             )
         except urllib.error.HTTPError as e:
-            error_body = e.read().decode('utf-8') if e.read() else str(e)
+            error_body = read_error_body(e)
             if e.code == 401:
                 reason = UnavailabilityReason.UNAUTHORIZED
                 detail = "Clé API Anthropic invalide ou absente"
@@ -148,8 +148,8 @@ class AnthropicProvider(HostedProvider):
                 reason = UnavailabilityReason.QUOTA_EXCEEDED
                 detail = "Quota Anthropic dépassé"
             else:
-                reason = UnavailabilityReason.UNAVAILABLE
-                detail = f"Erreur API Anthropic: {e.code}"
+                reason = UnavailabilityReason.UNREACHABLE
+                detail = detail_avec_corps(f"Erreur API Anthropic: {e.code}", error_body)
 
             return GenerationResponse.unavailable(
                 provider_id=self.provider_id,
@@ -161,6 +161,6 @@ class AnthropicProvider(HostedProvider):
             return GenerationResponse.unavailable(
                 provider_id=self.provider_id,
                 model_name=request.model_name,
-                reason=UnavailabilityReason.UNAVAILABLE,
+                reason=UnavailabilityReason.UNREACHABLE,
                 detail=f"Erreur lors de l'appel à l'API Anthropic: {str(e)}",
             )

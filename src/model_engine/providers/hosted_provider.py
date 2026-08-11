@@ -146,3 +146,57 @@ class HostedProvider(ModelProvider):
             f"Les identifiants pour {self.display_name} sont attendus dans la variable d'environnement {variable}. "
             "Assurez-vous qu'elle est définie et contient une clé API valide."
         )
+
+
+def read_error_body(erreur, limite: int = 500) -> str:
+    """
+    Lit le corps d'une `HTTPError`, **une seule fois**.
+
+    Les trois fournisseurs distants écrivaient :
+
+    ```python
+    error_body = e.read().decode('utf-8') if e.read() else str(e)
+    ```
+
+    `e.read()` y est appelé deux fois. Le premier appel, dans la condition,
+    consomme le flux ; le second ne rend plus rien. `error_body` valait donc
+    toujours la chaîne vide dès que le corps était non vide — exactement le cas
+    où il aurait servi.
+
+    Chez OpenAI et Anthropic la variable n'était même pas utilisée. Chez Google
+    elle l'était : `if e.code == 400 and "API_KEY_INVALID" in error_body`. Cette
+    détection ne se déclenchait donc **jamais**, et une clé Google invalide était
+    rapportée comme une erreur générique 400 au lieu d'un défaut
+    d'authentification.
+
+    Args:
+        erreur: l'exception `urllib.error.HTTPError`.
+        limite: nombre maximal de caractères conservés.
+
+    Returns:
+        Le corps décodé et tronqué, ou une chaîne vide s'il est illisible. La
+        troncature est là parce que ce texte finit dans un message d'erreur :
+        un corps d'API peut faire plusieurs kilo-octets.
+    """
+    try:
+        brut = erreur.read()
+    except Exception:
+        return ""
+    if not brut:
+        return ""
+    if isinstance(brut, bytes):
+        brut = brut.decode("utf-8", errors="replace")
+    brut = brut.strip()
+    return brut[:limite] + "…" if len(brut) > limite else brut
+
+
+def detail_avec_corps(message: str, corps: str) -> str:
+    """
+    Ajoute au message d'erreur ce que l'API a réellement répondu.
+
+    Sans lui, un 400 rendait « Erreur API OpenAI: 400 » et le corps qui
+    l'expliquait — modèle inconnu, paramètre refusé — était lu puis jeté.
+    L'opérateur qui configure enfin un fournisseur est précisément celui à qui
+    ce texte manque.
+    """
+    return f"{message} — {corps}" if corps else message

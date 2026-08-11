@@ -29,7 +29,7 @@ sont traités ; la série est close.**
   aucun signal ; quatre routes rendaient l'hôte interne dans leur 500.
 - **Trois fois** deux implémentations d'une même interface trouvées en désaccord :
   `save()` des notifications (13), `get()` des connaissances (21), le compteur d'accès (23).
-- Tests : **2092 passants**, 7 ignorés (**398 ajoutés** dans la session).
+- Tests : **2114 passants**, 7 ignorés (**420 ajoutés** dans la session).
 - **P1 le plus haut retiré** : la décision du planificateur pilote le pipeline.
   « bonjour » passe de 45,2 s à 1,5 s ; la suite de tests de 183 s à 81 s.
   Branche `claude/galsen-ia-phases-ukwz7p`, tout est poussé.
@@ -47,5 +47,6 @@ connaissances vide** — il ne dépend pas du code. Les deux P0 dépendent de l'
   Restent document et vision sans fournisseur — leurs moteurs ne produisent pas encore de
   texte cherchable.
 - **La base de connaissances est toujours vide** : P1, ne dépend plus du code.
-- **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192.
+- **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192. Le chemin
+  distant est désormais testé — il levait sur toute erreur autre que 401 ou 429.
 - **C4 dépend de toi** : rien n'est déployé ; aucun tag de version n'existe.
