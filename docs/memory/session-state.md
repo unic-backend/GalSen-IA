@@ -29,7 +29,7 @@ sont traités ; la série est close.**
   aucun signal ; quatre routes rendaient l'hôte interne dans leur 500.
 - **Trois fois** deux implémentations d'une même interface trouvées en désaccord :
   `save()` des notifications (13), `get()` des connaissances (21), le compteur d'accès (23).
-- Tests : **2062 passants**, 7 ignorés (**368 ajoutés** dans la session).
+- Tests : **2082 passants**, 7 ignorés (**388 ajoutés** dans la session).
 - **P1 le plus haut retiré** : la décision du planificateur pilote le pipeline.
   « bonjour » passe de 45,2 s à 1,5 s ; la suite de tests de 183 s à 81 s.
   Branche `claude/galsen-ia-phases-ukwz7p`, tout est poussé.
@@ -43,6 +43,8 @@ connaissances vide** — il ne dépend pas du code. Les deux P0 dépendent de l'
 - **`AgentRuntime` fait double emploi avec `RouterEngine`** et reste sans route : seul
   `RouterEngine` est exposé (`POST /workflow/run`). Quatrième duplication de la série,
   non traitée.
+- **La recherche de mémoire ne filtrait pas** : corrigé. Reste que trois sources de
+  recherche sur quatre n'ont aucun fournisseur (P1).
 - **La base de connaissances est toujours vide** : P1, ne dépend plus du code.
 - **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192.
 - **C4 dépend de toi** : rien n'est déployé ; aucun tag de version n'existe.

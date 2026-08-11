@@ -5,9 +5,9 @@ Abstract base class for memory retrieval and an in-memory implementation.
 """
 
 import abc
-import re
 import time
 from typing import Any, List, Optional, Tuple
+from src.text_normalization import tokenize
 from .types import MemoryItem, MemoryType, MemoryStatus
 
 
@@ -106,11 +106,11 @@ class InMemoryMemoryRetriever(BaseMemoryRetriever):
 
         # Score each item based on the query
         scored_items = []
-        query_terms = set(self._normalize_text(query).split())
+        query_terms = set(self._terms(query))
         for item in items:
             # Only consider items with string content for text matching
             if isinstance(item.content, str):
-                content_terms = set(self._normalize_text(item.content).split())
+                content_terms = set(self._terms(item.content))
                 # Simple Jaccard similarity
                 intersection = len(query_terms & content_terms)
                 union = len(query_terms | content_terms)
@@ -119,7 +119,18 @@ class InMemoryMemoryRetriever(BaseMemoryRetriever):
                 # For non-string content, we can't do text matching, so score 0
                 score = 0.0
 
-            if score >= min_score:
+            # Un score nul veut dire « aucun terme en commun ». Ces éléments
+            # étaient rendus quand même, parce que le seuil par défaut valait
+            # `0.0` et que le test était `>=` : chercher « xyzzy » rendait
+            # **toutes** les mémoires du sujet, notées 0. L'appelant recevait
+            # une liste de résultats et le contexte d'un agent se remplissait de
+            # mémoires sans rapport, présentées comme pertinentes.
+            #
+            # Une mémoire dont le contenu n'est pas du texte tombe dans le même
+            # cas : on ne peut pas la rapprocher d'une requête, donc elle n'est
+            # pas un résultat de recherche. `list_items()` reste la façon de
+            # tout obtenir.
+            if score > 0.0 and score >= min_score:
                 scored_items.append((item, score))
 
         # Sort by score descending
@@ -130,8 +141,12 @@ class InMemoryMemoryRetriever(BaseMemoryRetriever):
         """Retrieve a memory item by its ID."""
         return self._store.get(item_id)
 
-    def _normalize_text(self, text: str) -> str:
-        """Normalize text for matching: lowercase and remove punctuation."""
-        text = text.lower()
-        text = re.sub(r'[^\w\s]', '', text)
-        return text
+    @staticmethod
+    def _terms(text: str) -> List[str]:
+        """Découpe un texte en mots comparables.
+
+        Même normalisation que l'index de connaissances : sans accents et sans
+        marque de pluriel simple, appliquée des deux côtés. « pluviometrie »
+        retrouve « pluviométrie », et « arachide » retrouve « arachides ».
+        """
+        return tokenize(text)

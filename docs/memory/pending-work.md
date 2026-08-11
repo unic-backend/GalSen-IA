@@ -46,13 +46,6 @@ gets re-argued at every review.
   *Deciding criterion:* user impact — retrieval quality caps out at exact term matching,
   which matters the day the base holds real documents, not before.
 
-- **The query processor ignores accents and plurals.** `pluviometrie` finds nothing when
-  `pluviométrie` is indexed, and `arachides` misses `arachide`; stop-words are French only.
-  The **planner** was fixed on 2026-08-11 (accents normalised, keywords matched at word
-  start) because agent selection now depends on it; search still has the defect.
-  *Deciding criterion:* strategic alignment — unaccented typing is the norm on a Senegalese
-  deployment, so this is a relevance defect before it is a linguistic one.
-
 - **Three search sources of four have no provider** (memory, document, vision), and the
   per-source merge weights (1.0 / 0.9 / 0.85 / 0.8) come from no measurement. They are
   inert while one source is wired and will silently reorder results once a second is.

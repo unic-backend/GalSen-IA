@@ -5,6 +5,7 @@ Indexeur de connaissances pour recherche plein texte rapide.
 import logging
 import re
 from typing import Dict, Set, List, Optional
+from src.text_normalization import tokenize
 from .types import KnowledgeItem
 from .interfaces import KnowledgeIndexer, KnowledgeStore
 import threading
@@ -52,15 +53,26 @@ class InMemoryKnowledgeIndexer(KnowledgeIndexer):
         """Met à jour l'index pour une connaissance modifiée."""
         self.update(knowledge)
 
+    # Mots vides écartés de l'index. Écrits avec leurs accents : ils sont
+    # normalisés comme le reste, donc « où » et « ou » se rejoignent.
+    STOP_WORDS = frozenset({
+        'le', 'la', 'les', 'un', 'une', 'des', 'de', 'du', 'et', 'ou', 'à', 'a',
+        'ce', 'cet', 'cette', 'ces', 'en', 'au', 'aux', 'avec', 'sans', 'sur',
+        'sous', 'pour', 'par', 'pas', 'mais', 'où', 'qui', 'que',
+        'quoi', 'dont', 'lorsque', 'quand', 'comment', 'pourquoi',
+    })
+
     def _tokenize(self, text: str) -> List[str]:
-        """Tokenise un texte en mots en minuscules."""
-        words = self._word_re.findall(text.lower())
-        # Filtrer les mots très courants (stop words simples) - optionnel
-        stop_words = {'le', 'la', 'les', 'un', 'une', 'des', 'de', 'du', 'et', 'ou', 'à', 'a',
-                      'ce', 'cet', 'cette', 'ces', 'en', 'au', 'aux', 'avec', 'sans', 'sur',
-                      'sous', 'pour', 'par', 'pas', 'mais', 'ou', 'où', 'qui', 'que',
-                      'quoi', 'dont', 'où', 'lorsque', 'quand', 'comment', 'pourquoi'}
-        return [w for w in words if w not in stop_words and len(w) > 1]
+        """
+        Découpe un texte en mots comparables.
+
+        La normalisation s'applique **des deux côtés** — ici pour l'indexation
+        et pour la requête, puisque cette méthode sert aux deux. C'est ce qui
+        rend la transformation sûre : « pluviometrie » retrouve
+        « pluviométrie », et « arachide » retrouve « arachides », sans qu'une
+        forme puisse disparaître de l'index.
+        """
+        return tokenize(text, self.STOP_WORDS)
 
     def _add_to_index(self, doc_id: str, terms: List[str]) -> None:
         """Ajoute un document à l'index pour les termes donnés."""

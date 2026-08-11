@@ -9,6 +9,28 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Fixed
+- **Backlog P1 — a search that ignored accents, and a memory search that returned
+  everything.** Measured state → `docs/architecture/search.md`
+  - On a base holding « La pluviométrie du Sénégal varie selon les régions »:
+    `pluviometrie` → **0 results**, `senegal` → **0**, `arachide` → **0**, while the
+    accented and plural forms returned 1. Unaccented typing is the norm on a keyboard used
+    in Senegal, so a platform that finds nothing without accents finds nothing for its users
+  - `src/text_normalization.py` strips accents and a simple final `s`/`x` (on words longer
+    than four letters), **on both sides** — indexing and query. That symmetry makes a lossy
+    transformation safe: it cannot prevent a match, only create one too many. Stop words are
+    normalised too, and short words keep their `s` so `pas` and `bus` stay themselves
+  - Deliberately not done, and named: `-aux` plurals, irregulars, conjugated forms, and
+    languages other than French — those need a real morphological analyser
+  - **A heavier defect surfaced next door**: `MemoryRetriever.retrieve()` scores by Jaccard
+    similarity, but the default `min_score` was `0.0` and the test was `score >= min_score`,
+    so a score of **zero** — not one term in common — passed.
+    `search_memory(query="xyzzy")` returned all of the subject's memories, scored 0.0. Every
+    caller asking about a subject got everything, and an agent's context filled with
+    unrelated memories presented as relevant. A zero-score item is not a result;
+    `list_items()` remains the way to get everything
+  - 20 new tests; full suite 2 082 passing, 7 skipped
+
 ### Added
 - **The orchestration is reachable.** Measured state → `docs/architecture/orchestration.md`
   - None of the API's routes ran a workflow or an agent: `RouterEngine` was instantiated

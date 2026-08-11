@@ -9,18 +9,12 @@ makes a plan reviewable.
 """
 
 import re
-import unicodedata
 from typing import Any, Dict, List
 
 from src.agent.base_agent import BaseAgent
 from src.agent.context import AgentContext
 from src.agent.legacy import run_agent_module
-
-
-def _sans_accents(texte: str) -> str:
-    """Retire les diacritiques, sans changer le reste du texte."""
-    decompose = unicodedata.normalize("NFD", texte)
-    return "".join(c for c in decompose if unicodedata.category(c) != "Mn")
+from src.text_normalization import strip_accents as _sans_accents
 
 
 class PlannerAgent(BaseAgent):

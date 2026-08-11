@@ -275,3 +275,46 @@ empty-result rate — how often the platform found nothing — and index integri
 - **Stage 9 is deletion, not secure deletion.** Nothing overwrites or proves erasure.
 
 None of these received a placeholder value or a plausible-looking score.
+
+---
+
+# Accents and plurals (backlog P1, 2026-08-11)
+
+Measured on a base holding « La pluviométrie du Sénégal varie selon les régions » and
+« Les arachides se récoltent en octobre » :
+
+```
+pluviométrie → 1    pluviometrie → 0
+Sénégal      → 1    senegal      → 0
+arachides    → 1    arachide     → 0
+```
+
+Unaccented typing is the norm on a keyboard used in Senegal, so a platform that finds
+nothing without accents finds nothing for its users. The plural case is the most ordinary
+search there is: looking up the singular of something written in the plural.
+
+`src/text_normalization.py` applies two transformations — accents removed, a simple final
+`s`/`x` dropped on words longer than four letters — **on both sides**, indexing and query
+alike. That symmetry is what makes a lossy transformation safe: it cannot prevent a match,
+only create one too many. Stop words are normalised too, so `où` and `ou` are the same
+word to the filter.
+
+What it deliberately does not do, and would need a real morphological analyser for:
+`-aux` plurals (journal/journaux), irregulars, conjugated verb forms, and languages other
+than French. Naming those is cheaper than pretending they work.
+
+## The finding next door: memory search returned everything
+
+Fixing the query side surfaced a heavier defect in `MemoryRetriever.retrieve()`. It does
+score by Jaccard similarity, but the default `min_score` was `0.0` and the test was
+`score >= min_score` — so a score of **zero**, meaning not one term in common, passed.
+
+```
+search_memory(query="xyzzy") → 2 mémoires sur 2, notées 0.0
+```
+
+Every caller asking for memories about something received all of that subject's memories,
+and an agent's context filled with unrelated memories presented as relevant. A zero-score
+item is not a result; `list_items()` remains the way to get everything. Memories whose
+content is not text fall in the same case — a dictionary cannot be matched against a
+query, so it is not a search hit.
