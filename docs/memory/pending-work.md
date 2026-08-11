@@ -28,17 +28,6 @@ gets re-argued at every review.
 
 ## P1 — High · a Phase 2 exit criterion depends on it, or it removes a demonstrated risk
 
-- **Decide whether `tester` belongs in the request-time pipeline.** Measured on
-  2026-08-11 (VOLET 19): on the shipped `standard` workflow, `tester` takes **43.5 s of a
-  45.2 s request — 96 %**, because it runs the project's full pytest suite before the
-  platform answers. It does this on every request, whatever the request asks; "bonjour"
-  costs 45 seconds. The cost is now measured and attributable (`agent_time` in the
-  workflow history), which is why this is a decision and no longer a discovery.
-  *Deciding criterion:* removes a demonstrated risk — `docs/standards/performance.md`
-  targets 500 ms at p95 for a write, and this is two orders of magnitude away. The options
-  (move it out of the pipeline, make it a separate workflow, scope it to changed files)
-  differ enough that picking one is not a phase's call.
-
 - **Put something in the knowledge base.** It holds **0 items, 0 indexed documents, 0
   graph nodes**, and `docs/knowledge/` does not exist. The Knowledge Engine, the RAG tool,
   the search service and the retrieval ranking are all built and retrieving from nothing.
@@ -59,6 +48,8 @@ gets re-argued at every review.
 
 - **The query processor ignores accents and plurals.** `pluviometrie` finds nothing when
   `pluviométrie` is indexed, and `arachides` misses `arachide`; stop-words are French only.
+  The **planner** was fixed on 2026-08-11 (accents normalised, keywords matched at word
+  start) because agent selection now depends on it; search still has the defect.
   *Deciding criterion:* strategic alignment — unaccented typing is the norm on a Senegalese
   deployment, so this is a relevance defect before it is a linguistic one.
 

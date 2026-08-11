@@ -342,7 +342,8 @@ not exist, and writing down a review cadence nobody performs would be a fabricat
 # Decision trace (VOLET 22)
 
 The claim recorded above — *intent detection exists in `PlannerAgent` and is not used* —
-still holds for **routing**, and is now measured rather than only stated. `src/router/
+was true until the backlog item that followed from it was taken. It is now measured **and
+acted on**. `src/router/
 decision_trace.py` compares the agents the planner recommends with the agents that run,
 and puts the comparison in the response metadata with an explicit `applied: false`.
 
@@ -352,3 +353,56 @@ named exception, any other reader fails the guard, and a behavioural test assert
 leaves the executed set untouched.
 
 Full measurement and what it costs → `docs/architecture/decisions.md`.
+
+---
+
+# Planner-driven selection (backlog P1, taken 2026-08-11)
+
+The `standard` workflow now declares `execution.agent_selection: planner`. The planner's
+recommendation restricts the declared pipeline instead of being discarded.
+
+Measured before and after, same requests:
+
+| Requête | Avant | Après |
+|---------|-------|-------|
+| « bonjour » | 45,2 s — 9 agents | **1,5 s — 2 agents** |
+| « surveille les logs et les métriques » | 45,2 s — 9 agents | **3,7 s — 4 agents** |
+| « écris et teste une fonction » | 45,2 s — 9 agents | 50 s — 3 agents, `tester` compris |
+
+The third row is the point: `tester` still runs when the request is about testing. The cost
+did not move, it became attributable to a request that asked for it.
+
+Three invariants hold the change:
+
+- **Selection restricts, never extends.** `workflows.yaml` stays the authority on what
+  *may* run; the planner decides what runs among that. A planner able to add an
+  undeclared agent would bypass the human review that file carries.
+- **An unusable recommendation keeps the whole pipeline.** No planner, or an empty
+  recommendation, and the declared pipeline runs in full: executing nothing because a
+  heuristic recognised nothing would be worse than doing too much.
+- **It is declared, not implicit.** A workflow without the key behaves exactly as before —
+  `revue` is the shipped counter-example — and removing the line restores full execution.
+
+## Three defects the wiring exposed
+
+Following a decision makes the decision's quality matter. Three things that were harmless
+while the recommendation was ignored became consequential:
+
+- **The fallback ran the test suite.** An unrecognised request fell back to `research` *and*
+  `quality`, and `quality` mobilises `tester` — so "bonjour" spent 43 seconds verifying code
+  nobody had produced. Understanding a request means researching it, not testing it. The
+  fallback is now `research` only.
+- **Accents decided which agents ran.** `deploiement` did not match `déploiement`, so an
+  unaccented request lost its intent — and, now, lost the agent. Unaccented typing is the
+  norm on a Senegalese deployment; the backlog had recorded this for search, and the planner
+  had the same defect with a heavier consequence.
+- **`veille` matched inside `surveiller`.** Every monitoring request also triggered a
+  research agent, through a substring. Keywords must now start a word; they need not end
+  one, so `application` still recognises `applications`.
+
+## What deployment now costs, on purpose
+
+`deployment` mobilises `tester`. Preparing a release without knowing whether the tests pass
+is the speed-over-truth the constitution rejects (VOLET 01, ch. 04), and the deployment
+agent already reads that verdict — it reports `test_state.known: false` without it. So a
+deployment request pays the full suite, and that is the one place where it should.

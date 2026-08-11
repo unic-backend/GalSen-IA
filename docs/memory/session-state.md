@@ -29,16 +29,19 @@ sont traités ; la série est close.**
   aucun signal ; quatre routes rendaient l'hôte interne dans leur 500.
 - **Trois fois** deux implémentations d'une même interface trouvées en désaccord :
   `save()` des notifications (13), `get()` des connaissances (21), le compteur d'accès (23).
-- Tests : **2034 passants**, 7 ignorés (**340 ajoutés** dans la session).
+- Tests : **2047 passants**, 7 ignorés (**353 ajoutés** dans la session).
+- **P1 le plus haut retiré** : la décision du planificateur pilote le pipeline.
+  « bonjour » passe de 45,2 s à 1,5 s ; la suite de tests de 183 s à 81 s.
   Branche `claude/galsen-ia-phases-ukwz7p`, tout est poussé.
 
 **Prochaine étape**
-Plus aucun manuel à traiter. Reprendre `docs/memory/pending-work.md` : les deux P1 les
-plus hauts ne dépendent plus du code.
+Reprendre `docs/memory/pending-work.md`. Le P1 restant le plus haut est la **base de
+connaissances vide** — il ne dépend pas du code. Les deux P0 dépendent de l'opérateur
+(vérifier les identités, configurer un fournisseur de modèle).
 
 **Bloqué / à surveiller**
-- **`tester` coûte 96 % de chaque requête** : P1, décision sur le pipeline. Le VOLET 22
-  l'affûte — le planificateur calcule déjà les agents nécessaires et sa décision est jetée.
+- **L'orchestration n'est atteignable par aucune route** : `RouterEngine` et `AgentRuntime`
+  ne sont instanciés que par les tests. Découvert en attaquant le P1 ; non traité.
 - **La base de connaissances est toujours vide** : P1, ne dépend plus du code.
 - **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192.
 - **C4 dépend de toi** : rien n'est déployé ; aucun tag de version n'existe.

@@ -90,6 +90,11 @@ already being made.
 
 A measurement phase records that. It does not take it.
 
+**Taken on 2026-08-11**, as the backlog's highest P1: `standard` now declares
+`execution.agent_selection: planner`, and the recommendation restricts the pipeline.
+`applied` reports `true` when it did. Full measurement, invariants and the three defects the
+wiring exposed → `docs/architecture/orchestration.md`.
+
 ## Chapters 04 to 10
 
 Management, security, compliance, monitoring, quality and governance describe an engine

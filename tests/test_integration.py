@@ -343,24 +343,53 @@ def test_agent_errors_are_contained():
 # ----------------------------------------------------------------------
 # Orchestration
 # ----------------------------------------------------------------------
-def test_router_runs_the_full_pipeline():
-    """The Router Engine must run every agent through the shared context."""
+def test_router_runs_the_declared_pipeline():
+    """The Router Engine must run every declared agent, in order.
+
+    Le workflow `revue` ne déclare pas `agent_selection`, donc son pipeline
+    s'exécute en entier : c'est là que se vérifie la capacité brute de
+    l'orchestrateur, indépendamment de la sélection.
+    """
     print("Testing Router Engine pipeline...")
     router = RouterEngine()
 
     response = router.process_request(
         "Verifier la qualite et la securite du projet",
         user_id="test_user",
+        workflow_id="revue",
     )
 
     assert response["status"] in ("success", "partial_success")
-    assert response["metadata"]["total_agents_executed"] == len(AGENT_IDS)
     assert response["metadata"]["failed_agents"] == 0, "Des agents ont échoué dans le pipeline"
 
     executed = [result["agent"] for result in response["agent_results"]]
-    assert executed == list(AGENT_IDS), f"Ordre d'exécution inattendu: {executed}"
+    assert executed == ["reviewer", "security"], f"Ordre d'exécution inattendu: {executed}"
+    assert response["metadata"]["decision"]["applied"] is False
 
     print(f"[OK] Router executed {len(executed)} agents in {response['execution_time_seconds']}s")
+
+
+def test_router_restricts_the_pipeline_to_the_request():
+    """Sur `standard`, la recommandation du planificateur restreint l'exécution.
+
+    C'est le branchement demandé par le backlog : le pipeline complet tournait
+    pour toute demande, `tester` compris, soit 43 s sur 45 s mesurées.
+    """
+    print("Testing planner-driven selection...")
+    router = RouterEngine()
+
+    # Sans « production » : ce mot porte l'intention de déploiement, qui
+    # mobilise légitimement `tester` — préparer une mise en production sans
+    # connaître l'état des tests serait la vitesse préférée à la vérité.
+    response = router.process_request("Surveiller les logs et les metriques")
+
+    executed = [result["agent"] for result in response["agent_results"]]
+    assert response["metadata"]["decision"]["applied"] is True
+    assert "monitor" in executed
+    # L'agent le plus coûteux ne tourne pas pour une demande de supervision.
+    assert "tester" not in executed, f"Pipeline non restreint: {executed}"
+    # Le planificateur ouvre toujours : c'est lui qui produit la décision.
+    assert executed[0] == "planner"
 
 
 def test_agents_see_previous_results():
@@ -368,7 +397,12 @@ def test_agents_see_previous_results():
     print("Testing result propagation between agents...")
     router = RouterEngine()
 
-    response = router.process_request("Preparer un deploiement du projet")
+    # La demande mobilise le déploiement **et** la supervision : depuis que la
+    # sélection s'applique, un agent non recommandé ne tourne plus, et ce test
+    # a besoin des deux pour vérifier la propagation dans les deux sens.
+    response = router.process_request(
+        "Preparer un deploiement du projet et surveiller les logs"
+    )
 
     deployment = next(
         result for result in response["agent_results"] if result["agent"] == "deployment"

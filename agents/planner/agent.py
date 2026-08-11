@@ -8,11 +8,19 @@ The agent therefore produces the same plan for the same request, which is what
 makes a plan reviewable.
 """
 
+import re
+import unicodedata
 from typing import Any, Dict, List
 
 from src.agent.base_agent import BaseAgent
 from src.agent.context import AgentContext
 from src.agent.legacy import run_agent_module
+
+
+def _sans_accents(texte: str) -> str:
+    """Retire les diacritiques, sans changer le reste du texte."""
+    decompose = unicodedata.normalize("NFD", texte)
+    return "".join(c for c in decompose if unicodedata.category(c) != "Mn")
 
 
 class PlannerAgent(BaseAgent):
@@ -57,8 +65,13 @@ class PlannerAgent(BaseAgent):
         "deployment": {
             "keywords": ("déployer", "déploiement", "production", "livrer", "release",
                          "deploy", "publish", "mise en ligne"),
-            "agents": ("deployment",),
-            "description": "Préparer la mise en production",
+            # `tester` accompagne le déploiement : préparer une mise en
+            # production sans savoir si les tests passent, c'est très
+            # exactement la vitesse préférée à la vérité que la constitution
+            # écarte (VOLET 01, ch. 04). L'agent de déploiement lit d'ailleurs
+            # ce verdict et rapporte `test_state.known: false` sans lui.
+            "agents": ("tester", "deployment"),
+            "description": "Vérifier l'état des tests, puis préparer la mise en production",
         },
         "monitoring": {
             "keywords": ("surveiller", "monitoring", "performance", "logs", "métriques",
@@ -68,8 +81,14 @@ class PlannerAgent(BaseAgent):
         },
     }
 
-    # Plan appliqué quand aucune intention n'est reconnue : comprendre avant d'agir
-    FALLBACK_INTENTS = ("research", "quality")
+    # Plan appliqué quand aucune intention n'est reconnue : comprendre avant d'agir.
+    #
+    # `quality` en faisait partie, et cela devient coûteux dès que la
+    # recommandation est suivie : une demande non reconnue — « bonjour » — faisait
+    # exécuter toute la suite de tests du projet, soit 43 secondes pour vérifier
+    # un code que personne n'avait produit. Comprendre une demande, c'est la
+    # chercher, pas la tester.
+    FALLBACK_INTENTS = ("research",)
 
     def perform(self, context: AgentContext) -> Dict[str, Any]:
         """
@@ -110,12 +129,27 @@ class PlannerAgent(BaseAgent):
         }
 
     def _detect_intents(self, request: str) -> List[str]:
-        """Repère les intentions présentes dans la demande."""
-        normalized = request.lower()
+        """
+        Repère les intentions présentes dans la demande.
+
+        Deux défauts de la comparaison naïve sont corrigés ici, et ils sont
+        devenus conséquents le jour où la recommandation a piloté l'exécution :
+        une intention manquée ne coûte plus un agent inutile, elle coûte un
+        agent absent.
+
+        - **Les accents ne comptent pas.** « deploiement » est la façon dont on
+          tape sur un clavier sénégalais ; sans normalisation, la demande
+          perdait son intention de déploiement.
+        - **Un mot-clé doit commencer un mot.** « veille » se trouvait dans
+          « surveiller », si bien que toute demande de supervision déclenchait
+          aussi une recherche. Le début de mot est exigé, la fin ne l'est pas :
+          « application » reconnaît « applications ».
+        """
+        normalise = _sans_accents(request.lower())
 
         detected = [
             intent for intent, rule in self.INTENT_RULES.items()
-            if any(keyword in normalized for keyword in rule["keywords"])
+            if any(_MOTIFS[keyword].search(normalise) for keyword in rule["keywords"])
         ]
 
         return detected or list(self.FALLBACK_INTENTS)
@@ -192,3 +226,12 @@ def execute(input_data: Any) -> Dict[str, Any]:
         Résultat de l'agent au format standard
     """
     return run_agent_module(PlannerAgent, input_data)
+
+
+# Motif par mot-clé : début de mot exigé, fin libre. Construits une fois — la
+# détection tourne à chaque demande.
+_MOTIFS = {
+    mot: re.compile(r"\b" + re.escape(_sans_accents(mot)))
+    for regle in PlannerAgent.INTENT_RULES.values()
+    for mot in regle["keywords"]
+}

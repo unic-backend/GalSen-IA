@@ -76,20 +76,19 @@ def test_deux_requetes_opposees_donnent_le_meme_plan(planificateur):
 
 # Seul module autorisé à lire `agents_required`, et pour quoi faire.
 #
-# Le VOLET 22 a ajouté `src/router/decision_trace.py`, qui **rapporte** l'écart
-# entre les agents recommandés et ceux qui tournent, sans rien changer à
-# l'exécution. C'est l'exception voulue par ce garde-fou : un branchement doit
-# être un choix visible, et celui-ci l'est — la trace dit elle-même
-# `applied: false`.
+# Le VOLET 22 a ajouté `src/router/decision_trace.py`, qui rapporte l'écart entre
+# les agents recommandés et ceux qui tournent. Le branchement demandé par le
+# backlog l'a ensuite fait **décider** — mais toujours par ce seul module, et
+# seulement pour les workflows qui le déclarent. Un autre lecteur reste interdit.
 LECTEURS_AUTORISES = {"src/router/decision_trace.py"}
 
 
-def test_les_intentions_detectees_ne_pilotent_toujours_pas_l_execution():
-    """`agents_required` est calculé par le planner et ne route rien.
+def test_un_seul_module_lit_la_recommandation_du_planificateur():
+    """Le branchement devait être un choix visible, pas un effet de bord.
 
-    Verrouillé pour que le branchement, quand il aura lieu, soit un choix visible
-    et non un effet de bord. Un nouveau lecteur fait échouer ce test : c'est le
-    moment de dire s'il rapporte ou s'il décide.
+    Il a eu lieu, en un seul endroit et derrière une option déclarée dans
+    `workflows.yaml`. Un nouveau lecteur fait échouer ce test : c'est le moment
+    de dire s'il rapporte ou s'il décide.
     """
     lecteurs = []
     for dossier in (RACINE / "src", RACINE / "agents"):
@@ -106,19 +105,31 @@ def test_les_intentions_detectees_ne_pilotent_toujours_pas_l_execution():
     )
 
 
-def test_la_trace_de_decision_ne_change_pas_l_execution():
-    """Le pendant comportemental du test précédent.
+def test_la_selection_restreint_le_pipeline_et_ne_l_elargit_jamais():
+    """L'invariant de sécurité du branchement.
 
-    Lire la recommandation sans la suivre est acceptable ; la suivre en silence
-    ne l'est pas. La trace le déclare, et ce test le vérifie.
+    `workflows.yaml` reste l'autorité sur ce qui **peut** tourner ; le
+    planificateur décide seulement ce qui tourne parmi cela. Un planificateur
+    capable d'ajouter un agent absent de la déclaration contournerait la revue
+    humaine qui accompagne ce fichier.
     """
-    from src.router.decision_trace import decision_trace
+    from src.router.decision_trace import selection_appliquee
 
-    trace = decision_trace(
-        [{"agent": "planner", "status": "success",
-          "result": {"agents_required": ["monitor"]}}],
-        ["planner", "coder", "tester"],
-    )
+    declare = ["planner", "reviewer", "tester"]
 
-    assert trace["applied"] is False
-    assert trace["executed_agents"] == ["planner", "coder", "tester"]
+    assert selection_appliquee(declare, ["reviewer"]) == ["reviewer"]
+    # Un agent recommandé mais non déclaré n'entre pas dans l'exécution.
+    assert selection_appliquee(declare, ["deployment"]) is None
+    assert selection_appliquee(declare, ["reviewer", "deployment"]) == ["reviewer"]
+
+
+def test_une_recommandation_inutilisable_laisse_le_pipeline_entier():
+    """Ne rien exécuter parce qu'une heuristique n'a rien reconnu serait pire.
+
+    `None` signale à l'orchestrateur de garder la déclaration ; c'est le repli
+    volontaire, pas une exécution vide.
+    """
+    from src.router.decision_trace import selection_appliquee
+
+    assert selection_appliquee(["planner", "tester"], None) is None
+    assert selection_appliquee(["planner", "tester"], []) is None

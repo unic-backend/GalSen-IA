@@ -31,6 +31,20 @@ workflows:
 
       - monitor
 
+    # Sélection des agents par le planificateur (P1 du backlog, VOLET 22).
+    #
+    # `standard` est un pipeline de développement logiciel : sans cette option,
+    # « bonjour » faisait tourner les dix agents, dont `tester` qui exécute
+    # toute la suite pytest — 43,5 s sur 45,2 s mesurées. Le planificateur
+    # calculait déjà les agents nécessaires et sa décision était jetée.
+    #
+    # La sélection **restreint** ce pipeline, elle ne l'élargit jamais : cette
+    # liste reste l'autorité sur ce qui peut tourner. Retirer la ligne rétablit
+    # l'exécution complète.
+    execution:
+
+      agent_selection: planner
+
   # Deuxième workflow, et il existe pour une raison : un seul pipeline ne
   # démontre pas l'automatisation, il démontre le chargeur (critère C3).
   # « revue » relit un changement sans rien exécuter ni déployer — les deux

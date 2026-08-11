@@ -9,6 +9,34 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Changed
+- **Backlog P1 — the planner's decision now drives the pipeline.** Measured state →
+  `docs/architecture/orchestration.md`
+  - Measuring first contradicted the item's premise: there is **no request-time pipeline**.
+    None of the API's 64 routes runs a workflow or an agent, and `RouterEngine` /
+    `AgentRuntime` are instantiated only by tests. Reported before acting
+  - `standard` now declares `execution.agent_selection: planner`, and the recommendation
+    restricts the declared pipeline. Measured: "bonjour" **45.2 s → 1.5 s** (9 agents → 2);
+    a monitoring request 3.7 s with 4 agents; "écris et teste une fonction" still 50 s with
+    `tester` — the cost did not vanish, it became attributable to a request that asked for
+    it. The full test suite went from 183 s to 81 s
+  - Three invariants: selection **restricts, never extends** (`workflows.yaml` stays the
+    authority on what may run, or a planner would bypass the human review that file
+    carries); an unusable recommendation keeps the whole pipeline; the option is declared,
+    with `revue` as the shipped counter-example
+  - **Three defects the wiring made consequential, and fixed**: the planner's fallback
+    mobilised `quality`, so an unrecognised request spent 43 s testing code nobody had
+    produced; **accents decided which agents ran** (`deploiement` did not match
+    `déploiement`, and unaccented typing is the norm on a Senegalese deployment); and
+    `veille` matched inside `surveiller`, so every monitoring request also triggered a
+    research agent. Keywords must now start a word, without having to end one
+  - `deployment` mobilises `tester` on purpose: preparing a release without knowing whether
+    tests pass is the speed-over-truth the constitution rejects
+  - Two integration tests were rewritten, not weakened: raw pipeline capability is now
+    verified on `revue`, which declares no selection, and a second test verifies the
+    restriction on `standard`
+  - 11 new tests, 3 rewritten; full suite 2 047 passing, 7 skipped
+
 ### Added
 - **VOLET 01 — the constitution's final rule is now a test.** Measured state →
   `docs/architecture/constitution.md`. This closes the series: all 25 manuals are treated

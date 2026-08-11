@@ -28,7 +28,7 @@ from .result_aggregator import ResultAggregator
 from .retry_manager import RetryManager
 from .agent_dispatcher import AgentDispatcher
 from .workflow_history import WorkflowHistory
-from .decision_trace import decision_trace
+from .decision_trace import decision_trace, recommended_agents, selection_appliquee
 from .logger import Logger
 from ..agent.context import AgentContext
 from ..audit_engine.types import AuditEventType, AuditStatus, generate_request_id
@@ -163,7 +163,24 @@ class RouterEngine:
             all_agent_results = []  # Pour stocker tous les résultats détaillés
             agent_durations = {}  # Durée observée de chaque agent, reprises comprises
 
+            # Sélection pilotée par le planificateur, si le workflow la déclare
+            # (`execution.agent_selection: planner`). Elle **restreint** le
+            # pipeline déclaré, jamais elle ne l'élargit : `workflows.yaml`
+            # reste l'autorité sur ce qui peut tourner, le planificateur décide
+            # ce qui tourne parmi cela.
+            selection_par_planificateur = (
+                (workflow_config.get('execution') or {}).get('agent_selection') == 'planner'
+            )
+            selection_appliquee_effectivement = False
+            agents_retenus = None
+
             for agent_id in ordered_agents:
+                if agents_retenus is not None and agent_id not in agents_retenus:
+                    self.logger.info(
+                        "Agent '%s' écarté : le planificateur ne l'a pas retenu pour cette demande.",
+                        agent_id,
+                    )
+                    continue
                 if not self.agent_loader.is_enabled(agent_id):
                     self.logger.warning(f"L'agent '{agent_id}' est désactivé. Ignoré.")
                     continue
@@ -195,6 +212,26 @@ class RouterEngine:
                 # Le contexte est enrichi au fur et à mesure : l'agent suivant
                 # peut consulter ce qui vient d'être produit
                 context.previous_results.append(agent_result)
+
+                # Dès que le planificateur a rendu sa décision, le reste du
+                # pipeline s'y conforme. Une recommandation vide ou absente
+                # laisse le pipeline entier : ne rien exécuter parce qu'une
+                # heuristique n'a rien reconnu serait pire que d'en faire trop.
+                if selection_par_planificateur and agents_retenus is None and agent_id == 'planner':
+                    restreint = selection_appliquee(
+                        ordered_agents, recommended_agents(all_agent_results),
+                    )
+                    if restreint is not None:
+                        agents_retenus = set(restreint) | {'planner'}
+                        selection_appliquee_effectivement = True
+                        self.logger.info(
+                            "Pipeline restreint par le planificateur : %s sur %d agents déclarés.",
+                            restreint, len(ordered_agents),
+                        )
+                    else:
+                        self.logger.info(
+                            "Le planificateur n'a retenu aucun agent : le pipeline déclaré s'applique."
+                        )
 
                 if agent_result.get('status') != 'success':
                     if agent_result.get('status') == 'requires_approval':
@@ -282,7 +319,11 @@ class RouterEngine:
                     # Ce que le planificateur a décidé, et ce qui a tourné
                     # (VOLET 22, ch. 03 étape 10). La décision existe et n'est
                     # pas suivie ; l'enregistrer est la seule façon de le voir.
-                    "decision": decision_trace(all_agent_results, ordered_agents),
+                    "decision": decision_trace(
+                        all_agent_results,
+                        [r.get('agent') for r in all_agent_results if r.get('agent')],
+                        applied=selection_appliquee_effectivement,
+                    ),
                 }
             }
             if approval_request_ids:
