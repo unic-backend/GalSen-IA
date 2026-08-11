@@ -90,3 +90,62 @@ Three decisions worth keeping:
 The history is bounded (500 runs) and lives in process memory. It says so in its own
 output: a restart clears it, and another instance has its own (ADR-009). An unbounded
 history is the debt the platform's log already cost once.
+
+---
+
+# The second manual (VOLET 18)
+
+`VOLET_18.md` is a **second Workflow Engine manual**, despite its folder being named
+"Infrastructure & DevOps Engine". Like VOLET 17 for notifications, it restates most of
+VOLET 08. Only what it asks beyond that one is treated here; re-measuring the rest would
+duplicate the sections above.
+
+## What it asks that VOLET 08 did not
+
+| Chapter | New ask | Measured state |
+|---------|---------|----------------|
+| 02 | Task Scheduler, Event Bus, Workflow Repository | absent — see below |
+| 03 stage 3 | Deployment | n/a — a workflow is a YAML entry, there is no deploy step |
+| 03 stage 7 | **Version Management** | **declared and unused** |
+| 03 stage 8 | Retirement and Archival | absent — a retired workflow is a deleted YAML block |
+| 03 practices | Retry failed tasks safely | present — `RetryManager`, 3 attempts |
+| 04 | Task Management, Rule Management | the pipeline is the only rule |
+| 06 | Queue health | n/a — no queue |
+
+## The finding: every workflow declares a version nobody reads
+
+`workflows/workflows.yaml` gives each workflow a `version`, and `WorkflowValidator` lists
+it among the metadata it requires — a workflow without one is flagged. Measured across
+`src/router/`, the string `version` appears in exactly two places:
+
+```
+workflow_validator.py: METADONNEES_ATTENDUES = ("description", "version", "owner")
+workflow_validator.py: CLES_CONNUES = {"description", "pipeline", "execution", "version", …}
+```
+
+Both are the validator checking that the field exists. **Nothing reads its value.** The
+execution path (`RouterEngine.process_request`) loads the workflow config and never looks
+at it, and `WorkflowHistory.record()` stores `workflow`, `status`, `duration_seconds`,
+`agents_executed`, `failed_agents`, `request_id`, `at` — no version.
+
+The consequence is precise, and it undoes the metric VOLET 08 built. Change a pipeline,
+bump `version: "1.0"` to `"1.1"`, and the history keeps both under the same name: the
+success rate now mixes runs of two different definitions. An operator reading "this
+workflow fails 30 % of the time" cannot tell whether the old definition failed often and
+the new one is fine, or the reverse. Chapter 03 makes version management a lifecycle stage
+and chapter 06 makes failure analysis a quality control; conflating versions defeats both.
+
+This is the pattern the platform keeps finding: a field that is validated as *present* and
+never used as *data*. Required, checked, and inert.
+
+The fix belongs to phase 3.1 of this VOLET, not to this measurement.
+
+## What is absent, and stays absent
+
+- **Task Scheduler**: nothing runs a workflow on a schedule; a run starts because a
+  request arrived.
+- **Event Bus**: no events, no triggers — already recorded under VOLET 08 as the absent
+  Event Dispatcher, and this manual asks for the same thing under a different name.
+- **Workflow Repository**: `workflows.yaml` is the repository. There is no store, no
+  history of definitions, and therefore nothing to archive when one is retired.
+- **Queue health** (chapters 04 and 06): there is no queue. Execution is synchronous.
