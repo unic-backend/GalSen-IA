@@ -101,10 +101,11 @@ gets re-argued at every review.
   *Deciding criterion:* performance impact — the read path writes, which also makes a
   read-only deployment impossible.
 
-- **Speed up the orchestration suite.** `tests/test_integration.py` takes **105 s**, of
-  which three tests take ~34 s each because the tester agent runs real suites inside the
-  pipeline. Re-measured 2026-08-10: it was recorded at 97 s and has grown.
-  *Deciding criterion:* performance impact on the development loop.
+- **Validate agent outputs.** Chapter 02 of VOLET_06 lists "validate outputs" as a
+  pipeline step and nothing implements it: no schema stands between an agent's dictionary
+  and the aggregated response, and an empty pipeline returns `success` having run nothing.
+  *Deciding criterion:* technical feasibility — the aggregator cannot report what it
+  cannot check.
 
 ## P3 — Low · worth doing, nothing waits on it
 

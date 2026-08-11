@@ -9,6 +9,22 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Fixed
+- **The `tester` agent reported suites it never ran.** It executed `python <suite>`, which
+  only runs a file's `__main__` block — **20 of 92 suites have one**; the other 72 imported
+  themselves, ran no test, exited 0 and were counted as passing. It now runs
+  `python -m pytest`, and a suite collecting zero tests is no longer green
+- **The `tester` agent is 2.5× faster**: one process per suite paid the platform's import
+  92 times. A single batched pytest invocation pays it once — **97.4 s → 38.6 s** for 91
+  suites — while keeping a per-suite verdict, since pytest names the file of each failure.
+  A batch that fails or times out falls back to per-suite execution
+- **The router announced parallel execution it never performed.** Its docstring claimed
+  "supports parallel execution", the log printed a parallel plan, and no concurrency
+  primitive exists in `src/router/` — the "parallel" agents were appended to the sequential
+  list. The claims are corrected (`parallel_supported: False`); the behaviour is unchanged
+  and the decision is now backed by measurement: `tester` is 97.4 s of a 99 s pipeline and
+  the eight other agents total 1.66 s, so parallelism would buy ~1.5 s
+
 ### Added
 - **VOLET 03 — Development Manual, 10 chapters in 12 phases.** Measured state →
   `docs/architecture/development.md`

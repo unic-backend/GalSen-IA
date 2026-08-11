@@ -131,3 +131,122 @@ the code and its claims agree.
 Real parallel execution and request-aware planning are features, not repairs. They belong
 to phases 5.2 and beyond, where they can be measured against the 105 s the orchestration
 suite currently takes.
+
+## What agents exchange (chapter 05)
+
+A single `AgentContext` is built per request and shared by every agent in the pipeline.
+Each result is appended to `context.previous_results` as it is produced, so an agent reads
+what came before through the context rather than through a rewritten request — the request
+text handed to each agent is the user's original words, unmodified.
+
+Measured on the `revue` workflow (248 ms, two agents):
+
+| Agent | Keys it produces |
+|-------|------------------|
+| `reviewer` | `files_reviewed`, `issues`, `issues_by_severity`, `issues_found`, `rules_checked`, `target` |
+| `security` | `files_scanned`, `findings`, `findings_by_severity`, `findings_count`, `repository_protections`, `rules_enforced` |
+
+There is no shared schema between agents: each returns its own dictionary and the next one
+reads whatever it recognises. That is workable at two agents and is the thing to watch as
+the number grows — nothing declares what `security` may rely on from `reviewer`.
+
+## Sequential versus parallel (chapter 05), measured
+
+Per-agent durations on the full nine-agent pipeline:
+
+| Agent | Duration |
+|-------|----------|
+| `tester` | **97 417 ms** |
+| `researcher` | 1 237 ms |
+| `monitor` | 129 ms |
+| `planner` | 87 ms |
+| `documentation` | 72 ms |
+| `security` | 70 ms |
+| `reviewer` | 39 ms |
+| `deployment` | 19 ms |
+| `coder` | 7 ms |
+
+**One agent is 98 % of the pipeline.** Everything else put together takes 1.66 s.
+Parallelism would therefore buy almost nothing here — running the eight fast agents
+concurrently saves about 1.5 s on a 99 s pipeline — while costing concurrent access to the
+shared context and a non-deterministic `previous_results` order. That is the measured
+answer to "should the router run agents in parallel": **not until an agent other than
+`tester` is slow.** The declaration stays, the claim is gone (see Finding 2), and the
+decision now rests on a number.
+
+## Two defects in the `tester` agent (chapters 06 and 09)
+
+**It reported suites it never ran.** The agent executed `python <suite>`, which only runs a
+file's `__main__` block. **20 of the 92 suites have one**; the other 72 imported themselves,
+ran no test, exited 0, and were counted as passing. A verdict of "92 suites green" where 72
+verified nothing is precisely the fabrication `.claude/rules/verification.md` forbids.
+
+Fixed: the agent runs `python -m pytest <suite> -q`, and a suite that collects **zero
+tests is not green** — it reports `aucun test collecté`, whether pytest exits 0 or 5.
+
+**It was slow for a mechanical reason.** One process per suite paid the platform's full
+import 92 times. A single batched invocation pays it once:
+
+| | Before | After |
+|---|--------|-------|
+| `tester` agent, 91 suites | **97.4 s** | **38.6 s** |
+
+The batch keeps what matters: pytest names the file of every failure, so each suite still
+gets its own verdict, and a failing suite keeps its output. A batch that times out or
+cannot run falls back to per-suite execution — a detailed report beats no report. Tests
+cover the failure attribution, the empty-batch case and the zero-test case.
+
+Note the order of these two changes: the honesty fix made the agent **slower** (it now
+runs the 72 suites it used to skip), and the batching fix made it faster than it ever was.
+Fixing the lie first was the right order — a faster wrong answer is still wrong.
+
+## Failure handling (chapter 06)
+
+| What the manual asks | What happens |
+|----------------------|--------------|
+| Retry recoverable failures | `RetryManager`: 3 attempts, 1 s apart, configurable through `settings.yaml` |
+| Terminal states | `success`, `skipped` and `requires_approval` stop the retries — retrying an approval request would spam the operator |
+| Stop or continue on failure | `workflows.execution.failure.rollback` decides; `true` breaks the loop |
+| Rollback | **the name is wrong**: nothing is undone. It stops the pipeline |
+| Reassign to another agent | **no**: retries re-run the same agent |
+
+The `rollback` flag deserves the note it now carries in this file: it does not roll
+anything back. What an agent wrote to memory, to the knowledge base or to disk before
+failing stays written. It is a *stop-on-failure* switch, and calling it rollback invites
+the belief that a failed pipeline leaves no trace.
+
+## Aggregation (chapter 07)
+
+`ResultAggregator.aggregate()` is small and behaves consistently:
+
+| Input | Status returned | Extra keys |
+|-------|-----------------|------------|
+| all successful | `success` | — |
+| any error | `partial_success` (or `error` if nothing succeeded) | `errors` |
+| any approval pending, no error | `requires_approval` | `approval_request_ids` |
+| empty | `success` | — |
+
+The empty case is worth a second look: **no agent ran, and the status is `success`.**
+It is defensible (nothing failed) and misleading (nothing happened either), and it is
+reachable — the default workflow has an empty pipeline and empty execution groups, so
+`process_request()` without a workflow returns `success` having done nothing at all.
+
+**Output validation does not exist.** Chapter 02's workflow step 6 is "validate outputs";
+no schema, no contract and no check stands between an agent's dictionary and the
+aggregated response. An agent returning `{"status": "success"}` with no result at all
+aggregates as a success.
+
+## Observability (chapter 08)
+
+What an operator can see of a run, measured on the `revue` workflow:
+
+- **Response metadata**: `total_agents_executed`, `successful_agents`, `failed_agents`,
+  `pending_approval_agents`, `execution_time_seconds`, `request_id`, `workflow_used`.
+- **Audit trail**: 20 events for a two-agent run — one per agent, one per tool call, one
+  for the request itself — each carrying the agent, the action and the status.
+- **Logs**: every agent start, retry and outcome.
+
+What is **not** visible: nothing reports progress *during* a run (the response arrives at
+the end), no per-agent duration is recorded anywhere durable, and `/metrics` counts HTTP
+traffic and searches but not agent executions. An operator watching a 99-second pipeline
+sees nothing until it finishes.

@@ -28,6 +28,11 @@ class TesterAgent(BaseAgent):
     # Délai maximum accordé à une suite, en secondes
     SUITE_TIMEOUT = 120
 
+    # Délai du lot unique : il exécute toutes les suites retenues d'un coup.
+    # Plus large qu'une suite seule, sans être infini — un lot qui dépasse ce
+    # délai retombe sur l'exécution suite par suite, qui dira laquelle bloque.
+    BATCH_TIMEOUT = 600
+
     # Nombre de caractères de sortie conservés pour une suite en échec
     FAILURE_OUTPUT_CHARS = 2000
 
@@ -159,7 +164,7 @@ class TesterAgent(BaseAgent):
         os.environ[self.REENTRANCY_FLAG] = "1"
 
         try:
-            return [self._run_suite(context, suite) for suite in suites]
+            return self._run_batch(context, suites)
         finally:
             # L'environnement du processus est restauré même en cas d'erreur,
             # sinon les exécutions suivantes se croiraient imbriquées
@@ -168,10 +173,73 @@ class TesterAgent(BaseAgent):
             else:
                 os.environ[self.REENTRANCY_FLAG] = previous_value
 
-    def _run_suite(self, context: AgentContext, suite: str) -> Dict[str, Any]:
-        """Exécute une suite et interprète son résultat."""
+    def _run_batch(self, context: AgentContext, suites: List[str]) -> List[Dict[str, Any]]:
+        """
+        Exécute toutes les suites en **une seule** invocation de pytest.
+
+        Un processus par suite payait l'import complet de la plateforme à chaque
+        fois : 92 suites prenaient 97 s, dont l'essentiel en démarrages répétés.
+        Un lot unique paie cet import une fois. Le verdict par suite est
+        reconstruit depuis la sortie : pytest nomme le fichier de chaque échec.
+
+        Retombe sur l'exécution suite par suite si le lot n'a pas pu tourner —
+        un rapport détaillé vaut mieux qu'aucun rapport.
+        """
+        if not suites:
+            return []
+
         outcome = context.use_tool(
-            "terminal", ["python", suite], timeout=self.SUITE_TIMEOUT
+            "terminal", ["python", "-m", "pytest", *suites, "-q"],
+            timeout=self.BATCH_TIMEOUT,
+        )
+        if outcome.get("status") != "success":
+            return [self._run_suite(context, suite) for suite in suites]
+
+        execution = outcome["result"]
+        sortie = f"{execution.get('stdout', '')}\n{execution.get('stderr', '')}"
+        if execution.get("timed_out"):
+            return [self._run_suite(context, suite) for suite in suites]
+
+        # Fichiers cités dans les lignes d'échec : `tests/test_x.py::test_y FAILED`
+        en_echec = set(re.findall(r'^(\S+\.py)(?:::\S+)? (?:FAILED|ERROR)', sortie, re.MULTILINE))
+        en_echec |= set(re.findall(r'^(?:FAILED|ERROR) (\S+\.py)', sortie, re.MULTILINE))
+
+        total_tests = self._count_tests(sortie)
+        resultats: List[Dict[str, Any]] = []
+        for suite in suites:
+            echoue = any(suite.endswith(nom) or nom.endswith(suite) for nom in en_echec)
+            resultat: Dict[str, Any] = {
+                "suite": suite,
+                "passed": not echoue,
+                "returncode": execution.get("returncode"),
+                "timed_out": False,
+                "assertions": 0,
+                # Le lot ne dit pas combien de tests chaque fichier a exécutés :
+                # le total est rapporté à part plutôt qu'attribué au hasard.
+                "tests": None,
+            }
+            if echoue:
+                resultat["output"] = sortie[-self.FAILURE_OUTPUT_CHARS:]
+            resultats.append(resultat)
+
+        if total_tests == 0:
+            for resultat in resultats:
+                resultat["passed"] = False
+                resultat["reason"] = "aucun test collecté : le lot n'a rien exécuté"
+        return resultats
+
+    def _run_suite(self, context: AgentContext, suite: str) -> Dict[str, Any]:
+        """Exécute une suite par pytest et interprète son résultat.
+
+        L'agent lançait `python <suite>`, ce qui n'exécute que le bloc
+        `__main__` du fichier : **20 des 92 suites en ont un**. Les 72 autres
+        s'importaient sans lancer un seul test et sortaient à 0, donc l'agent les
+        comptait comme réussies. Un rapport de tests qui compte des suites vides
+        est exactement la fabrication que `.claude/rules/verification.md`
+        interdit. `python -m pytest` exécute les tests, quel que soit le fichier.
+        """
+        outcome = context.use_tool(
+            "terminal", ["python", "-m", "pytest", suite, "-q"], timeout=self.SUITE_TIMEOUT
         )
 
         if outcome.get("status") != "success":
@@ -187,13 +255,24 @@ class TesterAgent(BaseAgent):
         passed = execution.get("success", False) and not execution.get("timed_out", False)
         output = f"{execution.get('stdout', '')}\n{execution.get('stderr', '')}"
 
+        tests_executes = self._count_tests(output)
         result: Dict[str, Any] = {
             "suite": suite,
             "passed": passed,
             "returncode": execution.get("returncode"),
             "timed_out": execution.get("timed_out", False),
             "assertions": self._count_assertions(output),
+            # Une suite qui ne collecte aucun test n'est pas une suite qui passe :
+            # le compte est rapporté pour que « 92 suites vertes » veuille dire
+            # quelque chose.
+            "tests": tests_executes,
         }
+        if tests_executes == 0:
+            # Deux chemins mènent ici : pytest sort à 5 quand il ne collecte rien,
+            # et sortait à 0 quand le fichier était exécuté comme un script. Dans
+            # les deux cas la suite n'a rien vérifié, et doit le dire.
+            result["passed"] = False
+            result["reason"] = "aucun test collecté : la suite n'a rien exécuté"
 
         # La sortie n'est conservée que pour les échecs : c'est là qu'elle sert
         if not passed:
@@ -204,6 +283,17 @@ class TesterAgent(BaseAgent):
     def _count_assertions(self, output: str) -> int:
         """Compte les vérifications réussies signalées par la suite."""
         return len(re.findall(r'^\[OK\]', output, re.MULTILINE))
+
+    def _count_tests(self, output: str) -> int:
+        """Compte les tests réellement exécutés, d'après le résumé de pytest.
+
+        Retourne 0 quand aucun résumé n'est trouvé : mieux vaut signaler une
+        suite comme n'ayant rien exécuté que lui prêter des tests supposés.
+        """
+        total = 0
+        for motif in (r'(\d+) passed', r'(\d+) failed', r'(\d+) error'):
+            total += sum(int(n) for n in re.findall(motif, output))
+        return total
 
     def _verdict(self, passed: List[Dict[str, Any]], failed: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Conclut sur l'état des tests."""
