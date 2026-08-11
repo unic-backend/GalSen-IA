@@ -5,6 +5,7 @@ Stockage en mémoire des connaissances pour le moteur de connaissances GalSen IA
 from typing import Dict, Any, List, Optional
 from .types import KnowledgeItem
 from .interfaces import KnowledgeStore
+import copy
 import threading
 import datetime
 
@@ -37,9 +38,20 @@ class InMemoryKnowledgeStore(KnowledgeStore):
             return knowledge.id
 
     def get(self, knowledge_id: str) -> Optional[KnowledgeItem]:
-        """Récupère une connaissance par son ID."""
+        """Récupère une connaissance par son ID.
+
+        Une **copie** est retournée, comme le fait déjà le magasin SQLite qui
+        désérialise à chaque lecture. Rendre la référence interne rendait
+        `update()` inutilisable depuis le flux normal — lire, corriger,
+        enregistrer : incrémenter la version de l'objet lu incrémentait du même
+        coup celle du magasin, si bien que le contrôle `version > existante`
+        refusait la mise à jour. Deux implémentations d'une même interface ne
+        peuvent pas diverger sur ce point sans qu'un appelant correct sur l'une
+        soit fautif sur l'autre.
+        """
         with self._lock:
-            return self._data.get(knowledge_id)
+            knowledge = self._data.get(knowledge_id)
+            return copy.deepcopy(knowledge) if knowledge is not None else None
 
     def update(self, knowledge: KnowledgeItem) -> bool:
         """Met à jour une connaissance existante."""

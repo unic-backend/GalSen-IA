@@ -9,6 +9,33 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Fixed
+- **VOLET 21 — three views of one knowledge item gave two different answers.** Measured
+  state → `docs/architecture/knowledge.md`
+  - `KnowledgeStore.save()` refuses to overwrite when an equal-or-newer version exists
+    under the id, and signals that refusal **by returning the id** — "created", "unchanged"
+    and "rejected" are indistinguishable. `add_knowledge()` then cached the object it had
+    been handed without checking whether the store took it. Measured, on a caller
+    correcting a fact: `get_knowledge()` returned "… en juillet." while the store and
+    search returned "… en juin."
+  - The caller read back their own submission and had every reason to believe it was
+    stored. Chapter 03 makes integrity validation and consistency verification two of its
+    quality controls; a cache contradicting its store defeats both
+  - `add_knowledge()` now indexes and caches **what the store holds**, re-read after the
+    write, and warns with the id and the remedy when the submitted content was not kept
+  - **A second defect, exposed by the test written for the first**: read → edit → bump
+    version → `update_knowledge()` did not work on the in-memory store, because `get()`
+    returned its internal reference, so incrementing the version on the object you read
+    also incremented the stored one and `update()` refused the write. The SQLite store
+    deserialises on every read and hands back a fresh object — two implementations of one
+    interface disagreeing on what a read is, the same class of bug as the notification
+    stores in VOLET 13. `get()` now returns a copy in both. `list_items()` deliberately
+    still returns references, which several callers rely on
+  - **Nothing was added for duplicate removal**: a knowledge id is its content hash, so the
+    practice chapter 03 asks for is already met structurally. A `deduplicate()` here would
+    have been code with no defect under it
+  - 5 new tests; full suite 1 987 passing, 7 skipped
+
 ### Added
 - **VOLET 20 — duplicates were detected and nothing could remove them.** Measured state →
   `docs/architecture/memory.md`

@@ -386,3 +386,80 @@ Chapters 02 to 10 describe organization, lifecycle, validation, retrieval, gover
 security, integration and quality — all of which act on knowledge items. Measuring them
 against an empty base measures the code, not the platform. Each following phase states
 which of the two it is checking.
+
+---
+
+# The second manual (VOLET 21)
+
+`VOLET_21.md` is a **second Knowledge Engine manual**, after VOLET 05. It restates most of
+that one and adds an ambitious component list — Knowledge Graph, Ontology Manager,
+Inference Engine, Semantic Search Engine, Synchronization Service. Only what it asks
+beyond VOLET 05 was examined, and most of that list is absent and stays absent: semantic
+search is already a ranked P1 in `docs/memory/pending-work.md`, and synchronisation
+presupposes a second instance that ADR-009 says is not possible yet.
+
+## Duplicate removal was already met, structurally
+
+Chapter 03's practice "remove duplicate knowledge" — the same one VOLET 20 exposed as
+missing for memory — is already satisfied here, and not by a maintenance routine: a
+knowledge item's **id is its content hash**, so saving identical content three times yields
+one id and one item. Measured: `identifiants distincts: 1`, `redundant_items: 0`.
+
+Nothing was added for it. Adding a `deduplicate()` here would have been code with no defect
+under it.
+
+## The finding: three views of one item, two different answers
+
+That same content-addressing has a consequence nobody had followed through.
+`KnowledgeStore.save()` refuses to overwrite when an equal-or-newer version already exists
+under the id — and it signals that refusal **by returning the id**, so "created",
+"unchanged" and "rejected" are indistinguishable to the caller.
+
+`add_knowledge()` then cached the object it had been handed, without checking whether the
+store took it. Measured, on a caller who corrects a fact and re-adds it under the same id:
+
+```
+via get_knowledge (cache) : Le mil se sème en juillet.
+via le magasin            : Le mil se sème en juin.
+via la recherche          : Le mil se sème en juin.
+```
+
+The caller read back their own submission and had every reason to believe it was stored.
+Chapter 03 makes knowledge-integrity validation and consistency verification two of its
+quality controls; a cache that contradicts its store defeats both.
+
+**Fixed**: `add_knowledge()` now indexes and caches **what the store holds**, re-read after
+the write, and logs a warning naming the id and the remedy when the submitted content was
+not the content kept. The three views agree.
+
+## The second defect, found by the test written for the first
+
+The obvious way to correct a knowledge item — read it, edit it, bump the version, call
+`update_knowledge()` — did not work on the in-memory store, and the test for the remedy is
+what exposed it. `InMemoryKnowledgeStore.get()` returned its internal reference, so
+incrementing the version on the object you just read also incremented the stored one, and
+`update()`'s `version > existing` check then refused the write.
+
+The SQLite store does not have this behaviour: it deserialises on every read, so it hands
+back a fresh object. Two implementations of one interface, disagreeing on whether a read is
+a copy — the same class of bug as the notification stores in VOLET 13, where `save()` meant
+"create" in one and "upsert" in the other. `get()` now returns a copy in both.
+
+`list_items()` deliberately still returns references: several callers mutate what it hands
+back and rely on that, and changing it is a larger job than this VOLET's scope. It is worth
+knowing before writing the next caller.
+
+## Chapters 04 to 10
+
+Management, security, compliance, monitoring, quality and governance restate VOLET 05:
+domains and sensitivity, role-gated reads, the lifecycle with its withdrawn statuses,
+revalidation of stale approvals, the governance and quality reports. Chapters 08 and 10 are
+both titled "Knowledge Engine Governance" and assign work to a board the project does not
+have.
+
+The lifecycle metrics chapter 03 asks for — acquisition rate, validation success rate,
+retrieval accuracy, semantic consistency score — are not added. The first two need a
+history that survives a restart, which is the same open storage decision already recorded
+in `pending-work.md`; the last two need a ground truth nobody has written. `quality_report()`
+already names what it cannot compute and why, and that list did not need lengthening with
+figures nobody could stand behind.

@@ -8,29 +8,26 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 20 terminé
+**VOLET en cours** : aucun — VOLET 21 terminé
 **Phase courante** : —
 **Terminées** : toutes (5 phases)
 **Cadence** : **une phase par tour** (défaut).
 
 ```
-VOLET 20 — Memory Engine (second manuel) : terminé
-                                   → docs/architecture/memory.md
-  Le fichier n'a pas de chapitre 02 : il enchaîne 01, 01, puis 03. L'inventaire
-  des composants du VOLET 07 tient, rien n'a été inventé pour combler le trou.
-  Défaut central : les doublons étaient détectés et rien ne pouvait les
-  retirer — trois enregistrements du même contenu donnaient trois mémoires et
-  la recherche rendait les trois. `deduplicate()` garde la plus ancienne et
-  archive les autres, avec un essai à blanc.
-  Second défaut trouvé en construisant : `quality_report()` comptait les
-  doublons tous statuts confondus, donc il en annonçait encore après
-  déduplication. Il ne compte plus que les actives — le rapport et l'action
-  doivent parler du même ensemble.
+VOLET 21 — Knowledge Engine (second manuel) : terminé
+                                   → docs/architecture/knowledge.md
+  La déduplication qu'il réclame était déjà acquise, structurellement :
+  l'identifiant d'une connaissance est l'empreinte de son contenu. Rien
+  n'a été ajouté — du code sans défaut dessous.
+  Défaut trouvé : trois vues d'une même connaissance, deux réponses. Le cache
+  gardait l'objet soumis sans vérifier que le magasin l'avait accepté, alors
+  que `save()` refuse silencieusement une version pas plus récente.
+  Second défaut, exposé par le test du premier : lire → corriger → enregistrer
+  ne marchait pas en mémoire, `get()` rendant la référence interne. Les deux
+  magasins divergeaient — même classe de bug qu'au VOLET 13.
 ```
 
-**Restants** : 21 à 25 — soit 5 VOLETs, dont 2 portent un sujet déjà traité avec
-un contenu différent (21, 24). Le VOLET 01 n'a jamais eu de plan de phases
-formel.
+**Restants** : 22 à 25 — soit 4 VOLETs, dont 1 porte un sujet déjà traité avec
+un contenu différent (24). Le VOLET 01 n'a jamais eu de plan de phases formel.
 
-**Prochaine action** : par ordre numérique, **VOLET 21** — vérifier son titre
-réel dans le fichier avant de planifier.
+**Prochaine action** : par ordre numérique, **VOLET 22 — Decision Engine**.

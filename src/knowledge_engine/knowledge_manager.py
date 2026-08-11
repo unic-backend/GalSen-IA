@@ -103,9 +103,6 @@ class KnowledgeManagerImpl(KnowledgeManager):
             # Sauvegarder dans le stockage
             kid = self._store.save(knowledge)
 
-            # Mettre à jour l'index
-            self._indexer.add(knowledge)
-
             # Ajouter au graphe (en tant que nœud isolé pour l'instant)
             self._graph.add_node(kid)
 
@@ -115,8 +112,30 @@ class KnowledgeManagerImpl(KnowledgeManager):
                 km.metadata.setdefault("access_count", 0)
                 self._store.update(km)  # incrémentera la version
 
-            # Si on veut mettre en cache l'élément récemment ajouté
-            self._cache.set(f"knowledge:{kid}", knowledge)
+            # Indexer et mettre en cache **ce que le magasin détient**, jamais ce
+            # qui lui a été soumis.
+            #
+            # `KnowledgeStore.save()` refuse une écriture quand une version au
+            # moins aussi récente existe sous le même identifiant, et il le fait
+            # en retournant cet identifiant : « créé », « inchangé » et
+            # « refusé » sont indiscernables pour l'appelant. Mettre en cache
+            # l'objet soumis faisait alors diverger trois vues d'une même
+            # connaissance — mesuré avant correction, `get_knowledge()` rendait
+            # « Le mil se sème en juillet. » pendant que le magasin et la
+            # recherche rendaient « ... en juin. ». Le chapitre 03 du VOLET 21
+            # range la validation d'intégrité et la cohérence parmi ses
+            # contrôles qualité ; un cache qui contredit son magasin les défait
+            # tous les deux.
+            stocke = km or knowledge
+            if km is not None and km.compute_content_hash() != knowledge.compute_content_hash():
+                self._logger.warning(
+                    "Connaissance non écrite : l'identifiant %s porte déjà une version "
+                    "au moins aussi récente. Le contenu soumis a été ignoré ; "
+                    "utilisez update_knowledge() pour corriger une connaissance existante.",
+                    kid,
+                )
+            self._indexer.add(stocke)
+            self._cache.set(f"knowledge:{kid}", stocke)
             self._invalidate_query_cache()
 
             self._logger.debug(f"Knowledge added with ID: {kid}")
