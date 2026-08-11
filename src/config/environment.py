@@ -112,6 +112,10 @@ CONTROLES: Dict[str, Tuple[Callable[[str], Optional[str]], str]] = {
         _entier_positif,
         "le seuil de détection par défaut (10 échecs) s'applique",
     ),
+    "GALSEN_CLOUD_BACKEND": (
+        _parmi("in-memory", "sqlite", "filesystem", "s3"),
+        "le magasin cloud par défaut s'applique",
+    ),
     "GALSEN_NOTIFICATION_DEDUP_SECONDS": (
         _entier_positif,
         "la fenêtre de regroupement par défaut (300 s) s'applique",

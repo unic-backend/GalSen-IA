@@ -45,15 +45,59 @@ def _infer_category(content_type: str) -> CloudFileCategory:
 class CloudManagerImpl(CloudManager):
     """Façade du service cloud, toujours disponible en mémoire."""
 
+    # Magasin choisi pour ce service seulement, quand le magasin général ne
+    # convient pas. Deux implémentations livrées — disque et S3 — n'étaient
+    # atteignables par aucune configuration : elles existaient, étaient
+    # exportées et testées, et aucun déploiement ne pouvait les sélectionner
+    # (VOLET 24, ch. 03 étape 4). Un connecteur qu'on ne peut pas configurer
+    # n'est pas une intégration, c'est du code que seuls les tests maintiennent
+    # en vie.
+    BACKEND_ENV = "GALSEN_CLOUD_BACKEND"
+    BACKENDS = ("in-memory", "sqlite", "filesystem", "s3")
+
     def __init__(self, store: Optional[CloudStore] = None) -> None:
-        if store is not None:
-            self._store = store
-        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
-            from src.storage.sqlite_cloud_store import SQLiteCloudStore
-            self._store = SQLiteCloudStore()
-        else:
-            self._store = InMemoryCloudStore()
         self._logger = logging.getLogger(f"{__name__}.CloudManagerImpl")
+        self._store = store if store is not None else self._build_store()
+
+    def _build_store(self) -> CloudStore:
+        """
+        Construit le magasin demandé par la configuration.
+
+        `GALSEN_CLOUD_BACKEND` prime sur `GALSEN_STORAGE_BACKEND` : `filesystem`
+        et `s3` n'ont de sens que pour ce service, et les imposer aux autres par
+        la variable générale serait faux.
+
+        Une valeur inconnue **n'est pas devinée** : elle est signalée et le
+        magasin par défaut s'applique, comme partout ailleurs dans la
+        configuration de la plateforme.
+        """
+        demande = os.getenv(self.BACKEND_ENV, "").strip().lower()
+        if demande and demande not in self.BACKENDS:
+            self._logger.error(
+                "%s='%s' inconnu (valeurs acceptées : %s) — magasin par défaut appliqué",
+                self.BACKEND_ENV, demande, ", ".join(self.BACKENDS),
+            )
+            demande = ""
+
+        if not demande:
+            demande = "sqlite" if os.getenv(
+                "GALSEN_STORAGE_BACKEND", "in-memory"
+            ).lower() == "sqlite" else "in-memory"
+
+        if demande == "sqlite":
+            from src.storage.sqlite_cloud_store import SQLiteCloudStore
+            return SQLiteCloudStore()
+        if demande == "filesystem":
+            from .store_fs import FileSystemCloudStore
+            return FileSystemCloudStore()
+        if demande == "s3":
+            # boto3 est importé paresseusement par le magasin : la construction
+            # n'échoue pas ici, et un envoi vers un S3 injoignable rapporte une
+            # vraie erreur plutôt que de retomber en silence sur la mémoire —
+            # un fichier « déposé » en RAM serait pire que l'échec.
+            from .store_s3 import S3CloudStore
+            return S3CloudStore()
+        return InMemoryCloudStore()
 
     def upload(
         self,

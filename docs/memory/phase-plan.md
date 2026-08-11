@@ -8,25 +8,24 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 23 terminé
+**VOLET en cours** : aucun — VOLET 24 terminé
 **Phase courante** : —
 **Terminées** : toutes (5 phases)
 **Cadence** : **une phase par tour** (défaut).
 
 ```
-VOLET 23 — Learning Engine : terminé   → docs/architecture/learning.md
-  Sujet neuf : aucun moteur d'apprentissage n'existe, aucun n'a été fabriqué.
-  L'étape 6 est l'entraînement de modèle et le critère C1 n'est pas atteint.
-  La plateforme recueille **un** signal d'usage — le compteur de consultations
-  d'une connaissance, qui alimente le critère `popularity` du classement — et
-  il ne fonctionnait pas : `update()` refusait l'écriture faute de version
-  avancée. Jamais sur SQLite ; en mémoire il ne survivait que par aliasing,
-  **que mon correctif du VOLET 21 a supprimé** — régression que j'ai
-  introduite et corrigée ici.
-  `record_access()` écrit le compteur sans toucher à la version. Les deux
-  magasins concordent enfin — troisième divergence de ce type de la série.
+VOLET 24 — Integration Engine (second manuel) : terminé
+                                   → docs/architecture/integration.md
+  Défaut trouvé : deux magasins du service Cloud — disque et S3 — étaient
+  implémentés, exportés et testés, et **aucune configuration ne pouvait les
+  choisir**. Le gestionnaire ne connaissait que la mémoire et SQLite.
+  `GALSEN_CLOUD_BACKEND` les rend atteignables ; le défaut n'a pas changé, une
+  valeur inconnue est signalée et non devinée, et le test écrit puis relit
+  réellement par le magasin disque.
+  Absents et assumés : bus d'événements, courtier de messages, moteur de
+  transformation, moteur de synchronisation.
 ```
 
-**Restants** : 24 et 25. Le VOLET 01 n'a jamais eu de plan de phases formel.
+**Reste** : le VOLET 25. Le VOLET 01 n'a jamais eu de plan de phases formel.
 
-**Prochaine action** : **VOLET 24** — vérifier son titre réel dans le fichier.
+**Prochaine action** : **VOLET 25** — vérifier son titre réel dans le fichier.

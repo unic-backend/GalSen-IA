@@ -12,7 +12,7 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-11
 
-**En cours** : rien. **Vingt VOLETs terminés** dans cette session : 05, 14, 03, 06, 07, 08, 09, 10, 11, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23.
+**En cours** : rien. **Vingt et un VOLETs terminés** dans cette session : 05, 14, 03, 06, 07, 08, 09, 10, 11, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23, 24.
 
 **Terminé dans cette session**
 - Documents mesurés dans `docs/architecture/` : `knowledge.md`, `search.md`,
@@ -28,12 +28,12 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
   personne n'a reçus ; douze échecs d'authentification ne déclenchaient aucun signal ;
   un aller-retour RAG détruisait une connaissance ; quatre routes rendaient l'hôte
   interne et un chemin de fichier dans leur 500.
-- Tests : **2001 passants**, 7 ignorés (**307 ajoutés** dans la session).
+- Tests : **2009 passants**, 7 ignorés (**315 ajoutés** dans la session).
   Branche `claude/galsen-ia-phases-ukwz7p`, tout est poussé.
 
 **Prochaine étape**
-Ouvrir le **VOLET 24** et publier son plan de phases.
-Reste ensuite : 25. **Cadence revenue à une phase par tour.**
+Ouvrir le **VOLET 25** — le dernier. **Cadence revenue à une phase par tour.**
+Ensuite, seul le VOLET 01 n'aura jamais eu de plan de phases formel.
 Attention : les noms de dossier des VOLETs 17 et 18 ne correspondaient pas à
 leur contenu — vérifier le titre dans le fichier avant de planifier.
 

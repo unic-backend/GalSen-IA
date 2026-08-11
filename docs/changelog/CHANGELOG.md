@@ -9,6 +9,29 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Added
+- **VOLET 24 — two storage backends no configuration could select.** Measured state →
+  `docs/architecture/integration.md`
+  - `FileSystemCloudStore` and `S3CloudStore` are implemented, exported and covered by
+    tests, and `CloudManagerImpl` only ever built the in-memory or SQLite store. No
+    environment variable reached them: a deployment could not choose them, only a caller
+    injecting a store could, and nothing in the platform does. Two working integrations
+    kept alive by their tests and unreachable by anyone deploying — while chapter 03 makes
+    configuration stage 4 and deployment stage 5
+  - `GALSEN_CLOUD_BACKEND` selects `in-memory` (default), `sqlite`, `filesystem` or `s3`,
+    taking precedence over `GALSEN_STORAGE_BACKEND` for this service only, since
+    `filesystem` and `s3` are meaningless for the other stores
+  - The default did not change — making `filesystem` default would start writing to disk on
+    deployments that never asked. An unknown value is reported, never guessed: reading
+    `filesytem` as `filesystem` would write files somewhere other than where the operator
+    believes. S3 construction imports boto3 lazily, so configuring it cannot break startup,
+    and an unreachable bucket fails on upload with a real error instead of silently falling
+    back to memory — a file "stored" in RAM is worse than the failure. An injected store
+    still wins
+  - The test writes through the filesystem backend and reads it back from a second manager:
+    making a store reachable without checking that it stores would prove nothing
+  - 8 new tests; full suite 2 009 passing, 7 skipped
+
 ### Fixed
 - **VOLET 23 — the platform's only feedback loop never worked, and VOLET 21 finished
   breaking it.** Measured state → `docs/architecture/learning.md`
