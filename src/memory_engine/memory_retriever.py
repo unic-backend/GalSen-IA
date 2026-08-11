@@ -6,6 +6,7 @@ Abstract base class for memory retrieval and an in-memory implementation.
 
 import abc
 import re
+import time
 from typing import Any, List, Optional, Tuple
 from .types import MemoryItem, MemoryType, MemoryStatus
 
@@ -82,6 +83,12 @@ class InMemoryMemoryRetriever(BaseMemoryRetriever):
     ) -> List[Tuple[MemoryItem, float]]:
         """
         Retrieve memories relevant to a query using simple term frequency.
+
+        Only ACTIVE memories are considered. Archiving is the lifecycle stage
+        that takes a memory out of everyday use (VOLET 07 ch. 03); returning
+        archived items would make it a label with no effect. Expired memories
+        are excluded for the same reason: a retention date the retriever
+        ignores is not a retention date.
         """
         # Get all items that match the filters
         items = self._store.list_items(
@@ -90,10 +97,12 @@ class InMemoryMemoryRetriever(BaseMemoryRetriever):
             session_id=session_id,
             agent_id=agent_id,
             tags=tags,
-            status=None,  # We don't filter by status here; the retriever should return all matching items
+            status=MemoryStatus.ACTIVE,
             limit=10000,  # Get a large number to then score and limit
             offset=0
         )
+        maintenant = time.time()
+        items = [i for i in items if i.expires_at is None or i.expires_at >= maintenant]
 
         # Score each item based on the query
         scored_items = []

@@ -6,6 +6,7 @@ L'interface principale pour les agents afin d'interagir avec le système de mém
 
 import logging
 import os
+import time
 from typing import Any, Dict, List, Optional, Tuple
 from .types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
 from .interfaces import (
@@ -90,13 +91,31 @@ class MemoryManager(MemoryManagerInterface):
         # Essayer le cache en premier
         cached = self._cache.get(f"item:{item_id}")
         if cached is not None:
+            # Une mémoire expirée ne doit pas être servie parce qu'elle a été lue
+            # récemment : le cache survivait au nettoyage et rendait un souvenir
+            # que la politique de rétention avait effacé (VOLET 07, ch. 03).
+            if self._is_expired(cached):
+                self._cache.delete(f"item:{item_id}")
+                return None
             return cached
         # Si pas dans le cache, obtenir depuis le magasin
         item = self._store.get(item_id)
+        if item is not None and self._is_expired(item):
+            return None
         if item is not None:
             # Le mettre en cache
             self._cache.set(f"item:{item_id}", item, ttl=3600)
         return item
+
+    @staticmethod
+    def _is_expired(item: MemoryItem) -> bool:
+        """Indique si une mémoire a dépassé sa date d'expiration.
+
+        L'expiration est déclarée par l'appelant : la respecter à la lecture est
+        ce qui la rend réelle. S'en remettre au seul `cleanup_expired()` faisait
+        dépendre une règle de rétention du passage d'une tâche de ménage.
+        """
+        return item.expires_at is not None and item.expires_at < time.time()
 
     def update_memory(self, item: MemoryItem) -> bool:
         """Mettre à jour un élément de mémoire.
@@ -175,15 +194,38 @@ class MemoryManager(MemoryManagerInterface):
         return results
 
     def forget_memory(self, item_id: str) -> bool:
-        """Oublier (supprimer) un élément de mémoire.
+        """Oublier un élément de mémoire : il est archivé, pas effacé.
+
+        Le chapitre 03 distingue l'archivage (étape 7) de la suppression
+        (étape 8), et le statut `ARCHIVED` existait sans que rien ne le pose.
+        « Oublier » supprimait donc définitivement, ce qu'aucun appelant
+        n'attendait d'un verbe aussi doux — et ce que la politique de rétention
+        interdit tant qu'une mémoire n'est pas obsolète.
+
+        Une mémoire archivée n'est plus retournée par la recherche ; elle reste
+        lisible par son identifiant, et `delete_memory()` l'efface pour de bon.
 
         Args:
             item_id: L'ID de l'élément à oublier.
 
         Returns:
-            True si oublié, False sinon.
+            True si l'élément a été archivé, False s'il n'existe pas.
         """
-        return self.delete_memory(item_id)
+        self._logger.debug(f"Archivage de l'élément de mémoire : {item_id}")
+        item = self._store.get(item_id)
+        if item is None:
+            return False
+
+        item.status = MemoryStatus.ARCHIVED
+        item.updated_at = time.time()
+        if not self._store.update(item):
+            return False
+
+        # Retirée de l'index : une mémoire archivée ne remonte plus dans une
+        # recherche, sans quoi l'archivage ne changerait rien à l'usage.
+        self._indexer.deindex(item_id)
+        self._cache.set(f"item:{item_id}", item, ttl=3600)
+        return True
 
     def consolidate_memory(
         self,
@@ -199,14 +241,16 @@ class MemoryManager(MemoryManagerInterface):
         Returns:
             Nombre de mémoires traitées.
         """
-        self._logger.debug(f"Consolidation des mémoires pour l'utilisateur : {user_id}, session : {session_id}")
-        # Ceci est une implémentation de placeholder. Dans un système complet, cela ferait :
-        # 1. Identifier les mémoires candidates à la consolidation (par exemple, les mémoires de court terme anciennes)
-        # 2. Les déplacer vers le stockage à long terme
-        # 3. Résumer des groupes de mémoires
-        # 4. Appliquer des courbes d'oubli
-        # Pour l'instant, nous retournerons simplement 0.
-        return 0
+        self._logger.warning(
+            "consolidate_memory() n'est pas implémentée : aucune mémoire n'a été "
+            "consolidée pour l'utilisateur %s (session %s).", user_id, session_id
+        )
+        raise NotImplementedError(
+            "La consolidation de mémoire n'est pas implémentée. Elle demande de "
+            "décider ce qui passe du court au long terme, ce qui se résume et "
+            "selon quelle courbe d'oubli — aucune de ces règles n'existe encore. "
+            "Retourner 0 laissait croire qu'il n'y avait rien à consolider."
+        )
 
     def cleanup_expired(self) -> int:
         """Supprimer les mémoires expirées.
@@ -215,7 +259,13 @@ class MemoryManager(MemoryManagerInterface):
             Nombre de mémoires supprimées.
         """
         self._logger.debug("Nettoyage des mémoires expirées")
-        return self._store.cleanup_expired()
+        supprimees = self._store.cleanup_expired()
+        if supprimees:
+            # Sans cette purge, une mémoire supprimée du magasin restait servie
+            # par le cache : le nettoyage rapportait un nombre exact et la
+            # mémoire était toujours lisible.
+            self._cache.clear()
+        return supprimees
 
     # Méthodes supplémentaires qui pourraient être utiles mais ne font pas partie de l'interface
     def get_store(self) -> MemoryStore:
