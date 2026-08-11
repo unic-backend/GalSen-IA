@@ -41,23 +41,40 @@ The manual's flow is *receive → authenticate → authorize → route → respo
 What actually runs, in order:
 
 ```
-SecurityHeadersMiddleware ─┐  (ajouté en premier, exécuté en dernier)
-RequestMetricsMiddleware  ─┤  Starlette exécute les intergiciels
-CORSMiddleware            ─┘  dans l'ordre inverse de leur ajout
+CORSMiddleware             ← le plus externe
+RequestMetricsMiddleware
+SecurityHeadersMiddleware  ← le plus proche de la route
    → rate_limit_dependency
    → require_auth / require_permission
    → la fonction de route
 ```
 
-The ordering is deliberate and load-bearing: `RequestMetricsMiddleware` is added *after*
-`SecurityHeadersMiddleware` so that it wraps it and observes the status code actually
-returned. A metrics layer that measures a response nobody receives is worse than no
-metrics.
+Execution order is the **reverse** of the `add_middleware` calls — Starlette inserts each
+new middleware at the head of the stack. That inversion is invisible when reading
+`server.py` top to bottom, and two properties depend on it.
 
-One deviation from the manual's flow: **rate limiting runs before authentication**. That
-is the right order — an unauthenticated flood must be cheap to reject, and making the
-limiter wait for authentication would mean every abusive request pays for a key lookup
-first.
+**The metrics layer wraps the security headers**, so it observes the status code actually
+returned. A metrics layer that measures a response nobody receives is worse than no
+metrics. Measured: an unauthenticated `GET /metrics` answers 401, that 401 carries
+`X-Content-Type-Options` and `X-Frame-Options`, and the counters record one request at an
+error rate of 1.0. An error response is still a response — headers posted only on
+successes leave the most common case unprotected.
+
+**Rate limiting runs before authentication.** This is the one place where the running
+order deviates from the manual's flow, and deliberately: an unauthenticated flood must be
+cheap to reject, and making the limiter wait for authentication would mean every abusive
+request pays for a key lookup first. Measured with a two-per-minute budget and no key:
+
+```
+5 appels sans clé → [401, 401, 429, 429, 429]
+```
+
+`tests/test_gateway_request_flow.py` locks all three: the headers on an error, the status
+code the counters see (with a counter-test on a successful call, so marking everything as
+an error would not pass), the 401-then-429 sequence, and the middleware order the first
+two depend on. Written first against the wrong assumption about `user_middleware` — the
+list is already in execution order, not in insertion order — and the failing test is what
+said so.
 
 ## Coverage of the two controls, and why it is now a test
 
