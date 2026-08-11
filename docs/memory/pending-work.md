@@ -107,6 +107,13 @@ gets re-argued at every review.
   *Deciding criterion:* technical feasibility — the aggregator cannot report what it
   cannot check.
 
+- **Decide whether analytics data is retained.** Trends and anomaly detection are the
+  chapter 09 capabilities `/analytics` declares unavailable, and both need history that
+  survives a restart — counters and workflow history are process-memory only (ADR-009).
+  This is a storage decision, so an ADR before code.
+  *Deciding criterion:* strategic alignment — worth taking **after C4**: before a
+  deployment exists there is no operational history worth keeping.
+
 ## P3 — Low · worth doing, nothing waits on it
 
 - **Share the two subsystems that block a second instance** (ADR-009): key revocations,

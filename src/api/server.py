@@ -53,6 +53,8 @@ from src.api.metrics import (
 # Version de la plateforme — source unique (src/version.py)
 from src.version import __version__
 from src.config import log_environment_problems
+from src.analytics import build_report as build_analytics_report
+from src.integration.engine_registry import get_shared_registry
 
 # Import de la posture de sécurité HTTP (VOLET 02 ch. 08)
 from src.api.security_headers import (
@@ -902,6 +904,29 @@ async def search_knowledge(request: KnowledgeSearchRequest,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la recherche: {str(e)}")
+
+@app.get("/analytics", tags=["health"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.ADMIN_AUDIT))])
+async def analytics():
+    """Ce que la plateforme a fait, agrégé à partir de ce qu'elle mesure déjà.
+
+    `/metrics` répond « combien de requêtes » ; cette route répond « qu'ont fait
+    les agents, quels workflows ont réussi, quelles sources alimentent
+    réellement l'analytique » (VOLET 09, ch. 02 et 06).
+
+    Elle ne collecte rien : elle agrège l'audit, l'historique des workflows et
+    les compteurs. Une source absente rend `null`, jamais zéro — un zéro se
+    lirait comme une mesure. Ce que la plateforme ne sait pas produire — les
+    tendances, la détection d'anomalies, les tableaux de bord — est nommé dans
+    `unavailable` avec sa raison.
+    """
+    registre = get_shared_registry()
+    return build_analytics_report(
+        audit_manager=registre.try_get("audit"),
+        metrics=metrics_snapshot(),
+    )
+
 
 @app.get("/knowledge/governance", tags=["knowledge"],
          dependencies=[Depends(rate_limit_dependency),

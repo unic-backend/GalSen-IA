@@ -9,6 +9,25 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Added
+- **VOLET 09 — Analytics Engine: collection existed, aggregation did not.** Measured state
+  → `docs/architecture/analytics.md`
+  - `src/` had no analytics package: the audit engine recorded events and `/metrics`
+    counted traffic, and nothing turned either into an indicator
+  - **`src/analytics/` is an aggregation layer, not a second collector** — a second count
+    of the same executions would create two truths with no way to choose. It reuses audit
+    events, `WorkflowHistory` and the `/metrics` snapshot without recomputing them
+  - **`GET /analytics`** (`ADMIN_AUDIT`): per-agent executions, success rate and durations
+    from audit; workflow success rate; traffic and search counters; source coverage
+  - **An absent source returns `null`, never `0`** — zero reads as "no agent ran" when the
+    truth is "nothing was measured"
+  - **Four of the seven data sources** in chapter 04 are wired; memory, system logs and
+    external integrations feed nothing, and `source_coverage()` says so at runtime
+  - **Trends, anomaly detection and dashboards are named unavailable with their reason**:
+    no time series survives a restart (ADR-009), so there is no baseline to compare against
+  - No user request, subject or key fingerprint enters a report
+  - 8 new tests; full suite 1 742 passing, 7 skipped
+
 ### Fixed
 - **VOLET 08 — Workflow Engine: nothing validated a workflow.** Measured state →
   `docs/architecture/workflows.md`
