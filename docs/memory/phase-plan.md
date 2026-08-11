@@ -8,22 +8,26 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 12 terminé
+**VOLET en cours** : aucun — VOLET 13 terminé
 **Phase courante** : —
 **Terminées** : toutes
 **Cadence** : **une phase par tour** (défaut).
 
 ```
-VOLET 12 — Communication Engine : terminé   → docs/architecture/communication.md
-  « Envoyé » désignait des messages que personne n'a reçus : sans SMTP, l'envoi
-  retournait un succès et le statut `sent`, sans contacter aucun serveur.
-  Six tests verrouillaient ce mensonge — tous réécrits.
-  Le message reste stocké, le statut devient `failed`, la route répond 503.
-  Absents : gestionnaire de conversation, file de messages, accusé de réception.
+VOLET 13 — Notification Engine : terminé   → docs/architecture/notifications.md
+  La même alerte cinq fois produisait cinq notifications : aucune prévention des
+  doublons, alors que le chapitre 03 la range dans ses contrôles qualité.
+  Regroupement d'une notification identique et non lue dans une fenêtre de 300 s
+  (le même identifiant est retourné, `created_at` ne recule pas), et rétention
+  des notifications lues au-delà de 90 jours — l'étape 9 du cycle n'existait pas.
+  Un désaccord entre les deux magasins sur le sens de `save()` a été corrigé par
+  un `update()` explicite, vérifié sur les deux backends.
+  Absents : moteur de règles, connecteurs de canaux, file de livraison,
+  préférences utilisateur.
 ```
 
-**Restants** : 13, 15, 17 à 25 — soit 11 VOLETs, dont 5 portent un sujet déjà
-traité avec un contenu différent (18, 19, 20, 21, 24) et 17 qui recoupe 13 à
-46 %. Le VOLET 01 n'a jamais eu de plan de phases formel.
+**Restants** : 15, 17 à 25 — soit 10 VOLETs, dont 5 portent un sujet déjà traité
+avec un contenu différent (18, 19, 20, 21, 24) et 17 qui recoupe 13 à 46 %. Le
+VOLET 01 n'a jamais eu de plan de phases formel.
 
-**Prochaine action** : par ordre numérique, **VOLET 13 — Notification Engine**.
+**Prochaine action** : par ordre numérique, **VOLET 15 — API Gateway Engine**.

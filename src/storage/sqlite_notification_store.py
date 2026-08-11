@@ -144,6 +144,18 @@ class SQLiteNotificationStore(NotificationStore):
                 conn.commit()
             return notification.id
 
+    def update(self, notification: Notification) -> bool:
+        """Met à jour une notification existante ; False si elle n'existe pas.
+
+        Explicite là où `save()` remplaçait silencieusement : l'appelant qui
+        veut modifier le dit, et celui qui croit créer n'écrase rien par mégarde.
+        """
+        with self._lock:
+            if self.get(notification.id) is None:
+                return False
+            self.save(notification)
+            return True
+
     def get(self, notification_id: str) -> Optional[Notification]:
         """Retourne une notification par identifiant, ou None si absente."""
         with self._lock:

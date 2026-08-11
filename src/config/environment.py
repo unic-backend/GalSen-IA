@@ -112,6 +112,14 @@ CONTROLES: Dict[str, Tuple[Callable[[str], Optional[str]], str]] = {
         _entier_positif,
         "le seuil de détection par défaut (10 échecs) s'applique",
     ),
+    "GALSEN_NOTIFICATION_DEDUP_SECONDS": (
+        _entier_positif,
+        "la fenêtre de regroupement par défaut (300 s) s'applique",
+    ),
+    "GALSEN_NOTIFICATION_RETENTION_DAYS": (
+        _entier_positif,
+        "la durée de rétention par défaut (90 jours) s'applique",
+    ),
     "GALSEN_OPENAI_COMPATIBLE_CONTEXT": (
         _entier_positif,
         "la taille de contexte annoncée est ignorée, le modèle peut être refusé par le sélecteur",

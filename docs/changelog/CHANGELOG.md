@@ -10,6 +10,34 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Fixed
+- **VOLET 13 — Notification Engine: the same alert five times produced five
+  notifications.** Measured state → `docs/architecture/notifications.md`
+  - Chapter 03 lists duplicate prevention among its quality controls and nothing applied
+    it. A "disk full" alert repeating every minute buried the recipient's inbox — that
+    is, the notifications they had **not yet read**
+  - An identical, **unread** notification inside a configurable window (300 s) now
+    increments `metadata["occurrences"]` and returns the **same identifier**.
+    `created_at` never moves — it says when the problem started; `last_occurrence_at`
+    carries the latest. A read notification is never grouped, and identity requires type,
+    title, message **and** recipient, so two incidents never merge and two recipients each
+    keep their own copy
+  - **Lifecycle stage 9 (retention and secure deletion) did not exist.** `purge_expired()`
+    deletes **read** notifications past the retention period (90 days by default);
+    `include_unread` defaults to `False`, because deleting what nobody has seen decides on
+    their behalf that it did not matter. It is a method, not a schedule — nothing calls it
+    periodically, and that is stated rather than faked with a background task
+  - **Two implementations of one contract, disagreeing.** Grouping wrote back via
+    `store.save()`: the in-memory store **raises** on a known id, the SQLite store does
+    `INSERT OR REPLACE`. The manager's `try/except` swallowed the exception, so in memory
+    the mutation only landed because the object is shared by reference. `save()` keeps
+    meaning **create**, and an explicit `update()` was added to `NotificationStore` and
+    both stores; it returns `False` when the notification is gone, and the manager then
+    counts nothing rather than counting into the void. Verified against **both** backends
+  - 3 of 7 components exist. Absent: rules engine, channel connectors, delivery queue,
+    user preferences. No placeholders
+  - New: `GALSEN_NOTIFICATION_DEDUP_SECONDS`, `GALSEN_NOTIFICATION_RETENTION_DAYS`,
+    documented in `.env.example` and validated at startup
+  - 10 new tests; full suite 1 783 passing, 7 skipped
 - **VOLET 12 — Communication Engine: "sent" named messages nobody received.** Measured
   state → `docs/architecture/communication.md`
   - With no SMTP configured, `send_email()` returned `success=True`, "Email envoyé à 1

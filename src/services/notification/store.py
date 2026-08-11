@@ -33,6 +33,14 @@ class InMemoryNotificationStore(NotificationStore):
             self._order.append(notification.id)
             return notification.id
 
+    def update(self, notification: Notification) -> bool:
+        """Met à jour une notification existante ; False si elle n'existe pas."""
+        with self._lock:
+            if notification.id not in self._notifications:
+                return False
+            self._notifications[notification.id] = notification
+            return True
+
     def get(self, notification_id: str) -> Optional[Notification]:
         """Retourne une notification par identifiant, ou None si absente."""
         with self._lock:

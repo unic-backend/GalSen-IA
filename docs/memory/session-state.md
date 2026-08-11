@@ -12,25 +12,26 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-11
 
-**En cours** : rien. **Onze VOLETs terminés** dans cette session : 05, 14, 03, 06, 07, 08, 09, 10, 11, 12.
+**En cours** : rien. **Douze VOLETs terminés** dans cette session : 05, 14, 03, 06, 07, 08, 09, 10, 11, 12, 13.
 
 **Terminé dans cette session**
-- Documents mesurés : `knowledge.md`, `search.md`, `development.md`,
-  `orchestration.md`, `memory.md`, `workflows.md` (tous dans `docs/architecture/`).
+- Documents mesurés dans `docs/architecture/` : `knowledge.md`, `search.md`,
+  `development.md`, `orchestration.md`, `memory.md`, `workflows.md`, `analytics.md`,
+  `integration.md`, `security.md`, `communication.md`, `notifications.md`.
 - **Une cible de performance existe** (`docs/standards/performance.md`) : le P1 le
   plus ancien du backlog est payé.
 - **Le motif dominant de la session** : des règles déclarées que rien n'appliquait, et
   des capacités qui rapportaient un succès sans travail. Les plus graves :
   l'agent `tester` comptait 72 suites qu'il n'exécutait pas ; `POST /search` répondait
-  « aucun résultat » sans aucune source branchée ; un workflow vide rapportait
-  `success` ; « oublier » une mémoire la supprimait ; `count()` mentait sur la taille
-  du magasin ; un aller-retour RAG détruisait une connaissance.
-- Tests : **1773 passants**, 7 ignorés (**214 ajoutés** dans la session).
+  « aucun résultat » sans aucune source branchée ; « envoyé » désignait des e-mails que
+  personne n'a reçus ; douze échecs d'authentification ne déclenchaient aucun signal ;
+  un aller-retour RAG détruisait une connaissance.
+- Tests : **1783 passants**, 7 ignorés (**224 ajoutés** dans la session).
   Branche `claude/galsen-ia-phases-ukwz7p`, tout est poussé.
 
 **Prochaine étape**
-Ouvrir le **VOLET 13 — Notification Engine** et publier son plan de phases.
-Restent ensuite : 15, 17 à 25. **Cadence revenue à une phase par tour.**
+Ouvrir le **VOLET 15 — API Gateway Engine** et publier son plan de phases.
+Restent ensuite : 17 à 25. **Cadence revenue à une phase par tour.**
 
 **Bloqué / à surveiller**
 - **La base de connaissances est toujours vide** : P1 le plus haut, ne dépend plus du code.
