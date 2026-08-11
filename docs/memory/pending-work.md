@@ -87,11 +87,6 @@ gets re-argued at every review.
   is worthless for forensics. It stays P2 only because there is nothing to audit yet;
   **it becomes P1 the day C4 is met.**
 
-- **Report connector health inside `/health`**, alongside the engines. An unconfigured
-  connector must not make the platform unhealthy.
-  *Deciding criterion:* user impact for an operator — one call should answer "what is
-  wrong", not two.
-
 - **Deployment documentation.** Pairs with C4: a deployment nobody can reproduce is a
   one-off.
   *Deciding criterion:* maintenance cost.

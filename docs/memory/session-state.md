@@ -12,7 +12,7 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-11
 
-**En cours** : rien. **Sept VOLETs terminés** dans cette session : 05, 14, 03, 06, 07, 08, 09.
+**En cours** : rien. **Neuf VOLETs terminés** dans cette session : 05, 14, 03, 06, 07, 08, 09, 10.
 
 **Terminé dans cette session**
 - Documents mesurés : `knowledge.md`, `search.md`, `development.md`,
@@ -25,12 +25,12 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
   « aucun résultat » sans aucune source branchée ; un workflow vide rapportait
   `success` ; « oublier » une mémoire la supprimait ; `count()` mentait sur la taille
   du magasin ; un aller-retour RAG détruisait une connaissance.
-- Tests : **1742 passants**, 7 ignorés (**183 ajoutés** dans la session).
+- Tests : **1748 passants**, 7 ignorés (**189 ajoutés** dans la session).
   Branche `claude/galsen-ia-phases-ukwz7p`, tout est poussé.
 
 **Prochaine étape**
-Ouvrir le **VOLET 10 — Integration Engine** et publier son plan de phases.
-Restent ensuite : 11 à 13, 15, 17 à 25. **Cadence revenue à une phase par tour.**
+Ouvrir le **VOLET 11 — Security Engine** et publier son plan de phases.
+Restent ensuite : 12, 13, 15, 17 à 25. **Cadence revenue à une phase par tour.**
 
 **Bloqué / à surveiller**
 - **La base de connaissances est toujours vide** : P1 le plus haut, ne dépend plus du code.

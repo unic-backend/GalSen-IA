@@ -406,3 +406,12 @@
 - **Vie privée tenue** : aucune requête utilisateur, aucun sujet, aucune empreinte de clé dans un rapport. Un test cherche une chaîne distinctive via `/knowledge/search` et vérifie qu'elle n'apparaît pas dans `/analytics`.
 - **Ce qui rendrait l'analytique réelle** : la rétention. C'est une décision de stockage (un ADR), à prendre après le critère C4 — avant un déploiement, il n'y a pas d'historique d'exploitation qui vaille d'être conservé.
 - 8 tests ajoutés par ce VOLET. Suite complète : **1742 tests passent**, 7 ignorés. **VOLET 09 terminé.**
+
+### 2026-08-11 (VOLET 10 — Integration Engine : 10 chapitres, 12 phases)
+- **`/health` ignorait toute la couche d'intégration** : la plateforme avait deux façons de répondre à « qu'est-ce qui ne va pas » — `/health` pour les moteurs, `/connectors/status` pour les intégrations — et rien ne le disait. Entrée P2 du backlog fermée.
+- **La règle qui décide de tout est l'inverse de l'intuition : un connecteur non configuré ne dégrade rien.** La plupart des déploiements n'en configurent aucun ; un `/health` qui passe en `degraded` parce que SMTP est absent est rouge en permanence, donc ignoré. Seul un connecteur **configuré et en erreur** dégrade. Le composant porte une note qui le dit, pour qu'un opérateur ne cherche pas une panne inexistante.
+- La vérification **ne contacte personne** : elle lit la configuration. `/connectors/status` reste la route qui sollicite les services distants — décrire n'est pas vérifier.
+- **5 composants sur 7** (chapitre 02) existent. Absents : le courtier de messages et le service de synchronisation — ils décrivent une plateforme qui échange avec des systèmes qu'elle ne contrôle pas, sur un rythme ; celle-ci appelle directement quand un agent le demande. Consigné pour que « Integration Engine » ne se lise pas comme plus qu'il n'est.
+- **Cycle de vie** : le milieu de la liste existe (développement, validation, déploiement, supervision, documentation) ; **versionnage et retrait sont absents** — un connecteur ne porte pas de version et rien ne le marque déprécié.
+- Les deux connecteurs livrés sont **visibles bien que non configurés** (ADR-007) : les masquer priverait un opérateur de la liste de ce que l'installation saurait joindre une fois branchée.
+- 6 tests ajoutés par ce VOLET. Suite complète : **1748 tests passent**, 7 ignorés. **VOLET 10 terminé.**

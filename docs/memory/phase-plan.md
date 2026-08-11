@@ -8,28 +8,22 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 09 terminé
+**VOLET en cours** : aucun — VOLET 10 terminé
 **Phase courante** : —
 **Terminées** : toutes
-**Cadence** : **une phase par tour** (défaut). Les autorisations d'enchaînement
-données le 2026-08-11 (VOLETs 07, 08 puis 09) sont consommées.
+**Cadence** : **une phase par tour** (défaut). Les enchaînements autorisés le
+2026-08-11 (VOLETs 07, 08, 09, 10) sont consommés.
 
 ```
-VOLET 09 — Analytics Engine : terminé       → docs/architecture/analytics.md
-  Il n'existait aucun moteur analytique : de la collecte sans agrégation.
-  4 composants sur 7 existent désormais, bâtis comme une couche d'agrégation
-  au-dessus de l'audit, de l'historique des workflows et de /metrics — jamais
-  comme un second collecteur.
-  Ajouté : `src/analytics/` et `GET /analytics`.
-  Déclaré absent avec sa raison : tendances, détection d'anomalies, tableaux de
-  bord — aucune série temporelle ne survit à un redémarrage (ADR-009).
+VOLET 10 — Integration Engine : terminé     → docs/architecture/integration.md
+  `/health` ignorait la couche d'intégration : deux routes répondaient à
+  « qu'est-ce qui ne va pas » sans se recouper. Fermé (entrée P2 du backlog).
+  Règle posée : un connecteur non configuré ne dégrade rien — sinon /health
+  serait rouge en permanence, donc ignoré.
+  5 composants sur 7 ; courtier de messages et synchronisation absents ;
+  versionnage et retrait absents du cycle de vie des intégrations.
 ```
-
-**Ce qui rendrait l'analytique réelle** : la rétention des données analytiques.
-C'est une décision de stockage (un ADR), à prendre **après** le critère C4 —
-avant un déploiement, il n'y a pas d'historique d'exploitation qui vaille d'être
-conservé. Entré au backlog.
 
 **Prochaine action** : choisir le prochain VOLET, publier son plan de phases,
-puis s'arrêter. Par ordre numérique : **VOLET 10 — Integration Engine**.
-Restent ensuite : 11 à 13, 15, 17 à 25.
+puis s'arrêter. Par ordre numérique : **VOLET 11 — Security Engine**.
+Restent ensuite : 12, 13, 15, 17 à 25.

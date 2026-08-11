@@ -195,6 +195,7 @@ class ComponentHealthChecker(HealthChecker):
             "knowledge_engine": self._check_knowledge_engine(),
             "tool_engine": self._check_tool_engine(),
             "storage": self._check_storage(),
+            "connectors": self._check_connectors(),
         }
 
         overall = self._compute_overall_status(components.values())
@@ -463,6 +464,48 @@ class ComponentHealthChecker(HealthChecker):
         if "degraded" in statuses:
             return "degraded"
         return "healthy"
+
+    def _check_connectors(self) -> ComponentHealth:
+        """Rapporte l'état des connecteurs externes (VOLET 10, chapitre 06).
+
+        Règle qui décide de tout ici : **un connecteur non configuré ne rend pas
+        la plateforme malsaine.** La plupart des déploiements n'en configurent
+        aucun, et faire passer `/health` en `degraded` pour un SMTP absent
+        rendrait l'indicateur inutilisable — il serait rouge en permanence, donc
+        ignoré. Seul un connecteur configuré *et* en erreur dégrade la santé.
+
+        Cette vérification ne contacte personne : elle lit la configuration.
+        `/connectors/status` est la route qui sollicite les services distants.
+        """
+        try:
+            from src.connectors import get_shared_connector_registry
+
+            registre = get_shared_connector_registry()
+            resume = registre.check_all()
+        except Exception as error:  # pragma: no cover - chemin de secours
+            return ComponentHealth(
+                status="degraded",
+                details={"reason": "registre de connecteurs illisible"},
+                error=str(error),
+            )
+
+        par_statut = resume.get("by_status", {})
+        en_erreur = par_statut.get("error", 0) + par_statut.get("unreachable", 0)
+
+        return ComponentHealth(
+            status="degraded" if en_erreur else "healthy",
+            details={
+                "total": resume.get("total", 0),
+                "ready": resume.get("ready", 0),
+                "by_status": par_statut,
+                # Dit explicitement pourquoi « non configuré » ne dégrade rien,
+                # pour qu'un opérateur ne cherche pas une panne inexistante.
+                "note": (
+                    "un connecteur non configuré est normal et ne dégrade pas la "
+                    "santé ; seul un connecteur configuré et en erreur le fait"
+                ),
+            },
+        )
 
     @staticmethod
     def _get_storage_backend() -> str:

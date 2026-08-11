@@ -10,6 +10,20 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **VOLET 10 — Integration Engine: `/health` ignored the integration layer.** Measured
+  state → `docs/architecture/integration.md`
+  - The platform had two ways to answer "what is wrong" — `/health` for engines,
+    `/connectors/status` for integrations — and nothing said so. `/health` now carries a
+    `connectors` component (closes a P2 backlog entry)
+  - **An unconfigured connector does not degrade anything**, which is the opposite of the
+    intuition: most deployments configure none, and an endpoint that turns `degraded`
+    because SMTP is absent is red permanently, therefore ignored. Only a connector that is
+    configured *and* failing degrades the platform, and the component says so in a note
+  - The check reads configuration and **contacts nobody**; `/connectors/status` remains the
+    route that reaches out
+  - **Five of seven components** exist; the message broker and synchronisation service are
+    absent, and versioning and retirement are missing from the integration lifecycle
+  - 6 new tests; full suite 1 748 passing, 7 skipped
 - **VOLET 09 — Analytics Engine: collection existed, aggregation did not.** Measured state
   → `docs/architecture/analytics.md`
   - `src/` had no analytics package: the audit engine recorded events and `/metrics`
