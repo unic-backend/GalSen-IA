@@ -23,6 +23,9 @@ dist/
 build/
 .cache/
 *.log
+# Archives de rotation : `*.log` ne les couvre pas, si bien que
+# application.log.1 à .3 étaient suivis et modifiés à chaque exécution.
+*.log.*
 
 # IDE
 .vscode/
