@@ -27,6 +27,7 @@ from .execution_planner import ExecutionPlanner
 from .result_aggregator import ResultAggregator
 from .retry_manager import RetryManager
 from .agent_dispatcher import AgentDispatcher
+from .workflow_history import WorkflowHistory
 from .logger import Logger
 from ..agent.context import AgentContext
 from ..audit_engine.types import AuditEventType, AuditStatus, generate_request_id
@@ -65,6 +66,15 @@ class RouterEngine:
         # moteurs que le reste de la plateforme
         self.engine_registry = get_shared_registry()
 
+        # Validation des workflows au démarrage (VOLET 08, ch. 02 et 03). Un
+        # workflow sans étape rapportait `success` sans rien faire, et un
+        # workflow citant un agent inexistant s'arrêtait à mi-parcours : les
+        # deux se chargeaient sans le moindre signal.
+        self.workflow_loader.validate(self.agent_loader.get_all_agents().keys())
+
+        # Journal borné des exécutions, pour le taux de succès du chapitre 09.
+        self.history = WorkflowHistory()
+
         self.logger.info("RouterEngine initialisé avec succès.")
 
     def process_request(
@@ -98,6 +108,18 @@ class RouterEngine:
             execution_plan = self.execution_planner.plan_execution(workflow_id)
             workflow_id_to_use = workflow_id or self.workflow_loader.get_default_workflow()
             workflow_config = self.workflow_loader.get_workflow(workflow_id_to_use)
+
+            # Un workflow inexécutable est refusé ici plutôt que de produire une
+            # réponse crédible : mieux vaut une erreur qui nomme la cause qu'un
+            # `success` obtenu sans avoir exécuté un seul agent.
+            if not self.workflow_loader.is_executable(workflow_id_to_use):
+                raisons = "; ".join(
+                    p.message for p in self.workflow_loader.get_problems(workflow_id_to_use)
+                    if p.gravite == "error"
+                )
+                raise ValueError(
+                    f"Workflow '{workflow_id_to_use}' inexécutable : {raisons}"
+                )
 
             self.logger.info(f"Workflow '{workflow_id_to_use}' sélectionné.")
             # Le journal dit ce qui va se passer, pas ce que le workflow déclare :
@@ -215,6 +237,17 @@ class RouterEngine:
                 and r.get('approval_request_id')
             ]
 
+            # Historique d'exécution (VOLET 08, ch. 03 et 09) : sans lui, on ne
+            # peut pas dire si un workflow échoue une fois sur dix ou neuf.
+            self.history.record(
+                workflow_id=workflow_id_to_use,
+                status=status,
+                duration_seconds=execution_time,
+                agents_executed=len(all_agent_results),
+                failed_agents=failed_agents,
+                request_id=request_id,
+            )
+
             response = {
                 "status": status,
                 "user_request": user_request,
@@ -255,12 +288,20 @@ class RouterEngine:
 
         except Exception as e:
             self.logger.error(f"Erreur inattendue lors du traitement de la requête: {e}", exc_info=True)
+            duree = time.time() - start_time
+            # Un échec compte dans l'historique : un taux de succès qui n'observe
+            # que les réussites vaut toujours 100 %.
+            self.history.record(
+                workflow_id=workflow_id or self.workflow_loader.get_default_workflow(),
+                status="error",
+                duration_seconds=duree,
+            )
             error_response = {
                 "status": "error",
                 "user_request": user_request,
                 "error": str(e),
                 "request_id": request_id,
-                "execution_time_seconds": round(time.time() - start_time, 2)
+                "execution_time_seconds": round(duree, 2)
             }
             if context is not None:
                 context.record_audit(

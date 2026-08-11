@@ -382,3 +382,15 @@
 - **Qualité et rétention** (`memory_quality.py`) : 4 métriques sur 6 calculées — fraîcheur, doublons **par propriétaire** (le même contenu chez deux utilisateurs n'est pas un doublon), complétude des métadonnées, répartition par statut et type. Précision de récupération et satisfaction déclarées indisponibles avec leur raison.
 - **`list_inactive()`** répond au « revoir les mémoires inactives » du chapitre 08 en les **nommant**, seuil configurable (90 jours). Rien n'est archivé automatiquement : retirer une mémoire de l'usage est une décision.
 - 15 tests ajoutés par ce VOLET. Suite complète : **1715 tests passent**, 7 ignorés. **VOLET 07 terminé.**
+
+### 2026-08-11 (VOLET 08 — Workflow Engine : 10 chapitres, 12 phases)
+- **Rien ne validait un workflow**, alors que le chapitre 02 place « valider les entrées » en deuxième étape et le chapitre 03 en fait la deuxième étape du cycle de vie. Un workflow citant **un agent inexistant** se chargeait sans bruit et échouait à mi-parcours ; un workflow **sans aucune étape** produisait un plan vide dont l'exécution rapportait `success` sans avoir exécuté un seul agent.
+- `workflow_validator.py` sépare deux gravités : une **erreur** rend le workflow inexécutable et le moteur refuse de le lancer ; un **avertissement** signale une définition incomplète. Les doublons ne sont cherchés qu'à l'intérieur d'une même liste — un agent présent dans `pipeline` et dans `execution` est la même séquence exprimée deux fois.
+- **Trois déclarations ne configuraient rien**, découvertes en validant le registre réel :
+  1. le bloc `execution` **à la racine** de `workflows.yaml` (le planificateur lit `execution` *dans* le workflow) ;
+  2. le bloc `failure` **à la racine** : le code lit `workflows.execution.failure.*` via `ConfigLoader`, donc dans `config/settings.yaml`, **où la clé n'existait pas** — `max_attempts` et `rollback` retombaient toujours sur les défauts du code ;
+  3. aucun workflow ne portait `version` ni `owner` (chapitre 04).
+  Corrigé : la configuration d'échec est déclarée là où elle est lue, avec les valeurs réellement en vigueur ; les blocs morts sont retirés ; les métadonnées sont posées. Le validateur avertit si un bloc racine revient.
+- **Aucun historique d'exécution** (chapitre 03) et donc **aucun taux de succès** (chapitre 09, sa première métrique) : chaque exécution rapportait son statut et disparaissait. `WorkflowHistory` enregistre chaque exécution, **échecs compris** — un taux qui n'observe que les réussites vaut toujours 100 %. `success_rate` vaut `None` sans exécution, jamais 0.0. La requête de l'utilisateur n'est pas conservée. Historique borné à 500, en mémoire du processus, et il le dit (ADR-009).
+- **Quatre composants sur sept** du chapitre 02 existent : ni gestionnaire d'état, ni répartiteur d'événements, ni déclencheurs. Consigné pour que « Workflow Engine » ne se lise pas comme plus qu'il n'est.
+- 19 tests ajoutés par ce VOLET. Suite complète : **1734 tests passent**, 7 ignorés. **VOLET 08 terminé.**

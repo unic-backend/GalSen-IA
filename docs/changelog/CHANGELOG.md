@@ -10,6 +10,23 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Fixed
+- **VOLET 08 — Workflow Engine: nothing validated a workflow.** Measured state →
+  `docs/architecture/workflows.md`
+  - A workflow citing **an agent that does not exist** loaded silently and failed halfway
+    through; one with **no steps at all** returned `success` having executed nothing.
+    `workflow_validator.py` separates blocking errors from warnings, and the engine now
+    refuses to run a workflow that would produce a misleading result
+  - **Three declarations configured nothing**: the root `execution:` block (the planner
+    reads `execution` *inside* a workflow), the root `failure:` block (the code reads it
+    from `config/settings.yaml`, where the key did not exist, so `max_attempts` and
+    `rollback` always fell back to code defaults), and no workflow carried `version` or
+    `owner`. The failure settings now live where they are read, the dead blocks are gone,
+    and the metadata is in place
+  - **Added `WorkflowHistory`**: execution history and the success rate chapter 09 asks
+    for. Failures are recorded too — a rate that only observes successes is always 100 %.
+    `success_rate` is `None` with no runs, never 0.0; the user's request is not stored;
+    the history is bounded at 500 runs and says it dies with the process (ADR-009)
+  - 19 new tests; full suite 1 734 passing, 7 skipped
 - **VOLET 07 — Memory Engine: four declared rules that nothing applied.** Measured state →
   `docs/architecture/memory.md`
   - **"Forgetting" deleted permanently**: `forget_memory()` called `delete_memory()`, and

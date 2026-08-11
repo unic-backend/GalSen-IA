@@ -8,31 +8,32 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : 07 — Memory Engine
-**Phases** : 12
-**Phase courante** : 5.1
-**Terminées** : 1.1, 2.1, 2.2, 3.1, 4.1
-**Cadence** : **deux VOLETs d'affilée en autonomie** (07 puis 08), autorisés
-explicitement par l'utilisateur le 2026-08-11 : il dort, ne sera pas réveillé, et
-m'a donné son feu vert pour décider seul. Retour au défaut d'une phase par tour
-dès qu'il le redemande.
+**VOLET en cours** : aucun — VOLETs 07 et 08 terminés
+**Phase courante** : —
+**Terminées** : toutes
+**Cadence** : retour au **défaut d'une phase par tour**. L'autorisation de deux
+VOLETs d'affilée en autonomie (2026-08-11, utilisateur endormi) est **consommée**.
 
 ```
-VOLET 07 — Memory Engine
-10 chapitres → 12 phases
+VOLET 07 — Memory Engine : terminé          → docs/architecture/memory.md
+  Quatre règles déclarées que rien n'appliquait : « oublier » supprimait,
+  l'archivage n'aurait rien changé, l'expiration attendait un nettoyage manuel,
+  et le nettoyage comptait des suppressions que le cache annulait.
+  `consolidate_memory()` retournait 0 : elle lève désormais NotImplementedError.
+  Ajouté : `quality_report()` et `list_inactive()`.
 
-Ch. 01  Vision           → 1 phase   1.1  état mesuré du moteur
-Ch. 02  Architecture     → 2 phases  2.1  les 7 composants ; 2.2  le flux en 7 étapes
-Ch. 03  Cycle de vie     → 1 phase   3.1  les 8 étapes : archivage et expiration
-Ch. 04  Classification   → 1 phase   4.1  types, priorités, statuts réellement utilisés
-Ch. 05  Récupération     → 2 phases  5.1  pipeline ; 5.2  pertinence et cache mesurés
-Ch. 06  Synchronisation  → 1 phase   6.1  ce qui est partagé entre services
-Ch. 07  Sécurité         → 1 phase   7.1  isolation par utilisateur, vie privée
-Ch. 08  Gouvernance      → 1 phase   8.1  rétention, propriété des mémoires
-Ch. 09  Qualité          → 1 phase   9.1  métriques réellement calculables
-Ch. 10  Gouvernance moteur → 1 phase 10.1 clôture, mémoire et CHANGELOG
-
-Total : 12 phases.
+VOLET 08 — Workflow Engine : terminé        → docs/architecture/workflows.md
+  Rien ne validait un workflow : agent inexistant accepté, workflow vide
+  rapportant `success`. Trois déclarations ne configuraient rien, dont la
+  configuration d'échec lue dans un fichier où elle n'existait pas.
+  Ajouté : `workflow_validator.py` et `WorkflowHistory` (taux de succès).
 ```
 
-**Puis VOLET 08 — Workflow Engine**, même méthode.
+**Ce que ces deux VOLETs n'ont pas fait, et le disent** : la consolidation de
+mémoire (aucune règle n'existe pour ce qui passe du court au long terme), le
+gestionnaire d'état et le répartiteur d'événements du chapitre 02 du VOLET 08,
+et la précision de récupération (aucun jeu de référence).
+
+**Prochaine action** : choisir le prochain VOLET, publier son plan de phases,
+puis s'arrêter. Par ordre numérique : **VOLET 09 — Analytics Engine**.
+Restent ensuite : 10 à 13, 15, 17 à 25.

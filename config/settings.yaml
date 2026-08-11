@@ -20,6 +20,17 @@ tools:
 
 workflows:
   registry: "../workflows/workflows.yaml"
+  # Lu par RouterEngine et AgentRuntime via ConfigLoader. Ces réglages étaient
+  # déclarés dans workflows.yaml, où personne ne les lisait : les valeurs
+  # ci-dessous sont celles qui s'appliquaient réellement (les défauts du code).
+  execution:
+    failure:
+      retry: true
+      max_attempts: 3
+      # `rollback` n'annule rien : il arrête le pipeline au premier échec.
+      # Le nom est conservé pour ne pas casser la configuration existante ;
+      # le comportement est décrit dans docs/architecture/orchestration.md.
+      rollback: true
 
 memory:
   schema: "../memory/schema.md"

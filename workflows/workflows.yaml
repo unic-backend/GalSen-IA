@@ -6,6 +6,8 @@ workflows:
 
   standard:
     description: "Workflow principal"
+    version: "1.0"
+    owner: "unic-backend"
 
     pipeline:
 
@@ -36,6 +38,8 @@ workflows:
   # tourne en quelques secondes, ce qui le rend testable de bout en bout.
   revue:
     description: "Relecture d'un changement : conventions, puis secrets et appels dangereux"
+    version: "1.0"
+    owner: "unic-backend"
 
     pipeline:
 
@@ -55,31 +59,3 @@ workflows:
         - reviewer
 
         - security
-
-execution:
-
-  parallel_agents:
-
-    - researcher
-
-    - security
-
-  sequential_agents:
-
-    - planner
-
-    - coder
-
-    - reviewer
-
-    - tester
-
-    - deployment
-
-failure:
-
-  retry: true
-
-  max_attempts: 3
-
-  rollback: true

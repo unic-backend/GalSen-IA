@@ -4,9 +4,12 @@ Workflow Loader for the Router Engine.
 Charge les workflows depuis le registre de workflows.
 """
 
+import logging
 import yaml
 import os
-from typing import Dict, Any
+from typing import Any, Dict, Iterable, List, Optional
+
+from .workflow_validator import ProblemeWorkflow, blocking_errors, validate_registry
 
 
 class WorkflowLoader:
@@ -22,6 +25,9 @@ class WorkflowLoader:
         self.registry_path = registry_path
         self.workflows: Dict[str, Dict[str, Any]] = {}
         self.default_workflow: str = ""
+        self._registry: Dict[str, Any] = {}
+        self._problems: List[ProblemeWorkflow] = []
+        self._logger = logging.getLogger(__name__)
         self._load_workflows()
 
     def _load_workflows(self) -> None:
@@ -30,6 +36,7 @@ class WorkflowLoader:
             with open(self.registry_path, 'r', encoding='utf-8') as f:
                 data = yaml.safe_load(f)
                 if data:
+                    self._registry = data
                     self.default_workflow = data.get('default_workflow', 'standard')
                     if 'workflows' in data:
                         self.workflows = data['workflows']
@@ -72,3 +79,43 @@ class WorkflowLoader:
             Dictionnaire de tous les workflows, indexé par leur identifiant.
         """
         return self.workflows
+
+    def validate(self, agents_connus: Iterable[str],
+                 journaliser: bool = True) -> List[ProblemeWorkflow]:
+        """
+        Valide le registre chargé contre les agents réellement enregistrés.
+
+        La validation n'a pas lieu au chargement : le chargeur ne connaît pas la
+        liste des agents, et la lui faire deviner recréerait le couplage que le
+        registre déclaratif évite. C'est l'appelant qui la déclenche, une fois.
+
+        Args:
+            agents_connus: identifiants des agents enregistrés
+            journaliser: écrit chaque problème dans le journal
+
+        Returns:
+            La liste des problèmes trouvés (erreurs et avertissements).
+        """
+        self._problems = validate_registry(self._registry, agents_connus)
+        if journaliser:
+            for probleme in self._problems:
+                detail = probleme.to_dict()
+                niveau = self._logger.error if probleme.gravite == "error" else self._logger.warning
+                niveau("Workflow '%s' — %s", detail["workflow"], detail["message"])
+        return self._problems
+
+    def get_problems(self, workflow_id: Optional[str] = None) -> List[ProblemeWorkflow]:
+        """Retourne les problèmes trouvés lors de la dernière validation."""
+        if workflow_id is None:
+            return list(self._problems)
+        return [p for p in self._problems if p.workflow == workflow_id]
+
+    def is_executable(self, workflow_id: str) -> bool:
+        """
+        Indique si un workflow peut être exécuté sans produire un résultat trompeur.
+
+        Un workflow sans étape ou citant un agent inexistant n'est pas
+        exécutable : le premier rapporterait un succès sans rien faire, le second
+        s'arrêterait à mi-parcours.
+        """
+        return not blocking_errors(self.get_problems(workflow_id))
