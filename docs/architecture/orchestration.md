@@ -250,3 +250,89 @@ What is **not** visible: nothing reports progress *during* a run (the response a
 the end), no per-agent duration is recorded anywhere durable, and `/metrics` counts HTTP
 traffic and searches but not agent executions. An operator watching a 99-second pipeline
 sees nothing until it finishes.
+
+---
+
+# The third orchestration manual (VOLET 19)
+
+`VOLET_19.md` — *AI Agent Orchestration Engine* — is the third manual covering this
+subsystem, after VOLET 06 (Orchestration) and VOLET 08/18 (Workflow). Only what it asks
+beyond those is treated here.
+
+## The seven components (chapter 02), against the code
+
+| Component the manual names | What plays it | State |
+|----------------------------|---------------|-------|
+| Orchestration Core | `RouterEngine.process_request` | present |
+| Agent Registry | `AgentLoader` + `agents.yaml` | present |
+| Monitoring Service | `WorkflowHistory` | present |
+| Decision Engine | `ExecutionPlanner` | **partial**: reads the declaration, decides nothing |
+| **Communication Bus** | shared `AgentContext` | **absent as a bus**: agents share state, they do not send messages |
+| **Task Scheduler** | — | **absent**: a run starts because a request arrived |
+| **Resource Manager** | — | **absent**: see below |
+
+## The finding: one agent ate 96 % of every request
+
+The section above closes on "no per-agent duration is recorded anywhere durable". This
+VOLET measured what that was hiding. On the shipped `standard` pipeline, with a trivial
+request:
+
+```
+TOTAL 45.2s
+  tester           43.48s  success     ← 96 %
+  researcher        1.25s  success
+  monitor           0.14s  success
+  planner           0.09s  success
+  … five more agents, 0.22s combined
+```
+
+The `tester` agent runs the project's full pytest suite. It does so on **every request**,
+whatever the request asks — "bonjour" costs 45 seconds because the platform tests itself
+before answering. Chapter 03 makes monitoring stage 5 and optimisation stage 7; you cannot
+optimise what you do not measure, and the only number recorded was the 45.
+
+### What it does now
+
+Each agent's duration — retries included, because that is what the request actually waited
+for — is recorded with the run, and `stats()` aggregates it:
+
+```
+agent_time:
+  tester:     {executions: 1, total_seconds: 46.14, share: 0.9631}
+  researcher: {executions: 1, total_seconds:  1.34, share: 0.0279}
+```
+
+The share is computed over the **sum of agent durations**, not over request duration: what
+happens between two agents belongs to neither, and dividing by the total would invent idle
+time that is not there.
+
+This does not make the pipeline faster. It makes the cost visible and attributable, which
+is the prerequisite: the fix — whether `tester` belongs in a request-time pipeline at all —
+is a decision about the pipeline, not a measurement, and it is recorded in
+`docs/memory/pending-work.md` rather than taken here.
+
+## Resource Manager, and why no timeout was invented
+
+Chapter 02 names a Resource Manager and chapter 03 makes resource allocation stage 3.
+Neither exists: nothing bounds an agent's execution, so an agent that hangs hangs the whole
+request, and the retry manager cannot help — it only sees results, and a call that never
+returns produces none.
+
+No timeout was added, and the reason is not oversight. Python cannot kill a thread: a
+`future.result(timeout=…)` would free the caller while the runaway agent keeps running and
+keeps its resources. That is a timeout in appearance only, and this repository has paid for
+appearances before. A real bound needs process isolation, which changes how agents are
+loaded and deserves an ADR rather than a phase.
+
+What does exist: `RetryManager` bounds *attempts* (3 by default), and the `tester` agent
+carries its own `BATCH_TIMEOUT` from VOLET 06. The gap is the general case.
+
+## Lifecycle, security, governance (chapters 03, 05, 07, 08, 10)
+
+Stages 1, 2, 4, 5 and 6 are covered above and in the VOLET 06 sections. Stage 3 is the
+Resource Manager gap. Stage 8, retirement and archival, has the same answer as VOLET 18:
+the bounded in-memory history is all there is, and it says so in its own output.
+
+Security, compliance and governance restate VOLET 11 and the ADR-010 identity model, with
+the same conclusion as elsewhere: the governance bodies these chapters assign work to do
+not exist, and writing down a review cadence nobody performs would be a fabrication.

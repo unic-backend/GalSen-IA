@@ -44,7 +44,8 @@ class WorkflowHistory:
                agents_executed: int = 0, failed_agents: int = 0,
                request_id: Optional[str] = None,
                workflow_version: str = VERSION_INCONNUE,
-               failing_agents: Optional[Iterable[str]] = None) -> None:
+               failing_agents: Optional[Iterable[str]] = None,
+               agent_durations: Optional[Dict[str, float]] = None) -> None:
         """
         Enregistre une exécution terminée.
 
@@ -65,6 +66,7 @@ class WorkflowHistory:
                 "agents_executed": agents_executed,
                 "failed_agents": failed_agents,
                 "failing_agents": sorted(set(failing_agents or ())),
+                "agent_durations": dict(agent_durations or {}),
                 "request_id": request_id,
                 "at": time.time(),
             })
@@ -109,6 +111,10 @@ class WorkflowHistory:
             "by_version": self._par_version(executions),
             # Nommer l'agent qui échoue, pas seulement en compter (ch. 06).
             "failing_agents": self._agents_en_echec(executions),
+            # Où passe le temps (VOLET 19, ch. 03 étapes 5 et 7). Une durée
+            # totale ne dit pas quel agent la consomme, et on n'optimise pas ce
+            # qu'on ne mesure pas.
+            "agent_time": self._temps_par_agent(executions),
             "median_duration_seconds": durees[len(durees) // 2] if durees else None,
             "max_duration_seconds": durees[-1] if durees else None,
             "capacity": self._capacity,
@@ -116,6 +122,37 @@ class WorkflowHistory:
                 "mémoire du processus : un redémarrage remet l'historique à zéro "
                 "et une autre instance a le sien (ADR-009)"
             ),
+        }
+
+    @staticmethod
+    def _temps_par_agent(executions: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+        """
+        Agrège le temps passé par agent, du plus coûteux au moins coûteux.
+
+        Args:
+            executions: les exécutions déjà filtrées par l'appelant.
+
+        Returns:
+            Pour chaque agent : le nombre d'exécutions, le temps total et la
+            part du temps d'agent qu'il représente. La part est calculée sur la
+            somme des durées d'agents, pas sur la durée des requêtes : ce qui se
+            passe entre deux agents n'appartient à aucun d'eux.
+        """
+        totaux: Dict[str, float] = {}
+        comptes: Dict[str, int] = {}
+        for execution in executions:
+            for agent, duree in (execution.get("agent_durations") or {}).items():
+                totaux[agent] = totaux.get(agent, 0.0) + duree
+                comptes[agent] = comptes.get(agent, 0) + 1
+
+        somme = sum(totaux.values())
+        return {
+            agent: {
+                "executions": comptes[agent],
+                "total_seconds": round(total, 3),
+                "share": round(total / somme, 4) if somme else None,
+            }
+            for agent, total in sorted(totaux.items(), key=lambda paire: paire[1], reverse=True)
         }
 
     @staticmethod

@@ -9,6 +9,30 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Added
+- **VOLET 19 — one agent ate 96 % of every request, and nothing said so.** Measured state
+  → `docs/architecture/orchestration.md`
+  - On the shipped `standard` pipeline, with the request "bonjour": total 45.2 s, of which
+    **43.5 s in the `tester` agent**, which runs the project's full pytest suite before the
+    platform answers — on **every** request, whatever it asks. The other eight agents come
+    to 1.7 s combined
+  - Only the total duration was recorded, so the cost existed but could not be attributed.
+    Each agent's duration — retries included, because that is what the request actually
+    waited for — is now stored with the run, and `stats()` aggregates it as `agent_time`
+    with each agent's share. The share is computed over the **sum of agent durations**, not
+    over request duration: what happens between two agents belongs to neither, and dividing
+    by the total would invent idle time. Verified end to end at 96.3 %
+  - **The fix itself was not taken here.** Moving `tester` out of the pipeline, making it a
+    separate workflow, or scoping it to changed files are different enough decisions that
+    picking one is not a phase's call. Recorded as **P1** in `pending-work.md` with the
+    measurement
+  - **No per-agent timeout was invented.** Nothing bounds an agent's execution and a
+    hanging agent hangs the request, but Python cannot kill a thread: a
+    `future.result(timeout=…)` would free the caller while the runaway agent keeps running
+    and holding its resources — a timeout in appearance only. A real bound needs process
+    isolation, which deserves an ADR
+  - 6 new tests, 1 adapted; full suite 1 972 passing, 7 skipped
+
 ### Fixed
 - **VOLET 18 — every workflow declared a version that nothing read.** Measured state →
   `docs/architecture/workflows.md`

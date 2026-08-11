@@ -160,6 +160,7 @@ class RouterEngine:
 
             # Exécution séquentielle des agents (pour une première version simple)
             all_agent_results = []  # Pour stocker tous les résultats détaillés
+            agent_durations = {}  # Durée observée de chaque agent, reprises comprises
 
             for agent_id in ordered_agents:
                 if not self.agent_loader.is_enabled(agent_id):
@@ -176,11 +177,18 @@ class RouterEngine:
                 # Chaque agent reçoit la demande d'origine. Les productions des
                 # agents précédents lui parviennent par le contexte, ce qui évite
                 # de déformer la demande à chaque étape.
+                # Durée par agent (VOLET 19, ch. 03 étapes 5 et 7). Seule la
+                # durée totale était mesurée, si bien que l'orchestration ne
+                # pouvait pas nommer son propre goulot d'étranglement. Le temps
+                # inclut les reprises : c'est ce que la requête a réellement
+                # attendu.
+                debut_agent = time.perf_counter()
                 agent_result = self.retry_manager.execute_with_retry(
                     dispatch_agent,
                     agent_config,
                     user_request
                 )
+                agent_durations[agent_id] = round(time.perf_counter() - debut_agent, 3)
 
                 all_agent_results.append(agent_result)
                 # Le contexte est enrichi au fur et à mesure : l'agent suivant
@@ -254,6 +262,7 @@ class RouterEngine:
                 agents_executed=len(all_agent_results),
                 failed_agents=failed_agents,
                 failing_agents=failing_agents,
+                agent_durations=agent_durations,
                 request_id=request_id,
             )
 

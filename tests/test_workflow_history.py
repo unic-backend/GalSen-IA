@@ -74,7 +74,7 @@ def test_la_requete_utilisateur_n_est_pas_conservee(historique):
     entree = historique.recent(1)[0]
     assert set(entree) == {"workflow", "workflow_version", "status", "duration_seconds",
                            "agents_executed", "failed_agents", "failing_agents",
-                           "request_id", "at"}
+                           "agent_durations", "request_id", "at"}
 
 
 def test_la_portee_est_annoncee(historique):

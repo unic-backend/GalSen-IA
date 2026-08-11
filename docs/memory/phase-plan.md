@@ -8,27 +8,30 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 18 terminé
+**VOLET en cours** : aucun — VOLET 19 terminé
 **Phase courante** : —
-**Terminées** : toutes (7 phases)
+**Terminées** : toutes (6 phases)
 **Cadence** : **une phase par tour** (défaut).
 
 ```
-VOLET 18 — Workflow Engine (second manuel) : terminé
-                                   → docs/architecture/workflows.md
-  `VOLET_18.md` est un second manuel Workflow, pas l'« Infrastructure & DevOps »
-  annoncé par le nom du dossier. Seul ce qu'il demande en plus du VOLET 08 a été
-  traité.
-  Défaut central : chaque workflow déclarait une version que rien ne lisait, si
-  bien que deux définitions se confondaient dans le même taux d'échec. La
-  version est désormais enregistrée à chaque exécution et le rapport la ventile.
-  L'analyse des défaillances nomme l'agent en cause au lieu de le compter.
-  Absents et assumés : ordonnanceur, bus d'événements, dépôt de définitions,
-  file d'attente, et les instances de gouvernance que le projet n'a pas.
+VOLET 19 — AI Agent Orchestration : terminé
+                                   → docs/architecture/orchestration.md
+  Troisième manuel sur ce sous-système, après les VOLETs 06 et 08/18.
+  Défaut central mesuré : sur le pipeline livré, l'agent `tester` consomme
+  43,5 s d'une requête de 45,2 s — 96 % — parce qu'il exécute toute la suite
+  pytest avant que la plateforme réponde, à chaque requête. « bonjour » coûte
+  45 secondes. Rien ne mesurait la durée par agent : le coût était invisible.
+  La durée de chaque agent est désormais enregistrée et ventilée (`agent_time`).
+  Le correctif est une décision sur le pipeline, pas une mesure → P1 du backlog.
+  Aucun délai d'attente inventé : Python ne peut pas tuer un fil, un
+  `future.result(timeout=…)` libérerait l'appelant pendant que l'agent continue.
+  Absents et assumés : bus de communication, ordonnanceur, gestionnaire de
+  ressources.
 ```
 
-**Restants** : 19 à 25 — soit 7 VOLETs, dont 4 portent un sujet déjà traité avec
-un contenu différent (19, 20, 21, 24). Le VOLET 01 n'a jamais eu de plan de
-phases formel.
+**Restants** : 20 à 25 — soit 6 VOLETs, dont 3 portent un sujet déjà traité avec
+un contenu différent (20, 21, 24). Le VOLET 01 n'a jamais eu de plan de phases
+formel.
 
-**Prochaine action** : par ordre numérique, **VOLET 19**.
+**Prochaine action** : par ordre numérique, **VOLET 20** — vérifier son titre
+réel dans le fichier avant de planifier.
