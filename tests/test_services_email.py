@@ -288,14 +288,22 @@ class TestEmailManager:
         self.manager = EmailManagerImpl()
 
     def test_send_email(self):
-        """send_email() doit retourner un résultat positif."""
+        """Sans transport configuré, l'envoi est refusé et le message conservé.
+
+        Ce test affirmait `result.success` alors qu'aucun serveur n'était
+        contacté : il rendait permanente une réponse fabriquée. Il vérifie
+        désormais ce qui se passe vraiment.
+        """
         result = self.manager.send_email(
             subject="Test", body="Message", sender="a@b.com",
             recipients=["b@c.com"],
         )
-        assert result.success
+        assert result.success is False
+        assert "aucun transport" in result.message.lower()
+        # Le message est enregistré : ce qui a été rédigé ne disparaît pas.
         assert result.email_id is not None
         assert result.email_id.startswith("email_")
+        assert self.manager.get_email(result.email_id) is not None
 
     def test_send_and_get(self):
         """send_email() puis get_email() doivent retourner le même email."""
@@ -306,7 +314,8 @@ class TestEmailManager:
         email = self.manager.get_email(result.email_id)
         assert email is not None
         assert email.subject == "Sujet"
-        assert email.status.value == "sent"
+        # `sent` seulement quand un transport a accepté le message.
+        assert email.status.value == "failed"
 
     def test_send_email_empty_subject(self):
         """send_email() avec un sujet vide doit échouer."""
@@ -362,8 +371,9 @@ class TestEmailManager:
             is_html=True,
             metadata={"source": "test"},
         )
-        assert result.success
+        assert result.success is False  # aucun transport configuré
         assert result.details["cc"] == ["cc@c.com"]
+        assert result.details["delivered"] is False
 
     def test_list_emails(self):
         """list_emails() doit retourner les emails envoyés."""
@@ -398,7 +408,8 @@ class TestEmailManager:
         self.manager.send_email(subject="B", body="b", sender="b@b.com", recipients=["r@b.com"])
         stats = self.manager.stats()
         assert stats["total"] == 2
-        assert stats["by_status"]["sent"] == 2
+        # Enregistrés mais non délivrés : le compte le dit.
+        assert stats["by_status"]["failed"] == 2
 
     def test_clear(self):
         """clear() doit tout supprimer."""
@@ -432,12 +443,18 @@ class TestEmailTransport:
     """Vérifie les transports email."""
 
     def test_noop_transport_default_behavior(self):
-        """NoopTransport doit retourner un succès sans effet."""
+        """Le transport qui n'envoie rien doit le dire, pas rendre un succès.
+
+        Il retournait `(True, "")`, si bien que le gestionnaire répondait
+        « Email envoyé » sans qu'aucun serveur ait été contacté.
+        """
         from src.services.email.transport import NoopTransport
         transport = NoopTransport()
         ok, msg = transport.send("a@b.com", ["b@c.com"], "Sujet", "Corps")
-        assert ok
-        assert msg == ""
+        assert ok is False
+        assert "aucun transport" in msg.lower()
+        # Le message dit quoi faire, pas seulement que ça n'a pas marché.
+        assert "GALSEN_SMTP_HOST" in msg
 
     def test_console_transport_logs(self):
         """ConsoleTransport doit logger le message."""
@@ -543,7 +560,7 @@ class TestEmailTransport:
         assert "<i>" not in result
 
     def test_manager_with_noop_transport(self):
-        """EmailManagerImpl avec NoopTransport doit fonctionner comme avant."""
+        """Sans transport, le gestionnaire stocke et signale la non-délivrance."""
         from src.services.email import EmailManagerImpl
         from src.services.email.transport import NoopTransport
         manager = EmailManagerImpl(transport=NoopTransport())
@@ -551,8 +568,9 @@ class TestEmailTransport:
             subject="Test", body="Message", sender="a@b.com",
             recipients=["b@c.com"],
         )
-        assert result.success
+        assert result.success is False
         assert result.email_id is not None
+        assert manager.get_email(result.email_id).status.value == "failed"
 
     def test_manager_with_console_transport(self):
         """EmailManagerImpl avec ConsoleTransport doit logger et stocker."""

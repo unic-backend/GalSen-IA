@@ -9,6 +9,26 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Fixed
+- **VOLET 12 — Communication Engine: "sent" named messages nobody received.** Measured
+  state → `docs/architecture/communication.md`
+  - With no SMTP configured, `send_email()` returned `success=True`, "Email envoyé à 1
+    destinataire(s)" and stored the message as `sent` — **no server was ever contacted**.
+    The default `NoopTransport` returned `(True, "")`, justified in a comment as
+    "historically equivalent" behaviour: a lie preserved for compatibility
+  - **Six tests asserted that lie**, including one requiring `(True, "")` from the
+    transport that does nothing. `.claude/rules/verification.md` forbids exactly this —
+    pinning a fabricated value makes the fabrication permanent. All six were rewritten to
+    assert the real behaviour
+  - The transport now says it sent nothing **and what to do about it**; the stored status
+    becomes `failed`; `POST /email/send` answers **503, not 400** — a 400 accuses the
+    caller of an error they did not make
+  - **The composed message is still stored**: what a user wrote must not vanish because
+    the infrastructure is missing. Only the status changed, because the status was lying
+  - Notifications do not have this defect: they are an internal inbox, and creating one
+    *is* the delivery
+  - 7 new tests, 6 rewritten; full suite 1 773 passing, 7 skipped
+
 ### Added
 - **VOLET 11 — Security Engine: counting is not detecting.** Measured state →
   `docs/architecture/security.md`

@@ -1791,7 +1791,11 @@ async def email_send(request: EmailSendRequest):
         metadata=request.metadata,
     )
     if not result.success:
-        raise HTTPException(status_code=400, detail=result.message)
+        # 503 quand c'est le déploiement qui n'est pas configuré, 400 quand la
+        # requête est fautive : répondre 400 à un SMTP absent accuse l'appelant
+        # d'une erreur qu'il n'a pas commise (VOLET 12, ch. 02).
+        stocke = (result.details or {}).get("stored") is True
+        raise HTTPException(status_code=503 if stocke else 400, detail=result.message)
     return {
         "email_id": result.email_id,
         "status": "sent",
