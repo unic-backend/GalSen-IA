@@ -101,6 +101,61 @@ dependency makes it fail, naming that route.
 This is the same shape as the structural guards from VOLET 03 — a rule the project
 declared and nothing enforced becomes a rule the test suite enforces.
 
+## The lifecycle (chapter 03), stage by stage
+
+| Stage | State |
+|-------|-------|
+| 1. Request Reception | FastAPI / Uvicorn |
+| 2. Authentication | `require_auth`, API key → subject (ADR-010) |
+| 3. Authorization | `require_permission`, RBAC roles |
+| 4. Request Validation | Pydantic models on every body — no route takes an untyped `dict` |
+| 5. Routing | dispatch to a function; no target service |
+| 6. Response Delivery | **fixed by this phase** — see below |
+| 7. Logging and Analytics | rotating log + `metrics_snapshot()` |
+| 8. Monitoring | `/health`, `/ready`, `/live`, `/metrics` |
+| 9. **Lifecycle Review and Retirement** | **absent**: no versioning, no deprecation |
+
+### The finding: four routes handed the caller the inside of the machine
+
+Stage 6 is *deliver the response*, and the chapter's quality controls include error
+detection. Four routes built their 500 out of the exception text:
+
+```python
+raise HTTPException(status_code=500, detail=f"Erreur lors de la recherche : {str(e)}")
+```
+
+Measured, with a search failing on a connection error:
+
+```
+500 {'detail': 'Erreur lors de la recherche : connexion refusée vers
+     http://interne:11434 (fichier /home/user/GalSen-IA/data/knowledge.sqlite)'}
+```
+
+An internal hostname, a port and a filesystem path, returned to anyone who could make the
+call fail. An exception message is not written for a client to read: it routinely carries
+a path, a host, a SQL fragment or a service URL. Chapter 07 asks to protect sensitive API
+data; this was the opposite.
+
+`erreur_interne()` now logs the exception **with its traceback** under an incident id and
+returns that id to the caller:
+
+```
+500 {'detail': 'Erreur lors de la recherche (incident d979057377c5)'}
+```
+
+The cause is not lost, it changes recipient. Silencing the error without giving anything
+back would have made support impossible — the caller can quote the id, the operator greps
+it in the log and finds the real exception.
+
+Validation errors are untouched: a malformed request still answers 422 with the precise
+reason. It is the caller's mistake and telling them exactly what it is helps. Only the
+internal failure became opaque.
+
+`tests/test_gateway_error_delivery.py` covers the leak, the incident id, its uniqueness,
+the log carrying the real cause, and the 422 that must stay readable. A sixth test reads
+`server.py` and fails if any route ever builds a 500 detail from an exception again —
+verified to catch it on a deliberately faulty source.
+
 ## What comes next in this VOLET
 
 Chapters 04, 05, 06, 08, 09 and 10 are not covered by this phase. What is already known

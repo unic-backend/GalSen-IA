@@ -107,6 +107,34 @@ logger = logging.getLogger(__name__)
 # Horodatage de démarrage (utilisé pour le calcul de l'uptime)
 APP_START_TIME = time.time()
 
+
+def erreur_interne(message: str, erreur: Exception) -> HTTPException:
+    """
+    Construit un 500 qui informe l'appelant sans lui livrer l'intérieur.
+
+    Le texte d'une exception n'est pas rédigé pour être lu par un client : il
+    porte régulièrement un chemin de fichier, un nom d'hôte interne, un
+    fragment de requête SQL ou une URL de service. Quatre routes le
+    recopiaient tel quel dans `detail`, et c'était mesurable — une recherche en
+    échec répondait « connexion refusée vers http://interne:11434 (fichier
+    /home/user/.../knowledge.sqlite) » à qui savait la faire échouer.
+
+    La cause n'est pas perdue pour autant : elle part au journal avec sa pile
+    d'appels, sous un identifiant d'incident que l'appelant reçoit et peut
+    citer. L'opérateur retrouve l'erreur exacte, l'appelant n'apprend rien de
+    la machine.
+
+    Args:
+        message: ce que l'appelant peut savoir, sans détail interne
+        erreur: l'exception à journaliser
+
+    Returns:
+        L'HTTPException 500 à lever.
+    """
+    incident = uuid.uuid4().hex[:12]
+    logger.exception("Incident %s — %s : %s", incident, message, erreur)
+    return HTTPException(status_code=500, detail=f"{message} (incident {incident})")
+
 # API Key security
 API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
@@ -825,7 +853,7 @@ async def generate_text(request: ModelGenerateRequest):
             latency_seconds=0.0,  # À implémenter réellement
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la génération: {str(e)}")
+        raise erreur_interne("Erreur lors de la génération", e)
 
 # Endpoint conseil agricole (première feature pour les utilisateurs sénégalais)
 @app.post("/agri/advice", response_model=AgriAdviceResponse, tags=["agri"],
@@ -886,7 +914,7 @@ async def execute_tool(request: ToolExecuteRequest):
             tool_id=request.tool_id,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de l'exécution de l'outil: {str(e)}")
+        raise erreur_interne("Erreur lors de l'exécution de l'outil", e)
 
 # Endpoints connaissances
 @app.post("/knowledge/search", response_model=KnowledgeSearchResponse, tags=["knowledge"],
@@ -920,7 +948,7 @@ async def search_knowledge(request: KnowledgeSearchRequest,
             total=len(result_dicts),
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la recherche: {str(e)}")
+        raise erreur_interne("Erreur lors de la recherche", e)
 
 @app.get("/security/threats", tags=["health"],
          dependencies=[Depends(rate_limit_dependency),
@@ -1463,7 +1491,7 @@ async def unified_search(request: SearchRequest,
         record_search(response.sources_used, response.total, response.execution_time_ms)
         return response.to_dict()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la recherche : {str(e)}")
+        raise erreur_interne("Erreur lors de la recherche", e)
 
 
 @app.get("/search/status", tags=["search"],
