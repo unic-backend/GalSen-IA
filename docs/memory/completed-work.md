@@ -370,3 +370,15 @@
 - **Rien n'est visible pendant une exécution** : la réponse arrive à la fin, aucune durée par agent n'est conservée, `/metrics` ne compte pas les exécutions d'agents.
 - `tests/test_orchestration_claims.py` verrouille les deux constats **dans les deux sens** : il échoue si une primitive de concurrence apparaît sans que `parallel_supported` suive, et si quelqu'un se met à lire `agents_required`.
 - 13 tests ajoutés par ce VOLET. Suite complète : **1700 tests passent**, 7 ignorés. **VOLET 06 terminé.**
+
+### 2026-08-11 (VOLET 07 — Memory Engine : 10 chapitres, 12 phases)
+- **Quatre défauts de la même famille** : une règle déclarée que rien n'appliquait, donc une mémoire qui survivait à ce qui aurait dû l'effacer.
+  1. **« Oublier » supprimait définitivement.** `forget_memory()` appelait `delete_memory()` ; le statut `ARCHIVED` existait et n'était jamais posé, alors que le chapitre 03 sépare archivage (7) et suppression (8). Le verbe le plus doux de l'API était le plus destructeur.
+  2. **L'archivage n'aurait rien changé** : le récupérateur passait `status=None` avec le commentaire « on ne filtre pas par statut ici ». Une mémoire archivée continuait de remonter dans toutes les recherches.
+  3. **L'expiration ne s'appliquait que si quelqu'un lançait le nettoyage** — et rien ne le lance périodiquement. Une mémoire périmée était servie normalement. Elle est désormais respectée **à la lecture**.
+  4. **`cleanup_expired()` comptait des suppressions que le cache annulait** : il retournait 1 et la mémoire restait lisible sous la clé `item:{id}`. Même défaut que le cache de requêtes du VOLET 05.
+- **`consolidate_memory()` retournait 0**, indiscernable de « rien à consolider », avec un commentaire listant ce qu'une vraie implémentation ferait. Elle lève désormais `NotImplementedError` en nommant ce qui manque : aucune règle n'existe pour ce qui passe du court au long terme, ce qui se résume, ni selon quelle courbe d'oubli. Aucun appelant dans le dépôt.
+- **Isolation mesurée** : la recherche filtre par utilisateur, `get_memory` ne filtre pas — la frontière est une couche plus haut (`/memory/retrieve` répond **404 et non 403**, critère C2). Consigné pour que le comportement du moteur ne soit pas pris pour une autorisation.
+- **Qualité et rétention** (`memory_quality.py`) : 4 métriques sur 6 calculées — fraîcheur, doublons **par propriétaire** (le même contenu chez deux utilisateurs n'est pas un doublon), complétude des métadonnées, répartition par statut et type. Précision de récupération et satisfaction déclarées indisponibles avec leur raison.
+- **`list_inactive()`** répond au « revoir les mémoires inactives » du chapitre 08 en les **nommant**, seuil configurable (90 jours). Rien n'est archivé automatiquement : retirer une mémoire de l'usage est une décision.
+- 15 tests ajoutés par ce VOLET. Suite complète : **1715 tests passent**, 7 ignorés. **VOLET 07 terminé.**

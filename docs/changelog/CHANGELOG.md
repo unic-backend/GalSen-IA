@@ -10,6 +10,23 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Fixed
+- **VOLET 07 — Memory Engine: four declared rules that nothing applied.** Measured state →
+  `docs/architecture/memory.md`
+  - **"Forgetting" deleted permanently**: `forget_memory()` called `delete_memory()`, and
+    the `ARCHIVED` status was never set by anything. It now archives; `delete_memory()`
+    still erases
+  - **Archiving would have changed nothing**: the retriever passed `status=None`, so an
+    archived memory kept appearing in every search. It now considers `ACTIVE` only
+  - **Expiry only applied if someone ran the cleaner**, and nothing runs it on a schedule.
+    It is now honoured at read time
+  - **`cleanup_expired()` reported deletions the cache undid** — it returned an exact count
+    while the memory stayed readable from `item:{id}`
+  - **`consolidate_memory()` returned 0**, indistinguishable from "nothing to consolidate".
+    It now raises `NotImplementedError` naming the rules that do not exist
+  - **Added** `quality_report()` and `list_inactive()`: freshness, per-owner duplicate rate,
+    metadata completeness and status breakdown; retrieval accuracy and user satisfaction
+    are named unavailable with their reason
+  - 15 new tests
 - **The `tester` agent reported suites it never ran.** It executed `python <suite>`, which
   only runs a file's `__main__` block — **20 of 92 suites have one**; the other 72 imported
   themselves, ran no test, exited 0 and were counted as passing. It now runs

@@ -13,6 +13,7 @@ from .interfaces import (
     MemoryStore, MemoryRetriever, MemoryIndexer,
     MemorySummarizer, MemoryRanker, MemoryCache, MemoryManager as MemoryManagerInterface
 )
+from .memory_quality import DEFAULT_INACTIVITY_DAYS, inactive_memories, quality_report
 from .memory_store import InMemoryMemoryStore
 from .memory_retriever import InMemoryMemoryRetriever
 from .memory_indexer import InMemoryMemoryIndexer
@@ -251,6 +252,32 @@ class MemoryManager(MemoryManagerInterface):
             "selon quelle courbe d'oubli — aucune de ces règles n'existe encore. "
             "Retourner 0 laissait croire qu'il n'y avait rien à consolider."
         )
+
+    def quality_report(self, max_age_days: int = None) -> Dict[str, Any]:
+        """
+        Rapporte la qualité et la rétention des mémoires (chapitres 08 et 09).
+
+        Args:
+            max_age_days: seuil d'inactivité en jours ; le défaut du module sinon
+
+        Returns:
+            Fraîcheur, doublons, complétude des métadonnées, répartition par
+            statut et par type, mémoires inactives à revoir, et les métriques que
+            la plateforme ne sait pas calculer avec leur raison.
+        """
+        if max_age_days is None:
+            return quality_report(self._store)
+        return quality_report(self._store, max_age_days=max_age_days)
+
+    def list_inactive(self, max_age_days: int = DEFAULT_INACTIVITY_DAYS) -> List[MemoryItem]:
+        """
+        Liste les mémoires actives que personne n'a touchées depuis longtemps.
+
+        Répond à « revoir les mémoires inactives » (chapitre 08). Rien n'est
+        archivé automatiquement : retirer une mémoire de l'usage est une décision,
+        pas un effet de bord d'un rapport.
+        """
+        return inactive_memories(self._store.list_items(limit=100000), max_age_days)
 
     def cleanup_expired(self) -> int:
         """Supprimer les mémoires expirées.
