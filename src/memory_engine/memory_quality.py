@@ -83,8 +83,15 @@ def quality_report(store, max_age_days: int = DEFAULT_INACTIVITY_DAYS) -> Dict[s
     ages.sort()
 
     # Doublons : contenus textuels rigoureusement identiques pour un même sujet.
+    #
+    # Seules les mémoires **actives** comptent. Une archivée n'est plus rendue
+    # par la recherche : la compter ferait dire au rapport qu'il reste des
+    # doublons après que `deduplicate()` les a archivés, et un opérateur en
+    # conclurait que l'opération n'a rien fait. Le rapport et l'action doivent
+    # parler du même ensemble.
+    actives = [i for i in items if i.status is MemoryStatus.ACTIVE]
     empreintes: Dict[Any, int] = {}
-    for item in items:
+    for item in actives:
         if isinstance(item.content, str):
             cle = (item.user_id, item.content.strip())
             empreintes[cle] = empreintes.get(cle, 0) + 1
@@ -114,8 +121,11 @@ def quality_report(store, max_age_days: int = DEFAULT_INACTIVITY_DAYS) -> Dict[s
             "threshold_days": max_age_days,
         },
         "duplicates": {
-            "rate": _ratio(redondants, total),
+            # Rapporté sur les actives, pas sur le total : le taux doit être
+            # celui de l'ensemble qu'on peut réellement dédupliquer.
+            "rate": _ratio(redondants, len(actives)),
             "redundant_items": redondants,
+            "scope": "active_only",
         },
         "metadata_completeness": {
             "with_owner": _ratio(avec_proprietaire, total),

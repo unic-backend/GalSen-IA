@@ -8,30 +8,29 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 19 terminé
+**VOLET en cours** : aucun — VOLET 20 terminé
 **Phase courante** : —
-**Terminées** : toutes (6 phases)
+**Terminées** : toutes (5 phases)
 **Cadence** : **une phase par tour** (défaut).
 
 ```
-VOLET 19 — AI Agent Orchestration : terminé
-                                   → docs/architecture/orchestration.md
-  Troisième manuel sur ce sous-système, après les VOLETs 06 et 08/18.
-  Défaut central mesuré : sur le pipeline livré, l'agent `tester` consomme
-  43,5 s d'une requête de 45,2 s — 96 % — parce qu'il exécute toute la suite
-  pytest avant que la plateforme réponde, à chaque requête. « bonjour » coûte
-  45 secondes. Rien ne mesurait la durée par agent : le coût était invisible.
-  La durée de chaque agent est désormais enregistrée et ventilée (`agent_time`).
-  Le correctif est une décision sur le pipeline, pas une mesure → P1 du backlog.
-  Aucun délai d'attente inventé : Python ne peut pas tuer un fil, un
-  `future.result(timeout=…)` libérerait l'appelant pendant que l'agent continue.
-  Absents et assumés : bus de communication, ordonnanceur, gestionnaire de
-  ressources.
+VOLET 20 — Memory Engine (second manuel) : terminé
+                                   → docs/architecture/memory.md
+  Le fichier n'a pas de chapitre 02 : il enchaîne 01, 01, puis 03. L'inventaire
+  des composants du VOLET 07 tient, rien n'a été inventé pour combler le trou.
+  Défaut central : les doublons étaient détectés et rien ne pouvait les
+  retirer — trois enregistrements du même contenu donnaient trois mémoires et
+  la recherche rendait les trois. `deduplicate()` garde la plus ancienne et
+  archive les autres, avec un essai à blanc.
+  Second défaut trouvé en construisant : `quality_report()` comptait les
+  doublons tous statuts confondus, donc il en annonçait encore après
+  déduplication. Il ne compte plus que les actives — le rapport et l'action
+  doivent parler du même ensemble.
 ```
 
-**Restants** : 20 à 25 — soit 6 VOLETs, dont 3 portent un sujet déjà traité avec
-un contenu différent (20, 21, 24). Le VOLET 01 n'a jamais eu de plan de phases
+**Restants** : 21 à 25 — soit 5 VOLETs, dont 2 portent un sujet déjà traité avec
+un contenu différent (21, 24). Le VOLET 01 n'a jamais eu de plan de phases
 formel.
 
-**Prochaine action** : par ordre numérique, **VOLET 20** — vérifier son titre
+**Prochaine action** : par ordre numérique, **VOLET 21** — vérifier son titre
 réel dans le fichier avant de planifier.

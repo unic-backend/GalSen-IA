@@ -102,3 +102,84 @@ configurable threshold (90 days by default). It archives nothing: taking a memor
 use is a decision, not a side effect of running a report.
 
 On an empty engine every ratio is `0.0`, never `1.0`.
+
+---
+
+# The second manual (VOLET 20)
+
+`VOLET_20.md` is a **second Memory Engine manual**, after VOLET 07. It restates most of
+that one, so only what it asks beyond it is treated here.
+
+Worth recording about the file itself: **chapter 02 is missing**. It runs 01, 01 again,
+then 03 — the architecture chapter that would have named the engine's components is not in
+the document. Nothing was invented to fill the gap; the component inventory of VOLET 07
+stands.
+
+## The finding: duplicates were detected and could not be removed
+
+Chapter 03 lists "remove duplicate knowledge" among its management practices and
+"duplicate detection" among its quality controls. Only detection existed. Measured, saving
+the same content three times:
+
+```
+identifiants distincts : 3
+quality_report()["duplicates"] → {"rate": 0.6667, "redundant_items": 2}
+recherche "mil" → 3 résultats
+```
+
+The report named the problem and nothing could act on it, while retrieval returned all
+three: the caller got the same answer three times and the agent's context filled up with
+repetitions.
+
+### What it does now
+
+`deduplicate(user_id=None, dry_run=False)` groups active memories by owner and exact
+content, keeps the **oldest** — it carries the date the knowledge appeared — and
+**archives** the rest.
+
+- **Archived, not deleted.** Nothing authorises erasing what a user saved on the grounds
+  that they saved it twice. Same distinction `forget_memory()` draws, and archived
+  memories drop out of retrieval, so the duplicate stops being returned without being lost.
+- **Same criterion as the report.** Owner plus stripped content — two different
+  definitions of "duplicate" would put the report and the action in disagreement.
+- **`dry_run` first.** An operator can see what would go before anything moves.
+- **Idempotent**, so it can be run periodically.
+
+### The report had to be corrected too
+
+Building this exposed a second defect. `quality_report()` counted duplicates across **all**
+memories, whatever their status. So after deduplication the report still said "2 redundant
+items", and an operator would have concluded the operation did nothing. The duplicate
+metric now counts active memories only — the set `deduplicate()` acts on — and says so
+with `"scope": "active_only"`.
+
+That is the rule the docstring states and the code had to be made to keep: the report and
+the action must talk about the same set.
+
+### It is a method, not a schedule
+
+Nothing calls `deduplicate()` periodically, exactly like `purge_expired()` for
+notifications. That is stated rather than faked with a background task that would die
+silently, and no API route was added: `quality_report()` has none either, and adding one
+half of the pair would be worse than neither.
+
+## Monitoring (chapter 06), and what a single process cannot say
+
+The chapter names ten key metrics. Several are about a deployment this platform does not
+have: **replication latency**, **synchronization success rate** and **recovery time** all
+presuppose more than one instance, and ADR-009 records that a second instance is not yet
+possible. Reporting them would report constants.
+
+What is measurable is measured — retrieval, freshness, duplicates, metadata completeness
+and status breakdown are in `quality_report()`, and its `unavailable` block already names
+what it cannot compute and why. VOLET 20 adds no new metric; it makes the duplicate one
+honest.
+
+## Chapters 04, 05, 07, 08, 09, 10
+
+Management, security, compliance, governance and quality restate VOLET 07 and the platform
+rules already documented: ownership isolation (ADR-010), retention through expiry and
+`cleanup_expired()`, archival before deletion, audit trail, and no memory content in the
+metrics. Chapters 08 and 10 are both titled "Memory Engine Governance" and assign work to a
+governance board the project does not have — the same answer as everywhere else in this
+series: writing down a review cadence nobody performs would be a fabrication.

@@ -228,6 +228,75 @@ class MemoryManager(MemoryManagerInterface):
         self._cache.set(f"item:{item_id}", item, ttl=3600)
         return True
 
+    def deduplicate(self, user_id: Optional[str] = None,
+                    dry_run: bool = False) -> Dict[str, Any]:
+        """
+        Archive les mémoires en double, en gardant la plus ancienne de chaque groupe.
+
+        Le chapitre 03 du VOLET 20 range « supprimer les connaissances en
+        double » parmi ses pratiques de gestion, et la détection parmi ses
+        contrôles qualité. Seule la détection existait : `quality_report()`
+        annonçait « 2 éléments redondants » et rien ne pouvait agir dessus.
+        Mesuré, trois enregistrements du même contenu produisaient trois
+        mémoires **et la recherche rendait les trois** — l'appelant recevait
+        trois fois la même réponse et le contexte de l'agent s'en trouvait
+        rempli de répétitions.
+
+        Deux mémoires sont considérées identiques quand le propriétaire et le
+        contenu textuel coïncident, après retrait des espaces de bord. C'est
+        exactement le critère de `quality_report()` : deux définitions
+        différentes du doublon donneraient un rapport et une action en désaccord.
+
+        La **plus ancienne est conservée** : elle porte la date à laquelle la
+        connaissance est apparue. Les autres sont **archivées, pas supprimées**
+        — même distinction que `forget_memory()`, et la même raison : rien
+        n'autorise à effacer ce qu'un utilisateur a enregistré au motif qu'il
+        l'a enregistré deux fois.
+
+        Args:
+            user_id: se limiter aux mémoires d'un propriétaire.
+            dry_run: ne rien modifier et rapporter ce qui serait archivé.
+
+        Returns:
+            Le nombre de groupes trouvés, le nombre de mémoires archivées et
+            leurs identifiants.
+        """
+        try:
+            items = self._store.list_items(limit=100000)
+        except Exception as error:
+            self._logger.warning("Déduplication impossible : %s", error)
+            return {"groups": 0, "archived": 0, "archived_ids": [], "dry_run": dry_run}
+
+        groupes: Dict[Any, List[MemoryItem]] = {}
+        for item in items:
+            if item.status != MemoryStatus.ACTIVE or not isinstance(item.content, str):
+                continue
+            if user_id is not None and item.user_id != user_id:
+                continue
+            groupes.setdefault((item.user_id, item.content.strip()), []).append(item)
+
+        a_archiver: List[str] = []
+        groupes_avec_doublon = 0
+        for lot in groupes.values():
+            if len(lot) < 2:
+                continue
+            groupes_avec_doublon += 1
+            # La plus ancienne d'abord ; `created_at` peut manquer sur une
+            # mémoire ancienne, auquel cas elle est traitée comme la plus vieille.
+            lot.sort(key=lambda i: i.created_at or 0.0)
+            a_archiver.extend(item.id for item in lot[1:] if item.id)
+
+        archivees = []
+        if not dry_run:
+            archivees = [item_id for item_id in a_archiver if self.forget_memory(item_id)]
+
+        return {
+            "groups": groupes_avec_doublon,
+            "archived": len(a_archiver) if dry_run else len(archivees),
+            "archived_ids": a_archiver if dry_run else archivees,
+            "dry_run": dry_run,
+        }
+
     def consolidate_memory(
         self,
         user_id: Optional[str] = None,

@@ -10,6 +10,28 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **VOLET 20 — duplicates were detected and nothing could remove them.** Measured state →
+  `docs/architecture/memory.md`
+  - Chapter 03 lists "remove duplicate knowledge" among its management practices. Only
+    detection existed: saving the same content three times produced three memories,
+    `quality_report()` reported `redundant_items: 2`, **and retrieval returned all three** —
+    the caller got the same answer three times and the agent's context filled with
+    repetitions
+  - `MemoryManager.deduplicate(user_id=None, dry_run=False)` groups active memories by
+    owner and exact content, keeps the **oldest** (it carries the date the knowledge
+    appeared) and **archives** the rest. Never deletes: nothing authorises erasing what a
+    user saved on the grounds that they saved it twice. Same criterion as the report, or
+    report and action would disagree. Idempotent, with a dry run
+  - **A second defect surfaced while building it**: `quality_report()` counted duplicates
+    across all statuses, so after deduplication it still reported two redundant items and
+    an operator would have concluded the operation did nothing. The rate now covers active
+    memories only — the set `deduplicate()` acts on — and says so with
+    `"scope": "active_only"`
+  - It is a method, not a schedule; no API route was added, since `quality_report()` has
+    none either and shipping half the pair would be worse than neither
+  - `VOLET_20.md` **has no chapter 02** — it runs 01, 01, then 03. Nothing was invented to
+    fill the gap; VOLET 07's component inventory stands
+  - 10 new tests; full suite 1 982 passing, 7 skipped
 - **VOLET 19 — one agent ate 96 % of every request, and nothing said so.** Measured state
   → `docs/architecture/orchestration.md`
   - On the shipped `standard` pipeline, with the request "bonjour": total 45.2 s, of which
