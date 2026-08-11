@@ -10,10 +10,10 @@ exécuter, et une seule.
 
 **VOLET en cours** : 06 — AI Orchestration
 **Phases** : 12
-**Phase courante** : 1.1 — en attente de confirmation
-**Terminées** : aucune
-**Cadence** : **2 à 3 phases par tour**, demandé par l'utilisateur le 2026-08-10.
-Revenir au défaut d'une phase par tour dès qu'il le dit.
+**Phase courante** : 5.1 — en attente de confirmation
+**Terminées** : 1.1, 2.1, 2.2, 3.1, 4.1 (→ `docs/architecture/orchestration.md`)
+**Cadence** : **jusqu'à 5 phases par tour**, demandé par l'utilisateur le 2026-08-11
+(2 à 3 auparavant). Revenir au défaut d'une phase par tour dès qu'il le dit.
 
 ```
 VOLET 06 — AI Orchestration

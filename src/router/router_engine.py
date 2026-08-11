@@ -1,11 +1,19 @@
 """
 Router Engine for GalSen IA.
 
-The central orchestrator that receives user requests, understands them,
-classifies them, determines required agents, creates an execution plan,
-executes agents in the correct order, supports parallel execution,
-collects results, detects failures, retries failed tasks, and merges
-output into a final response.
+The central orchestrator that receives user requests, builds an execution plan
+from the declared workflow, runs the agents **in sequence**, collects results,
+detects failures, retries failed tasks and merges output into a final response.
+
+Two limits are stated here rather than discovered later (VOLET 06):
+
+- **Execution is sequential.** Workflows declare `parallel_agents`, and nothing
+  runs them concurrently: they are appended to the sequential order. The plan
+  reports `parallel_supported: False` so no caller mistakes the declaration for
+  a behaviour.
+- **The plan does not depend on the request.** The order of agents comes from
+  the workflow declaration. Intent detection exists in `PlannerAgent` and is not
+  wired to routing — see `docs/architecture/orchestration.md`.
 """
 
 import logging
@@ -92,7 +100,15 @@ class RouterEngine:
             workflow_config = self.workflow_loader.get_workflow(workflow_id_to_use)
 
             self.logger.info(f"Workflow '{workflow_id_to_use}' sélectionné.")
-            self.logger.info(f"Plan d'exécution - Parallèle: {execution_plan['parallel']}, Séquentiel: {execution_plan['sequential']}")
+            # Le journal dit ce qui va se passer, pas ce que le workflow déclare :
+            # les agents marqués « parallèles » sont exécutés à la suite des autres.
+            declares_paralleles = execution_plan['parallel']
+            self.logger.info(
+                "Plan d'exécution — séquentiel : %s%s",
+                execution_plan['sequential'],
+                (f" ; {declares_paralleles} déclarés parallèles, exécutés séquentiellement "
+                 "(le moteur n'exécute rien en parallèle)") if declares_paralleles else "",
+            )
 
             # Étape 2: Préparer les données d'entrée initiales
             pipeline = workflow_config.get('pipeline', [])

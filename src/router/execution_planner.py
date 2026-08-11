@@ -28,9 +28,19 @@ class ExecutionPlanner:
             workflow_id: Identifiant du workflow. Si None, utilise le workflow par défaut.
 
         Returns:
-            Dictionnaire contenant deux listes :
-                - 'parallel': liste d'identifiants d'agents à exécuter en parallèle
-                - 'sequential': liste d'identifiants d'agents à exécuter séquentiellement
+            Dictionnaire contenant :
+                - 'parallel' : agents *déclarés* parallèles dans le workflow
+                - 'sequential' : agents déclarés séquentiels
+                - 'parallel_supported' : toujours False aujourd'hui
+
+        Le troisième champ existe parce que les deux premiers se lisaient comme
+        une promesse : le moteur n'exécute rien en parallèle, il ajoute les
+        agents « parallèles » à la suite des autres. Annoncer un parallélisme
+        qui n'a pas lieu est le mode d'échec que `.claude/rules/verification.md`
+        interdit — une capacité inachevée rapporte son état.
+
+        Le plan ne dépend pas de la requête : l'ordre vient de la déclaration du
+        workflow (VOLET 06, chapitre 03).
         """
         if workflow_id is None:
             workflow_id = self.workflow_loader.get_default_workflow()
@@ -47,7 +57,8 @@ class ExecutionPlanner:
 
         return {
             'parallel': parallel_agents,
-            'sequential': sequential_agents
+            'sequential': sequential_agents,
+            'parallel_supported': False,
         }
 
     def get_agents_in_workflow(self, workflow_id: str = None) -> Set[str]:
