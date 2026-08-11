@@ -8,27 +8,24 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — **VOLET 25 terminé, série close**
+**VOLET en cours** : aucun — **les 25 VOLETs sont traités**
 **Phase courante** : —
 **Terminées** : toutes
 **Cadence** : **une phase par tour** (défaut).
 
 ```
-VOLET 25 — Enterprise Governance & Global Architecture : terminé
-                                   → docs/architecture/enterprise.md
-  Défaut le plus grave de la série : **chaque moteur existait en deux
-  exemplaires**. `server.py` construisait les siens, `EngineRegistry` ceux des
-  agents — une alerte levée par un agent n'apparaissait pas sur la route que
-  l'utilisateur consulte, et une mémoire écrite par l'API restait invisible aux
-  agents. Invisible avec SQLite (fichier partagé), le défaut ne mordait que sur
-  la configuration **par défaut**, celle que tout le monde lance en premier.
-  Corrigé : l'API prend ses moteurs du registre partagé ; le secours reste
-  possible mais il est journalisé.
+VOLET 01 — Master Constitution : terminé   → docs/architecture/constitution.md
+  Le seul VOLET qui n'avait jamais eu de plan de phases, et celui dont le
+  reste de la série était l'audit sans le dire.
+  Mesuré : le portillon d'approbation humaine existe (ADR-006) et **aucun agent
+  ne l'active** — ce qui est aujourd'hui correct, les neuf agents ne faisant
+  que lire. Ce qui manquait, c'est ce qui maintient cet état :
+  `approval_required` vaut `False` par défaut, donc le premier agent qui
+  écrira le fera sans portillon. Un test rend la règle finale du chapitre 03
+  exécutable, et un second verrouille la mesure pour qu'elle ne passe pas au
+  vert pour une mauvaise raison.
 ```
 
-**Restant** : le VOLET 01 (Master Constitution) n'a jamais eu de plan de phases
-formel. C'est le seul reliquat de la série.
-
-**Prochaine action** : proposer le VOLET 01, ou reprendre le backlog — les deux
-P1 les plus hauts (`tester` dans le pipeline, base de connaissances vide) ne
-dépendent plus du code.
+**Restant** : plus aucun manuel. Le travail revient au backlog
+(`docs/memory/pending-work.md`), dont les deux P1 les plus hauts ne dépendent
+plus du code : `tester` dans le pipeline, et la base de connaissances vide.

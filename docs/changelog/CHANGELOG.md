@@ -9,6 +9,28 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Added
+- **VOLET 01 — the constitution's final rule is now a test.** Measured state →
+  `docs/architecture/constitution.md`. This closes the series: all 25 manuals are treated
+  - Chapter 03 ends on *no feature may be implemented if it removes meaningful human
+    control over important decisions*. The gate exists (`BaseAgent.approval_required`,
+    ADR-006) and **no agent sets it** — which is currently correct: all nine agents read,
+    analyse and report, and every tool call they make is read-only. The `deployment` agent
+    evaluates readiness; it does not deploy
+  - What was missing is what keeps it that way. `approval_required` defaults to `False`,
+    so the first agent calling a mutating tool would get no gate and nothing would say so.
+    `tests/test_constitution_human_control.py` scans every agent's tool calls and fails if
+    a mutating operation appears without the gate declared — verified to fail on a
+    deliberately faulty agent. A second test locks the measurement, so the rule cannot pass
+    green because the agents stopped calling tools
+  - Reading is deliberately exempt: requiring approval to read a file would get the gate
+    switched off within a day, and a control that gets switched off protects nothing
+  - Also records what the constitution asks and the platform still does not do: confidence
+    levels outside the gate, the four-level source hierarchy of chapter 04, and human
+    verification for critical decisions — no medical, legal or financial path exists to
+    gate, and building the gate before the path would be the same fabrication in reverse
+  - 12 new tests; full suite 2 034 passing, 7 skipped
+
 ### Fixed
 - **VOLET 25 — every engine existed twice, and the two halves did not know about each
   other.** Measured state → `docs/architecture/enterprise.md`
