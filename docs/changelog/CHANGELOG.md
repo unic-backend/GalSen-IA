@@ -9,6 +9,31 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Added
+- **VOLET 22 — the one decision the platform takes was thrown away.** Measured state →
+  `docs/architecture/decisions.md`
+  - The manual describes an eleven-component Decision Engine over a fourteen-stage
+    lifecycle. **None of it exists and none of it was built**: standing one up empty would
+    produce exactly what `.claude/rules/verification.md` forbids. The AI-reasoning stages
+    also depend on exit criterion C1, which is not met
+  - `PlannerAgent` does decide: it detects intents and derives the agents a request needs.
+    Measured on "surveille les logs de production" — **3 agents recommended, 9 executed**,
+    the declared pipeline in full. Six agents run that the platform's own analysis said
+    were unnecessary, including `tester`, measured at 96 % of request time in VOLET 19
+  - Chapter 03 makes decision recording stage 10 and explainability a quality control; a
+    decision taken and lost is neither. `src/router/decision_trace.py` compares the
+    recommendation with the execution in the response metadata, with `applied: false`
+    stated explicitly rather than left to inference, "the planner did not run" kept
+    distinct from "it recommended nothing", and both directions of the gap reported
+  - **Following the recommendation was deliberately not done** — it would change what every
+    request executes. That is the P1 already recorded after VOLET 19, and this measurement
+    sharpens it: the platform already computes which agents a request needs
+  - The VOLET 06 guard forbidding any reader of `agents_required` failed, as designed. It
+    was not weakened but tightened to its real intent — reading to *report* is allowed and
+    named, reading to *decide* stays forbidden — and paired with a behavioural test
+    asserting the trace leaves the executed set untouched
+  - 7 new tests, 1 renamed and tightened; full suite 1 995 passing, 7 skipped
+
 ### Fixed
 - **VOLET 21 — three views of one knowledge item gave two different answers.** Measured
   state → `docs/architecture/knowledge.md`

@@ -28,6 +28,7 @@ from .result_aggregator import ResultAggregator
 from .retry_manager import RetryManager
 from .agent_dispatcher import AgentDispatcher
 from .workflow_history import WorkflowHistory
+from .decision_trace import decision_trace
 from .logger import Logger
 from ..agent.context import AgentContext
 from ..audit_engine.types import AuditEventType, AuditStatus, generate_request_id
@@ -278,6 +279,10 @@ class RouterEngine:
                     "successful_agents": successful_agents,
                     "failed_agents": failed_agents,
                     "pending_approval_agents": pending_approval_agents,
+                    # Ce que le planificateur a décidé, et ce qui a tourné
+                    # (VOLET 22, ch. 03 étape 10). La décision existe et n'est
+                    # pas suivie ; l'enregistrer est la seule façon de le voir.
+                    "decision": decision_trace(all_agent_results, ordered_agents),
                 }
             }
             if approval_request_ids:

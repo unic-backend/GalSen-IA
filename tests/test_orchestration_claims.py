@@ -74,11 +74,22 @@ def test_deux_requetes_opposees_donnent_le_meme_plan(planificateur):
     assert planificateur.plan_execution("revue")["sequential"] == ["reviewer", "security"]
 
 
-def test_les_intentions_detectees_ne_sont_lues_par_personne():
-    """`agents_required` est calculé par le planner et consommé nulle part.
+# Seul module autorisé à lire `agents_required`, et pour quoi faire.
+#
+# Le VOLET 22 a ajouté `src/router/decision_trace.py`, qui **rapporte** l'écart
+# entre les agents recommandés et ceux qui tournent, sans rien changer à
+# l'exécution. C'est l'exception voulue par ce garde-fou : un branchement doit
+# être un choix visible, et celui-ci l'est — la trace dit elle-même
+# `applied: false`.
+LECTEURS_AUTORISES = {"src/router/decision_trace.py"}
+
+
+def test_les_intentions_detectees_ne_pilotent_toujours_pas_l_execution():
+    """`agents_required` est calculé par le planner et ne route rien.
 
     Verrouillé pour que le branchement, quand il aura lieu, soit un choix visible
-    et non un effet de bord.
+    et non un effet de bord. Un nouveau lecteur fait échouer ce test : c'est le
+    moment de dire s'il rapporte ou s'il décide.
     """
     lecteurs = []
     for dossier in (RACINE / "src", RACINE / "agents"):
@@ -86,8 +97,28 @@ def test_les_intentions_detectees_ne_sont_lues_par_personne():
             if chemin.name == "agent.py" and chemin.parent.name == "planner":
                 continue
             if "agents_required" in chemin.read_text(encoding="utf-8"):
-                lecteurs.append(str(chemin.relative_to(RACINE)))
-    assert lecteurs == [], (
-        "Quelqu'un lit maintenant `agents_required` : mettre à jour "
-        "docs/architecture/orchestration.md — " + ", ".join(lecteurs)
+                lecteurs.append(chemin.relative_to(RACINE).as_posix())
+    inattendus = sorted(set(lecteurs) - LECTEURS_AUTORISES)
+    assert inattendus == [], (
+        "Quelqu'un lit maintenant `agents_required` : dire s'il rapporte ou s'il "
+        "décide, et mettre à jour docs/architecture/orchestration.md — "
+        + ", ".join(inattendus)
     )
+
+
+def test_la_trace_de_decision_ne_change_pas_l_execution():
+    """Le pendant comportemental du test précédent.
+
+    Lire la recommandation sans la suivre est acceptable ; la suivre en silence
+    ne l'est pas. La trace le déclare, et ce test le vérifie.
+    """
+    from src.router.decision_trace import decision_trace
+
+    trace = decision_trace(
+        [{"agent": "planner", "status": "success",
+          "result": {"agents_required": ["monitor"]}}],
+        ["planner", "coder", "tester"],
+    )
+
+    assert trace["applied"] is False
+    assert trace["executed_agents"] == ["planner", "coder", "tester"]

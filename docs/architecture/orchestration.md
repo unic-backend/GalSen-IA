@@ -336,3 +336,19 @@ the bounded in-memory history is all there is, and it says so in its own output.
 Security, compliance and governance restate VOLET 11 and the ADR-010 identity model, with
 the same conclusion as elsewhere: the governance bodies these chapters assign work to do
 not exist, and writing down a review cadence nobody performs would be a fabrication.
+
+---
+
+# Decision trace (VOLET 22)
+
+The claim recorded above — *intent detection exists in `PlannerAgent` and is not used* —
+still holds for **routing**, and is now measured rather than only stated. `src/router/
+decision_trace.py` compares the agents the planner recommends with the agents that run,
+and puts the comparison in the response metadata with an explicit `applied: false`.
+
+Reading `agents_required` to report on it is allowed; consuming it to choose what executes
+is not, and `tests/test_orchestration_claims.py` keeps that line: the trace module is a
+named exception, any other reader fails the guard, and a behavioural test asserts the trace
+leaves the executed set untouched.
+
+Full measurement and what it costs → `docs/architecture/decisions.md`.

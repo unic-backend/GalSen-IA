@@ -8,26 +8,24 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 21 terminé
+**VOLET en cours** : aucun — VOLET 22 terminé
 **Phase courante** : —
 **Terminées** : toutes (5 phases)
 **Cadence** : **une phase par tour** (défaut).
 
 ```
-VOLET 21 — Knowledge Engine (second manuel) : terminé
-                                   → docs/architecture/knowledge.md
-  La déduplication qu'il réclame était déjà acquise, structurellement :
-  l'identifiant d'une connaissance est l'empreinte de son contenu. Rien
-  n'a été ajouté — du code sans défaut dessous.
-  Défaut trouvé : trois vues d'une même connaissance, deux réponses. Le cache
-  gardait l'objet soumis sans vérifier que le magasin l'avait accepté, alors
-  que `save()` refuse silencieusement une version pas plus récente.
-  Second défaut, exposé par le test du premier : lire → corriger → enregistrer
-  ne marchait pas en mémoire, `get()` rendant la référence interne. Les deux
-  magasins divergeaient — même classe de bug qu'au VOLET 13.
+VOLET 22 — Decision Engine : terminé   → docs/architecture/decisions.md
+  Sujet neuf : aucun moteur de décision n'existe, et aucun n'a été fabriqué.
+  Onze composants et quatorze étapes : c'est un projet, pas une phase.
+  Ce qui a été mesuré : la plateforme prend **une** décision — le planificateur
+  déduit les agents nécessaires d'une demande — et elle est jetée. Sur
+  « surveille les logs de production » : 3 agents recommandés, 9 exécutés.
+  `decision_trace.py` enregistre l'écart avec un `applied: false` explicite.
+  Suivre la recommandation changerait toutes les exécutions : c'est le P1 déjà
+  inscrit après le VOLET 19, pas le travail d'une phase de mesure.
 ```
 
-**Restants** : 22 à 25 — soit 4 VOLETs, dont 1 porte un sujet déjà traité avec
-un contenu différent (24). Le VOLET 01 n'a jamais eu de plan de phases formel.
+**Restants** : 23 à 25 — soit 3 VOLETs, dont 1 porte un sujet déjà traité avec un
+contenu différent (24). Le VOLET 01 n'a jamais eu de plan de phases formel.
 
-**Prochaine action** : par ordre numérique, **VOLET 22 — Decision Engine**.
+**Prochaine action** : par ordre numérique, **VOLET 23 — Learning Engine**.
