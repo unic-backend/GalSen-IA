@@ -112,6 +112,10 @@ CONTROLES: Dict[str, Tuple[Callable[[str], Optional[str]], str]] = {
         _entier_positif,
         "le seuil de détection par défaut (10 échecs) s'applique",
     ),
+    # `GALSEN_TRUSTED_PROXIES` n'est pas contrôlé ici : sa validation est une
+    # analyse d'adresses, faite par `src/api/trusted_proxies.py`, qui signale
+    # chaque entrée illisible en la nommant. Un second contrôle plus grossier
+    # dirait moins.
     "GALSEN_CLOUD_BACKEND": (
         _parmi("in-memory", "sqlite", "filesystem", "s3"),
         "le magasin cloud par défaut s'applique",

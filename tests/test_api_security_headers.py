@@ -81,10 +81,22 @@ class TestEnTetesDeSecurite:
         """En HTTP, l'en-tête HSTS ne protège rien et casserait l'accès local."""
         assert "Strict-Transport-Security" not in client.get("/essai").headers
 
-    def test_hsts_derriere_un_repartiteur_https(self, client):
-        """Derrière un répartiteur, `X-Forwarded-Proto` porte le vrai schéma."""
+    def test_hsts_derriere_un_repartiteur_declare(self, client, monkeypatch):
+        """Derrière un répartiteur **déclaré**, `X-Forwarded-Proto` porte le vrai schéma.
+
+        La déclaration est nouvelle et volontaire : l'en-tête était cru sans
+        condition, donc un appelant pouvait faire poser un HSTS de deux ans sur
+        une réponse jamais chiffrée.
+        """
+        monkeypatch.setenv("GALSEN_TRUSTED_PROXIES", "testclient")
         reponse = client.get("/essai", headers={"X-Forwarded-Proto": "https"})
         assert "max-age=63072000" in reponse.headers["Strict-Transport-Security"]
+
+    def test_pas_de_hsts_sur_un_en_tete_forge(self, client, monkeypatch):
+        """Le même en-tête, sans proxy déclaré, ne doit rien obtenir."""
+        monkeypatch.delenv("GALSEN_TRUSTED_PROXIES", raising=False)
+        reponse = client.get("/essai", headers={"X-Forwarded-Proto": "https"})
+        assert "Strict-Transport-Security" not in reponse.headers
 
     def test_les_erreurs_portent_aussi_les_entetes(self, client):
         """Une réponse d'erreur ne doit pas échapper à la posture."""

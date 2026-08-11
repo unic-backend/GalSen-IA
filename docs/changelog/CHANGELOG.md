@@ -9,7 +9,72 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Security
+- **A forwarded header was believed unconditionally, and there was no proxy to send it.**
+  Decision → `docs/architecture/decisions/012-tls-termination.md` (ADR-012)
+  - `X-Forwarded-For` was read straight from the request, leftmost value first — exactly
+    the entry a caller controls. With nothing in front of the application, **any caller
+    could set it**, present a different address on every request, and thereby obtain an
+    unlimited unauthenticated quota *and* invisibility from the threat detector, which
+    counts authentication failures per source. Twelve credential-stuffing attempts spread
+    over twelve declared addresses stayed below the threshold of all of them at once
+  - `X-Forwarded-Proto` had the quieter version of the same hole: believed on sight, it made
+    the application send a two-year HSTS header on a response that was never encrypted
+  - `src/api/trusted_proxies.py` applies one rule to both: **a forwarding header is believed
+    only when the connection's peer is a declared proxy** (`GALSEN_TRUSTED_PROXIES`,
+    addresses, CIDR blocks or exact peer names). Empty — the default — believes nothing and
+    uses the connection's own address. The chain is walked right to left, past declared
+    proxies, stopping at the first host that is not one. A malformed entry such as
+    `10.0.0.300` is logged as an error rather than accepted as a hostname, so a typo cannot
+    silently mean "no proxy declared"
+  - `tests/test_trusted_proxies.py` — 10 tests, including the two bypasses measured end to
+    end: forged addresses now hit the rate limit (`429`), and the detector tracks one source
+    and raises one threat instead of twelve invisible ones
+
+### Added
+- **TLS termination, and one way in.** `Caddyfile` + `caddy` service in `docker-compose.yml`
+  - `Internet → HTTPS → Caddy → api:8000`. Certificates, renewal and the HTTP→HTTPS redirect
+    are Caddy's, not the application's. `caddy_data` persists certificates and private keys;
+    without it every restart re-requests one and meets Let's Encrypt's rate limits
+  - **`api` no longer publishes a port**: `expose` replaces `ports`, so a clear-text route
+    around TLS and around the proxy's access log no longer exists
+  - `api-dev` moved behind the `dev` Compose profile. It ran alongside `api` with
+    `restart: unless-stopped` and a published port — a second instance of the platform,
+    which ADR-009 forbids, auto-reloading and with rate limiting disabled
+  - Caddy does not duplicate the application's security headers: two values for one header
+    let the most permissive win, depending on the client
+- **Deployment audit before any of it** → `docs/deployment/audit-2026-08-11.md`
+  (current architecture, ten defects D1–D10, risks, four roadmaps). It is also the record of
+  what was **not** taken: Redis (a single authoritative instance makes process memory the
+  single source of truth), semantic-release (a Node tool in a Python repository that already
+  has `scripts/release_check.py`), PocketBase (architectural reference only)
+- **Hot backup and restore** → `scripts/backup.py` (`sauvegarder`, `lister`, `restaurer`)
+  - `VACUUM INTO` writes a consistent copy while the application keeps writing. The `cp -r`
+    procedure documented before was wrong: copying an open SQLite file can produce a corrupt
+    database, and since the stores run in WAL mode the recent writes live in a separate
+    `-wal` file a `.sqlite` copy would leave behind
+  - Restore refuses to run while an instance holds the data directory
+- `tests/test_persistence_deployment.py` (16 tests) — data survives a restart, WAL is on,
+  database files are `0600`, a backup taken during concurrent writes restores intact
+- `tests/test_docker_image_contents.py` (8 tests) — one of them derives the required
+  directories from the code itself, so a new `os.path.join(project_root, ...)` cannot be
+  forgotten in the image again
+
 ### Fixed
+- **The production image shipped without `config/`, `agents/` and `workflows/`.**
+  `Dockerfile` copied `src/`, `tools/` and `scripts/` only, while `RouterEngine` reads
+  `config/settings.yaml`, `agents/registry.yaml` and `workflows/workflows.yaml` and imports
+  agents by module path. Every workflow route would have failed in the container while
+  passing in the test suite
+- **`SQLiteMemoryStore` ignored `GALSEN_DATA_DIR`.** It hardcoded `data/memory.sqlite` —
+  the only one of the eight stores to do so — so memory persisted outside the configured
+  directory and outside every backup. Found because `scripts/backup.py` returned an empty
+  list where a memory database was expected
+- **Storage backend selection was scattered.** `src/storage/paths.py` is now the single
+  decision point (`storage_backend()`, `sqlite_enabled()`), sets `busy_timeout`,
+  `foreign_keys`, `synchronous=NORMAL` and WAL on every connection, and `chmod 0600` on the
+  database file. `/health` reports the declared value next to the effective one, so
+  `GALSEN_STORAGE_BACKEND=postgresql` is visible instead of silently falling back to memory
 - **Backlog P1 — the hosted-provider path raised on every failure except 401 and 429.**
   Measured state → `docs/architecture/models.md`
   - The three hosted providers wrote `reason = UnavailabilityReason.UNAVAILABLE`, and
