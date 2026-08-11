@@ -8,26 +8,35 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 13 terminé
-**Phase courante** : —
-**Terminées** : toutes
-**Cadence** : **une phase par tour** (défaut).
+**VOLET en cours** : 15 — API Gateway
+**Phases** : 12
+**Phase courante** : 2.1 — en attente de confirmation
+**Terminées** : 1.1
+**Cadence** : **une phase par tour** (demandée explicitement pour ce VOLET).
 
 ```
-VOLET 13 — Notification Engine : terminé   → docs/architecture/notifications.md
-  La même alerte cinq fois produisait cinq notifications : aucune prévention des
-  doublons, alors que le chapitre 03 la range dans ses contrôles qualité.
-  Regroupement d'une notification identique et non lue dans une fenêtre de 300 s
-  (le même identifiant est retourné, `created_at` ne recule pas), et rétention
-  des notifications lues au-delà de 90 jours — l'étape 9 du cycle n'existait pas.
-  Un désaccord entre les deux magasins sur le sens de `save()` a été corrigé par
-  un `update()` explicite, vérifié sur les deux backends.
-  Absents : moteur de règles, connecteurs de canaux, file de livraison,
-  préférences utilisateur.
+VOLET 15 — API Gateway
+10 chapitres → 12 phases
+
+Ch. 01  Vision                  → 1 phase   (1.1 ce qu'est réellement la passerelle)  ✔
+Ch. 02  Architecture            → 1 phase   (2.1 les 7 composants, le flux de requête)
+Ch. 03  Cycle de vie            → 1 phase   (3.1 les 9 étapes, une par une)
+Ch. 04  Gestion                 → 2 phases  (4.1 versionnement, 4.2 retrait d'une API)
+Ch. 05  Routage et trafic       → 2 phases  (5.1 limitation mesurée, 5.2 coupe-circuit et reprises)
+Ch. 06  Supervision             → 1 phase   (6.1 métriques clés manquantes)
+Ch. 07  Sécurité                → 1 phase   (7.1 indivisible — recoupe le VOLET 11)
+Ch. 08  Gouvernance             → 1 phase   (8.1 indivisible)
+Ch. 09  Qualité et optimisation → 1 phase   (9.1 indivisible)
+Ch. 10  Gouvernance d'entreprise→ 1 phase   (10.1 indivisible — redit le ch. 08)
+
+Total : 12 phases.
 ```
 
-**Restants** : 15, 17 à 25 — soit 10 VOLETs, dont 5 portent un sujet déjà traité
-avec un contenu différent (18, 19, 20, 21, 24) et 17 qui recoupe 13 à 46 %. Le
-VOLET 01 n'a jamais eu de plan de phases formel.
+Phase 1.1 a livré `docs/architecture/gateway.md` (tête du document) et
+`tests/test_gateway_surface.py` : 63 routes énumérées, 59 exigent une
+authentification, 62 passent par le limiteur, 4 exceptions nommées et
+verrouillées.
 
-**Prochaine action** : par ordre numérique, **VOLET 15 — API Gateway Engine**.
+**Restants après le 15** : 17 à 25 — soit 9 VOLETs, dont 5 portent un sujet déjà
+traité avec un contenu différent (18, 19, 20, 21, 24). Le VOLET 01 n'a jamais eu
+de plan de phases formel.
