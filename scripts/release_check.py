@@ -153,9 +153,31 @@ def controler_changelog() -> Resultat:
     apres = contenu.split("## [Unreleased]", 1)[1]
     section = apres.split("\n## ", 1)[0]
     entrees = [l for l in section.splitlines() if l.strip().startswith("- ")]
-    if not entrees:
-        return Resultat(ECHEC, "La section [Unreleased] est vide : rien à publier.")
-    return Resultat(OK, f"{len(entrees)} entrée(s) à publier")
+    if entrees:
+        return Resultat(OK, f"{len(entrees)} entrée(s) à publier")
+
+    # Section vide : c'est l'état normal juste après une publication. Ce n'est un
+    # échec que si la version courante n'a pas non plus de section à elle —
+    # publier alors ne dirait à personne ce qui a changé.
+    if f"## [{__version__}]" in contenu:
+        return Resultat(OK, f"rien de nouveau ; [{__version__}] est déjà rédigée")
+    return Resultat(ECHEC, "La section [Unreleased] est vide : rien à publier.")
+
+
+def controler_notes_de_version() -> Resultat:
+    """
+    Les notes de la version à publier doivent exister avant l'étiquette.
+
+    Le workflow `release.yml` les lit dans le dépôt plutôt que de les écrire au
+    moment de publier : des notes rédigées dans la précipitation d'une
+    publication ne sont relues par personne. Sans le fichier, le workflow
+    échoue — autant l'apprendre ici.
+    """
+    chemin = f"docs/changelog/releases/v{__version__}.md"
+    contenu = _lire(chemin)
+    if not contenu.strip():
+        return Resultat(ECHEC, f"absentes : {chemin}")
+    return Resultat(OK, f"{chemin} ({len(contenu.splitlines())} lignes)")
 
 
 def controler_documentation() -> Resultat:
@@ -247,6 +269,44 @@ def controler_cibles_performance() -> Resultat:
     return Resultat(OK, "cibles déclarées et couvertes par tests/test_performance_targets.py")
 
 
+def controler_image() -> Resultat:
+    """
+    L'image de production doit se construire depuis le commit publié.
+
+    C'est le contrôle qui manquait, et il a déjà attrapé quelque chose : le
+    `Dockerfile` ne copiait ni `config/`, ni `agents/`, ni `workflows/`. La suite
+    de tests passait — elle lit ces répertoires depuis l'arbre de travail — et
+    toutes les routes de workflow auraient échoué en conteneur.
+
+    Sans `docker`, le contrôle **ne se coche pas** : il rapporte une alerte
+    nommant ce qui n'a pas été vérifié. Un point qui se coche tout seul sans
+    avoir été vérifié est pire que pas de point du tout.
+    """
+    try:
+        disponible = subprocess.run(
+            ["docker", "version", "--format", "{{.Server.Version}}"],
+            cwd=RACINE, capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return Resultat(ALERTE, "docker absent : l'image n'a pas été construite ici")
+    if disponible.returncode != 0:
+        return Resultat(ALERTE, "démon docker injoignable : l'image n'a pas été construite ici")
+
+    try:
+        construction = subprocess.run(
+            ["docker", "build", "--target", "production", "-t",
+             f"galsen-ia:{__version__}", "."],
+            cwd=RACINE, capture_output=True, text=True, timeout=1800,
+        )
+    except (OSError, subprocess.SubprocessError) as erreur:
+        return Resultat(ECHEC, f"la construction n'a pas pu s'exécuter : {erreur}")
+
+    if construction.returncode != 0:
+        derniere = [l for l in construction.stderr.strip().splitlines() if l.strip()]
+        return Resultat(ECHEC, derniere[-1] if derniere else "construction échouée")
+    return Resultat(OK, f"galsen-ia:{__version__} construite")
+
+
 def controles(sans_tests: bool) -> List[Controle]:
     """Construit la liste des contrôles automatiques, dans l'ordre de lecture."""
     return [
@@ -255,11 +315,13 @@ def controles(sans_tests: bool) -> List[Controle]:
         Controle("Arbre de travail", "reproductibilité", controler_arbre_propre),
         Controle("Secrets", "contrôles de sécurité", controler_secrets),
         Controle("Journal des changements", "notes de version", controler_changelog),
+        Controle("Notes de version", "notes de version", controler_notes_de_version),
         Controle("Documentation", "documentation à jour", controler_documentation),
         Controle("Démarrage", "défauts critiques", controler_demarrage),
         Controle("Cibles de performance", "cibles de performance vérifiées",
                  controler_cibles_performance),
         Controle("Suite de tests", "défauts critiques", lambda: controler_suite(sans_tests)),
+        Controle("Image de production", "reproductibilité", controler_image),
     ]
 
 

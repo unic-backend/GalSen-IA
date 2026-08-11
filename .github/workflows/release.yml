@@ -1,0 +1,121 @@
+name: Release
+
+# Publier depuis un poste, c'est publier depuis un état que personne d'autre ne
+# peut reproduire. Ce workflow refait le chemin complet à partir de l'étiquette
+# seule : suite de tests, construction de l'image, puis la publication — dans
+# cet ordre, et rien n'est publié si l'une des deux échoue.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Verify the tagged commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout the tag
+        uses: actions/checkout@v4
+        with:
+          # L'historique complet : `release_check.py` interroge les étiquettes.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: The tag must match src/version.py
+        # Une étiquette qui ne correspond pas à la version rend impossible de
+        # dire quel code tourne : c'est exactement ce que la source unique de
+        # version existe pour empêcher.
+        run: |
+          python - <<'PY'
+          import os, sys
+          sys.path.insert(0, ".")
+          from src.version import __version__
+          etiquette = os.environ["GITHUB_REF_NAME"]
+          if etiquette != f"v{__version__}":
+              sys.exit(f"Étiquette {etiquette} ≠ v{__version__} (src/version.py)")
+          print(f"{etiquette} correspond à src/version.py")
+          PY
+
+      - name: Run the test suite
+        run: python -m pytest -q
+
+      - name: Build the production image
+        # Le contrôle qui manquait : la suite lit `config/`, `agents/` et
+        # `workflows/` depuis l'arbre de travail, donc elle passe même quand
+        # l'image ne les contient pas. Seule une construction le dit.
+        run: docker build --target production -t "galsen-ia:${GITHUB_REF_NAME#v}" .
+
+      - name: Check that the image starts and answers
+        # Construire n'est pas démarrer. Le conteneur doit répondre sur /health,
+        # sinon l'étiquette désigne une image qu'on ne peut pas déployer.
+        run: |
+          docker run -d --name galsen-verif \
+            -e GALSEN_API_KEYS=verification-only-not-a-deployment-key \
+            -p 8000:8000 "galsen-ia:${GITHUB_REF_NAME#v}"
+          for essai in $(seq 1 30); do
+            if curl -sf http://localhost:8000/live > /dev/null; then
+              echo "L'image répond après ${essai}s."
+              curl -s http://localhost:8000/health | head -c 400
+              docker rm -f galsen-verif
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "L'image n'a pas répondu en 30 s :"
+          docker logs galsen-verif
+          docker rm -f galsen-verif
+          exit 1
+
+  publish:
+    name: Publish the release
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout the tag
+        uses: actions/checkout@v4
+
+      - name: Extract the release notes
+        # Les notes viennent du dépôt, pas d'un résumé écrit au moment de
+        # publier : `docs/changelog/releases/` porte le texte relu.
+        id: notes
+        run: |
+          fichier="docs/changelog/releases/${GITHUB_REF_NAME}.md"
+          if [ ! -f "$fichier" ]; then
+            echo "Notes de version absentes : $fichier" >&2
+            exit 1
+          fi
+          echo "fichier=$fichier" >> "$GITHUB_OUTPUT"
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Une version 0.x reste une pré-version : la marquer stable ferait une
+          # promesse que `__release_type__ = "prototype"` contredit.
+          prerelease=""
+          case "${GITHUB_REF_NAME}" in
+            v0.*) prerelease="--prerelease" ;;
+          esac
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "GalSen IA ${GITHUB_REF_NAME}" \
+            --notes-file "${{ steps.notes.outputs.fichier }}" \
+            $prerelease

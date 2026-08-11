@@ -6,9 +6,15 @@ The format is based on Keep a Changelog.
 This project follows Semantic Versioning; the version lives in `src/version.py` and
 nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 
-Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
+`v0.1.0` is the first release, and it is a **prototype**: the platform's headline
+capability answers `503` until an operator configures a model provider. Release notes →
+`docs/changelog/releases/`.
 
 ## [Unreleased]
+
+Nothing since `v0.1.0`.
+
+## [0.1.0] - 2026-08-11
 ### Security
 - **A forwarded header was believed unconditionally, and there was no proxy to send it.**
   Decision → `docs/architecture/decisions/012-tls-termination.md` (ADR-012)
@@ -32,6 +38,21 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
     and raises one threat instead of twelve invisible ones
 
 ### Added
+- **A release that can be rebuilt and rolled back to.** `.github/workflows/release.yml`,
+  `docs/deployment/rollback.md`, `docs/changelog/releases/v0.1.0.md`
+  - The repository had **zero tags**. A rollback target that does not exist is not a
+    rollback plan, and CI never built the image — the one check that would have caught the
+    `Dockerfile` missing `config/`, `agents/` and `workflows/`
+  - On a `v*` tag the workflow re-does the whole path from the tag alone: the tag must
+    match `src/version.py`, the suite runs, the production image is built, **and the
+    container must answer on `/live`** — building is not starting. Nothing is published if
+    any of those fails
+  - `scripts/release_check.py` gains two checks: the production image builds, and the
+    release notes exist. Without Docker the image check reports what it could not verify
+    instead of ticking itself
+  - `semantic-release` was **not** adopted: a Node toolchain in a Python repository that
+    already has a release checker better fitted to it. The principle is kept — the
+    changelog and the tag drive the release, and nothing is published from untested code
 - **One authoritative instance, enforced.** `src/api/instance_lock.py` + ADR-013
   (`docs/architecture/decisions/013-single-authoritative-instance.md`)
   - ADR-009 stated the single-instance posture and `scaling_report()` published the
@@ -86,6 +107,18 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
   forgotten in the image again
 
 ### Fixed
+- **Dependencies were unpinned, and the production image carried the test tooling.**
+  Found by the production-readiness review → `docs/deployment/production-readiness.md`
+  - `requirements.txt` used `>=` throughout, so the same git tag produced different images
+    over time — the opposite of the reproducible build a release is for. Now pinned to the
+    exact versions the v0.1.0 suite ran against
+  - pytest, its plugins and the test HTTP client were installed into the image exposed to
+    the network. Split into `requirements-dev.txt`; the image no longer carries them
+  - `starlette` was imported directly by the code and never declared — the application
+    relied on FastAPI happening to install it
+  - `tests/test_requirements.py` derives the expected runtime dependencies from the code's
+    own imports. Maintained by hand, the split would break at the first added import and
+    the failure would surface only when starting the container
 - **The production image shipped without `config/`, `agents/` and `workflows/`.**
   `Dockerfile` copied `src/`, `tools/` and `scripts/` only, while `RouterEngine` reads
   `config/settings.yaml`, `agents/registry.yaml` and `workflows/workflows.yaml` and imports
@@ -1376,8 +1409,16 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 - KnowledgeValidator date comparison now works with timezone-aware datetime objects
 - Fixed missing imports and updated credential detail message in hosted providers to enable environment‑based credential handling (ADR-004)
 
-## [0.2.0] - 2026-07-31
-### Added
+## Pre-release history — never tagged
+
+The two sections below were written while the version number lived in two places at once
+(`0.1.0` in the application, `0.2.0` in the Docker image). **No tag was ever created for
+either**, so neither was a release in any sense a user could act on. They are kept
+because they are history, and moved under this heading so that `v0.1.0` above is
+unambiguously the first release.
+
+### 0.2.0 — 2026-07-31 (development)
+#### Added
 - Project foundation structure
 - Root `CLAUDE.md` with permanent memory system
 - Core memory files (`vision`, `current-objectives`, `completed-work`, `pending-work`, `priorities`, `knowledge-index`)
@@ -1393,12 +1434,12 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 - Memory Engine (unified memory management system)
   - Memory Manager, Memory Store (in-memory), Memory Retriever, Memory Indexer, Memory Cache (LRU), Memory Summarizer, Memory Ranking
   - Designed for future storage backends (vector databases, SQL, local, cloud)
-  
-### Changed
+
+#### Changed
 - Nothing yet
 
-### Fixed
+#### Fixed
 - Nothing yet
 
-## [0.1.0] - 2026-07-28
+### 0.1.0 — 2026-07-28 (development)
 - Initial project foundation created

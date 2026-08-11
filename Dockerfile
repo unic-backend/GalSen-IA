@@ -28,11 +28,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copier et installer les dépendances Python
+# Copier et installer les dépendances Python.
+# `requirements.txt` ne contient que l'exécution : pytest et le client HTTP de
+# test vivent dans `requirements-dev.txt` et n'ont rien à faire dans une image
+# exposée au réseau.
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir pyyaml
+    pip install --no-cache-dir -r requirements.txt
 
 # ---------------------------------------------------------------------------
 # Étape 2 : Image de production
