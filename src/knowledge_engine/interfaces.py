@@ -46,6 +46,22 @@ class KnowledgeStore(ABC):
         """Nettoie les anciennes versions, en gardant seulement les plus récentes."""
         pass
 
+    @abstractmethod
+    def record_access(self, knowledge_id: str) -> int:
+        """Compte une consultation et retourne le nouveau total.
+
+        Une méthode dédiée plutôt qu'un `update()` : consulter une connaissance
+        n'en produit pas une nouvelle version, et `update()` refuse à juste
+        titre une écriture dont la version n'a pas avancé. Le compteur passait
+        par là et ne s'incrémentait donc jamais ailleurs que par le partage de
+        référence du magasin en mémoire — c'est-à-dire nulle part sur SQLite.
+
+        Returns:
+            Le nombre de consultations après incrément, ou 0 si la connaissance
+            n'existe pas.
+        """
+        pass
+
 
 class KnowledgeLoader(ABC):
     """Interface pour le chargement de connaissances depuis diverses sources."""

@@ -8,24 +8,25 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 22 terminé
+**VOLET en cours** : aucun — VOLET 23 terminé
 **Phase courante** : —
 **Terminées** : toutes (5 phases)
 **Cadence** : **une phase par tour** (défaut).
 
 ```
-VOLET 22 — Decision Engine : terminé   → docs/architecture/decisions.md
-  Sujet neuf : aucun moteur de décision n'existe, et aucun n'a été fabriqué.
-  Onze composants et quatorze étapes : c'est un projet, pas une phase.
-  Ce qui a été mesuré : la plateforme prend **une** décision — le planificateur
-  déduit les agents nécessaires d'une demande — et elle est jetée. Sur
-  « surveille les logs de production » : 3 agents recommandés, 9 exécutés.
-  `decision_trace.py` enregistre l'écart avec un `applied: false` explicite.
-  Suivre la recommandation changerait toutes les exécutions : c'est le P1 déjà
-  inscrit après le VOLET 19, pas le travail d'une phase de mesure.
+VOLET 23 — Learning Engine : terminé   → docs/architecture/learning.md
+  Sujet neuf : aucun moteur d'apprentissage n'existe, aucun n'a été fabriqué.
+  L'étape 6 est l'entraînement de modèle et le critère C1 n'est pas atteint.
+  La plateforme recueille **un** signal d'usage — le compteur de consultations
+  d'une connaissance, qui alimente le critère `popularity` du classement — et
+  il ne fonctionnait pas : `update()` refusait l'écriture faute de version
+  avancée. Jamais sur SQLite ; en mémoire il ne survivait que par aliasing,
+  **que mon correctif du VOLET 21 a supprimé** — régression que j'ai
+  introduite et corrigée ici.
+  `record_access()` écrit le compteur sans toucher à la version. Les deux
+  magasins concordent enfin — troisième divergence de ce type de la série.
 ```
 
-**Restants** : 23 à 25 — soit 3 VOLETs, dont 1 porte un sujet déjà traité avec un
-contenu différent (24). Le VOLET 01 n'a jamais eu de plan de phases formel.
+**Restants** : 24 et 25. Le VOLET 01 n'a jamais eu de plan de phases formel.
 
-**Prochaine action** : par ordre numérique, **VOLET 23 — Learning Engine**.
+**Prochaine action** : **VOLET 24** — vérifier son titre réel dans le fichier.

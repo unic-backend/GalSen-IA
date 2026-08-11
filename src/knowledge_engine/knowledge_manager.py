@@ -711,15 +711,23 @@ class KnowledgeManagerImpl(KnowledgeManager):
             return self._ranker.rank_by_priority(knowledge_items)
 
     def _increment_access_count(self, knowledge_id: str) -> None:
-        """Incrémente le compteur d'accès pour une connaissance."""
+        """Compte une consultation de la connaissance.
+
+        Le compteur passait auparavant par `get()` puis `update()`, sans
+        incrémenter la version : `update()` refusait donc l'écriture, et le
+        compteur ne survivait que par le partage de référence du magasin en
+        mémoire — c'est-à-dire jamais sur SQLite, qui désérialise à chaque
+        lecture. C'est le seul signal d'usage que la plateforme recueille et il
+        alimente le critère `popularity` du classement (VOLET 23, ch. 01 et 03) :
+        perdu, ce critère valait toujours zéro.
+
+        `record_access()` écrit le compteur sans toucher à la version, une
+        consultation n'étant pas une nouvelle version de la connaissance.
+        """
         try:
-            knowledge = self._store.get(knowledge_id)
-            if knowledge:
-                count = knowledge.metadata.get("access_count", 0)
-                knowledge.metadata["access_count"] = count + 1
-                # Mettre à jour le stockage (cela incrémentera la version)
-                self._store.update(knowledge)
-                # Mettre à jour le cache
-                self._cache.set(f"knowledge:{knowledge_id}", knowledge)
+            total = self._store.record_access(knowledge_id)
+            if total:
+                # Le cache doit refléter le magasin, jamais le devancer.
+                self._cache.set(f"knowledge:{knowledge_id}", self._store.get(knowledge_id))
         except Exception as e:
             self._logger.debug(f"Failed to increment access count for {knowledge_id}: {e}")

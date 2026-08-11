@@ -245,6 +245,25 @@ class SQLiteKnowledgeStore(KnowledgeStore):
                 cursor = conn.execute(sql, data)
             return cursor.rowcount > 0
 
+    def record_access(self, knowledge_id: str) -> int:
+        """Compte une consultation et retourne le nouveau total.
+
+        Écrit le compteur dans les métadonnées sans toucher à la version : une
+        consultation n'est pas une nouvelle version de la connaissance.
+        """
+        with self._lock:
+            existing = self.get(knowledge_id)
+            if existing is None:
+                return 0
+            total = int(existing.metadata.get("access_count", 0)) + 1
+            existing.metadata["access_count"] = total
+            with self._get_connection() as conn:
+                conn.execute(
+                    "UPDATE knowledge_items SET metadata = ? WHERE id = ?",
+                    (json.dumps(existing.metadata, ensure_ascii=False), knowledge_id),
+                )
+            return total
+
     def delete(self, knowledge_id: str) -> bool:
         """Supprime une connaissance."""
         with self._lock:

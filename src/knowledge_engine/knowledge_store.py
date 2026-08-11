@@ -65,6 +65,16 @@ class InMemoryKnowledgeStore(KnowledgeStore):
             self._data[knowledge.id] = knowledge
             return True
 
+    def record_access(self, knowledge_id: str) -> int:
+        """Compte une consultation et retourne le nouveau total."""
+        with self._lock:
+            knowledge = self._data.get(knowledge_id)
+            if knowledge is None:
+                return 0
+            total = int(knowledge.metadata.get("access_count", 0)) + 1
+            knowledge.metadata["access_count"] = total
+            return total
+
     def delete(self, knowledge_id: str) -> bool:
         """Supprime une connaissance."""
         with self._lock:

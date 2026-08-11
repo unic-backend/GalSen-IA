@@ -9,6 +9,31 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Fixed
+- **VOLET 23 — the platform's only feedback loop never worked, and VOLET 21 finished
+  breaking it.** Measured state → `docs/architecture/learning.md`
+  - The knowledge access counter is not decorative: `KnowledgeRankerImpl` weights a
+    `popularity` criterion computed from it. `_increment_access_count()` read the item,
+    incremented the counter and called `update()` — which refuses a write whose version has
+    not advanced, and the counter did not advance it. The write was always rejected
+  - **It never worked on SQLite**, which deserialises on every read. In memory the
+    increment survived only by accident, because `get()` returned the store's own object
+  - **VOLET 21's fix removed that accident.** Making `get()` return a copy — the right fix
+    for the cache-versus-store divergence — left the counter writing to a discarded copy.
+    Measured: `access_count = 5` before, `None` after. That is a regression introduced in
+    this session and caught by this VOLET's measurement; it finished exposing a defect the
+    in-memory path had been masking all along
+  - `record_access(knowledge_id)` is now an explicit store method on the interface and both
+    implementations, writing the counter **without touching the version** — consulting an
+    item is not a new version of it, and forcing the write through the version would make
+    every read produce a revision. Both backends agree: `access_count = 5, version = 1`
+  - Third time in this series that two implementations of one interface were found
+    disagreeing: notification `save()` (VOLET 13), knowledge `get()` (VOLET 21), this
+    counter
+  - **No learning engine was built.** Ten components and twelve stages including model
+    training, with exit criterion C1 unmet — there is nothing to train
+  - 6 new tests; full suite 2 001 passing, 7 skipped
+
 ### Added
 - **VOLET 22 — the one decision the platform takes was thrown away.** Measured state →
   `docs/architecture/decisions.md`
