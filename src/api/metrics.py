@@ -58,6 +58,11 @@ ROUTE_INCONNUE = "unmatched"
 _metriques: Optional[MetricsTool] = None
 _verrou = threading.Lock()
 
+# Début de la fenêtre de mesure. Le débit se déduit des compteurs ; les remettre
+# à zéro sans remettre l'origine donnerait un débit calculé sur une durée que
+# les compteurs ne couvrent plus.
+_debut_mesure = time.time()
+
 
 def get_shared_metrics() -> MetricsTool:
     """
@@ -77,7 +82,9 @@ def get_shared_metrics() -> MetricsTool:
 
 def reset_metrics() -> None:
     """Vide les compteurs. Réservé aux tests, qui doivent partir d'un état connu."""
+    global _debut_mesure
     get_shared_metrics().execute("reset")
+    _debut_mesure = time.time()
 
 
 def _nom_de_route(request: Request) -> str:
@@ -189,6 +196,7 @@ def metrics_snapshot() -> Dict[str, Any]:
         et la portée de la mesure.
     """
     donnees = get_shared_metrics().execute("get_metrics")
+    disponibilite = max(time.time() - _debut_mesure, 0.0)
     compteurs = donnees.get("counters", {})
 
     total = compteurs.get(TOTAL, 0)
@@ -224,8 +232,27 @@ def metrics_snapshot() -> Dict[str, Any]:
         # Arrondi à quatre décimales : au-delà, le chiffre suggère une précision
         # que quelques centaines de requêtes ne portent pas.
         "error_rate": round(erreurs / total, 4) if total else 0.0,
+        # Débit, réclamé par le chapitre 06 du VOLET 15. Moyenne depuis le
+        # démarrage, pas débit instantané : la distinction compte, une pointe de
+        # trafic d'il y a deux heures n'est plus visible ici.
+        "uptime_seconds": round(disponibilite, 3),
+        "throughput_rps": round(total / disponibilite, 4) if disponibilite > 0 else None,
         "counters": compteurs,
         "latency_ms": donnees.get("histograms", {}),
+        # Deux métriques clés du chapitre 06 que ce processus ne peut pas
+        # produire. Les nommer vaut mieux que de rendre un chiffre plausible.
+        "unavailable": {
+            "availability": (
+                "non mesurable de l'intérieur : une instance arrêtée ne rapporte "
+                "rien, et une disponibilité auto-déclarée vaut toujours 100 %. "
+                "Elle demande une sonde externe qui interroge /live et conserve "
+                "l'historique"
+            ),
+            "resource_utilization": (
+                "CPU et mémoire demanderaient une dépendance supplémentaire "
+                "(psutil), absente de l'environnement"
+            ),
+        },
         "scope": "instance",
         "detail": (
             "Compteurs tenus en mémoire du processus : un redémarrage les remet "

@@ -68,6 +68,9 @@ from src.api.security_headers import (
     docs_enabled,
 )
 
+# Versionnement et fin de vie des routes (VOLET 15 ch. 04, ADR-011)
+from src.api.versioning import DeprecationHeadersMiddleware, version_report
+
 # Import du RBAC
 from src.api.rbac import (
     ANONYMOUS_SUBJECT,
@@ -290,6 +293,11 @@ app = FastAPI(
 
 # En-têtes de sécurité sur toutes les réponses
 app.add_middleware(SecurityHeadersMiddleware)
+
+# Annonce de fin de vie (ADR-011). Au plus près de la route, comme les en-têtes
+# de sécurité : l'annonce doit accompagner toute réponse de la route dépréciée,
+# y compris ses erreurs.
+app.add_middleware(DeprecationHeadersMiddleware)
 
 # Mesure du trafic. Ajouté après la sécurité : Starlette exécute les
 # intergiciels dans l'ordre inverse de leur ajout, donc celui-ci enveloppe
@@ -635,6 +643,22 @@ async def metrics():
     les taux d'erreur décrivent l'usage d'un déploiement, pas son architecture.
     """
     return metrics_snapshot()
+
+
+@app.get("/api/versions", tags=["health"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def api_versions():
+    """Version servie et routes annoncées en fin de vie (ADR-011).
+
+    Le chapitre 04 demande un contrôle de version et le retrait sûr des API
+    obsolètes. La réponse dit explicitement qu'il n'existe **pas** de
+    versionnage d'URL : un appelant qui suppose un `/v1` implicite, donc une
+    stabilité que rien ne garantit, construit sur du sable.
+
+    La liste des dépréciations est vide tant qu'aucune route ne l'est.
+    """
+    return version_report()
 
 
 @app.get("/live", tags=["health"], dependencies=[Depends(rate_limit_dependency)])

@@ -9,7 +9,40 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Added
+- **VOLET 15 — API Gateway: a way to announce that a route is going away.** Decision →
+  `docs/architecture/decisions/011-api-versioning-and-deprecation.md`, measured state →
+  `docs/architecture/gateway.md`
+  - Chapters 04 and 08 ask for version control and safe retirement of obsolete APIs.
+    There was no version prefix, no negotiation header and no deprecation mechanism: the
+    only available retirement was deletion, discovered as a 404 in production
+  - ADR-011 deliberately does **not** add a `/v1` prefix. A version prefix is a promise of
+    stability, and this platform is a prototype whose main capability answers 503 for lack
+    of a provider. Deprecation is announced through RFC 8594 headers instead —
+    `Deprecation`, `Sunset` only when a date is decided, `Link: rel="successor-version"`
+    only when there is a replacement
+  - Carried by a middleware, not a per-route dependency, so the notice covers **error
+    responses too**: a caller who only ever hits a route in error is precisely the one who
+    needs warning. Deprecated is not removed — the route keeps working and keeps its
+    status code
+  - `GET /api/versions` serves the version, the deprecation list, and an explicit
+    statement that there is no URL versioning. **The registry is empty**, because no route
+    is deprecated; registering a sample would fabricate a fact
+  - `metrics_snapshot()` gains `throughput_rps` and `uptime_seconds` (chapter 06), and
+    names the two key metrics it cannot produce: availability — a process cannot measure
+    its own, a self-reported figure is always 100 % — and resource utilization
+  - `tests/test_gateway_surface.py` locks the whole surface: of 63 routes, 59 require
+    authentication and 62 pass the rate limiter, with 4 named exceptions. Verified the
+    guard fails on an unprotected route
+
 ### Fixed
+- **VOLET 15 — four routes handed the caller the inside of the machine on a 500.**
+  Measured, with a search failing on a connection error, the response body carried an
+  internal hostname, a port and a filesystem path. `erreur_interne()` now logs the
+  exception with its traceback under an incident id and returns only that id — the cause
+  changes recipient rather than being lost. Validation errors still answer 422 with the
+  precise reason; only internal failures became opaque. A test reads `server.py` and fails
+  if any route builds a 500 detail from an exception again
 - **VOLET 13 — Notification Engine: the same alert five times produced five
   notifications.** Measured state → `docs/architecture/notifications.md`
   - Chapter 03 lists duplicate prevention among its quality controls and nothing applied

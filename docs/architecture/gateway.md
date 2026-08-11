@@ -156,15 +156,128 @@ the log carrying the real cause, and the 422 that must stay readable. A sixth te
 `server.py` and fails if any route ever builds a 500 detail from an exception again —
 verified to catch it on a deliberately faulty source.
 
-## What comes next in this VOLET
+## Versioning and retirement (chapters 04 and 08)
 
-Chapters 04, 05, 06, 08, 09 and 10 are not covered by this phase. What is already known
-to be missing, and will be measured rather than assumed:
+Both chapters ask for version control and for retiring obsolete APIs safely. Measured:
+**no version prefix anywhere**, no negotiation header, no way to mark a route as going
+away. The only available retirement was deletion, which a caller discovers as a 404 in
+production.
 
-- **No API versioning at all**: no `/v1` prefix, no version negotiation. Chapters 04 and
-  08 both ask for version control and for retiring obsolete APIs safely; there is
-  currently no way to deprecate a route except deleting it.
-- **Traffic controls beyond rate limiting**: no throttling tier, no circuit breaker, no
-  retry policy, no load balancing — the last two being meaningless without a backend.
-- **Chapter 10 restates chapter 08** almost entirely (both are titled "API Gateway
-  Governance"); it will be treated as one subject, not two.
+The decision is recorded in **ADR-011**, and it is deliberately not `/v1`. A version
+prefix is a *promise* — "this shape is stable, breaking changes land in `/v2`" — and this
+platform is a prototype whose main capability answers 503 for lack of a provider.
+Announcing stability the project cannot honour is the same failure this repository has
+paid for repeatedly.
+
+What was actually missing is narrower: a caller had no way to learn a route was going away
+**before** it went. `src/api/versioning.py` adds that, using RFC 8594 rather than anything
+bespoke:
+
+| | |
+|---|---|
+| `Deprecation: true` | the route is in end of life |
+| `Sunset: <HTTP-date>` | only when a removal date is decided — an invented date is worse than none, because it would be believed |
+| `Link: <…>; rel="successor-version"` | only when there is a replacement |
+| `GET /api/versions` | the version served, the deprecation list, and an explicit statement that **there is no URL versioning** |
+
+Three properties, all tested:
+
+- **The registry is empty.** No route is deprecated today. Registering a sample to show
+  the mechanism works would fabricate a fact; the tests prove it instead.
+- **Deprecated is not removed.** The route keeps working and keeps its status code. A
+  deprecation that broke the route would be a disguised deletion, learned exactly as
+  before — in production.
+- **The announcement covers error responses too.** That is why it is a middleware and not
+  a per-route dependency: a caller who only ever hits a route in error, because their
+  parameters have been wrong for months, is precisely the one who needs the notice.
+
+## Traffic controls (chapter 05)
+
+| Control the chapter names | State |
+|---------------------------|-------|
+| Rate limiting | present — token bucket, per key fingerprint or per IP |
+| Throttling | present — the bucket's `burst_multiplier` is the burst allowance |
+| **Load balancing** | **n/a**: one process, no backend pool |
+| **Circuit breaking** | **absent** |
+| **Retry policies** | **absent** |
+
+The limiter is better than the chapter requires on one point and worse on another. Better:
+a 429 carries `Retry-After` and the three `X-RateLimit-*` headers, so a well-behaved
+client can back off instead of guessing. It also counts against a key *fingerprint*, never
+the key itself — a limiter's buckets end up in logs and metrics.
+
+Worse: the buckets live in process memory, so **the quota actually granted is multiplied
+by the number of instances**. That is not a new finding — `scaling_report()` already
+records it as blocking under ADR-009 — and it stays true here.
+
+Circuit breaking and retries are absent and were not improvised. Every outbound provider
+call has a timeout (30 s for the hosted providers, configurable for the local one), so a
+hanging dependency cannot block a request forever; a breaker would save paying that
+timeout repeatedly, which is an optimisation, not a missing safety net. Adding one that
+guessed at failure thresholds would be inventing policy.
+
+## Monitoring (chapter 06)
+
+Six key metrics are named. Four were already measured, one was computable but nobody
+computed it, and two cannot be produced from inside this process:
+
+| Metric | State |
+|--------|-------|
+| Request latency | histograms per method and route template |
+| Error rate | derived in `metrics_snapshot()`, not left to consumers to disagree over |
+| Authentication success rate | two counters, no subject recorded |
+| Throughput | **added**: `throughput_rps` over `uptime_seconds` |
+| **Availability** | **named as unavailable** |
+| **Resource utilization** | **named as unavailable** |
+
+Availability is the interesting one. A process cannot measure its own availability: an
+instance that is down reports nothing, so a self-reported figure is always 100 %. That
+number would be exactly the plausible answer `.claude/rules/verification.md` forbids. It
+is named in an `unavailable` block, with what it would take — an external probe polling
+`/live` and keeping the history. Resource utilization would need `psutil`, which is not in
+the environment.
+
+Throughput is an average since the counters were last reset, not an instantaneous rate,
+and the field says so. Resetting the counters also resets the measurement window;
+otherwise the rate would collapse toward zero without any change in traffic.
+
+## Security (chapter 07)
+
+Nothing new here — the chapter restates what VOLET 11 built and what chapters 02 and 03
+above already measure. `docs/architecture/security.md` is the reference; the gateway's
+share of it is: API key authentication with digests and `hmac.compare_digest`, RBAC on
+every route, security headers on every response including errors, CORS closed by default,
+threat detection on authentication failures, and — added by phase 3.1 — 500 responses that
+no longer hand over the inside of the machine.
+
+The one control the chapter names that the platform does not implement is **TLS
+termination**. That is deliberate: TLS belongs to the deployment (reverse proxy, ingress),
+and a Python process terminating its own TLS would be a worse answer than the one every
+deployment already has. It is listed under exit criterion C4, which is open.
+
+## Governance and quality (chapters 08, 09, 10)
+
+Chapter 10 restates chapter 08 almost entirely — both are titled "API Gateway Governance"
+— so they are treated as one subject.
+
+What exists: version control of the code, audit trails, `/api/versions` for the API
+inventory, `/metrics` and `/analytics` for the KPIs, ADRs for the decisions, and the
+structural guards in `tests/test_gateway_surface.py` that make "enforce access controls"
+a test rather than a policy nobody applies.
+
+What does not exist, and is not simulated: there is no API Governance Board, no Operations
+Team, no Compliance Team — the roles the chapters assign belong to an organisation this
+project does not have. Recording a review cadence that nobody performs would be the same
+fabrication as an invented sunset date. Chapter 09's optimisation loop has one real
+foothold: `docs/standards/performance.md` sets the targets and `scripts/release_check.py`
+checks them.
+
+## What is still missing
+
+- **No URL versioning**, by decision (ADR-011). Two versions of a route cannot be served
+  side by side; when that is genuinely needed, the ADR is superseded, not stretched.
+- **No circuit breaker, no retry policy** — timeouts bound each outbound call instead.
+- **The limiter does not survive a second instance**: quotas multiply per process
+  (ADR-009).
+- **No availability measurement**, which needs an external probe.
+- **No TLS at the application layer**, by design; it belongs to the deployment (C4).
