@@ -17,6 +17,7 @@ from .interfaces import EmailManager, EmailStore
 from .store import InMemoryEmailStore
 from .transport import EmailTransport, NoopTransport
 from .types import EmailMessage, EmailSendResult, EmailStatus
+from src.storage.paths import sqlite_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class EmailManagerImpl(EmailManager):
     ) -> None:
         if store is not None:
             self._store = store
-        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
+        elif sqlite_enabled():
             from src.storage.sqlite_email_store import SQLiteEmailStore
             self._store = SQLiteEmailStore()
         else:

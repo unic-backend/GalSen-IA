@@ -76,6 +76,24 @@ COPY requirements.txt .
 COPY src/ src/
 COPY tools/ tools/
 
+# Registres lus à l'exécution, à la racine du projet.
+#
+# Ils manquaient : l'image ne contenait que `src/` et `tools/`, si bien que
+# `RouterEngine` — qui lit config/settings.yaml, agents/registry.yaml et
+# workflows/workflows.yaml — échouait dans le conteneur alors qu'il passait en
+# local. Les routes /workflow/* étaient donc en panne dès la mise en image, et
+# rien ne le montrait parce que la CI ne construit pas l'image.
+#
+# `agents/` porte aussi les modules Python des agents : le répartiteur les
+# importe par leur chemin de module (`agents.planner.agent`), pas seulement
+# leur déclaration YAML.
+#
+# `tests/test_docker_image_contents.py` échoue si un nouveau répertoire lu à
+# l'exécution n'est pas ajouté ici.
+COPY config/ config/
+COPY agents/ agents/
+COPY workflows/ workflows/
+
 # Créer le répertoire de données pour le stockage persistant
 RUN mkdir -p /app/data && \
     chown -R galsen:galsen /app

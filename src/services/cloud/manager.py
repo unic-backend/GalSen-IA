@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 from .interfaces import CloudManager, CloudStore
 from .store import InMemoryCloudStore
 from .types import CloudFileItem, CloudFileCategory, CloudProvider, CloudSyncResult
+from src.storage.paths import storage_backend
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +81,7 @@ class CloudManagerImpl(CloudManager):
             demande = ""
 
         if not demande:
-            demande = "sqlite" if os.getenv(
-                "GALSEN_STORAGE_BACKEND", "in-memory"
-            ).lower() == "sqlite" else "in-memory"
+            demande = storage_backend()
 
         if demande == "sqlite":
             from src.storage.sqlite_cloud_store import SQLiteCloudStore

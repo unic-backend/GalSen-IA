@@ -36,6 +36,7 @@ import logging
 import time
 import asyncio
 import os
+from src.storage.paths import sqlite_enabled
 
 
 class ModelManagerImpl(ModelManager):
@@ -62,7 +63,7 @@ class ModelManagerImpl(ModelManager):
         # Initialiser tous les composants
         if store is not None:
             self._store = store
-        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
+        elif sqlite_enabled():
             # Import différé pour éviter un import circulaire avec storage.
             from src.storage.sqlite_model_store import SQLiteModelStore
             self._store = SQLiteModelStore()

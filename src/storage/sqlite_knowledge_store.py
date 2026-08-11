@@ -21,7 +21,7 @@ from src.knowledge_engine.types import (
 )
 from src.knowledge_engine.interfaces import KnowledgeStore
 from src.storage.encryption import decrypt, encrypt
-from .paths import default_sqlite_path
+from .paths import default_sqlite_path, prepare_connection, secure_database_file
 
 
 class SQLiteKnowledgeStore(KnowledgeStore):
@@ -56,6 +56,9 @@ class SQLiteKnowledgeStore(KnowledgeStore):
         self._persistent_conn: Optional[sqlite3.Connection] = None
 
         self._initialize_db()
+        # Une base porte des mémoires, des connaissances et des e-mails ;
+        # elle était créée en 0644, donc lisible par tout compte de la machine.
+        secure_database_file(self.db_path)
         if self.db_path == ":memory:":
             # Base partagée : la connexion persistante garde la base en vie.
             self._persistent_conn = self._get_connection()
@@ -73,9 +76,7 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             conn = sqlite3.connect("file::memory:?cache=shared", uri=True)
         else:
             conn = sqlite3.connect(self.db_path)
-        conn.execute("PRAGMA foreign_keys = ON")
-        # Évite les erreurs "database is locked" lors de l'accès concurrent.
-        conn.execute("PRAGMA busy_timeout = 5000")
+        prepare_connection(conn)
         return conn
 
     def _initialize_db(self) -> None:

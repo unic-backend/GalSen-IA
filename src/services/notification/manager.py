@@ -15,6 +15,7 @@ from .interfaces import NotificationManager, NotificationStore
 from .store import InMemoryNotificationStore
 from .templates import TemplateError, TemplateRegistry
 from .types import Notification, NotificationPriority, NotificationType
+from src.storage.paths import sqlite_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class NotificationManagerImpl(NotificationManager):
         self._templates = templates if templates is not None else TemplateRegistry()
         if store is not None:
             self._store = store
-        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
+        elif sqlite_enabled():
             from src.storage.sqlite_notification_store import SQLiteNotificationStore
             self._store = SQLiteNotificationStore()
         else:

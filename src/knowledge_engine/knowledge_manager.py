@@ -26,6 +26,7 @@ import datetime
 import logging
 import threading
 import os
+from src.storage.paths import sqlite_enabled
 
 
 class KnowledgeManagerImpl(KnowledgeManager):
@@ -59,7 +60,7 @@ class KnowledgeManagerImpl(KnowledgeManager):
         # Composants avec valeurs par défaut
         if store is not None:
             self._store = store
-        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
+        elif sqlite_enabled():
             # Import différé pour éviter un import circulaire avec storage.
             from src.storage.sqlite_knowledge_store import SQLiteKnowledgeStore
             self._store = SQLiteKnowledgeStore()

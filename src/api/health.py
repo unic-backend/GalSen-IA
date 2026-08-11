@@ -22,6 +22,7 @@ import logging
 import os
 import threading
 import time
+from src.storage.paths import declared_backend, storage_backend
 
 logger = logging.getLogger(__name__)
 
@@ -428,9 +429,10 @@ class ComponentHealthChecker(HealthChecker):
     @staticmethod
     def _check_storage() -> ComponentHealth:
         """Vérifie la configuration du backend de stockage."""
-        backend = os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower()
+        declare = declared_backend()
+        backend = storage_backend()
 
-        if backend in ("in-memory", "sqlite"):
+        if declare == backend:
             return ComponentHealth(
                 status="healthy",
                 details={
@@ -439,9 +441,11 @@ class ComponentHealthChecker(HealthChecker):
                 },
             )
         else:
+            # La valeur déclarée n'est pas appliquée. Le rapport nomme les deux :
+            # savoir ce qui s'applique **à la place** est ce qui permet d'agir.
             return ComponentHealth(
                 status="degraded",
-                details={"backend": backend},
+                details={"backend": declare, "effective_backend": backend},
                 error=f"Backend de stockage inconnu : {backend}",
             )
 
@@ -510,7 +514,7 @@ class ComponentHealthChecker(HealthChecker):
     @staticmethod
     def _get_storage_backend() -> str:
         """Détecte le backend de stockage utilisé."""
-        return os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower()
+        return storage_backend()
 
     def _get_configured_providers(self) -> List[str]:
         """Retourne la liste des fournisseurs de modèles configurés."""

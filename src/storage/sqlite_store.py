@@ -12,20 +12,29 @@ from typing import Any, Dict, List, Optional
 
 from src.memory_engine.types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
 from src.storage.encryption import decrypt, encrypt
+from src.storage.paths import default_sqlite_path, prepare_connection, secure_database_file
 from src.memory_engine.interfaces import MemoryStore
 
 
 class SQLiteMemoryStore(MemoryStore):
     """Magasin de mémoire soutenu par SQLite."""
 
-    def __init__(self, db_path: str = "data/memory.sqlite"):
+    def __init__(self, db_path: Optional[str] = None):
         """
         Initialise le magasin SQLite.
 
         Args:
-            db_path: Chemin vers le fichier de base de données SQLite.
+            db_path: Chemin vers le fichier de base de données SQLite. Par
+                défaut, `memory.sqlite` dans le répertoire de données configuré.
+
+        Le chemin était écrit en dur (`data/memory.sqlite`), seul des huit
+        magasins à ignorer `GALSEN_DATA_DIR` : un opérateur qui déplaçait le
+        répertoire de données déplaçait sept bases et laissait celle des
+        mémoires derrière, relative au répertoire courant. La valeur par défaut
+        est inchangée quand la variable n'est pas posée, donc aucune base
+        existante ne se perd.
         """
-        self.db_path = db_path
+        self.db_path = db_path or default_sqlite_path("memory.sqlite")
         # S'assurer que le répertoire existe (sauf pour :memory:)
         if db_path != ":memory:":
             os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
@@ -34,6 +43,9 @@ class SQLiteMemoryStore(MemoryStore):
         # la base quand la dernière connexion se ferme).
         self._persistent_conn: Optional[sqlite3.Connection] = None
         self._initialize_db()
+        # Une base porte des mémoires, des connaissances et des e-mails ;
+        # elle était créée en 0644, donc lisible par tout compte de la machine.
+        secure_database_file(self.db_path)
         if db_path == ":memory:":
             self._persistent_conn = self._get_connection()
 
@@ -54,7 +66,7 @@ class SQLiteMemoryStore(MemoryStore):
             conn = sqlite3.connect("file::memory:?cache=shared", uri=True)
         else:
             conn = sqlite3.connect(self.db_path)
-        conn.execute("PRAGMA foreign_keys = ON")
+        prepare_connection(conn)
         return conn
 
     def _initialize_db(self) -> None:

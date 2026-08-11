@@ -19,6 +19,7 @@ from .types import (
     FileUploadResult,
     get_category_for_content_type,
 )
+from src.storage.paths import sqlite_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class FileManagerImpl(FileManager):
     def __init__(self, store: Optional[FileStore] = None) -> None:
         if store is not None:
             self._store = store
-        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
+        elif sqlite_enabled():
             from src.storage.sqlite_file_store import SQLiteFileStore
             self._store = SQLiteFileStore()
         else:

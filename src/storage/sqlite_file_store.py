@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 
 from src.services.file.interfaces import FileStore
 from src.services.file.types import FileItem, FileCategory
-from src.storage.paths import default_sqlite_path
+from src.storage.paths import default_sqlite_path, prepare_connection, secure_database_file
 
 
 class SQLiteFileStore(FileStore):
@@ -35,6 +35,9 @@ class SQLiteFileStore(FileStore):
         self._lock = threading.RLock()
         self._persistent_conn: Optional[sqlite3.Connection] = None
         self._initialize_db()
+        # Une base porte des mémoires, des connaissances et des e-mails ;
+        # elle était créée en 0644, donc lisible par tout compte de la machine.
+        secure_database_file(self.db_path)
         if self.db_path == ":memory:":
             self._persistent_conn = self._get_connection()
 
@@ -48,8 +51,7 @@ class SQLiteFileStore(FileStore):
         if self.db_path == ":memory:":
             return self._persistent_conn or sqlite3.connect("file::memory:?cache=shared", uri=True)
         conn = sqlite3.connect(self.db_path)
-        conn.execute("PRAGMA foreign_keys = ON")
-        conn.execute("PRAGMA busy_timeout = 5000")
+        prepare_connection(conn)
         return conn
 
     def _initialize_db(self) -> None:

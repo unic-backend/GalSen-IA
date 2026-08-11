@@ -96,14 +96,37 @@ See `.env.example` for the complete list with descriptions.
 Le stockage SQLite (`GALSEN_STORAGE_BACKEND=sqlite`) utilise le répertoire `/app/data`
 dans le conteneur, monté sur le volume nommé `galsen_data`.
 
-```bash
-# Sauvegarde des données
-docker run --rm -v galsen_data:/data -v $(pwd):/backup alpine \
-  cp -r /data /backup/galsen-backup
+**Ne copiez pas le volume avec `cp`.** Copier un fichier SQLite ouvert peut
+produire une base corrompue — l'écriture en cours n'est pas atomique du point de
+vue du copieur — et depuis que les bases tournent en mode WAL, les écritures
+récentes vivent dans un fichier `-wal` séparé qu'une copie du seul `.sqlite`
+laisserait derrière. La procédure `cp -r` qui figurait ici était fausse.
 
-# Restauration
-docker run --rm -v galsen_data:/data -v $(pwd):/backup alpine \
-  cp -r /backup/galsen-backup/* /data/
+`scripts/backup.py` passe par `VACUUM INTO`, qui écrit une copie **cohérente**
+pendant que l'application continue d'écrire.
+
+```bash
+# Sauvegarde à chaud, sans arrêter le service
+docker compose exec api python scripts/backup.py sauvegarder
+
+# Lister les sauvegardes existantes
+docker compose exec api python scripts/backup.py lister
+
+# Restauration — le service doit être arrêté
+docker compose stop api
+docker compose run --rm api python scripts/backup.py restaurer 2026-08-11T18-30-00
+docker compose start api
+```
+
+Les sauvegardes vivent dans `GALSEN_BACKUP_DIR` (défaut `data/backups`), donc
+dans le volume `galsen_data`. **Pour survivre à la perte du volume, elles doivent
+en sortir** : montez un second volume ou copiez le répertoire de sauvegardes
+ailleurs — lui peut se copier avec `cp`, puisque `VACUUM INTO` a déjà produit des
+fichiers fermés et cohérents.
+
+```bash
+docker run --rm -v galsen_data:/data -v $(pwd):/hors-site alpine \
+  cp -r /data/backups /hors-site/galsen-sauvegardes
 ```
 
 ## Image Size Optimization

@@ -21,6 +21,7 @@ from .memory_cache import LRUMemoryCache
 from .memory_summarizer import SimpleMemorySummarizer
 from .memory_ranker import SimpleMemoryRanker
 from src.storage.sqlite_store import SQLiteMemoryStore
+from src.storage.paths import storage_backend
 
 
 class MemoryManager(MemoryManagerInterface):
@@ -42,7 +43,7 @@ class MemoryManager(MemoryManagerInterface):
         self._logger = logging.getLogger(__name__)
         # Initialiser les composants
         if store is None:
-            storage_type = os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower()
+            storage_type = storage_backend()
             if storage_type == "sqlite":
                 self._store: MemoryStore = SQLiteMemoryStore()
             else:
@@ -56,7 +57,7 @@ class MemoryManager(MemoryManagerInterface):
         self._ranker: MemoryRanker = SimpleMemoryRanker()
         store_type = "in-memory" if store is None else "custom"
         if store is None:
-            store_type = os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower()
+            store_type = storage_backend()
         self._logger.info(f"MemoryManager initialisé avec des composants {store_type}.")
 
     # Note : Dans un système de production, nous autoriserions l'injection de dépendance
