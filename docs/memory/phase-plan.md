@@ -17,10 +17,10 @@ Base du plan : `docs/architecture/assessment-2026-08-11.md`.
 
 ---
 
-## La série 26–32
+## La série 26–33
 
-Sept VOLETs, dérivés des sept phases du brief mais **réordonnés** : chaque VOLET
-rend le suivant vérifiable. Construire les agents avant qu'un modèle réponde
+Huit VOLETs, dérivés des phases du brief mais **réordonnés** : chaque VOLET rend
+le suivant vérifiable. Construire les agents avant qu'un modèle réponde
 produirait du code que rien ne peut tester, ce que les règles du projet
 interdisent.
 
@@ -67,9 +67,45 @@ VOLET 31 — Agent de développement autonome                  → 4 phases
 VOLET 32 — Multimodal                                       → 3 phases
   Ch. 32.1  Parole vers texte (Whisper local)               → 2 phases
   Ch. 32.2  Le moteur vision branché sur l'ingestion        → 1 phase
+
+VOLET 33 — Infrastructure d'entraînement                    → 5 phases
+  Conception → `docs/architecture/training-infrastructure.md`.
+  Ch. 33.1  Capture du signal (corrections, préférences)    → 1 phase  ← à exécuter tôt
+  Ch. 33.2  Jeu d'évaluation français/wolof, avant tout entraînement → 1 phase
+  Ch. 33.3  ADR : LoRA/QLoRA + DPO, ce qui est écarté       → 1 phase (indivisible)
+  Ch. 33.4  Recette d'entraînement (accelerate + peft + trl) → 1 phase
+  Ch. 33.5  Retour en service : fusion, GGUF, Ollama, mesure → 1 phase
 ```
 
-**Total : 28 phases.**
+**Total : 33 phases.**
+
+### Le VOLET 33 et les sept piliers
+
+| Pilier | Où il est traité |
+|---|---|
+| Modèles | 26 (un modèle répond), 30 (routage par coût et par tâche) |
+| **Entraînement** | **33** |
+| Mémoire | 27 (récupération sémantique) |
+| RAG | 28 (corpus, ingestion, citation) |
+| Agents | 26.2 (fusion des orchestrateurs), 29 (gestionnaire d'agents) |
+| Multimodal | 32 |
+| Optimisation / performance | 26.3 (traçage), 30.2 (coût mesuré par route) |
+
+### Une recommandation d'ordre, et sa raison
+
+**`33.1` (capture du signal) est le seul chapitre de la série dont le coût augmente chaque
+jour où il n'est pas fait.** Une correction d'utilisateur non enregistrée est perdue pour
+toujours ; tout le reste peut être construit plus tard sans rien perdre. Il ne dépend
+d'aucun autre VOLET.
+
+Proposition : l'exécuter **juste après le VOLET 26**, avant 27, et laisser 33.2 à 33.5 à
+leur place. La série reste à une phase par tour ; seul l'ordre change. À toi de trancher.
+
+**Un point de conception qui s'écarte du brief** : le premier modèle entraîné n'est pas un
+LLM mais **le modèle d'embeddings** du VOLET 27, adapté au français et au wolof. Il
+s'entraîne sur CPU ou petit GPU, son effet se mesure **sans jugement humain** (le taux de
+récupération monte ou non), et il améliore recherche, mémoire et RAG d'un coup. Il prouve
+la chaîne complète pour une fraction du coût d'un entraînement de LLM.
 
 ---
 
@@ -85,9 +121,15 @@ Décidé dans `docs/architecture/assessment-2026-08-11.md`, section D. Résumé 
 | Qdrant | Juste — quand il y aura un corpus. Sur 0 élément, c'est un service à opérer pour rien. Déclencheur : ~100 000 vecteurs. |
 | PostgreSQL, Redis | Même déclencheur qu'ADR-013 : une deuxième instance. |
 | OpenHands, Aider | Motifs à étudier (carte du dépôt, boucle éditer/tester), pas des dépendances : ils supposent être l'application. |
+| DeepSpeed | Résout « le modèle ne tient pas en mémoire ». En QLoRA sur 7–8B, il tient. Déclencheur écrit : entraînement complet au-dessus de ~13B, ou un pas qui ne passe pas à taille de lot 1. Accelerate l'activera alors par configuration. |
+| Entraînement distribué multi-nœuds | Zéro donnée d'entraînement aujourd'hui. Construire un cluster avant d'avoir 5 000 exemples serait le travail le plus spéculatif du dépôt. |
+| RLHF classique (PPO + modèle de récompense) | Trois modèles en mémoire, instable, cher à régler. **DPO** entraîne directement sur des paires de préférences et répond au même besoin. |
+| Axolotl, Weights & Biases | Une seconde culture de configuration, et un service hébergé pour quelques dizaines d'exécutions. Un manifeste à côté du point de reprise répond à la même question. |
 
 **Retenus** : Sentence Transformers (VOLET 27, avec ADR pour le prix réel :
-~90 Mo de poids et PyTorch) et Whisper (VOLET 32, en dernier).
+~90 Mo de poids et PyTorch), Whisper (VOLET 32, en dernier), et pour le VOLET 33
+**Accelerate + PEFT (QLoRA) + TRL (DPO) + conversion GGUF** — l'efficacité à
+petite échelle, jamais l'échelle elle-même.
 
 ---
 
