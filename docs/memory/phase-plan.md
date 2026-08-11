@@ -9,7 +9,7 @@ exécuter, et une seule.
 ---
 
 **VOLET en cours** : **26 — Fondations mesurables**
-**Phase courante** : 26.1 — en attente de confirmation
+**Phase courante** : 26.0 — en attente de confirmation
 **Terminées** : VOLETs 01 à 25 (série des manuels), 4 chantiers de mise en ligne
 **Cadence** : **une phase par tour** (défaut).
 
@@ -30,9 +30,10 @@ sécurité, journalisation, Docker, publication). Il n'en reste que deux manques
 réels, placés en VOLET 26.
 
 ```
-VOLET 26 — Fondations mesurables                            → 5 phases
+VOLET 26 — Fondations mesurables                            → 6 phases
   Ce qui empêche tout le reste d'être vérifiable.
-  Ch. 26.1  Un modèle qui répond (critère C1)               → 1 phase (indivisible)
+  Ch. 26.0  Souveraineté appliquée (ADR-014)                → 1 phase (indivisible)
+  Ch. 26.1  Un modèle **local** qui répond (critère C1)     → 1 phase (indivisible)
   Ch. 26.2  Résoudre AgentRuntime vs RouterEngine (C4)      → 2 phases (26.2 mesure, 26.3 fusion)
   Ch. 26.3  Traçage bout en bout router→agent→outil→modèle  → 1 phase
   Ch. 26.4  Le garde de dépendances rate les paquets absents → 1 phase
@@ -68,16 +69,17 @@ VOLET 32 — Multimodal                                       → 3 phases
   Ch. 32.1  Parole vers texte (Whisper local)               → 2 phases
   Ch. 32.2  Le moteur vision branché sur l'ingestion        → 1 phase
 
-VOLET 33 — Infrastructure d'entraînement                    → 5 phases
-  Conception → `docs/architecture/training-infrastructure.md`.
+VOLET 33 — Infrastructure d'entraînement : SamP et ToP      → 6 phases
+  Conception → `docs/architecture/training-infrastructure.md`, lignée → ADR-014.
   Ch. 33.1  Capture du signal (corrections, préférences)    → 1 phase  ← à exécuter tôt
   Ch. 33.2  Jeu d'évaluation français/wolof, avant tout entraînement → 1 phase
-  Ch. 33.3  ADR : LoRA/QLoRA + DPO, ce qui est écarté       → 1 phase (indivisible)
+  Ch. 33.3  ADR : QLoRA + DPO, base Apache-2.0, ce qui est écarté → 1 phase (indivisible)
   Ch. 33.4  Recette d'entraînement (accelerate + peft + trl) → 1 phase
-  Ch. 33.5  Retour en service : fusion, GGUF, Ollama, mesure → 1 phase
+  Ch. 33.5  Registre de lignée SamP/ToP : base, licence, données, mesures → 1 phase
+  Ch. 33.6  Retour en service : fusion, GGUF, Ollama, mesure → 1 phase
 ```
 
-**Total : 33 phases.**
+**Total : 35 phases.**
 
 ### Le VOLET 33 et les sept piliers
 
@@ -130,6 +132,33 @@ Décidé dans `docs/architecture/assessment-2026-08-11.md`, section D. Résumé 
 ~90 Mo de poids et PyTorch), Whisper (VOLET 32, en dernier), et pour le VOLET 33
 **Accelerate + PEFT (QLoRA) + TRL (DPO) + conversion GGUF** — l'efficacité à
 petite échelle, jamais l'échelle elle-même.
+
+---
+
+## Souveraineté — ce que la direction change au plan
+
+Décidé dans **ADR-014** : la plateforme ne dépend d'aucun modèle tiers à l'exécution.
+Ses modèles sont les familles **SamP** et **ToP**.
+
+Trois conséquences concrètes sur ce plan :
+
+1. **`26.1` n'a plus qu'un seul chemin.** « Ollama **ou** une clé fournisseur » devient
+   « un modèle local ». Le critère C1 se ferme avec `ollama serve`, pas avec une clé.
+2. **`26.0` est ajouté** : les trois fournisseurs hébergés ne doivent plus être
+   seulement inertes faute de clé, ils ne doivent plus être **inscrits**. Un fournisseur
+   absent du registre ne peut être choisi par aucun chemin. Le test qui compte : mode
+   souverain actif, toutes les clés hébergées présentes, et aucun point d'accès externe
+   joignable depuis le chemin des modèles.
+3. **Le VOLET 33 produit SamP et ToP**, par adaptation d'une base **Apache-2.0**
+   (Qwen 2.5, Mistral 7B v0.3). La licence Llama impose « Built with Llama » dans le nom
+   et l'affichage : incompatible avec l'identité SamP/ToP, donc écartée pour cette raison
+   seule.
+
+**Ce que la souveraineté d'exécution donne dès l'étape S1/S2 d'ADR-014** : aucun serveur
+tiers, aucune clé, aucune donnée qui sort de la machine. **Ce qu'elle ne donne pas encore** :
+des poids qui ne doivent rien à personne — c'est l'étape S3 (préentraînement continu sur
+le corpus du VOLET 28), et elle se chiffre en milliers d'heures de GPU. Les deux axes sont
+tenus séparés dans l'ADR pour que le premier ne soit pas retardé par le second.
 
 ---
 
