@@ -4,7 +4,7 @@ API Server for GalSen IA platform.
 Expose les fonctionnalités du noyau via une API RESTful.
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Security
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Request, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -31,7 +31,12 @@ from src.tools.agri_advice.tool import AgriAdviceTool
 from src.api.rate_limiter import (
     rate_limit_dependency,
     set_valid_api_key_digests,
+    # Réutilisé plutôt que réécrit : la détection de menaces doit identifier une
+    # source exactement comme le limiteur de débit, sinon les deux désignent des
+    # choses différentes sous le même nom.
+    _get_client_ip,
 )
+from src.api.threat_detection import get_shared_detector
 
 # Import du vérificateur de santé
 from src.api.health import (
@@ -115,13 +120,20 @@ rbac_manager = RBACManager()
 set_valid_api_key_digests(rbac_manager.active_key_digests())
 
 
-def require_auth(api_key: str = Security(api_key_header)) -> RBACContext:
+def require_auth(request: Request, api_key: str = Security(api_key_header)) -> RBACContext:
     """Dépendance FastAPI : authentifie la clé API et retourne le contexte RBAC.
 
     Remplace l'ancienne dépendance get_api_key(). En plus de valider la clé,
     elle associe un rôle et des permissions à la requête.
 
+    Chaque issue alimente aussi la détection de menaces (VOLET 11, ch. 05) :
+    compter les échecs ne suffisait pas, douze tentatives avec douze clés
+    différentes ne levaient aucun signal. La **source** est l'adresse IP, jamais
+    la clé ni son empreinte — un journal de menaces qui nomme des clés devient
+    lui-même une cible.
+
     Args:
+        request: Requête en cours, pour identifier la source.
         api_key: Clé API transmise dans l'en-tête X-API-Key.
 
     Returns:
@@ -130,15 +142,20 @@ def require_auth(api_key: str = Security(api_key_header)) -> RBACContext:
     Raises:
         HTTPException 401 : clé manquante ou invalide.
     """
+    source = _get_client_ip(request)
     try:
         contexte = rbac_manager.authenticate(api_key)
     except PermissionError as e:
         # Compté avant de lever : sans cela, la seule catégorie qui intéresse
         # une enquête — les échecs — serait la seule absente des chiffres.
         record_authentication(reussie=False)
+        get_shared_detector().record_failure(source)
         raise HTTPException(status_code=401, detail=str(e))
 
     record_authentication(reussie=True)
+    # Une authentification réussie efface les échecs de la source : sans cela,
+    # quelqu'un qui se trompe puis se connecte resterait signalé indéfiniment.
+    get_shared_detector().record_success(source)
     return contexte
 
 
@@ -904,6 +921,27 @@ async def search_knowledge(request: KnowledgeSearchRequest,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la recherche: {str(e)}")
+
+@app.get("/security/threats", tags=["health"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.ADMIN_AUDIT))])
+async def security_threats():
+    """Les sources dont les échecs d'authentification dépassent le seuil.
+
+    La plateforme comptait les échecs sans rien en conclure : douze tentatives
+    avec douze clés différentes donnaient un compteur à 12 et aucun signal
+    (VOLET 11, ch. 05). Cette route dit **qui** insiste, depuis quand, et à
+    quelle sévérité.
+
+    Ce qu'elle ne fait pas est nommé dans `unavailable_methods` : ni analyse
+    comportementale, ni corrélation de renseignement, ni analyse assistée par
+    modèle. Une fenêtre glissante d'échecs est une détection honnête ; l'appeler
+    autrement ne le serait pas.
+
+    Aucune clé ni empreinte de clé n'apparaît ici — une source est une adresse.
+    """
+    return get_shared_detector().summary()
+
 
 @app.get("/analytics", tags=["health"],
          dependencies=[Depends(rate_limit_dependency),

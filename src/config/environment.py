@@ -104,6 +104,14 @@ CONTROLES: Dict[str, Tuple[Callable[[str], Optional[str]], str]] = {
         _parmi(*SECURITES_SMTP),
         "le mode de sécurité SMTP par défaut s'applique",
     ),
+    "GALSEN_THREAT_WINDOW_SECONDS": (
+        _entier_positif,
+        "la fenêtre de détection par défaut (300 s) s'applique",
+    ),
+    "GALSEN_THREAT_FAILURE_THRESHOLD": (
+        _entier_positif,
+        "le seuil de détection par défaut (10 échecs) s'applique",
+    ),
     "GALSEN_OPENAI_COMPATIBLE_CONTEXT": (
         _entier_positif,
         "la taille de contexte annoncée est ignorée, le modèle peut être refusé par le sélecteur",

@@ -10,6 +10,25 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **VOLET 11 — Security Engine: counting is not detecting.** Measured state →
+  `docs/architecture/security.md`
+  - Twelve authentication attempts with **twelve different keys** from one source produced
+    `failed: 12` and **no signal at all** — the platform knew attempts had failed, not who,
+    when, or whether it was still happening
+  - **`src/api/threat_detection.py`**: a sliding window of failures per source (10 in
+    300 s, configurable), three severity levels, and `GET /security/threats`. Behavioural
+    analytics, threat-intelligence correlation and machine-assisted analysis are **named in
+    the response as unavailable**, with their reason
+  - **A bypass found while building it**: the first version cleared a source's failures on
+    successful authentication. End-to-end that returned **zero threats after twelve
+    failures** — an attacker who finds a valid key erased their trail, and the operator
+    reading the route erased what they came to see. Successes are now recorded beside
+    failures with `succeeded_in_window`
+  - A threat report names an **address**, never a key or its fingerprint; the route
+    requires `ADMIN_AUDIT`; the detector is bounded at 1 000 sources
+  - **Incident response** (chapter 06) has detection and severity; containment, eradication
+    and recovery do not exist and are not simulated — auto-blocking an address needs an ADR
+  - 18 new tests; full suite 1 766 passing, 7 skipped
 - **VOLET 10 — Integration Engine: `/health` ignored the integration layer.** Measured
   state → `docs/architecture/integration.md`
   - The platform had two ways to answer "what is wrong" — `/health` for engines,
