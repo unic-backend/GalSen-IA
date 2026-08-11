@@ -220,6 +220,13 @@ class RouterEngine:
             failed_agents = (
                 len(all_agent_results) - successful_agents - pending_approval_agents
             )
+            # Quels agents ont échoué, et pas seulement combien : l'analyse des
+            # défaillances du chapitre 06 (VOLET 18) demande de nommer la cause,
+            # et un compteur ne dit pas si c'est toujours le même agent.
+            failing_agents = [
+                r.get('agent') for r in all_agent_results
+                if r.get('status') not in ('success', 'requires_approval') and r.get('agent')
+            ]
 
             if failed_agents > 0:
                 status = "partial_success"
@@ -241,10 +248,12 @@ class RouterEngine:
             # peut pas dire si un workflow échoue une fois sur dix ou neuf.
             self.history.record(
                 workflow_id=workflow_id_to_use,
+                workflow_version=self.workflow_loader.get_version(workflow_id_to_use),
                 status=status,
                 duration_seconds=execution_time,
                 agents_executed=len(all_agent_results),
                 failed_agents=failed_agents,
+                failing_agents=failing_agents,
                 request_id=request_id,
             )
 
@@ -291,8 +300,10 @@ class RouterEngine:
             duree = time.time() - start_time
             # Un échec compte dans l'historique : un taux de succès qui n'observe
             # que les réussites vaut toujours 100 %.
+            workflow_en_echec = workflow_id or self.workflow_loader.get_default_workflow()
             self.history.record(
-                workflow_id=workflow_id or self.workflow_loader.get_default_workflow(),
+                workflow_id=workflow_en_echec,
+                workflow_version=self.workflow_loader.get_version(workflow_en_echec),
                 status="error",
                 duration_seconds=duree,
             )

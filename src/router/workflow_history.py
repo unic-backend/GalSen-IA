@@ -21,6 +21,12 @@ from typing import Any, Deque, Dict, Iterable, List, Optional
 # non borné est la dette que le journal de la plateforme a déjà coûtée une fois.
 DEFAULT_CAPACITY = 500
 
+# Version portée par une exécution dont l'appelant n'a pas dit laquelle. Une
+# valeur nommée plutôt qu'une chaîne vide : elle se lit dans un rapport, et elle
+# ne se confond pas avec la version « unversioned » d'un workflow qui n'en
+# déclare pas — les deux cas sont différents et le rapport doit les distinguer.
+VERSION_INCONNUE = "unrecorded"
+
 
 class WorkflowHistory:
     """Journal borné des exécutions de workflows."""
@@ -36,21 +42,29 @@ class WorkflowHistory:
 
     def record(self, workflow_id: str, status: str, duration_seconds: float,
                agents_executed: int = 0, failed_agents: int = 0,
-               request_id: Optional[str] = None) -> None:
+               request_id: Optional[str] = None,
+               workflow_version: str = VERSION_INCONNUE,
+               failing_agents: Optional[Iterable[str]] = None) -> None:
         """
         Enregistre une exécution terminée.
 
         La requête de l'utilisateur n'est pas conservée : un historique
         d'exécution sert à mesurer un workflow, pas à archiver ce que les gens
         demandent — même raisonnement que pour les métriques de recherche.
+
+        La **version** en fait partie (VOLET 18, ch. 03 étape 7). Sans elle, un
+        changement de pipeline laisse les deux définitions sous le même nom et
+        le taux de succès mélange ce qu'on cherchait justement à comparer.
         """
         with self._lock:
             self._executions.append({
                 "workflow": workflow_id,
+                "workflow_version": workflow_version,
                 "status": status,
                 "duration_seconds": round(duration_seconds, 3),
                 "agents_executed": agents_executed,
                 "failed_agents": failed_agents,
+                "failing_agents": sorted(set(failing_agents or ())),
                 "request_id": request_id,
                 "at": time.time(),
             })
@@ -89,6 +103,12 @@ class WorkflowHistory:
             "executions": total,
             "by_status": par_statut,
             "success_rate": round(succes / total, 4) if total else None,
+            # Le taux global reste servi, mais il ne suffit pas : c'est celui
+            # d'un mélange. La ventilation par version dit laquelle des
+            # définitions échoue (VOLET 18, ch. 03 étape 7 et ch. 06).
+            "by_version": self._par_version(executions),
+            # Nommer l'agent qui échoue, pas seulement en compter (ch. 06).
+            "failing_agents": self._agents_en_echec(executions),
             "median_duration_seconds": durees[len(durees) // 2] if durees else None,
             "max_duration_seconds": durees[-1] if durees else None,
             "capacity": self._capacity,
@@ -96,6 +116,50 @@ class WorkflowHistory:
                 "mémoire du processus : un redémarrage remet l'historique à zéro "
                 "et une autre instance a le sien (ADR-009)"
             ),
+        }
+
+    @staticmethod
+    def _agents_en_echec(executions: List[Dict[str, Any]]) -> Dict[str, int]:
+        """
+        Compte les échecs par agent, du plus fréquent au moins fréquent.
+
+        Args:
+            executions: les exécutions déjà filtrées par l'appelant.
+
+        Returns:
+            Un dictionnaire agent → nombre d'exécutions où il a échoué. Vide
+            quand rien n'a échoué : un classement sans échec n'existe pas.
+        """
+        comptes: Dict[str, int] = {}
+        for execution in executions:
+            for agent in execution.get("failing_agents", ()):
+                comptes[agent] = comptes.get(agent, 0) + 1
+        return dict(sorted(comptes.items(), key=lambda paire: paire[1], reverse=True))
+
+    @staticmethod
+    def _par_version(executions: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+        """
+        Ventile les exécutions par version de workflow.
+
+        Args:
+            executions: les exécutions déjà filtrées par l'appelant.
+
+        Returns:
+            Pour chaque version rencontrée : le nombre d'exécutions et son taux
+            de succès. Les versions sont triées, un rapport se lit.
+        """
+        groupes: Dict[str, List[Dict[str, Any]]] = {}
+        for execution in executions:
+            groupes.setdefault(execution.get("workflow_version", VERSION_INCONNUE), []).append(execution)
+
+        return {
+            version: {
+                "executions": len(lot),
+                "success_rate": round(
+                    sum(1 for e in lot if e["status"] == "success") / len(lot), 4
+                ),
+            }
+            for version, lot in sorted(groupes.items())
         }
 
     def clear(self) -> None:

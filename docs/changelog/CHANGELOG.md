@@ -9,6 +9,31 @@ nowhere else. Versioning policy and release types → `docs/roadmap/roadmap.md`.
 Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
+### Fixed
+- **VOLET 18 — every workflow declared a version that nothing read.** Measured state →
+  `docs/architecture/workflows.md`
+  - `VOLET_18.md` is a **second Workflow Engine manual**, despite its folder being named
+    "Infrastructure & DevOps Engine" — the same mismatch VOLET 17 had. Only what it asks
+    beyond VOLET 08 was treated
+  - `workflows.yaml` gives each workflow a `version` and `WorkflowValidator` requires it.
+    Across `src/router/`, the string appeared exactly twice, both times the validator
+    checking the field exists. Nothing read its value, and `WorkflowHistory.record()` did
+    not store it
+  - The consequence undid the metric VOLET 08 built: bump `1.0` to `1.1` and the history
+    kept both runs under the same name, so the success rate mixed two definitions.
+    "This workflow fails 30 % of the time" could not say which one
+  - `WorkflowLoader.get_version()` reads it, every run records it, and `stats()` breaks the
+    numbers down by version. The global rate is still served — it is not wrong, only
+    insufficient. `unversioned` (the workflow declares none) and `unrecorded` (the caller
+    did not pass one) stay distinct, because merging them would hide one
+  - Verified end to end on the real registry: a run of the shipped `standard` workflow
+    records `workflow_version: "1.0"`
+  - **Failure analysis now names the agent** (chapter 06): `failed_agents: 3` says how
+    many, never which. Runs record the failing agents' names and `stats()` ranks them; an
+    agent retried three times in one run counts once
+  - 11 new tests, 1 adapted — the guard locking the history's field set, which is exactly
+    its job; full suite 1 966 passing, 7 skipped
+
 ### Added
 - **VOLET 17 — Notification templates and a delivery report that does not flatter
   itself.** Measured state → `docs/architecture/notifications.md`

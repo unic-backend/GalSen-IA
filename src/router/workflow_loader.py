@@ -62,6 +62,22 @@ class WorkflowLoader:
             raise KeyError(f"Workflow '{workflow_id}' non trouvé dans le registre.")
         return self.workflows[workflow_id]
 
+    def get_version(self, workflow_id: str) -> str:
+        """
+        Retourne la version déclarée d'un workflow.
+
+        Args:
+            workflow_id: Identifiant du workflow.
+
+        Returns:
+            La version déclarée, ou `"unversioned"` si le workflow n'en déclare
+            pas. Le validateur signale déjà cette absence en avertissement ;
+            inventer un « 1.0 » ici la ferait disparaître, et deux définitions
+            sans version se confondraient à nouveau.
+        """
+        definition = self.workflows.get(workflow_id) or {}
+        return str(definition.get("version") or "unversioned")
+
     def get_default_workflow(self) -> str:
         """
         Récupère l'identifiant du workflow par défaut.

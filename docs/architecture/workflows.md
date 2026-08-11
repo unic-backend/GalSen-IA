@@ -138,7 +138,45 @@ and chapter 06 makes failure analysis a quality control; conflating versions def
 This is the pattern the platform keeps finding: a field that is validated as *present* and
 never used as *data*. Required, checked, and inert.
 
-The fix belongs to phase 3.1 of this VOLET, not to this measurement.
+### What it does now
+
+`WorkflowLoader.get_version()` reads the declared value, `WorkflowHistory.record()` stores
+it with every run, and `stats()` breaks the numbers down by version:
+
+```
+success_rate: 0.5              ← the same mixture as before
+by_version:
+  "1.0": {executions: 4, success_rate: 0.0}
+  "1.1": {executions: 4, success_rate: 1.0}
+```
+
+The global rate is still served — removing it would break its consumers, and it is not
+wrong, only insufficient. The breakdown is what says *which* definition is failing.
+
+Two distinctions kept deliberately separate:
+
+- **`unversioned`** — the workflow declares no version. The validator already warns about
+  that; returning a made-up `"1.0"` here would silence the warning and let two unversioned
+  definitions merge again.
+- **`unrecorded`** — the caller did not pass a version. A different problem, and merging
+  the two would hide one of them.
+
+Verified end to end on the real registry, not only in unit tests: a run of the shipped
+`standard` workflow now records `workflow_version: "1.0"` and appears under that key in
+the breakdown.
+
+### Failure analysis names the agent (chapter 06)
+
+`failed_agents: 3` says how many, never which. Chapter 06 makes failure analysis a quality
+control, and a count leaves the operator to go and look. Each run now records the *names*
+of the agents that failed, and `stats()` ranks them:
+
+```
+failing_agents: {"tester": 2, "security": 1}
+```
+
+An agent retried three times inside one run counts once — the ranking measures how many
+executions it broke, not how many attempts the retry manager made.
 
 ## What is absent, and stays absent
 
@@ -149,3 +187,25 @@ The fix belongs to phase 3.1 of this VOLET, not to this measurement.
 - **Workflow Repository**: `workflows.yaml` is the repository. There is no store, no
   history of definitions, and therefore nothing to archive when one is retired.
 - **Queue health** (chapters 04 and 06): there is no queue. Execution is synchronous.
+
+## Retirement, security, governance (chapters 03 stage 8, 05, 07, 08, 10)
+
+**Retirement (stage 8)** has no mechanism and gains none here. A retired workflow is a
+deleted YAML block; there is no definition store, so there is nothing to archive. What was
+made safe is the reporting around it: `get_version()` on a workflow that no longer exists
+answers `unversioned` instead of raising, so a report over history that outlives a
+definition does not fall over. The runs of a removed workflow stay in the bounded history
+until they age out — which is correct, they happened.
+
+**Security and compliance (05, 07)** restate what already applies and what
+`docs/architecture/security.md` documents: RBAC on every route that can start a run, no
+user request stored in the history, audit trail through the audit engine, and the platform
+threat detection. The chapter's "workflow authentication" has no separate meaning here —
+a workflow is not an actor, it is a declaration executed on behalf of the caller.
+
+**Governance (08, 10)** assigns work to a Workflow Governance Board and an operations
+team. Those bodies do not exist, and recording a review cadence nobody performs would be
+the same fabrication as an invented delivery rate. What does exist and is enforceable:
+`WorkflowValidator` refuses to let an empty or agent-less workflow report success, the
+declared owner is required metadata, and the version is now measured rather than merely
+declared.

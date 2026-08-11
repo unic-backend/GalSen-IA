@@ -72,8 +72,9 @@ def test_la_requete_utilisateur_n_est_pas_conservee(historique):
     """Mesurer un workflow n'est pas archiver ce que les gens demandent."""
     historique.record("revue", "success", 0.2, request_id="req_1")
     entree = historique.recent(1)[0]
-    assert set(entree) == {"workflow", "status", "duration_seconds", "agents_executed",
-                           "failed_agents", "request_id", "at"}
+    assert set(entree) == {"workflow", "workflow_version", "status", "duration_seconds",
+                           "agents_executed", "failed_agents", "failing_agents",
+                           "request_id", "at"}
 
 
 def test_la_portee_est_annoncee(historique):
