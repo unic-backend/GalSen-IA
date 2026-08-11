@@ -92,6 +92,18 @@ git checkout -            # back to the working branch
 Verified: the tag resolves, the tree checks out clean, and the version it carries is the
 one the tag names.
 
+**The tag is annotated on `383fcf7` but not yet on the remote.** The environment that
+prepared this release cannot push tag refs — the git proxy answers `403` — so
+`git fetch --tags` finds nothing until someone runs, once, from a normal clone:
+
+```bash
+git push origin v0.1.0
+```
+
+That push is also what triggers `.github/workflows/release.yml`, which builds the image,
+checks it answers on `/live`, and publishes the release notes. Until then the release is
+prepared, not published.
+
 **Not verified here, and it must be before the first real deployment**: the container
 part of this procedure — rebuild, restart and answer over HTTPS (TEST 6). That needs a
 Docker host; the machine that prepared this release had none, and a rehearsal that was

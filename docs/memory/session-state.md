@@ -12,10 +12,11 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-11
 
-**En cours** : préparation de la mise en ligne, en quatre chantiers issus de
-`docs/deployment/audit-2026-08-11.md`. **Chantiers 1, 2 et 3 terminés et poussés**
-(branche `claude/galsen-ia-phases-ukwz7p`). Reste le **chantier 4** : `v0.1.0`,
-publication, retour arrière.
+**En cours** : rien. **Les quatre chantiers de `docs/deployment/audit-2026-08-11.md`
+sont terminés et poussés** (branche `claude/galsen-ia-phases-ukwz7p`). `v0.1.0` est
+étiquetée localement sur `383fcf7` — **pas encore poussée** : le proxy git de
+l'environnement refuse les étiquettes (403). Un `git push origin v0.1.0` depuis un
+clone normal publie la version et déclenche `release.yml`.
 
 **Terminé dans cette session**
 - Les 25 VOLETs (série close) puis le backlog : le planificateur pilote le pipeline.
@@ -30,13 +31,16 @@ publication, retour arrière.
 - Tests : **2164 passants**, 7 ignorés.
 
 **Prochaine étape**
-Chantier 4 : étiquette `v0.1.0` après relecture de sécurité, workflow de publication sur
-`v*`, contrôle « l'image se construit » dans `scripts/release_check.py`, procédure de
-retour arrière écrite **et exécutée une fois**.
+Pousser l'étiquette (`git push origin v0.1.0`) : `release.yml` construit alors l'image,
+vérifie qu'elle répond sur `/live` et publie les notes. Puis la liste de
+`docs/deployment/production-readiness.md` — DNS, ports 80/443, `.env`, TEST 2, TEST 6.
 
 **Bloqué / à surveiller**
 - **TEST 2 et TEST 6 non exécutés** : ils demandent un hôte Docker, absent de
   l'environnement de travail. À la charge de l'opérateur avant publication.
+- **Chantier 4** : `release.yml`, `docs/deployment/rollback.md`,
+  `docs/deployment/production-readiness.md`, versions figées, outils de test sortis de
+  l'image de production.
 - **Une révocation de clé ne survit pas à un redémarrage** (`persistent: false`). Le
   verrou ferme le cas « autre instance », pas le cas « redémarrage ». Suite naturelle :
   persister la liste de révocation dans le répertoire de données.
