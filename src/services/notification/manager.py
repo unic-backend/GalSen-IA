@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from .interfaces import NotificationManager, NotificationStore
 from .store import InMemoryNotificationStore
+from .templates import TemplateError, TemplateRegistry
 from .types import Notification, NotificationPriority, NotificationType
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,9 @@ class NotificationManagerImpl(NotificationManager):
     RETENTION_DAYS_ENV = "GALSEN_NOTIFICATION_RETENTION_DAYS"
     DEFAULT_RETENTION_DAYS = 90
 
-    def __init__(self, store: Optional[NotificationStore] = None) -> None:
+    def __init__(self, store: Optional[NotificationStore] = None,
+                 templates: Optional[TemplateRegistry] = None) -> None:
+        self._templates = templates if templates is not None else TemplateRegistry()
         if store is not None:
             self._store = store
         elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
@@ -87,6 +90,67 @@ class NotificationManagerImpl(NotificationManager):
         except Exception as error:
             self._logger.warning("Échec de l'envoi d'une notification : %s", error)
             return None
+
+    def send_from_template(
+        self,
+        template_name: str,
+        values: Optional[Dict[str, Any]] = None,
+        recipient: Optional[str] = None,
+        role: Optional[str] = None,
+        source: Optional[str] = None,
+        related_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        priority: Optional[NotificationPriority] = None,
+    ) -> Optional[str]:
+        """
+        Envoie une notification composée à partir d'un gabarit enregistré.
+
+        Le chapitre 02 du VOLET 17 nomme un « Template Manager » et le chapitre
+        04 en fait un domaine de gestion. Sans lui, le même événement s'annonçait
+        différemment selon l'endroit du code qui le signalait, et la
+        déduplication — qui compare des chaînes exactes — ne pouvait pas les
+        rapprocher.
+
+        Un gabarit inconnu ou incomplet **échoue** au lieu d'envoyer un message
+        à trous : « Le disque {nom} est plein » a l'air d'une vraie alerte et ne
+        dit rien.
+
+        Args:
+            template_name: nom du gabarit enregistré.
+            values: valeurs des paramètres du gabarit.
+            recipient: destinataire, comme pour `send_notification`.
+            role: rôle destinataire.
+            source: origine de l'événement.
+            related_id: identifiant de l'objet concerné.
+            metadata: métadonnées libres.
+            priority: priorité, si elle doit primer sur celle du gabarit.
+
+        Returns:
+            L'identifiant de la notification, ou None si le gabarit est
+            inutilisable ou l'envoi impossible.
+        """
+        try:
+            champs = self._templates.render(template_name, values)
+        except TemplateError as error:
+            self._logger.warning("Gabarit inutilisable : %s", error)
+            return None
+
+        return self.send_notification(
+            notification_type=champs["notification_type"],
+            title=champs["title"],
+            message=champs["message"],
+            priority=priority or champs["priority"],
+            recipient=recipient,
+            role=role,
+            source=source,
+            related_id=related_id,
+            metadata=metadata,
+        )
+
+    @property
+    def templates(self) -> TemplateRegistry:
+        """Registre des gabarits de ce service."""
+        return self._templates
 
     def get(self, notification_id: str) -> Optional[Notification]:
         """Retourne une notification par identifiant, ou None si absente."""
@@ -228,6 +292,75 @@ class NotificationManagerImpl(NotificationManager):
         except Exception as error:
             self._logger.warning("Regroupement de notification impossible : %s", error)
             return notification.id
+
+    def delivery_report(self, recipient: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Ce que deviennent les notifications, une fois créées (VOLET 17, ch. 06 et 09).
+
+        Les deux chapitres demandent un taux de succès de livraison, une latence
+        de file et un compte d'échecs. Aucune de ces trois métriques n'a de sens
+        ici et les rendre quand même serait rendre des chiffres flatteurs :
+        le canal est une boîte interne, créer la notification **est** la
+        livraison, il n'y a pas de file et rien n'échoue. Un « taux de livraison
+        de 100 % » ne mesurerait que cette tautologie.
+
+        Ce qui se mesure vraiment, c'est ce qui arrive **après** : une
+        notification livrée mais jamais lue n'a rien accompli. Le rapport donne
+        donc le taux d'accusé de réception, l'âge de la plus vieille non lue, et
+        les incidents les plus répétés.
+
+        Args:
+            recipient: limiter le rapport à un destinataire.
+
+        Returns:
+            Les mesures réelles, et un bloc `unavailable` nommant les trois
+            métriques du manuel qui ne s'appliquent pas.
+        """
+        try:
+            notifications = self._store.list_notifications(limit=100000, recipient=recipient)
+        except Exception as error:
+            self._logger.warning("Rapport de livraison impossible : %s", error)
+            return {}
+
+        total = len(notifications)
+        lues = sum(1 for n in notifications if n.read)
+        maintenant = time.time()
+        non_lues = [n for n in notifications if not n.read]
+        plus_ancienne = max((maintenant - n.created_at for n in non_lues), default=None)
+
+        repetees = sorted(
+            (
+                {
+                    "title": n.title,
+                    "recipient": n.recipient,
+                    "occurrences": int(n.metadata.get("occurrences", 1)),
+                }
+                for n in notifications
+                if int(n.metadata.get("occurrences", 1)) > 1
+            ),
+            key=lambda entree: entree["occurrences"],
+            reverse=True,
+        )
+
+        return {
+            "total": total,
+            "unread": len(non_lues),
+            # Le vrai indicateur de bout en bout : ce qui a été vu.
+            "acknowledgement_rate": round(lues / total, 4) if total else None,
+            "oldest_unread_seconds": round(plus_ancienne, 1) if plus_ancienne else None,
+            "most_repeated": repetees[:5],
+            "unavailable": {
+                "delivery_success_rate": (
+                    "le canal est une boîte interne : créer la notification est "
+                    "la livraison, un taux vaudrait toujours 100 %"
+                ),
+                "queue_latency": "aucune file : l'envoi est synchrone",
+                "failed_deliveries": (
+                    "aucune livraison ne peut échouer sans canal externe ; "
+                    "les échecs d'envoi d'e-mail sont mesurés côté service Email"
+                ),
+            },
+        }
 
     def purge_expired(self, max_age_days: Optional[int] = None,
                       include_unread: bool = False) -> int:

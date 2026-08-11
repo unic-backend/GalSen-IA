@@ -1431,8 +1431,16 @@ async def mark_all_read(
 @app.get("/notification/stats", tags=["notification"],
           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
 async def notification_stats():
-    """Statistiques agrégées des notifications."""
-    return notification_manager.stats()
+    """Statistiques agrégées des notifications, et ce qu'elles deviennent.
+
+    Le comptage par type et par priorité dit ce qui a été créé ; le rapport de
+    livraison (VOLET 17, ch. 06 et 09) dit ce qui a été **vu**. Une notification
+    créée mais jamais lue n'a rien accompli, et c'était la seule chose que la
+    route ne disait pas.
+    """
+    statistiques = notification_manager.stats()
+    statistiques["delivery"] = notification_manager.delivery_report()
+    return statistiques
 
 
 @app.delete("/notification/{notification_id}", tags=["notification"],

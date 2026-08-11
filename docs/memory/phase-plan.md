@@ -8,29 +8,29 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : aucun — VOLET 15 terminé
+**VOLET en cours** : aucun — VOLET 17 terminé
 **Phase courante** : —
-**Terminées** : toutes (12 phases)
+**Terminées** : toutes (8 phases)
 **Cadence** : **une phase par tour** (défaut).
 
 ```
-VOLET 15 — API Gateway : terminé   → docs/architecture/gateway.md
-  La passerelle n'est pas un service séparé : c'est l'application FastAPI, et
-  ses contrôles sont des dépendances déclarées route par route — un dispositif
-  qui tombe en panne en silence. Les 63 routes sont désormais énumérées et
-  verrouillées par des tests (authentification, limiteur, ordre des
-  intergiciels).
-  Deux défauts réels corrigés : quatre routes recopiaient le texte de
-  l'exception dans leur 500 (hôte interne, chemin de fichier) ; aucun moyen
-  n'existait d'annoncer qu'une route allait disparaître.
-  ADR-011 : pas de préfixe `/v1` (une promesse de stabilité qu'un prototype ne
-  tient pas), dépréciation annoncée par les en-têtes RFC 8594.
-  Absents et non simulés : coupe-circuit, reprises, mesure de disponibilité,
-  TLS applicatif, et les instances de gouvernance que le projet n'a pas.
+VOLET 17 — Notification Engine (second manuel) : terminé
+                                   → docs/architecture/notifications.md
+  `VOLET_17.md` est un second manuel Notification, pas le « Agent Framework »
+  annoncé par le nom du dossier. Seul ce qu'il demande en plus du VOLET 13 a
+  été traité.
+  Gabarits de message : absents, maintenant un registre + send_from_template().
+  Un paramètre manquant n'envoie rien — un message à trous a l'air d'une vraie
+  alerte et ne dit rien. Registre livré vide.
+  Analytique : les trois métriques du manuel (taux de livraison, latence de
+  file, échecs) ne s'appliquent pas à une boîte interne et sont nommées ;
+  ce qui est mesuré est ce qui arrive après — taux d'accusé de réception, âge
+  de la plus vieille non lue, incidents les plus répétés.
+  Reprises : rien à reprendre sans canal externe.
 ```
 
-**Restants** : 17 à 25 — soit 9 VOLETs, dont 5 portent un sujet déjà traité avec
-un contenu différent (18, 19, 20, 21, 24) et 17 qui recoupe 13 à 46 %. Le VOLET
-01 n'a jamais eu de plan de phases formel.
+**Restants** : 18 à 25 — soit 8 VOLETs, dont 5 portent un sujet déjà traité avec
+un contenu différent (18, 19, 20, 21, 24). Le VOLET 01 n'a jamais eu de plan de
+phases formel.
 
-**Prochaine action** : par ordre numérique, **VOLET 17 — Agent Framework Engine**.
+**Prochaine action** : par ordre numérique, **VOLET 18 — Infrastructure & DevOps**.

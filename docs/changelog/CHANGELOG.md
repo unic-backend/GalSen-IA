@@ -10,6 +10,32 @@ Nothing has been released yet: the platform is a **prototype** at `0.1.0`.
 
 ## [Unreleased]
 ### Added
+- **VOLET 17 — Notification templates and a delivery report that does not flatter
+  itself.** Measured state → `docs/architecture/notifications.md`
+  - `VOLET_17.md` is a **second Notification Engine manual**, despite its folder being
+    named "Agent Framework Engine". Only the three things it asks beyond VOLET 13 were
+    treated; re-measuring the rest would have duplicated existing documentation
+  - **Template Manager** (chapters 02 and 04) did not exist: every caller composed title
+    and message by hand, so the same event announced itself differently depending on which
+    part of the code reported it — and deduplication, which compares exact strings, could
+    not bring those variants together. `src/services/notification/templates.py` adds a
+    registry and `send_from_template()`. A missing parameter **sends nothing**, because a
+    message with holes looks like a real alert and says nothing; the registry ships empty,
+    because providing templates would fabricate messages nobody asked for; substitution
+    goes through `string.Template`, not `str.format`, which accepts `{a.__class__}` and
+    would hand out attribute access from a configuration-supplied template
+  - **Delivery analytics** (chapters 06 and 09): the manual's three metrics — delivery
+    success rate, queue latency, failed deliveries — do not apply to an internal inbox,
+    where creating the notification *is* the delivery. Returning them would report a
+    100 % that measures only that tautology, so they are named in an `unavailable` block.
+    `delivery_report()` measures what happens **after** delivery instead: acknowledgement
+    rate, age of the oldest unread (the signal an inbox is no longer read), and the most
+    repeated incidents — the last only measurable thanks to VOLET 13's grouping. Served by
+    `GET /notification/stats`
+  - No retry mechanism: a send either lands in the store or raises. Retries become
+    meaningful when an external channel exists, and the e-mail service is where delivery
+    can genuinely fail
+  - 18 new tests; full suite 1 955 passing, 7 skipped
 - **VOLET 15 — API Gateway: a way to announce that a route is going away.** Decision →
   `docs/architecture/decisions/011-api-versioning-and-deprecation.md`, measured state →
   `docs/architecture/gateway.md`

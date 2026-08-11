@@ -101,6 +101,67 @@ not count into the void" and returns `None`.
 
 Verified against both backends, not just the default one.
 
+## The second manual (VOLET 17)
+
+`VOLET_17.md` is a **second Notification Engine manual**, despite its folder being named
+"Agent Framework Engine". It restates most of VOLET 13 and asks three things that one did
+not. Only those three were treated; re-measuring the rest would have produced a duplicate
+of the sections above.
+
+### Template Manager — was absent, now exists
+
+Chapter 02 names a Template Manager among its components and chapter 04 makes template
+management a domain of its own. Nothing of the sort existed: every caller composed title
+and message by hand, so the same event announced itself differently depending on which
+part of the code reported it — and deduplication, which compares exact strings, could not
+bring those variants together.
+
+`src/services/notification/templates.py` adds a registry and
+`send_from_template(name, values, …)`. Three decisions inside it:
+
+- **A missing parameter sends nothing.** "Le disque {nom} est plein" looks like a real
+  alert and says nothing; failing is better than delivering a message with holes.
+- **The registry ships empty.** Providing ready-made templates would fabricate messages
+  nobody asked for. Callers register their own.
+- **Values are text, never re-interpreted.** Substitution goes through `string.Template`,
+  not `str.format`: the latter accepts `{a.__class__}` and `{a[0]}`, which on a template
+  read from configuration hands out attribute access on whatever objects were passed.
+
+### Delivery analytics — three of the manual's metrics do not apply
+
+Chapters 06 and 09 both ask for a delivery success rate, a queue latency and a count of
+failed deliveries. None of the three means anything here, and returning them anyway would
+return flattering numbers: the channel is an internal inbox, creating the notification
+*is* the delivery, there is no queue and nothing can fail. A "100 % delivery rate" would
+measure only that tautology.
+
+`delivery_report()` measures what actually happens **after** delivery, which is where the
+real risk lives — a notification delivered and never read has accomplished nothing:
+
+| Measure | What it tells |
+|---------|---------------|
+| `acknowledgement_rate` | share that a human actually opened |
+| `oldest_unread_seconds` | the signal that an inbox is no longer being read |
+| `most_repeated` | the incidents that keep coming back — only measurable because grouping exists |
+| `unavailable` | the three metrics above, named with why they do not apply |
+
+`GET /notification/stats` now serves it alongside the counts by type and priority.
+
+### Retry, and why there is none
+
+Chapter 03's management practices include "retry failed deliveries". There is nothing to
+retry: a send either lands in the store or raises, and the store is local. Retries become
+meaningful the day an external channel exists — the e-mail service is where delivery can
+genuinely fail, and it is measured there (`docs/architecture/communication.md`).
+
+### Governance and compliance (chapters 05, 07, 08, 10)
+
+Security and compliance restate what already applies: ownership per recipient (ADR-010),
+RBAC on every route, retention with a configurable period, and no personal data beyond the
+recipient identifier. Chapter 08 and chapter 10 assign work to a Notification Governance
+Board and an operations team — bodies this project does not have. Recording a review
+cadence nobody performs would be the same fabrication as an invented delivery rate.
+
 ## Configuration
 
 | Variable | Default | Effect |
