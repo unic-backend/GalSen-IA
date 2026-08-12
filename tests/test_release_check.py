@@ -70,9 +70,23 @@ class TestVersion:
 class TestEtiquette:
     """Republier une version déjà étiquetée détruit la traçabilité."""
 
-    def test_version_libre(self):
-        """Aucune étiquette n'existe encore dans ce dépôt."""
+    def test_version_libre(self, monkeypatch):
+        """Une version non encore étiquetée passe le contrôle.
+
+        Les étiquettes du dépôt sont remplacées : ce test affirmait « aucune
+        étiquette n'existe encore », ce qui a cessé d'être vrai le jour où
+        `v0.1.0` a été posée. Un test qui dépend de l'état du dépôt mesure le
+        dépôt, pas le contrôle.
+        """
+        monkeypatch.setattr(release_check, "_git", lambda *_: "v0.0.1\nv0.0.2")
         assert controler_etiquette().niveau == OK
+
+    def test_l_etiquette_de_la_version_courante_existe_bien(self):
+        """La v0.1.0 a été publiée : le contrôle doit la voir dans le dépôt."""
+        etiquettes = release_check._git("tag", "--list")
+        if etiquettes is None:  # git indisponible : rien à prouver ici
+            pytest.skip("git indisponible")
+        assert "v0.1.0" in etiquettes.splitlines()
 
     def test_version_deja_etiquetee_refusee(self, monkeypatch):
         """Si `v0.1.0` existe, il faut incrémenter avant de publier."""

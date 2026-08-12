@@ -688,6 +688,14 @@ async def health_check():
     # c'est le seul endroit qu'un opérateur consulte avant de dupliquer un
     # service.
     donnees["scaling"] = scaling_report()
+    # La souveraineté se constate, elle ne se lit pas seulement dans un ADR :
+    # un opérateur doit pouvoir vérifier qu'aucun fournisseur tiers n'est
+    # inscrit, sans avoir à ouvrir le code (ADR-014).
+    try:
+        donnees["sovereignty"] = model_manager.sovereignty_report()
+    except Exception as erreur:
+        # `/health` ne tombe pas parce qu'une section refuse de se calculer.
+        logger.warning("Rapport de souveraineté indisponible : %s", erreur)
     return donnees
 
 

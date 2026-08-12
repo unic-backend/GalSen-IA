@@ -27,7 +27,23 @@ from src.model_engine.providers import (
     ProviderUnavailableError,
     UnavailabilityReason,
 )
+from src.model_engine.providers.provider_registry import SOVEREIGN_MODE_VARIABLE
 from src.model_engine.types import ModelItem, ModelType, ModelPriority, ModelStatus
+
+
+@pytest.fixture
+def multi_fournisseurs(monkeypatch):
+    """
+    Registre portant plusieurs fournisseurs, dont des fournisseurs tiers.
+
+    Depuis ADR-014, le mode souverain est le défaut et les fournisseurs tiers ne
+    sont plus inscrits. Les tests ci-dessous n'ont pas la souveraineté pour
+    sujet : ils vérifient la mécanique du moteur — inscription, sélection,
+    détection de capacités, catalogue — et cette mécanique doit continuer de
+    fonctionner avec plusieurs fournisseurs, ce qui reste un cas supporté et
+    déclaré. Le défaut, lui, est épinglé par `tests/test_model_sovereignty.py`.
+    """
+    monkeypatch.setenv(SOVEREIGN_MODE_VARIABLE, "false")
 
 
 @pytest.mark.asyncio
@@ -194,22 +210,40 @@ async def test_model_engine():
 # ----------------------------------------------------------------------
 # Provider layer
 # ----------------------------------------------------------------------
-def test_provider_registry():
-    """Every declared provider must be registered and describe its catalogue."""
+def test_provider_registry(monkeypatch):
+    """The default registry holds the sovereign providers, and only those.
+
+    This assertion changed with ADR-014: it used to require openai, anthropic
+    and google to be present. They are no longer registered, because "nobody set
+    a key" was a state rather than a guarantee.
+    """
     print("Testing provider registry...")
+    monkeypatch.delenv(SOVEREIGN_MODE_VARIABLE, raising=False)
+    registry = ProviderRegistry()
+
+    assert registry.provider_ids() == ["local", "openai_compatible"]
+
+    # A catalogue must be readable without credentials, otherwise selection
+    # could never run before a provider is configured
+    catalogue = registry.list_all_models()
+    assert catalogue, "Catalogue vide : la sélection ne pourrait jamais démarrer"
+    assert all(descriptor.context_window > 0 for descriptor in catalogue)
+
+    print(f"[OK] {len(registry.provider_ids())} sovereign providers, "
+          f"{len(catalogue)} models")
+
+
+def test_provider_registry_hors_mode_souverain(multi_fournisseurs):
+    """Declaring the escape hatch brings every provider back, catalogue included."""
     registry = ProviderRegistry()
 
     provider_ids = registry.provider_ids()
     for expected in ("openai", "anthropic", "google", "local"):
         assert expected in provider_ids, f"Fournisseur '{expected}' absent du registre"
 
-    # A catalogue must be readable without credentials, otherwise selection
-    # could never run before a provider is configured
     catalogue = registry.list_all_models()
     assert len(catalogue) >= 10, "Catalogue anormalement petit"
     assert all(descriptor.context_window > 0 for descriptor in catalogue)
-
-    print(f"[OK] {len(provider_ids)} providers declaring {len(catalogue)} models")
 
 
 def test_provider_interchangeability():
@@ -276,7 +310,7 @@ def test_provider_interchangeability():
     print("[OK] A new provider works without changing the engine")
 
 
-def test_unavailable_providers_report_clearly():
+def test_unavailable_providers_report_clearly(multi_fournisseurs):
     """With no provider configured the engine must say so, and produce no text."""
     print("Testing unavailable provider reporting...")
     manager = ModelManagerImpl()
@@ -307,7 +341,7 @@ def test_unavailable_providers_report_clearly():
     print("[OK] Unavailability is reported with a reason and no fabricated text")
 
 
-def test_model_registry_catalogue():
+def test_model_registry_catalogue(multi_fournisseurs):
     """The catalogue must stay usable for search even with no provider available."""
     print("Testing model registry...")
     registry = ModelRegistry()
@@ -334,7 +368,7 @@ def test_model_registry_catalogue():
           f"{len(stats['models_by_provider'])} providers")
 
 
-def test_capability_detection():
+def test_capability_detection(multi_fournisseurs):
     """Capabilities must come from the provider, and fall back to the static table."""
     print("Testing capability detection...")
     detector = CapabilityDetector()
@@ -373,7 +407,7 @@ def test_capability_detection():
     print("[OK] Capabilities come from providers, with a static fallback")
 
 
-def test_automatic_provider_selection():
+def test_automatic_provider_selection(multi_fournisseurs):
     """Selection must refuse clearly when nothing can serve, and pick well when it can."""
     print("Testing automatic provider selection...")
     selector = ProviderSelector()
@@ -472,7 +506,13 @@ def test_local_provider_probe():
 
 
 def test_engine_integrations():
-    """The Model Engine must be reachable from the tool, memory and agent layers."""
+    """The Model Engine must be reachable from the tool, memory and agent layers.
+
+    No `multi_fournisseurs` here, deliberately: `get_shared_registry()` builds
+    its manager once per process, so a fixture setting the environment now would
+    not reach it — and pretending otherwise would be a lie about what runs. The
+    shared registry is therefore sovereign, which is the intended state.
+    """
     print("Testing Model Engine integrations...")
     from src.agent.context import AgentContext
     from src.integration.engine_registry import get_shared_registry
@@ -485,7 +525,10 @@ def test_engine_integrations():
     assert tool_result["any_available"] is False
 
     catalogue = registry.tool.execute_tool("model", "catalogue")
-    assert len(catalogue) >= 10
+    # Le catalogue doit **arriver** jusqu'à la couche outil ; sa taille dépend
+    # des fournisseurs inscrits, et en mode souverain ce sont les seuls locaux.
+    assert catalogue, "Le catalogue n'atteint pas la couche outil"
+    assert all(entree["context_window"] > 0 for entree in catalogue)
 
     generation = registry.tool.execute_tool("model", "generate", "Bonjour")
     assert generation["status"] == "unavailable"

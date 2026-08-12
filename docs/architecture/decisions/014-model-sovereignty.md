@@ -63,7 +63,25 @@ The test that matters is not "is the flag read". It is: **with sovereign mode on
 hosted key set, no external endpoint is reachable from the model path.** That is the
 assertion, and it belongs in the suite.
 
-### 3. Weight lineage is staged, and the stages are named
+### 3. Two model families, two vocations
+
+| Family | Vocation | Evaluated on |
+|---|---|---|
+| **SamP** | Reasoning and language — French, Wolof and the region's languages | Instruction following, reasoning, translation quality, retrieval-grounded answers |
+| **ToP** | Code and vision — repository understanding, editing, image and document reading | Test-passing rate on real repository tasks, OCR and extraction accuracy |
+
+They are separate families rather than one model with two heads, and the reason is
+measurement: a coding regression and a language regression must be visible separately,
+otherwise a single averaged score hides which half moved. Each family has its own
+adapter, its own evaluation set (VOLET 33) and its own entry in the model router
+(VOLET 30) — a coding request goes to ToP, a reasoning request to SamP.
+
+Version numbers — SamP 1, 2, 3 and ToP 1, 2, 3 — mark a retrained model, never a
+re-serving of the same weights. What made each version is recorded in the lineage
+registry: base model, licence, data hash, hyper-parameters, and the scores that decided
+it was kept.
+
+### 4. Weight lineage is staged, and the stages are named
 
 Building the SamP and ToP families does not start with pretraining from scratch, and
 saying so plainly is more useful than encouragement.
@@ -81,7 +99,7 @@ project's*, because they will know things no base model knows. S4 is a legitimat
 long-term ambition and is not on any roadmap here — putting it on one would be a promise
 against the evidence.
 
-### 4. The base model licence is a decision, not a detail
+### 5. The base model licence is a decision, not a detail
 
 Naming an adapted model **SamP** or **ToP** is only clean under a permissive licence.
 

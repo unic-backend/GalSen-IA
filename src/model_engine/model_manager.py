@@ -53,7 +53,8 @@ class ModelManagerImpl(ModelManager):
 
         Args:
             provider_registry: Registre des fournisseurs. Le registre par défaut
-                enregistre OpenAI, Anthropic, Google et le serveur local.
+                n'inscrit que les fournisseurs souverains — serveur local et
+                serveur au format compatible (ADR-014).
             memory_manager: Moteur de mémoire recevant l'historique des
                 générations. Optionnel : sans lui, rien n'est consigné et le
                 moteur de modèles reste utilisable seul.
@@ -114,6 +115,15 @@ class ModelManagerImpl(ModelManager):
             ID du modèle enregistré
         """
         return self._store.save(model_item)
+
+    def sovereignty_report(self) -> Dict[str, Any]:
+        """
+        Décrit l'état de la souveraineté du moteur (ADR-014).
+
+        Exposé ici parce que le registre de fournisseurs est interne au moteur :
+        `/health` a besoin du constat, pas de l'objet.
+        """
+        return self._provider_registry.sovereignty_report()
 
     def get_model(self, model_id: str) -> Optional[ModelItem]:
         """
