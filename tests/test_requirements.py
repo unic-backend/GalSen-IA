@@ -147,10 +147,15 @@ def test_aucun_import_ne_vise_un_paquet_ni_installe_ni_declare():
     # la capacité se désactive en le disant. Chacun a été vérifié à la main le
     # 2026-08-12 ; la liste n'est pas un tapis, elle est un inventaire.
     TOLERES = {
-        # Outil d'embeddings : sa dépendance arrive au VOLET 27, avec l'ADR qui
-        # en pèse le prix (~90 Mo de poids et PyTorch). Jusque-là, l'outil dit
-        # qu'il lui manque sa bibliothèque au lieu de prétendre fonctionner.
+        # Recherche sémantique (ADR-015) : déclarée dans
+        # `requirements-embeddings.txt`, hors de l'image parce que
+        # `sentence-transformers` tire PyTorch. Sans elle, la récupération reste
+        # lexicale **et le dit** dans chaque réponse.
         "sentence_transformers",
+        # Transcription (VOLET 32) : déclarée dans `requirements-audio.txt`.
+        # Sans elle, un fichier audio est refusé à l'ingestion en le disant —
+        # jamais transcrit à vide, ce qui reviendrait à inventer un silence.
+        "faster_whisper", "whisper",
         # Chargeurs de formats du moteur documentaire : import protégé, le
         # format devient simplement non pris en charge.
         "PyPDF2", "docx", "openpyxl", "pptx", "markdown",

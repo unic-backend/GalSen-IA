@@ -55,6 +55,12 @@ DEFAULT_OVERLAP = 200
 # chargeurs du moteur documentaire, qui savent les ouvrir.
 EXTENSIONS_TEXTE = {".txt", ".md", ".markdown", ".rst"}
 
+# Entrées non textuelles (VOLET 32). Une photo de parcelle et un message vocal
+# sont deux des façons les plus naturelles de s'adresser à cette plateforme dans
+# son pays ; elles n'entraient nulle part.
+EXTENSIONS_IMAGE = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"}
+EXTENSIONS_AUDIO = {".wav", ".mp3", ".m4a", ".ogg", ".opus", ".flac", ".webm"}
+
 
 @dataclass
 class IngestionReport:
@@ -65,6 +71,10 @@ class IngestionReport:
     knowledge_ids: List[str] = field(default_factory=list)
     skipped: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
+    # Ce que l'ingestion a appris en chemin : modèle de transcription utilisé,
+    # OCR absent, moteur de vision indisponible. Ni erreurs ni rejets — des
+    # faits que l'opérateur doit connaître pour interpréter ce qui est entré.
+    notes: List[Dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         """Sérialise le rapport."""
@@ -74,6 +84,7 @@ class IngestionReport:
             "knowledge_ids": self.knowledge_ids,
             "skipped": self.skipped,
             "errors": self.errors,
+            "notes": self.notes,
             "ingested": len(self.knowledge_ids),
         }
 
@@ -231,6 +242,12 @@ class DocumentIngestor:
     def _lire(self, chemin: str, rapport: IngestionReport) -> Optional[str]:
         """Lit un fichier ; passe par le moteur documentaire pour les formats riches."""
         extension = os.path.splitext(chemin)[1].lower()
+
+        if extension in EXTENSIONS_AUDIO:
+            return self._transcrire(chemin, rapport)
+        if extension in EXTENSIONS_IMAGE:
+            return self._decrire_image(chemin, rapport)
+
         if extension in EXTENSIONS_TEXTE:
             try:
                 with open(chemin, "r", encoding="utf-8") as fichier:
@@ -252,6 +269,129 @@ class DocumentIngestor:
             # panne : le fichier est écarté en le disant.
             rapport.errors.append(f"format non pris en charge ici : {erreur}")
             return None
+
+    def _transcrire(self, chemin: str, rapport: IngestionReport) -> Optional[str]:
+        """
+        Transcrit un fichier audio, ou refuse en le disant (VOLET 32).
+
+        Sans transcripteur, le fichier est **écarté**. Le traiter comme un
+        document vide serait le pire des deux mondes : la base gagnerait une
+        entrée sans contenu, et l'opérateur croirait le message enregistré.
+        """
+        from src.multimodal.registry import active_transcriber, transcription_status
+
+        transcripteur = active_transcriber()
+        if transcripteur is None:
+            etat = transcription_status()
+            rapport.skipped.append(
+                f"audio non transcrit : {etat.get('detail', 'aucun transcripteur disponible')}"
+            )
+            return None
+
+        try:
+            resultat = transcripteur.transcribe(chemin)
+        except Exception as erreur:
+            rapport.errors.append(f"transcription impossible : {erreur}")
+            return None
+
+        if not resultat.text.strip():
+            # Un audio inaudible n'est pas un document vide : le dire évite
+            # d'inscrire un silence comme s'il était une connaissance.
+            rapport.skipped.append("transcription vide : rien d'audible dans le fichier")
+            return None
+
+        rapport.notes.append({
+            "kind": "transcription",
+            "model": resultat.model_name,
+            "language": resultat.language,
+            "confidence": resultat.confidence,
+        })
+        return resultat.text
+
+    def _decrire_image(self, chemin: str, rapport: IngestionReport) -> Optional[str]:
+        """
+        Décrit une image par le moteur de vision, et lit son texte si l'OCR existe.
+
+        Le moteur de vision (OpenCV, Pillow) tourne réellement : dimensions,
+        qualité, couleurs dominantes, classification. L'OCR dépend de
+        `pytesseract`, souvent absent — son absence retire le texte, pas
+        l'analyse.
+
+        Ce qui est versé est une **description mesurée**, jamais une description
+        rédigée : « image 1920×1080, nette, dominante verte » est vrai et
+        vérifiable ; « une parcelle de mil en bonne santé » serait inventé.
+        """
+        analyse = self._analyser_image(chemin, rapport)
+        texte_ocr = self._lire_texte_image(chemin, rapport)
+
+        morceaux = []
+        if analyse:
+            morceaux.append(analyse)
+        if texte_ocr:
+            morceaux.append(f"Texte lu dans l'image :\n{texte_ocr}")
+
+        if not morceaux:
+            rapport.skipped.append(
+                "image non exploitable : ni analyse ni texte n'ont pu être produits"
+            )
+            return None
+        return "\n\n".join(morceaux)
+
+    def _analyser_image(self, chemin: str, rapport: IngestionReport) -> Optional[str]:
+        """Retourne une description factuelle de l'image, ou None."""
+        try:
+            from PIL import Image
+
+            with Image.open(chemin) as image:
+                largeur, hauteur = image.size
+                mode = image.mode
+                format_ = image.format
+        except Exception as erreur:
+            rapport.errors.append(f"image illisible : {erreur}")
+            return None
+
+        details = [
+            f"Image {format_ or 'inconnue'} de {largeur}×{hauteur} pixels, mode {mode}."
+        ]
+
+        # Le moteur de vision est optionnel ici : son absence retire des mesures,
+        # elle n'empêche pas l'image d'entrer avec ce qu'on sait d'elle.
+        try:
+            from src.integration.engine_registry import get_shared_registry
+            from src.vision_intelligence_engine.types import ImageItem
+
+            vision = get_shared_registry().try_get("vision")
+            if vision is not None:
+                with open(chemin, "rb") as fichier:
+                    item = ImageItem(image_id=os.path.basename(chemin), data=fichier.read())
+                resultats = vision.analyze_image(item)
+                for cle in ("quality", "colors", "classification"):
+                    valeur = resultats.get(cle)
+                    if isinstance(valeur, dict) and not valeur.get("error"):
+                        details.append(f"{cle} : {valeur}")
+        except Exception as erreur:
+            rapport.notes.append({"kind": "vision", "unavailable": str(erreur)})
+
+        return "\n".join(details)
+
+    def _lire_texte_image(self, chemin: str, rapport: IngestionReport) -> Optional[str]:
+        """Lit le texte d'une image par OCR, ou rapporte son indisponibilité."""
+        try:
+            import pytesseract
+            from PIL import Image
+
+            with Image.open(chemin) as image:
+                texte = pytesseract.image_to_string(image, lang="fra")
+        except ImportError:
+            rapport.notes.append({
+                "kind": "ocr",
+                "unavailable": "pytesseract n'est pas installé : l'image entre sans son texte.",
+            })
+            return None
+        except Exception as erreur:
+            rapport.notes.append({"kind": "ocr", "unavailable": str(erreur)})
+            return None
+        return texte.strip() or None
 
     def _decouper(self, texte: str, chemin: str) -> List[str]:
         """Découpe via le découpeur du moteur documentaire, jamais un troisième."""

@@ -1,0 +1,17 @@
+# Transcription parole vers texte — installation délibérée (VOLET 32).
+#
+# Ce fichier n'est **pas** installé par l'image de production. `faster-whisper`
+# tire CTranslate2 et les poids du modèle (~500 Mo pour `small`). Sans lui, un
+# fichier audio est **refusé** à l'ingestion en le disant — jamais traité comme
+# un document vide.
+#
+#     pip install -r requirements-audio.txt
+#
+# `faster-whisper` plutôt que `openai-whisper` : même modèle sur CTranslate2,
+# environ quatre fois plus rapide sur CPU et moins gourmand en mémoire. Sur les
+# machines que ce projet vise, c'est la différence entre utilisable et théorique.
+# `GALSEN_WHISPER_MODEL` choisit la taille (`small` par défaut).
+
+-r requirements.txt
+
+faster-whisper==2.2.0

@@ -352,3 +352,13 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **31.2 — la boucle est bornée et annule ses dégâts.** Une modification qui casse ses tests est **remise en état**, et l'agent reçoit la sortie réelle de l'échec pour sa tentative suivante. Un fichier sans test est appliqué en **annonçant** qu'il n'est pas vérifié.
 - **Limite dite** : l'étape « proposer le code » appelle un modèle et dépend de 26.1. La boucle ne fabrique aucun code — elle applique, vérifie, annule.
 - Suite complète : **2282 tests passent**, 7 ignorés (20 ajoutés).
+
+### 2026-08-12 (VOLET 32 — la plateforme entend et regarde)
+- **Aucun chemin audio n'existait dans `src/`** et le moteur de vision — 1 845 lignes d'OpenCV et de Pillow — n'était relié à **aucune** ingestion. Une photo de parcelle et un message vocal, deux des façons les plus naturelles de s'adresser à cette plateforme dans son pays, n'entraient nulle part.
+- **`src/multimodal/`** suit la forme d'ADR-015 : interface, fournisseurs, registre, **local uniquement** (ADR-014). Envoyer la voix d'un utilisateur chez un tiers serait un export plus intime qu'une invite de texte.
+- **La règle qui gouverne ce volet** : sans transcripteur, un fichier audio est **refusé** en le disant. Le traiter comme un document vide serait le pire des deux mondes — la base gagnerait une entrée sans contenu et l'opérateur croirait le message enregistré. Une transcription inventée met des mots dans la bouche de quelqu'un : c'est la forme la plus dommageable de la fabrication que ce dépôt refuse, et la seule qui puisse nuire à une personne nommée.
+- **L'image entre avec ce qui est mesuré, jamais avec ce qui est imaginé** : « Image PNG de 640×480, netteté, couleurs dominantes » est vrai et vérifiable ; « une parcelle de mil en bonne santé » serait inventé. Vérifié de bout en bout sur une vraie image.
+- **`faster-whisper` plutôt que `openai-whisper`** : même modèle sur CTranslate2, ~4× plus rapide sur CPU. Sur les machines que ce projet vise, c'est la différence entre utilisable et théorique.
+- **Défaut d'autorité corrigé** : `active_transcriber()` consultait le fournisseur imposé **avant** l'interrupteur de l'exploitant — un `GALSEN_TRANSCRIPTION_ENABLED=false` ne coupait rien si un composant avait injecté son transcripteur. Un interrupteur qu'un composant peut contourner n'est pas un interrupteur. (Le registre d'embeddings avait déjà le bon ordre.)
+- **Non vérifié ici** : la transcription réelle. Les poids viennent de Hugging Face, qui répond **403** à travers ce mandataire — même situation que les embeddings au VOLET 27.
+- Suite complète : **2297 tests passent**, 7 ignorés (15 ajoutés).

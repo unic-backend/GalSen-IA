@@ -8,9 +8,9 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : **32 — Multimodal** (26 sauf 26.1, 27 à 31 terminés)
-**Phase courante** : 32.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
-**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 31**
+**VOLET en cours** : **33 — Infrastructure d'entraînement : SamP et ToP** (26 sauf 26.1, 27 à 32 terminés)
+**Phase courante** : 33.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
+**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 32**
 **Cadence** : **un VOLET par tour** — demandé par l'utilisateur le 2026-08-12.
 La limite des 25 minutes de `.claude/rules/work-cadence.md` continue de s'appliquer.
 
@@ -78,9 +78,12 @@ VOLET 31 — Agent de développement autonome                  → 4 phases — 
   **Limite dite** : l'étape « proposer le code » appelle un modèle et dépend
   de 26.1. La boucle ne fabrique aucun code — elle applique, vérifie, annule.
 
-VOLET 32 — Multimodal                                       → 3 phases
-  Ch. 32.1  Parole vers texte (Whisper local)               → 2 phases
-  Ch. 32.2  Le moteur vision branché sur l'ingestion        → 1 phase
+VOLET 32 — Multimodal                                       → 3 phases — **terminé**
+  Ch. 32.1  Transcription locale : interface + Whisper       → **terminées**
+  Ch. 32.2  Image et audio branchés sur l'ingestion          → **terminée**
+  **Non vérifié ici** : la transcription réelle. Les poids viennent de Hugging
+  Face, qui répond 403 à travers ce mandataire. Ce qui est vérifié : le refus
+  propre, le rapport, et l'ingestion d'image de bout en bout.
 
 VOLET 33 — Infrastructure d'entraînement : SamP et ToP      → 6 phases
   Conception → `docs/architecture/training-infrastructure.md`, lignée → ADR-014.
