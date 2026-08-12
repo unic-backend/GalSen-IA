@@ -31,12 +31,13 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
   mesure d'amélioration qui refuse de conclure sous 30 retours par fenêtre.
 - Suite complète : **2599 tests passent**, 7 ignorés ; `ruff check .` propre.
 
-**Prochaine étape**
-**Chapitre 13 — modèle de sécurité** : permissions, sauvegardes, points de reprise,
-activité. Puis 14 (matériel, pile logicielle, chemins de mise à niveau) — dernier du VOLET.
+**Prochaine étape** (cadence élargie, demandée le 2026-08-12)
+**Chapitres 13 et 14 dans le même tour**, puis **ADR-018 passé en *Accepted* avec l'option B**,
+que le propriétaire a tranchée. Ordre : ADR d'abord si les chapitres en dépendent, sinon après.
 
 **Bloqué / à surveiller**
-- **ADR-018 attend ta décision** : A / B / C sur la souveraineté. Recommandation : **B**.
+- **ADR-018 : décision prise — option B.** Le fichier est encore *Proposed* ; il reste à
+  l'écrire comme décision acceptée. Ce n'est plus un blocage, c'est une tâche.
 - **`git push origin v0.1.0`** : le proxy refuse les étiquettes (403). L'étiquette existe
   localement sur `383fcf7` ; à pousser depuis un clone normal.
 - **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192.

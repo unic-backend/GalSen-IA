@@ -10,11 +10,14 @@ exécuter, et une seule.
 
 **VOLET en cours** : **34 — Agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`)
 **Phases**         : 24, réparties sur 14 chapitres
-**Phase courante** : **chapitre 13 — modèle de sécurité : permissions, sauvegardes, points de reprise, activité**, en attente
+**Phase courante** : **chapitres 13 et 14 enchaînés**, puis ADR-018 en option B.
+Cadence élargie pour cette reprise à la demande du propriétaire (2026-08-12) : les deux
+derniers chapitres du VOLET dans le même tour, la limite des 25 minutes s'appliquant toujours.
 **Cadence** : **un chapitre par tour** — demandé par l'utilisateur le 2026-08-12
 (auparavant : un VOLET, puis une phase).
-**En attente de ta décision** : **ADR-018 est *proposé***, pas accepté. Il ne change rien
-tant que tu n'as pas tranché A / B / C. Les chapitres 05+ tiennent sous chaque option.
+**Décision prise le 2026-08-12** : **ADR-018 — option B**, choisie par le propriétaire.
+L'ADR est encore marqué *Proposed* dans le fichier : le passer en *Accepted* avec l'option B
+écrite comme décision est la première tâche de la reprise, avant les chapitres 13 et 14.
 **Terminées dans le VOLET 34** : 1.1 état des lieux (`personal-agent-assessment.md`),
 2.1 agents de code et multi-agents (`agent-foundations-comparison.md`),
 2.2 computer-use, bureau et MCP (`computer-use-comparison.md`),
