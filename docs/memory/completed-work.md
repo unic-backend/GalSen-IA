@@ -474,3 +474,14 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **`assert_stays_local()` refuse sans condition** qu'une lecture d'écran parte chez un tiers — sans consulter `GALSEN_SOVEREIGN_MODE`, et le refus suit l'héritage pour attraper le fournisseur ajouté demain. ADR-018 range les captures parmi les charges qu'aucune dérogation ne couvre.
 - **Les deux gardes de l'état des lieux ont échoué au bon moment** — compte d'outils et « ni vue ni pointeur ». Le document a été daté et corrigé, les tests n'ont pas été affaiblis : c'était leur rôle.
 - **17 tests** (`tests/test_screen_tool.py`). Suite complète : **2400 tests passent**, 7 ignorés ; `ruff` propre.
+
+### 2026-08-12 (VOLET 34, chapitre 06 — la main, sous portillon)
+- **`src/tools/gui/`** — 21e outil. Le chemin est celui de `GuardedEditor` (VOLET 31), repris à l'identique : `propose` → décision humaine → `apply`. Deux portillons finiraient par ne plus dire la même chose.
+- **Une action nomme sa cible, ou elle est refusée** (ADR-017 §4). `GUIAction` vise un `ScreenElement`, jamais un couple de coordonnées. **Cinq refus précèdent le portillon** : pas de cible, pas de libellé ni d'identifiant, pas de position, élément désactivé, champ de mot de passe.
+- **Le champ de secret est refusé, pas approuvé** : le portillon protège l'action, pas la valeur. Un identifiant qui transite par un agent est un problème d'identifiants qu'une approbation ne résout pas.
+- **Le texte saisi n'entre ni dans la demande ni dans l'audit** — seule sa longueur. L'audit persiste depuis cette semaine : un texte conservé là serait une fuite qui survit au redémarrage.
+- **Une approbation ne sert qu'une fois.** Rejouer un identifiant permettrait de cliquer deux fois avec une seule décision, et le second clic n'aurait été approuvé par personne.
+- **Sans moteur d'approbation, l'outil ferme** au lieu de dégrader — comme pour l'écriture de code.
+- **Sans exécutant, un geste approuvé refuse franchement** : rapporter « fait » sans avoir agi serait le pire des comptes rendus.
+- **La détection de plateforme est celle du chapitre 05**, partagée (`BackendDePlateforme`) plutôt que réécrite.
+- **19 tests** (`tests/test_gui_tool.py`), avec un **vrai** moteur d'approbation et non une imitation : simuler le portillon ferait passer le test sur un objet qui n'est pas celui qui protège la plateforme. Suite complète : **2419 tests passent**, 7 ignorés ; `ruff` propre.

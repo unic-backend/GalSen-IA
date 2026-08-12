@@ -90,8 +90,14 @@ themselves unimplemented: verifying them needs a machine with a desktop, the way
 TEST 2 and TEST 6 need one with Docker. That dependency is stated rather than
 papered over with untested code.
 
-**Nothing still moves a pointer.** Reading and acting were separated on purpose:
-an agent can be given eyes without being given hands. Acting is chapter 06.
+**Chapter 06 landed the same day.** `GUITool` proposes a gesture and executes
+none without an approved decision — the path `GuardedEditor` established for
+files (VOLET 31), reused rather than reinvented. A gesture names its target or is
+refused, and five refusals precede the gate: no target, no label, no position,
+disabled element, password field.
+
+Reading and acting stay two tools, and a test asserts `ScreenTool` has not grown
+a click. The platform backends still need a machine with a desktop.
 
 ### 2.4 The browser is not a browser
 
@@ -102,20 +108,20 @@ agents" has, today, **no counterpart here**.
 
 ---
 
-## 3. Tools: twenty enabled, all importable
+## 3. Tools: twenty-one enabled, all importable
 
-> **Updated 2026-08-12 by VOLET 34 chapter 05.** `screen` joined the catalogue:
-> it reads the accessibility tree and refuses, naming the reason, where there is
-> no display. Sight is therefore no longer absent — **GUI control still is**, and
-> the two were deliberately separated so an agent can be given eyes without hands.
+> **Updated 2026-08-12 by VOLET 34 chapters 05 and 06.** `screen` reads the
+> accessibility tree; `gui` proposes gestures and executes none without a human
+> decision. They are two tools on purpose: an agent can be given eyes without
+> being given hands.
 
 ```
-filesystem terminal screen git github web_search browser api database model
+filesystem terminal screen gui git github web_search browser api database model
 memory rag embeddings ocr pdf email calendar logging metrics agri_advice → enabled
 docker                                                                   → disabled
 ```
 
-All twenty modules import cleanly. `docker` is off **for a stated security
+All twenty-two modules import cleanly. `docker` is off **for a stated security
 reason**, not neglect: from inside the production container it would need the
 host's Docker socket, which is root on the host — an agent could start a
 privileged container mounting `/`. The brief asks for a sandbox; this is why the
@@ -173,7 +179,7 @@ preferences), **proactive discovery** (nothing runs unprompted), and a
 | Write / modify / debug code | present, gated (VOLET 31) |
 | Run commands and scripts | **partial** — six executables, no sandbox |
 | See the screen | **partial** — contract, refusals and element identity delivered (ch. 05) |
-| Drive a GUI | **absent** — chapter 06 |
+| Drive a GUI | **partial** — gate, refusals and action contract delivered (ch. 06); backends need a desktop |
 | Multi-agent collaboration | present, three specialists missing |
 | Memory | present |
 | Security, approval, logs | **present and ahead of the brief** |
@@ -181,8 +187,7 @@ preferences), **proactive discovery** (nothing runs unprompted), and a
 | Proactive opportunity discovery | **absent** |
 | MCP | **absent** |
 
-**Five of fifteen are absent, six partial, four present** (the row "see the
-screen, drive a GUI" split in two when chapter 05 delivered half of it). The four that are
+**Four of fifteen are absent, seven partial, four present.** The four that are
 present are the ones that are hardest to retrofit — permissions, approval,
 audit, ownership — and they are why the missing six can be built without turning
 this into a tool that deletes a user's drive on a bad inference.

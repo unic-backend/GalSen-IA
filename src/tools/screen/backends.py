@@ -48,7 +48,7 @@ def session_graphique() -> bool:
     return any(os.environ.get(variable) for variable in VARIABLES_D_AFFICHAGE)
 
 
-class _BackendDePlateforme(ScreenBackend):
+class BackendDePlateforme(ScreenBackend):
     """
     Base des backends liés à un système d'exploitation.
 
@@ -63,6 +63,9 @@ class _BackendDePlateforme(ScreenBackend):
     #: Module Python qui donne accès à l'arbre, et comment l'obtenir.
     module: str = ""
     installation: str = ""
+
+    #: Chapitre du VOLET qui livrera l'implémentation, cité dans le refus.
+    reference: str = "VOLET 34, ch. 05"
 
     def unavailable_reason(self) -> Optional[str]:
         """Retourne la raison précise, ou None si le backend peut servir."""
@@ -83,7 +86,7 @@ class _BackendDePlateforme(ScreenBackend):
         return (
             f"Le backend « {self.name} » n'est pas encore implémenté. Le vérifier "
             "demande une machine avec un bureau ; il est livré dans la phase qui "
-            "peut l'exécuter (VOLET 34, ch. 05)."
+            f"peut l'exécuter ({self.reference})."
         )
 
     def snapshot(self) -> ScreenSnapshot:
@@ -91,7 +94,7 @@ class _BackendDePlateforme(ScreenBackend):
         raise ScreenUnavailable(self.unavailable_reason())
 
 
-class AtSpiBackend(_BackendDePlateforme):
+class AtSpiBackend(BackendDePlateforme):
     """Arbre d'accessibilité de Linux, via AT-SPI."""
 
     name = "at-spi"
@@ -101,7 +104,7 @@ class AtSpiBackend(_BackendDePlateforme):
     installation = "Sur Debian ou Ubuntu : « apt install python3-pyatspi »."
 
 
-class UiaBackend(_BackendDePlateforme):
+class UiaBackend(BackendDePlateforme):
     """Arbre d'accessibilité de Windows, via UI Automation."""
 
     name = "uia"
@@ -111,7 +114,7 @@ class UiaBackend(_BackendDePlateforme):
     installation = "« pip install pywinauto »."
 
 
-class AxBackend(_BackendDePlateforme):
+class AxBackend(BackendDePlateforme):
     """Arbre d'accessibilité de macOS, via l'API Accessibility."""
 
     name = "ax"

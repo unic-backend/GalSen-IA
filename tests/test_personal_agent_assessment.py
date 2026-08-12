@@ -43,11 +43,11 @@ def test_le_compte_d_outils_actifs_est_celui_annonce(outils, document):
     """« dix-neuf activés » est un nombre, donc il se vérifie."""
     actifs = [outil for outil in outils if outil["enabled"]]
 
-    assert len(actifs) == 20, (
-        f"{len(actifs)} outils actifs — l'état des lieux en annonce 20. "
+    assert len(actifs) == 21, (
+        f"{len(actifs)} outils actifs — l'état des lieux en annonce 21. "
         "Mettre le document à jour, ou expliquer le nouvel outil."
     )
-    assert "twenty enabled" in document
+    assert "twenty-one enabled" in document
 
 
 def test_l_outil_docker_reste_desactive(outils, document):
@@ -111,12 +111,13 @@ def test_le_navigateur_n_est_pas_un_navigateur():
     assert not operations & {"click", "type", "screenshot", "evaluate"}
 
 
-def test_la_vue_existe_et_la_main_toujours_pas():
+def test_la_vue_et_la_main_existent_et_restent_separees():
     """
-    Ce test disait « ni vue ni pointeur ». Le chapitre 05 a livré la vue, il a
-    échoué, et l'état des lieux a été daté et corrigé — c'était exactement son
-    rôle. Il garde maintenant la moitié qui reste vraie : lire et agir sont
-    séparés, et un agent peut recevoir des yeux sans recevoir de main.
+    Ce test disait « ni vue ni pointeur ». Les chapitres 05 et 06 ont livré, il a
+    échoué deux fois, et l'état des lieux a été daté et corrigé à chaque fois —
+    c'était exactement son rôle. Il garde maintenant ce qui doit rester vrai :
+    lire et agir sont deux outils, et un agent peut recevoir des yeux sans
+    recevoir de main.
     """
     import importlib.util
 
@@ -128,11 +129,11 @@ def test_la_vue_existe_et_la_main_toujours_pas():
             return False
 
     assert existe("src.tools.screen.tool")
-    assert not existe("src.tools.gui.tool"), (
-        "Le contrôle GUI existe : le chapitre 06 a livré, l'état des lieux doit suivre."
-    )
+    assert existe("src.tools.gui.tool")
 
-    # La vue ne doit pas avoir gagné de main au passage.
+    # Les deux chapitres ont livré ; ce qui doit tenir, c'est leur séparation.
+    # `test_gui_tool.py` la garde en détail — ici on vérifie que la vue n'a pas
+    # gagné de main au passage.
     from src.tools.screen import ScreenTool
 
     assert set(ScreenTool().available_operations()) == {"availability", "find", "snapshot"}

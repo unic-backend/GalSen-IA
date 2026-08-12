@@ -12,6 +12,17 @@ tools:
     class: "ScreenTool"
     config: {}
 
+  # Propose un geste, n'en exécute aucun sans décision humaine. La cible est un
+  # élément identifié — rôle, libellé, bornes — jamais un couple de coordonnées :
+  # « cliquer en (412, 380) » n'est pas approuvable par un humain (ADR-017 §4).
+  # Sans moteur d'approbation, l'outil ferme au lieu de dégrader.
+  - id: gui
+    enabled: true
+    category: system
+    module: "tools.gui.tool"
+    class: "GUITool"
+    config: {}
+
   # Access is confined to the project root. Writing is disabled: agents report
   # what should change instead of changing it. Set allow_write to true only when
   # autonomous edits are actually wanted.
