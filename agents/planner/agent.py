@@ -45,7 +45,7 @@ class PlannerAgent(BaseAgent):
             "description": "Relire le code et exécuter les tests",
         },
         "security": {
-            "keywords": ("sécurité", "sécuriser", "vulnérabilité", "authentification", "secret",
+            "keywords": ("sécurité", "sécuris", "vulnérabilité", "authentification", "secret",
                          "security", "secure", "auth", "chiffrement", "données personnelles"),
             "agents": ("security",),
             "description": "Analyser les risques de sécurité",
@@ -177,6 +177,10 @@ class PlannerAgent(BaseAgent):
                 "intent": intent,
                 "description": rule["description"],
                 "assigned_agents": list(rule["agents"]),
+                # Premier agent de la phase : c'est lui qui porte la tâche. Le
+                # champ existe pour que `context.tasks_for()` réponde sans avoir
+                # à connaître la forme du plan.
+                "assigned_agent": rule["agents"][0],
                 "depends_on": tasks[-1]["id"] if tasks else None,
                 "priority": len(self.INTENT_RULES) - order,
             })

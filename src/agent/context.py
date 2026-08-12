@@ -19,6 +19,11 @@ from typing import Any, Dict, List, Optional
 from ..approval_engine.types import ApprovalRequest
 from ..audit_engine.types import AuditEvent, AuditEventType, AuditStatus, generate_request_id
 from ..integration.engine_registry import EngineRegistry, EngineUnavailableError, get_shared_registry
+from .blackboard import Blackboard
+
+# Profondeur maximale de délégation d'agent à agent. Trois niveaux suffisent à un
+# travail composé ; au-delà, on a une boucle plutôt qu'une décomposition.
+MAX_DELEGATION_DEPTH = 3
 
 
 class AgentContext:
@@ -46,6 +51,8 @@ class AgentContext:
         previous_results: Optional[List[Dict[str, Any]]] = None,
         options: Optional[Dict[str, Any]] = None,
         request_id: Optional[str] = None,
+        blackboard: Optional["Blackboard"] = None,
+        delegation_depth: int = 0,
     ):
         """
         Initialise le contexte.
@@ -59,6 +66,11 @@ class AgentContext:
             previous_results: Résultats des agents déjà exécutés dans cette requête
             options: Options libres transmises par l'orchestrateur
             request_id: Identifiant de la requête, généré si absent
+            blackboard: État de travail partagé (VOLET 29) ; créé si absent et
+                **partagé tel quel** par les contextes dérivés — une copie ferait
+                deux vérités.
+            delegation_depth: Profondeur de délégation atteinte. Sert à borner
+                les appels d'agent à agent, qui sinon peuvent boucler.
         """
         self.request = request
         self.agent_id = agent_id
@@ -69,6 +81,8 @@ class AgentContext:
         self.options = options or {}
         self.request_id = request_id or generate_request_id()
         self.started_at = time.time()
+        self.blackboard = blackboard if blackboard is not None else Blackboard()
+        self.delegation_depth = delegation_depth
 
         self._logger = logging.getLogger(f"{__name__}.{agent_id}")
 
@@ -118,7 +132,133 @@ class AgentContext:
             previous_results=self.previous_results,
             options=self.options,
             request_id=self.request_id,
+            # Même tableau noir, pas une copie : deux instances feraient deux
+            # états de travail, et l'agent dérivé ne verrait pas ce que son
+            # prédécesseur vient de déposer.
+            blackboard=self.blackboard,
+            delegation_depth=self.delegation_depth,
         )
+
+    # ------------------------------------------------------------------
+    # Plan du planificateur
+    # ------------------------------------------------------------------
+    def tasks(self) -> List[Dict[str, Any]]:
+        """
+        Retourne les tâches décidées par le planificateur pour cette requête.
+
+        Returns:
+            La liste des tâches, vide si le planificateur n'a pas tourné.
+        """
+        plan = self.previous_result("planner") or {}
+        resultat = plan.get("result") if isinstance(plan.get("result"), dict) else plan
+        taches = resultat.get("tasks") if isinstance(resultat, dict) else None
+        return taches if isinstance(taches, list) else []
+
+    def tasks_for(self, agent_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Retourne les tâches assignées à un agent.
+
+        Le planificateur assigne chaque tâche à un agent depuis longtemps, et
+        **personne ne lisait cette assignation**. `coder` se contentait de
+        vérifier qu'un plan existait, puis rapportait `plan_followed: true` —
+        une affirmation vraie sur l'existence du plan et fausse sur son suivi.
+
+        Args:
+            agent_id: Agent concerné ; celui de ce contexte par défaut.
+
+        Returns:
+            Les tâches qui lui reviennent, dans l'ordre du plan.
+        """
+        cible = agent_id or self.agent_id
+        return [
+            tache for tache in self.tasks()
+            if tache.get("assigned_agent") == cible
+            or cible in (tache.get("assigned_agents") or [])
+        ]
+
+    # ------------------------------------------------------------------
+    # État de travail partagé et délégation
+    # ------------------------------------------------------------------
+    def post(self, topic: str, value: Any, to: Optional[str] = None) -> None:
+        """
+        Dépose une observation sur le tableau noir partagé (VOLET 29).
+
+        Args:
+            topic: Sujet de l'observation.
+            value: Contenu.
+            to: Agent destinataire, si elle en vise un.
+        """
+        self.blackboard.post(topic, value, author=self.agent_id, to=to)
+
+    def read_notes(self, topic: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Lit les observations qui concernent cet agent.
+
+        Args:
+            topic: Sujet recherché ; tous si None.
+
+        Returns:
+            Les notes adressées à cet agent ou à personne, sérialisées.
+        """
+        return [note.to_dict() for note in self.blackboard.read(topic, pour=self.agent_id)]
+
+    def delegate(self, agent_id: str, task: Any = None) -> Dict[str, Any]:
+        """
+        Confie un travail à un autre agent, dans la même requête.
+
+        C'est la capacité qui manquait : un agent pouvait lire ce que les
+        précédents avaient produit, mais pas demander quelque chose à un autre.
+
+        Deux garde-fous, et ils ne sont pas décoratifs : des agents qui
+        s'appellent librement forment des cycles, et un cycle sans borne
+        consomme toute la requête sans jamais rendre de réponse.
+
+        - **Profondeur bornée** (`MAX_DELEGATION_DEPTH`).
+        - **Pas d'auto-délégation**, ni retour vers un agent déjà dans la chaîne.
+
+        Args:
+            agent_id: Agent sollicité.
+            task: Travail confié ; la requête courante par défaut.
+
+        Returns:
+            Le résultat de l'agent, ou un statut expliquant le refus. Un refus
+            est une donnée : l'agent appelant doit pouvoir continuer sans.
+        """
+        if agent_id == self.agent_id:
+            return {"status": "refused", "reason": "self_delegation",
+                    "detail": f"« {agent_id} » ne peut pas se déléguer à lui-même."}
+
+        chaine = self.options.get("delegation_chain", [])
+        if agent_id in chaine:
+            return {"status": "refused", "reason": "cycle",
+                    "detail": f"« {agent_id} » est déjà dans la chaîne {chaine} : cycle refusé."}
+
+        if self.delegation_depth >= MAX_DELEGATION_DEPTH:
+            return {"status": "refused", "reason": "depth_exceeded",
+                    "detail": f"Profondeur de délégation maximale atteinte ({MAX_DELEGATION_DEPTH})."}
+
+        from src.router.agent_dispatcher import AgentDispatcher
+
+        sous_contexte = self.derive(agent_id)
+        sous_contexte.delegation_depth = self.delegation_depth + 1
+        sous_contexte.options = {
+            **self.options,
+            "delegation_chain": [*chaine, self.agent_id],
+            "delegated_by": self.agent_id,
+        }
+
+        try:
+            resultat = AgentDispatcher().dispatch_by_id(
+                agent_id, task if task is not None else self.request, sous_contexte
+            )
+        except Exception as erreur:
+            # Une délégation qui échoue ne doit pas emporter l'agent appelant :
+            # il doit pouvoir rapporter qu'il n'a pas obtenu l'aide demandée.
+            self._logger.warning("Délégation à « %s » impossible : %s", agent_id, erreur)
+            return {"status": "error", "agent": agent_id, "error": str(erreur)}
+
+        self.post("delegation", {"agent": agent_id, "status": resultat.get("status")})
+        return resultat
 
     # ------------------------------------------------------------------
     # Moteur de mémoire

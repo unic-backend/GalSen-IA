@@ -8,9 +8,9 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : **29 — Gestionnaire d'agents** (26 sauf 26.1, 27 et 28 terminés)
-**Phase courante** : 29.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
-**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 et 28**
+**VOLET en cours** : **30 — Routage de modèles** (26 sauf 26.1, 27, 28, 29 terminés)
+**Phase courante** : 30.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
+**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27, 28 et 29**
 **Cadence** : **un VOLET par tour** — demandé par l'utilisateur le 2026-08-12.
 La limite des 25 minutes de `.claude/rules/work-cadence.md` continue de s'appliquer.
 
@@ -55,10 +55,13 @@ VOLET 28 — Base de connaissances                            → 4 phases — *
   mémoire — servir des affirmations inventées à un agriculteur serait le pire
   usage possible de ce dépôt.
 
-VOLET 29 — Gestionnaire d'agents                            → 5 phases
-  Ch. 29.1  Décomposition d'objectif                        → 2 phases
-  Ch. 29.2  Délégation et état partagé entre agents         → 2 phases
-  Ch. 29.3  Les neuf agents raisonnent au lieu d'exécuter   → 1 phase
+VOLET 29 — Gestionnaire d'agents                            → 5 phases — **terminé**
+  Ch. 29.1  Décomposition lue, et plus seulement produite   → **terminées**
+  Ch. 29.2  Délégation bornée + tableau noir partagé        → **terminées**
+  Ch. 29.3  Les agents suivent leurs tâches assignées       → **terminée**
+  **Limite dite** : « raisonner » au sens d'un modèle qui délibère dépend de
+  26.1. La décomposition, l'assignation et la délégation sont déterministes et
+  vérifiées ; l'affinage par modèle rapporte son indisponibilité.
 
 VOLET 30 — Routage de modèles par coût et par tâche         → 3 phases
   Le moteur existe (6 423 lignes) ; la politique n'existe pas.

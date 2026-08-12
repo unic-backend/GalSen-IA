@@ -29,6 +29,44 @@ class AgentDispatcher:
         # et le dispatcher est appelé pour chaque agent de chaque requête
         self._agent_classes: Dict[str, Optional[Type]] = {}
 
+    def dispatch_by_id(
+        self,
+        agent_id: str,
+        input_data: Any,
+        context: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """
+        Exécute un agent désigné par son identifiant.
+
+        Sert la délégation d'agent à agent (VOLET 29) : un agent connaît le nom
+        de celui qu'il sollicite, pas sa configuration. La configuration est lue
+        dans le registre déclaré, jamais reconstruite ici — sinon un agent
+        délégué tournerait avec des réglages différents de ceux qu'il a quand
+        l'orchestrateur l'appelle.
+
+        Args:
+            agent_id: Identifiant de l'agent, tel que déclaré dans le registre.
+            input_data: Données d'entrée.
+            context: `AgentContext` de l'appelant, dérivé pour l'agent sollicité.
+
+        Returns:
+            Le résultat de l'agent, ou un résultat d'erreur si l'agent est inconnu.
+        """
+        import os
+
+        from .agent_loader import AgentLoader
+
+        racine = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        registre = AgentLoader(os.path.join(racine, "agents", "registry.yaml"))
+        configuration = registre.get_all_agents().get(agent_id)
+
+        if not configuration:
+            return self._create_error_result(
+                agent_id,
+                f"Agent « {agent_id} » inconnu du registre : la délégation est refusée.",
+            )
+        return self.dispatch(configuration, input_data, context)
+
     def dispatch(
         self,
         agent_config: Dict[str, Any],
