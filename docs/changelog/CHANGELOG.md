@@ -35,6 +35,25 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Proactive discovery — the last capability the brief asked for** (`src/proactive/`)
+  - Seven detectors read state the platform already measures: model availability (C1),
+    approvals waiting over 24 h, blocking import cycles, code no test reaches, a
+    **measured** drop in quality, files worth tidying, security gaps
+  - **An observation without evidence or without a proposed action is refused at
+    construction**, not filtered later: a suggestion pointing at no measurement is an
+    opinion, and flagging without saying what to do moves the work onto the person
+  - **Nothing repeats.** A dismissed suggestion returns only if its evidence fingerprint
+    changed — silencing "3 untested files" cannot hide "300 untested files" six months
+    later. That distinction is what separates staying quiet from hiding
+  - **Nothing is executed** (`acted: false`); each observation names who must decide
+  - A silent detector and a failed one are never merged: "nothing to report" and "I could
+    not look" are different sentences
+  - Triggering is explicit — `scripts/proactive_scan.py` (cron-able, exit 1 on anything
+    blocking), `GET /proactive/suggestions`, `due()`. No background thread in the API:
+    with ADR-009 allowing one instance and no way to verify it without a clock, a
+    half-built one would mean discovery believed active and not running
+  - `tests/test_proactive.py` — 24 tests. On the real repository: 2 observations, 7
+    detectors, none failed
 - **The security model, measured in one place** (`src/security/`, VOLET 34 ch. 13)
   - The protections existed — RBAC, ownership, approval gate, audit, declared roots,
     sandbox, MCP whitelist — spread across six modules and five ADRs. `posture()` **reads

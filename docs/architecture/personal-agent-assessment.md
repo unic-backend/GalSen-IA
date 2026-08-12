@@ -212,7 +212,19 @@ write goes through the approval gate.
 | **Posture, measured** | `src/security/posture.py` — nine sections read from the real configuration, each carrying what it does **not** guarantee (ch. 13) |
 | **Checkpoints** | `src/security/checkpoints.py` — file operations, approval decisions and backups in one view, with `reversible` per line and **no global undo** (ch. 13) |
 
-Missing: **proactive discovery** — nothing runs unprompted.
+> **Updated 2026-08-12.** Proactive discovery was the last capability the brief
+> asked for and this repository lacked. `src/proactive/` closes it: seven
+> detectors read state the platform already measures — model availability,
+> approvals waiting over 24 h, blocking import cycles, code no test reaches,
+> a **measured** drop in quality, files worth tidying, security gaps — and each
+> observation carries its evidence and names who must decide. **Nothing is
+> executed.** A detector that cannot measure stays silent; one that fails is
+> reported as failed, never confused with a silent one. Dismissed suggestions do
+> not return unless their evidence fingerprint changes, so silencing "3 untested
+> files" cannot hide "300 untested files" six months later. Triggering is
+> explicit — `scripts/proactive_scan.py` (cron-able), `GET
+> /proactive/suggestions`, or `due()` — because a background thread nobody
+> verified would be the worst outcome: discovery believed active and not running.
 
 > **Updated 2026-08-12 by VOLET 34 chapter 12.** Working-style learning is no
 > longer missing. `src/training/working_style.py` derives preferences from what a
@@ -258,10 +270,10 @@ Missing: **proactive discovery** — nothing runs unprompted.
 | Memory | present |
 | Security, approval, logs | **present and ahead of the brief** — now measured in one place, `/security/posture` (ch. 13) |
 | Continuous improvement, style learning | **present** — preferences derived with evidence, applied to prompts; trends refused below sample size (ch. 12) |
-| Proactive opportunity discovery | **absent** |
+| Proactive opportunity discovery | **present** — seven measured detectors, nothing executed, no repetition (`src/proactive/`) |
 | MCP | **partial** — server delivered, whitelisted and identified (ch. 09); client decides before connecting but connects to nothing |
 
-**One of fifteen is absent, four partial, ten present.** The four that are
+**None of fifteen is absent: four partial, eleven present.** The four that are
 present are the ones that are hardest to retrofit — permissions, approval,
 audit, ownership — and they are why the missing six can be built without turning
 this into a tool that deletes a user's drive on a bad inference.

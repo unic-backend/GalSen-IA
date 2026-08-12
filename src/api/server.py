@@ -786,6 +786,43 @@ async def security_checkpoints(limit: int = 100):
     return list_checkpoints(limit=limit)
 
 
+@app.get("/proactive/suggestions", tags=["health"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def proactive_suggestions():
+    """Ce que la plateforme remarque sans qu'on lui demande.
+
+    Sept détecteurs lisent l'état réel — modèle disponible, décisions en
+    attente, cycles d'imports, code sans test, qualité en baisse, fichiers en
+    vrac, failles de posture. Chaque observation porte **ses preuves mesurées**
+    et nomme qui doit décider.
+
+    **Rien n'est exécuté** : c'est une liste de propositions, pas un journal
+    d'actions. Un détecteur qui ne peut pas mesurer se tait ; un détecteur en
+    panne est rapporté comme tel, jamais confondu avec un détecteur muet.
+    """
+    from src.proactive import scan
+
+    return scan()
+
+
+@app.post("/proactive/{observation_id}/dismiss", tags=["health"],
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.HEALTH_VIEW))])
+async def proactive_dismiss(observation_id: str, fingerprint: str,
+                            reason: str = "",
+                            ctx: RBACContext = Depends(require_permission(Permission.HEALTH_VIEW))):
+    """Écarte une suggestion : elle ne reviendra pas tant que rien n'aura changé.
+
+    L'empreinte est exigée pour que l'écart porte sur **cette situation** et non
+    sur le sujet en général : écarter « 3 fichiers sans test » ne doit pas
+    masquer « 300 fichiers sans test » six mois plus tard.
+    """
+    from src.proactive import dismiss
+
+    return dismiss(observation_id, fingerprint, by=ctx.subject, reason=reason)
+
+
 @app.get("/live", tags=["health"], dependencies=[Depends(rate_limit_dependency)])
 async def liveness_check():
     """Test de liveness pour Kubernetes.

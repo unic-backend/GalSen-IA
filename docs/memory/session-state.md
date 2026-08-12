@@ -32,12 +32,15 @@ accepté en option B et implémenté**.
   sécurité mesurée** avec ses points de reprise (`src/security/`, deux routes sous
   `ADMIN_AUDIT`), le document **matériel / pile / mises à niveau**, et **ADR-018 accepté en
   option B** avec sa dérogation cadrée (`GALSEN_SOVEREIGN_DEROGATIONS`).
-- Suite complète : **2638 tests passent**, 7 ignorés ; `ruff check .` propre.
+- **Découverte proactive** (`src/proactive/`) : sept détecteurs mesurés, rien d'exécuté,
+  aucune répétition. **Le brief n'a plus de capacité absente.**
+- Suite complète : **2666 tests passent**, 7 ignorés ; `ruff check .` propre.
 
 **Prochaine étape**
-Proposer le VOLET suivant, ou reprendre ce qui dépend de l'opérateur (voir ci-dessous).
-Le seul manque du brief encore ouvert est la **découverte proactive** : rien ne tourne sans
-qu'on le demande.
+Rien n'est en cours. Le brief est couvert : quatre capacités restent **partielles** (voir
+`personal-agent-assessment.md` — écran et interface demandent une machine de bureau, le
+navigateur reste `urllib`, MCP côté client ne joint aucun serveur). La suite dépend surtout
+de l'opérateur : `ollama serve` fermerait C1 et débloquerait toute la génération.
 
 **Bloqué / à surveiller**
 - **ADR-018 : accepté et implémenté** (option B). Plus rien en attente de décision.

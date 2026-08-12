@@ -10,8 +10,8 @@ exécuter, et une seule.
 
 **VOLET en cours** : **34 — Agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`)
 **Phases**         : 24, réparties sur 14 chapitres
-**Phase courante** : **aucune — le VOLET 34 est terminé** (14 chapitres sur 14).
-Prochaine étape : proposer le VOLET suivant, ou reprendre le backlog. Rien n'est en attente.
+**Phase courante** : **aucune.** VOLET 34 terminé (14/14), puis la **découverte proactive**
+(`src/proactive/`) livrée hors chapitre le 2026-08-12 : le brief n'a plus de capacité absente.
 **Cadence** : **un chapitre par tour** — demandé par l'utilisateur le 2026-08-12
 (auparavant : un VOLET, puis une phase).
 **ADR-018 : accepté en option B** le 2026-08-12, décidé par le propriétaire et **implémenté**
