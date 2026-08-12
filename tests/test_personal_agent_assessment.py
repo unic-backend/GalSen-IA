@@ -1,0 +1,146 @@
+"""
+L'état des lieux du VOLET 34 ne doit pas se mettre à mentir.
+
+`docs/architecture/personal-agent-assessment.md` est la base sur laquelle les
+vingt-trois phases suivantes sont planifiées. Un document qui décrit un dépôt
+qu'il n'y a plus envoie le travail suivant dans une direction qui n'existe pas —
+ce que ce dépôt a déjà constaté cette semaine : `orchestration.md` affirmait que
+le workflow par défaut avait un pipeline vide, faux depuis le planificateur.
+
+Ces tests n'épinglent pas les propriétés de sécurité mesurées dans le document :
+`test_terminal_tool.py` et `test_filesystem_tool.py` le font déjà, et les
+réécrire ici ferait deux vérités sur un même fait. Ils épinglent ce que le
+document **compte**, parce que c'est cela qui dérive en silence.
+"""
+
+import os
+import sys
+
+import pytest
+import yaml
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ETAT_DES_LIEUX = os.path.join(RACINE, "docs", "architecture", "personal-agent-assessment.md")
+
+
+@pytest.fixture(scope="module")
+def outils():
+    """Outils déclarés dans le registre."""
+    with open(os.path.join(RACINE, "tools", "tools.yaml"), encoding="utf-8") as fichier:
+        return yaml.safe_load(fichier)["tools"]
+
+
+@pytest.fixture(scope="module")
+def document():
+    """Contenu de l'état des lieux."""
+    with open(ETAT_DES_LIEUX, encoding="utf-8") as fichier:
+        return fichier.read()
+
+
+def test_le_compte_d_outils_actifs_est_celui_annonce(outils, document):
+    """« dix-neuf activés » est un nombre, donc il se vérifie."""
+    actifs = [outil for outil in outils if outil["enabled"]]
+
+    assert len(actifs) == 19, (
+        f"{len(actifs)} outils actifs — l'état des lieux en annonce 19. "
+        "Mettre le document à jour, ou expliquer le nouvel outil."
+    )
+    assert "nineteen enabled" in document
+
+
+def test_l_outil_docker_reste_desactive(outils, document):
+    """
+    Il est coupé pour une raison écrite : depuis le conteneur de production, il
+    exigerait le socket Docker de l'hôte, c'est-à-dire root sur l'hôte. Le
+    réactiver sans décision écrite rouvrirait ce chemin.
+    """
+    docker = next(outil for outil in outils if outil["id"] == "docker")
+
+    assert docker["enabled"] is False
+    assert "docker" in document and "disabled" in document
+
+
+def test_chaque_outil_declare_s_importe(outils):
+    """
+    Un outil du catalogue que rien ne peut charger est une capacité annoncée
+    sans preuve — le mode d'échec que ce dépôt traque partout.
+    """
+    import importlib
+
+    manquants = []
+    for outil in outils:
+        module = outil["module"].replace("tools.", "src.tools.")
+        try:
+            importlib.import_module(module)
+        except Exception as erreur:  # noqa: BLE001 - on rapporte, on ne masque pas
+            manquants.append(f"{outil['id']} ({type(erreur).__name__}: {erreur})")
+
+    assert manquants == [], "Outils déclarés et non chargeables : " + ", ".join(manquants)
+
+
+def test_les_agents_manquants_du_brief_le_sont_toujours():
+    """
+    Trois des six spécialistes demandés n'existent pas : organisateur de
+    fichiers, chef de projet, analyste d'opportunités. Le jour où l'un arrive,
+    ce test échoue et le document doit être corrigé — c'est le but.
+    """
+    from src.router.agent_loader import AgentLoader
+
+    agents = AgentLoader(os.path.join(RACINE, "agents", "registry.yaml")).get_all_agents()
+
+    assert len(agents) == 10
+    for absent in ("file_organizer", "project_manager", "opportunity_analyst"):
+        assert absent not in agents
+
+
+def test_le_navigateur_n_est_pas_un_navigateur():
+    """
+    Le document affirme qu'il ne sait ni exécuter du JavaScript ni cliquer. Si
+    un vrai navigateur arrive un jour, cette affirmation devient fausse.
+    """
+    from src.tools.browser.tool import BrowserTool
+
+    operations = {
+        nom for nom in dir(BrowserTool)
+        if not nom.startswith("_") and callable(getattr(BrowserTool, nom))
+    }
+
+    assert {"visit", "get_text", "get_links"} <= operations
+    assert not operations & {"click", "type", "screenshot", "evaluate"}
+
+
+def test_aucune_capacite_de_vue_ni_de_pointeur_n_existe_encore():
+    """
+    Le plus grand manque du brief, épinglé : rien ne capture d'écran et rien ne
+    déplace un pointeur. Ce test échouera quand le chapitre 05 livrera — et
+    l'état des lieux devra alors être daté et corrigé, pas laissé tel quel.
+    """
+    import importlib.util
+
+    def existe(module: str) -> bool:
+        """`find_spec` lève quand le paquet parent est absent — c'est aussi un « non »."""
+        try:
+            return importlib.util.find_spec(module) is not None
+        except ModuleNotFoundError:
+            return False
+
+    for module in ("src.tools.screen.tool", "src.tools.gui.tool"):
+        assert not existe(module), (
+            f"{module} existe désormais : l'état des lieux du VOLET 34 le dit absent."
+        )
+
+
+def test_le_mode_souverain_est_actif_par_defaut(monkeypatch):
+    """
+    Le brief demande une bascule vers le cloud ; ADR-014 la refuse par défaut.
+    Tant que la décision n'est pas prise, le défaut mesuré doit rester celui de
+    l'ADR — sinon le chapitre 04 arbitrerait une question déjà tranchée en
+    douce.
+    """
+    from src.model_engine.providers.provider_registry import sovereign_mode
+
+    monkeypatch.delenv("GALSEN_SOVEREIGN_MODE", raising=False)
+
+    assert sovereign_mode() is True
