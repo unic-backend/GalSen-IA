@@ -209,6 +209,8 @@ write goes through the approval gate.
 | Permissions | RBAC per key, ownership per subject (ADR-010) |
 | Learning from use | consented capture, PII scrubbing, DPO pairs, lineage (VOLET 33) |
 | Backups | `VACUUM INTO` hot backup of the data directory |
+| **Posture, measured** | `src/security/posture.py` — nine sections read from the real configuration, each carrying what it does **not** guarantee (ch. 13) |
+| **Checkpoints** | `src/security/checkpoints.py` — file operations, approval decisions and backups in one view, with `reversible` per line and **no global undo** (ch. 13) |
 
 Missing: **proactive discovery** — nothing runs unprompted.
 
@@ -254,7 +256,7 @@ Missing: **proactive discovery** — nothing runs unprompted.
 | Drive a GUI | **partial** — gate, refusals and action contract delivered (ch. 06); backends need a desktop |
 | Multi-agent collaboration | **present** — all six requested specialists exist (ch. 11) |
 | Memory | present |
-| Security, approval, logs | **present and ahead of the brief** |
+| Security, approval, logs | **present and ahead of the brief** — now measured in one place, `/security/posture` (ch. 13) |
 | Continuous improvement, style learning | **present** — preferences derived with evidence, applied to prompts; trends refused below sample size (ch. 12) |
 | Proactive opportunity discovery | **absent** |
 | MCP | **partial** — server delivered, whitelisted and identified (ch. 09); client decides before connecting but connects to nothing |

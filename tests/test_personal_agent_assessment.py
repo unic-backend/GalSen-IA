@@ -324,11 +324,18 @@ def test_l_adr_017_ne_tranche_pas_la_souverainete():
     assert "ADR-014" in texte
 
 
-def test_la_proposition_de_derogation_ne_change_rien_tant_qu_elle_est_proposee():
+def test_la_derogation_acceptee_est_plus_stricte_que_ce_qu_elle_remplace():
     """
-    ADR-018 est **proposé**, pas accepté : la décision appartient au propriétaire.
-    Tant que son statut n'a pas changé, rien dans le code ne doit avoir bougé —
-    sinon la proposition aurait tranché la question qu'elle pose.
+    Ce test disait l'inverse jusqu'au 2026-08-12, et il a fait son travail.
+
+    Il vérifiait qu'ADR-018 restait **proposé** et sans effet sur le code, parce
+    que la décision appartenait au propriétaire. Elle est prise — **option B** —
+    et le test garde maintenant ce qui rend B défendable : *B ne desserre pas le
+    défaut, il rétrécit l'exception.*
+
+    Deux propriétés, et la seconde est celle qui compte : le mode souverain
+    reste vrai par défaut, et les trois refus inconditionnels — qui n'existaient
+    pas avant cet ADR — tiennent quelle que soit la configuration.
     """
     chemin = os.path.join(
         RACINE, "docs", "architecture", "decisions",
@@ -337,11 +344,25 @@ def test_la_proposition_de_derogation_ne_change_rien_tant_qu_elle_est_proposee()
     with open(chemin, encoding="utf-8") as fichier:
         texte = fichier.read()
 
-    assert "**Proposed**" in texte
+    assert "**Accepted — option B**" in texte
 
-    # Le registre ne connaît aucune dérogation tant que l'ADR n'est pas accepté.
-    import inspect
+    from src.model_engine.providers.derogations import (
+        REFUS_INCONDITIONNELS,
+        Derogation,
+        allow,
+    )
+    from src.model_engine.providers.provider_registry import sovereign_mode
 
-    from src.model_engine.providers import provider_registry
+    assert sovereign_mode() is True, "B ne change pas le défaut d'ADR-014"
 
-    assert "derogation" not in inspect.getsource(provider_registry).lower()
+    # Une dérogation active pour un type de tâche ne couvre **pas** le contenu
+    # d'une personne : c'est la promesse de l'ADR, et sans elle la dérogation
+    # serait le levier global qu'elle prétend remplacer.
+    derogation = [Derogation(task_type="code_generation", provider_id="openai")]
+    autorise, _ = allow(
+        "code_generation", "openai", carries_user_content=True, derogations=derogation,
+    )
+    assert autorise is False
+    assert set(REFUS_INCONDITIONNELS) == {
+        "user_content", "screen_capture", "training_export",
+    }

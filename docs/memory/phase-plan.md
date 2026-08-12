@@ -10,19 +10,17 @@ exécuter, et une seule.
 
 **VOLET en cours** : **34 — Agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`)
 **Phases**         : 24, réparties sur 14 chapitres
-**Phase courante** : **chapitres 13 et 14 enchaînés**, puis ADR-018 en option B.
-Cadence élargie pour cette reprise à la demande du propriétaire (2026-08-12) : les deux
-derniers chapitres du VOLET dans le même tour, la limite des 25 minutes s'appliquant toujours.
+**Phase courante** : **aucune — le VOLET 34 est terminé** (14 chapitres sur 14).
+Prochaine étape : proposer le VOLET suivant, ou reprendre le backlog. Rien n'est en attente.
 **Cadence** : **un chapitre par tour** — demandé par l'utilisateur le 2026-08-12
 (auparavant : un VOLET, puis une phase).
-**Décision prise le 2026-08-12** : **ADR-018 — option B**, choisie par le propriétaire.
-L'ADR est encore marqué *Proposed* dans le fichier : le passer en *Accepted* avec l'option B
-écrite comme décision est la première tâche de la reprise, avant les chapitres 13 et 14.
+**ADR-018 : accepté en option B** le 2026-08-12, décidé par le propriétaire et **implémenté**
+(`src/model_engine/providers/derogations.py`, `GALSEN_SOVEREIGN_DEROGATIONS`).
 **Terminées dans le VOLET 34** : 1.1 état des lieux (`personal-agent-assessment.md`),
 2.1 agents de code et multi-agents (`agent-foundations-comparison.md`),
 2.2 computer-use, bureau et MCP (`computer-use-comparison.md`),
 3.1 **ADR-017** — les capacités manquantes arrivent comme outils, pas comme une seconde architecture,
-4.1 **ADR-018 (proposé)** — souverain par défaut, avec une dérogation cadrée,
+4.1 **ADR-018 (accepté, option B)** — souverain par défaut, avec une dérogation cadrée,
 **chapitre 05** — la vue (`src/tools/screen/`),
 **chapitre 06** — la main sous portillon (`src/tools/gui/`) — 21 outils au catalogue,
 **chapitre 07** — plusieurs racines et des opérations annulables (`src/storage/`),
@@ -30,9 +28,11 @@ L'ADR est encore marqué *Proposed* dans le fichier : le passer en *Accepted* av
 **chapitre 09** — MCP : serveur en liste blanche, client épinglé (`src/mcp/`),
 **chapitre 10** — graphe d'imports et index des symboles (`src/agent/repo_graph.py`, `symbol_index.py`),
 **chapitre 11** — les trois agents manquants (`agents/organizer/`, `project_manager/`, `opportunity/`) — 13 agents au registre,
-**chapitre 12** — style de travail dérivé et appliqué, amélioration mesurée ou refusée (`src/training/`)
-**Bloqué**         : la phase **4.1** demande ta décision sur ADR-014 (souveraineté
-contre bascule vers le cloud). Elle ne peut pas être prise à ta place.
+**chapitre 12** — style de travail dérivé et appliqué, amélioration mesurée ou refusée (`src/training/`),
+**chapitre 13** — posture de sécurité mesurée et points de reprise (`src/security/`),
+**chapitre 14** — matériel, pile et chemins de mise à niveau (`docs/architecture/hardware-and-stack.md`)
+**Bloqué**         : rien du côté des décisions. Reste ce qui dépend de l'opérateur —
+`ollama serve` (critère C1), `git push origin v0.1.0`, le corpus sénégalais, TEST 2 / TEST 6.
 **Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 33**,
 puis le backlog : persistance audit/approbation, validation des sorties d'agents, ADR-016, le linter
 **Cadence** : **un VOLET par tour** — demandé par l'utilisateur le 2026-08-12.

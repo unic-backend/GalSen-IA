@@ -1,9 +1,14 @@
 # ADR-018: Sovereign by Default, With a Scoped Derogation
 
 ## Status
-**Proposed** — awaiting the owner's decision. Nothing in the code changes until
-this is accepted; `GALSEN_SOVEREIGN_MODE` still defaults to `true` and the test
-that asserts it is untouched.
+**Accepted — option B**, decided by the owner on 2026-08-12.
+
+`GALSEN_SOVEREIGN_MODE` still defaults to `true`, and the test asserting it is
+untouched: **B does not loosen the default, it narrows the exception.** The three
+unconditional refusals below did not exist before this ADR, so a platform under
+option B refuses strictly more than the one that preceded it.
+
+Implemented in `src/model_engine/providers/derogations.py`.
 
 ## Date
 2026-08-12
@@ -47,10 +52,10 @@ lever, and pulling it opens everything.
 | | What it means | Cost |
 |---|---|---|
 | **A. Keep ADR-014 as is** | Cloud stays refused except via the global flag | Slower to reach quality; the founding position, intact |
-| **B. Scoped derogation** *(this proposal)* | Sovereign by default; a named, configured, logged exception per task type; some categories refused unconditionally | Some complexity; the principle survives and the blunt lever is narrowed |
+| **B. Scoped derogation** *(chosen)* | Sovereign by default; a named, configured, logged exception per task type; some categories refused unconditionally | Some complexity; the principle survives and the blunt lever is narrowed |
 | **C. Drop sovereignty** | Cloud and local as peers | The thing that makes this project distinct disappears |
 
-## Decision (proposed)
+## Decision
 
 ### 1. The derogation is configuration, never a request parameter
 
@@ -105,21 +110,28 @@ that makes a Senegalese platform worth building rather than a wrapper. And it
 would be premature: criterion C1 is still open, so the local path has never been
 measured. **Abandoning a road nobody has walked is not a decision, it is a guess.**
 
-## Consequences if accepted
+## What was built (2026-08-12)
 
-- `src/model_engine/providers/provider_registry.py` gains a derogation table read
-  from configuration, and the three unconditional refusals.
-- `sovereignty_report()` grows a `derogations` field; `/health` surfaces it.
-- Audit events record the derogation that allowed each third-party call.
-- The existing test — sovereign mode on, every hosted key set, no external
-  endpoint reachable — stays, and gains a sibling: **with a derogation active for
-  one task type, a request carrying user content is still refused.**
+- **`src/model_engine/providers/derogations.py`** — `GALSEN_SOVEREIGN_DEROGATIONS`,
+  read as `task_type:provider_id`, **configuration only**. A malformed entry is
+  dropped with an error rather than guessed, and declaring one of the three
+  refused categories is itself refused and logged: an operator error is not an
+  authorisation.
+- **`ProviderRegistry.register`** admits a hosted provider only when a derogation
+  names it. Admission is not permission: `allow()` still decides per call, per
+  task type.
+- **`allow(task_type, provider_id, carries_user_content)`** returns a decision
+  *and its reason*, in both directions — the reason is what the audit records and
+  what the response can carry. `carries_user_content=True` refuses whatever the
+  configuration says, and **a doubt counts as true**: erring that way costs a
+  slower answer; erring the other way costs someone's data.
+- **`sovereignty_report()["derogations"]`** — surfaced by `/health` and by
+  `/security/posture` (VOLET 34, ch. 13), because a derogation nobody can see is
+  indistinguishable from a leak.
 
-## Consequences if refused
-
-Nothing to undo. VOLET 34's chapters 05 onward hold under every option; only the
-ceiling of what a local model can do changes, and phase 2.2 already recorded that
-the top of the OSWorld table is proprietary.
+Tests: `tests/test_sovereign_derogations.py`. The pre-existing sovereignty test is
+unchanged, and now has the sibling this ADR promised — a derogation active for one
+task type still refuses a request carrying user content.
 
 ## References
 

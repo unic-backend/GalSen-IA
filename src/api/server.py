@@ -748,6 +748,44 @@ async def api_versions():
     return version_report()
 
 
+@app.get("/security/posture", tags=["health"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.ADMIN_AUDIT))])
+async def security_posture():
+    """Ce que la plateforme peut réellement faire à cette machine (VOLET 34, ch. 13).
+
+    Les protections vivent dans six modules et cinq ADR ; cette route les
+    **mesure** et les rassemble : racines inscriptibles, liste blanche
+    d'exécutables, bac à sable, exposition MCP, portillon, audit, souveraineté,
+    et ce qui reste annulable.
+
+    Chaque section porte ses `gaps` — ce qu'elle ne garantit pas. Une posture
+    qui ne montrerait que les protections présentes rassurerait à tort, ce qui
+    est pire que de ne rien montrer.
+
+    Elle demande une clé d'administration : la liste des trous d'une
+    installation est exactement ce qu'un attaquant voudrait lire.
+    """
+    from src.security.posture import posture
+
+    return posture()
+
+
+@app.get("/security/checkpoints", tags=["health"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.ADMIN_AUDIT))])
+async def security_checkpoints(limit: int = 100):
+    """Ce qu'un agent a fait, et ce qu'on peut encore défaire (VOLET 34, ch. 13).
+
+    Rassemble les opérations de fichiers annulables, les décisions du portillon
+    et les sauvegardes présentes. **Il n'y a pas d'annulation globale** : le
+    champ `reversible` dit, ligne par ligne, ce qui se défait.
+    """
+    from src.security.checkpoints import list_checkpoints
+
+    return list_checkpoints(limit=limit)
+
+
 @app.get("/live", tags=["health"], dependencies=[Depends(rate_limit_dependency)])
 async def liveness_check():
     """Test de liveness pour Kubernetes.

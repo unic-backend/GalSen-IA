@@ -35,6 +35,39 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **The security model, measured in one place** (`src/security/`, VOLET 34 ch. 13)
+  - The protections existed — RBAC, ownership, approval gate, audit, declared roots,
+    sandbox, MCP whitelist — spread across six modules and five ADRs. `posture()` **reads
+    the real configuration** and reports nine sections, each carrying what it does **not**
+    guarantee. Sandbox limits are taken from `NON_GARANTI` verbatim rather than restated:
+    two wordings of one limit diverge, and the reassuring one survives
+  - **No overall score**, deliberately: a number would hide the gap that matters behind the
+    average of the ones that do not. A section that fails to measure itself is returned as
+    `unknown` with its reason, never omitted
+  - `list_checkpoints()` puts file operations, approval decisions and backups in one view
+    with `reversible` per line and **no global undo** — a single button would suggest the
+    machine rewinds when half the lines do not
+  - `/security/posture` and `/security/checkpoints`, both behind `ADMIN_AUDIT`: the list of
+    an installation's holes is what an attacker would want to read
+  - `tests/test_security_posture.py` — 19 tests, one of which varies the real configuration
+    to prove the posture follows it rather than restating a document
+- **`docs/architecture/hardware-and-stack.md`** (VOLET 34 ch. 14) — four hardware profiles,
+  the stack and its reasons, what is deliberately absent **with the trigger that would
+  change the answer**, and seven upgrade paths. The full suite runs on 4 cores and under
+  1 GB; the 24 GB VRAM training figure is marked as **not verifiable here**
+- **ADR-018 accepted (option B): a scoped derogation to sovereignty**
+  (`src/model_engine/providers/derogations.py`)
+  - `GALSEN_SOVEREIGN_DEROGATIONS`, read as `task_type:provider_id`, **configuration only**.
+    A caller cannot ask for cloud — ADR-016 measured what a caller-supplied field is worth
+  - **B is stricter than what it replaces**: the three unconditional refusals — user
+    content, screen captures, training export — did not exist before. A derogation active
+    for one task type still refuses a request carrying someone's content, and that is the
+    test the ADR promised
+  - Declaring a refused category is itself refused and logged: an operator error is not an
+    authorisation. Active derogations appear in `sovereignty_report()`, `/health` and
+    `/security/posture` — a derogation nobody can see is indistinguishable from a leak
+  - `tests/test_sovereign_derogations.py` — 16 tests; the pre-existing sovereignty test is
+    untouched
 - **Working style, derived from evidence and actually applied** (`src/training/working_style.py`,
   `src/training/improvement.py`, VOLET 34 ch. 12)
   - VOLET 33 captured the signal; **nothing read it back**, so the platform answered exactly

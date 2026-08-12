@@ -30,6 +30,9 @@ from urllib.parse import urlparse
 
 from .anthropic_provider import AnthropicProvider
 from .base import ModelDescriptor, ModelProvider, ProviderInfo
+from .derogations import VARIABLE as DEROGATION_VARIABLE
+from .derogations import allowed_providers
+from .derogations import report as derogation_report
 from .google_provider import GoogleProvider
 from .hosted_provider import HostedProvider
 from .local_provider import LocalProvider
@@ -186,12 +189,20 @@ class ProviderRegistry:
             La raison du refus, ou None si le fournisseur est acceptable.
         """
         if isinstance(provider, HostedProvider):
+            # ADR-018 (option B) : un fournisseur tiers **nommé par une
+            # dérogation** peut être inscrit. L'inscription ne l'autorise pas
+            # pour autant : `allow()` tranche encore à chaque appel, par type de
+            # tâche. Sans cette porte, la dérogation resterait une phrase.
+            if provider.provider_id in allowed_providers():
+                return None
             return (
                 f"Mode souverain : le fournisseur « {provider.provider_id} » sert le "
                 f"modèle d'un tiers, sur son infrastructure. GalSen IA ne dépend "
                 f"d'aucun modèle tiers à l'exécution (ADR-014). "
                 f"Pour comparer un modèle propre à une référence, déclarez "
-                f"{SOVEREIGN_MODE_VARIABLE}=false, en connaissance de cause."
+                f"{SOVEREIGN_MODE_VARIABLE}=false, en connaissance de cause, ou "
+                f"une dérogation par type de tâche dans {DEROGATION_VARIABLE} "
+                f"(ADR-018), qui est plus étroit."
             )
 
         if isinstance(provider, OpenAICompatibleProvider):
@@ -228,6 +239,9 @@ class ProviderRegistry:
             "providers": self.provider_ids(),
             "third_party_providers": tiers,
             "reference": "ADR-014",
+            # ADR-018 : une dérogation que personne ne peut voir ne se distingue
+            # pas d'une fuite. `/health` la rend en même temps que le mode.
+            "derogations": derogation_report(),
         }
         hote = _hote_tiers(os.environ.get(URL_VARIABLE, ""))
         if hote:
