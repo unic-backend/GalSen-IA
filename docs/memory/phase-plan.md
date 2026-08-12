@@ -8,9 +8,9 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : **33 — Infrastructure d'entraînement : SamP et ToP** (26 sauf 26.1, 27 à 32 terminés)
-**Phase courante** : 33.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
-**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 32**
+**VOLET en cours** : **aucun — la série 26–33 est close** (26.1 exceptée)
+**Phase courante** : — . **26.1 reste la seule phase ouverte**, et elle dépend de toi : `ollama serve`.
+**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 33**
 **Cadence** : **un VOLET par tour** — demandé par l'utilisateur le 2026-08-12.
 La limite des 25 minutes de `.claude/rules/work-cadence.md` continue de s'appliquer.
 
@@ -85,14 +85,13 @@ VOLET 32 — Multimodal                                       → 3 phases — *
   Face, qui répond 403 à travers ce mandataire. Ce qui est vérifié : le refus
   propre, le rapport, et l'ingestion d'image de bout en bout.
 
-VOLET 33 — Infrastructure d'entraînement : SamP et ToP      → 6 phases
-  Conception → `docs/architecture/training-infrastructure.md`, lignée → ADR-014.
-  Ch. 33.1  Capture du signal (corrections, préférences)    → 1 phase  ← à exécuter tôt
-  Ch. 33.2  Jeu d'évaluation français/wolof, avant tout entraînement → 1 phase
-  Ch. 33.3  ADR : QLoRA + DPO, base Apache-2.0, ce qui est écarté → 1 phase (indivisible)
-  Ch. 33.4  Recette d'entraînement (accelerate + peft + trl) → 1 phase
-  Ch. 33.5  Registre de lignée SamP/ToP : base, licence, données, mesures → 1 phase
-  Ch. 33.6  Retour en service : fusion, GGUF, Ollama, mesure → 1 phase
+VOLET 33 — Infrastructure d'entraînement : SamP et ToP      → 6 phases — **terminé**
+  Ch. 33.1  Capture du signal : consentement, nettoyage, export sous portillon → **terminée**
+  Ch. 33.2  Barème d'évaluation + **référence mesurée : lexical = 0,40** → **terminée**
+  Ch. 33.3  Décisions consignées dans `training-infrastructure.md` → **terminée**
+  Ch. 33.4  Recette QLoRA+DPO — **écrite, jamais exécutée** (pas de GPU ici) → **terminée**
+  Ch. 33.5  Registre de lignée : base, licence, condensat, mesures → **terminée**
+  Ch. 33.6  Retour en service GGUF → **reste à faire quand un modèle existera**
 ```
 
 **Total : 35 phases.**

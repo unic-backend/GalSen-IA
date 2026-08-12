@@ -1,0 +1,28 @@
+# Entraînement de SamP et ToP — machine d'entraînement uniquement (VOLET 33).
+#
+# Ce fichier n'est installé **ni** dans l'image de production, **ni** sur un poste
+# de développement ordinaire : PyTorch pèse de ~200 Mo (roue CPU) à ~2,5 Go
+# (CUDA), et rien ici ne sert à servir la plateforme.
+#
+# Ce qui est retenu, et pourquoi (docs/architecture/training-infrastructure.md) :
+#   accelerate  — même script sur CPU, un GPU, plusieurs, ou plusieurs machines.
+#                 Une bibliothèque, pas un cadriciel : elle ne possède pas la
+#                 boucle d'entraînement, donc on peut s'en défaire.
+#   peft        — QLoRA. C'est le vrai levier : 0,1 à 2 % des paramètres
+#                 entraînés, un adaptateur de 50 à 200 Mo, quelques heures sur un
+#                 seul GPU. C'est pourquoi DeepSpeed et le multi-nœuds sont
+#                 écartés avec un déclencheur écrit.
+#   trl         — DPO, et non PPO : pas de modèle de récompense, deux fois moins
+#                 de modèles en mémoire, et un entraînement qui converge.
+#   bitsandbytes— la quantisation 4 bits qui fait tenir la base.
+#
+#     pip install -r requirements-training.txt
+
+-r requirements.txt
+
+accelerate==1.12.0
+peft==0.18.0
+trl==0.27.0
+transformers==5.1.0
+datasets==4.4.1
+bitsandbytes==0.49.0

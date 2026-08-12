@@ -132,3 +132,41 @@ the losing run is recorded too — a training log that only contains successes i
   achievable problem; pretraining is neither achievable nor necessary here.
 - No GPU dependency in the API image. Training lives in `scripts/training/` with its own
   requirements file; the production image stays as light as the release made it.
+
+---
+
+## What was built (2026-08-12), and what could not be
+
+VOLET 33 delivered the three components that do not need a GPU, and wrote the one
+that does without pretending to have run it.
+
+| Component | State |
+|---|---|
+| `src/training/feedback.py` | **Built and verified.** Corrections, preferences and reports, with consent, per-subject ownership (ADR-010), personal data scrubbed **at write time**, and export gated by ADR-006 |
+| `src/training/evaluation.py` + `docs/evaluation/retrieval.jsonl` | **Built and verified**, with a real baseline measured — see below |
+| `src/training/lineage.py` + `docs/training/lineage.jsonl` | **Built and verified.** Base, licence, data hash, metrics, kept-or-not |
+| `scripts/training/train_adapter.py` | **Written, never executed.** It needs a GPU, PyTorch and access to base weights. It refuses to start without an approval id, and reports precisely what is missing rather than dying on an ImportError halfway through a rented hour |
+
+### The baseline, measured rather than assumed
+
+Against the 250 passages of the project's own documentation, on ten questions
+whose answer is verifiable line by line:
+
+```
+méthode : lexical    cas : 10    hits : 4    hit_rate : 0.4
+```
+
+**That 0.4 is the number to beat.** It is what the semantic path of VOLET 27 must
+improve, and then what the fine-tuned embedding model — the first training run
+planned — must improve again. It needs no human judgement and no generation
+model, which is why it can be measured today while exit criterion C1 is still open.
+
+### What is deliberately still missing
+
+- **A Wolof evaluation set.** Writing questions *and their answers* here would
+  fabricate the truth the model is measured against: it would learn to satisfy an
+  invention. The set grows from real usage — the questions asked, the corrections
+  received — one line per case in `docs/evaluation/retrieval.jsonl`.
+- **Any training run.** No GPU here, and `huggingface.co` answers 403 through this
+  environment's proxy, so no base weights can be fetched. The recipe is versioned;
+  running it belongs to a machine rented for the occasion.
