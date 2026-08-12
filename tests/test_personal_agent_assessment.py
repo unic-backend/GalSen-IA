@@ -240,3 +240,74 @@ def test_la_couche_gui_devra_nommer_ce_qu_elle_touche():
     # Le champ existe et peut porter l'identité de la cible ; le chapitre 06
     # devra le remplir, et ce test deviendra l'assertion qui l'y oblige.
     assert hasattr(demande, "description")
+
+
+# ----------------------------------------------------------------------
+# Ce qu'ADR-017 engage (phase 3.1)
+# ----------------------------------------------------------------------
+
+ADR_017 = os.path.join(
+    RACINE, "docs", "architecture", "decisions",
+    "017-computer-agent-is-tools-not-a-new-architecture.md",
+)
+
+
+def test_les_capacites_manquantes_arrivent_comme_outils():
+    """
+    La décision centrale d'ADR-017 : ce qui manque, ce sont des **mains**, et
+    des mains sont des outils. Pas de second runtime, pas de seconde boucle,
+    pas de chemin d'exécution parallèle.
+
+    Ce test échouera si une capacité du VOLET arrive ailleurs que dans le
+    catalogue — par exemple un module `src/computer_agent/` avec sa propre
+    orchestration.
+    """
+    import importlib.util
+
+    def existe(module: str) -> bool:
+        try:
+            return importlib.util.find_spec(module) is not None
+        except ModuleNotFoundError:
+            return False
+
+    for orchestrateur_parallele in (
+        "src.computer_agent", "src.desktop_agent", "src.agent_runtime_v2",
+    ):
+        assert not existe(orchestrateur_parallele), (
+            f"{orchestrateur_parallele} existe : ADR-017 dit que les nouvelles "
+            "capacités arrivent comme outils, pas comme une seconde architecture."
+        )
+
+
+def test_aucun_cadre_d_orchestration_tiers_n_est_adopte():
+    """
+    ADR-017 §1 : ni LangGraph, ni CrewAI, ni AutoGen. Les motifs sont copiés,
+    les dépendances ne sont pas prises — c'est le prix assumé pour ne pas mettre
+    un second cerveau dans la plateforme.
+    """
+    fichiers = [
+        nom for nom in os.listdir(RACINE)
+        if nom.startswith("requirements") and nom.endswith(".txt")
+    ]
+    declare = ""
+    for nom in fichiers:
+        with open(os.path.join(RACINE, nom), encoding="utf-8") as fichier:
+            declare += fichier.read().lower()
+
+    for cadre in ("langgraph", "crewai", "autogen", "langchain"):
+        assert cadre not in declare, (
+            f"{cadre} est déclaré : ADR-017 refuse un second orchestrateur. "
+            "Modifier l'ADR d'abord."
+        )
+
+
+def test_l_adr_017_ne_tranche_pas_la_souverainete():
+    """
+    La question du cloud appartient au propriétaire (chapitre 04). Un ADR qui la
+    trancherait au passage rendrait le chapitre 04 décoratif.
+    """
+    with open(ADR_017, encoding="utf-8") as fichier:
+        texte = fichier.read()
+
+    assert "does **not** decide" in texte
+    assert "ADR-014" in texte

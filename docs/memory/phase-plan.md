@@ -10,10 +10,12 @@ exécuter, et une seule.
 
 **VOLET en cours** : **34 — Agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`)
 **Phases**         : 24, réparties sur 14 chapitres
-**Phase courante** : **3.1 — ADR-017, la décision d'architecture qui découle des chapitres 01 et 02**, en attente de confirmation
+**Phase courante** : **4.1 — ADR-014 revisité : souveraineté contre bascule cloud. ELLE DEMANDE TA DÉCISION**, en attente
+**Phases suivantes bloquées ?** Non : les chapitres 05+ tiennent quelle que soit l'option retenue.
 **Terminées dans le VOLET 34** : 1.1 état des lieux (`personal-agent-assessment.md`),
 2.1 agents de code et multi-agents (`agent-foundations-comparison.md`),
-2.2 computer-use, bureau et MCP (`computer-use-comparison.md`)
+2.2 computer-use, bureau et MCP (`computer-use-comparison.md`),
+3.1 **ADR-017** — les capacités manquantes arrivent comme outils, pas comme une seconde architecture
 **Bloqué**         : la phase **4.1** demande ta décision sur ADR-014 (souveraineté
 contre bascule vers le cloud). Elle ne peut pas être prise à ta place.
 **Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 33**,
