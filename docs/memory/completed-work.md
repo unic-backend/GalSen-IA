@@ -302,3 +302,15 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **26.4 — le garde de dépendances avait un angle mort** : il traduisait les imports via les paquets **installés**, donc un paquet absent de la machine était invisible. Il a trouvé **huit** imports ni installés ni déclarés (PyPDF2, python-docx, openpyxl, python-pptx, markdown, pytesseract, docker, scipy). Tous protégés, tous dégradant en le disant — mais les capacités correspondantes sont annoncées au catalogue et ne peuvent pas fonctionner dans l'image. Inscrit au backlog P1 : les déclarer, ou cesser de les annoncer.
 - **26.1 reste bloquée** : aucun `ollama` sur cette machine. Le message d'indisponibilité de la plateforme est déjà correct et souverain (« démarrez-le avec `ollama serve` »), rien à corriger côté code.
 - Suite complète : **2195 tests passent**, 7 ignorés (12 ajoutés).
+
+### 2026-08-12 (VOLET 27 — récupération sémantique, ADR-015)
+- **Le plafond mesuré** : toute la récupération était du Jaccard sur des jetons. « traitement des maladies du sorgho » contre « Comment soigner le mil » rendait **zéro** — un test le montre avant/après.
+- **Les embeddings sont un fournisseur**, comme les modèles (ADR-003) : `src/embeddings/` — interface, fournisseur local `sentence-transformers`, registre. La plateforme tourne **sans** la bibliothèque ; on gagne le sémantique en installant `requirements-embeddings.txt`, sans changer un appelant.
+- **Aucune API d'embeddings hébergée, jamais** : elle enverrait chez un tiers *chaque mémoire et chaque document* — un export plus large et plus continu qu'une invite. ADR-014 l'exclut pour la génération, ADR-015 a fortiori ici.
+- **Pas de base vectorielle** : SQLite + produit scalaire NumPy (déjà une dépendance). Déclencheur écrit pour Qdrant : ~100 000 vecteurs ou p95 > 100 ms.
+- **Le modèle voyage avec chaque vecteur** : comparer deux espaces rend un nombre bien calculé et vide de sens. Le magasin refuse le mélange au lieu de le classer.
+- **La méthode est rapportée à chaque réponse** (`semantic` / `lexical`, avec la raison) : un résultat lexical ne doit jamais passer pour sémantique.
+- **Défaut corrigé pendant la phase** : `set_embedder()` primait sur `GALSEN_EMBEDDINGS_ENABLED=false`. Un interrupteur qui n'interrompt pas toujours ne vaut rien — l'ordre est inversé.
+- **Non vérifié ici, et écrit dans l'ADR** : l'encodage réel. `huggingface.co` répond **403** à travers le mandataire, les poids sont inatteignables. Ce qui est testé du vrai fournisseur, c'est qu'il **signale** sa dépendance manquante et **lève** au lieu de rendre un vecteur de complaisance.
+- **Reste ouvert** : les fournisseurs de `src/services/search/` utilisent encore le chemin lexical.
+- Suite complète : **2212 tests passent**, 7 ignorés (17 ajoutés), en ordre de fichier et aléatoire.

@@ -8,9 +8,9 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : **26 — Fondations mesurables**
-**Phase courante** : 26.1 — **bloquée sur l'exploitant** (aucun modèle local joignable)
-**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**
+**VOLET en cours** : **28 — Base de connaissances** (le 27 est terminé)
+**Phase courante** : 28.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
+**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLET 27**
 **Cadence** : **un VOLET par tour** — demandé par l'utilisateur le 2026-08-12.
 La limite des 25 minutes de `.claude/rules/work-cadence.md` continue de s'appliquer.
 
@@ -39,11 +39,12 @@ VOLET 26 — Fondations mesurables                            → 6 phases
   Ch. 26.3  Traçage bout en bout router→agent→outil→modèle  → 1 phase — **terminée**
   Ch. 26.4  Le garde de dépendances rate les paquets absents → 1 phase — **terminée**
 
-VOLET 27 — Récupération sémantique                          → 4 phases
-  Aujourd'hui tout est du Jaccard sur des jetons.
-  Ch. 27.1  ADR : embeddings locaux, et leur prix réel      → 1 phase (indivisible)
-  Ch. 27.2  Fournisseur d'embeddings + magasin de vecteurs  → 2 phases
-  Ch. 27.3  Mémoire et recherche passent au sémantique      → 1 phase
+VOLET 27 — Récupération sémantique                          → 4 phases — **terminé**
+  Ch. 27.1  ADR-015 : embeddings locaux, et leur prix réel  → **terminée**
+  Ch. 27.2  Fournisseur d'embeddings + magasin de vecteurs  → **terminées**
+  Ch. 27.3  Mémoire au sémantique, méthode rapportée        → **terminée**
+  Reste ouvert : les fournisseurs de `src/services/search/` utilisent encore le
+  chemin lexical. `rank_or_fallback` les attend — inscrit au backlog.
 
 VOLET 28 — Une base de connaissances qui contient quelque chose → 4 phases
   Le RAG sur 0 élément ne prouve rien.

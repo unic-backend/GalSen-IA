@@ -6,7 +6,7 @@ Abstract base class for memory retrieval and an in-memory implementation.
 
 import abc
 import time
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from src.text_normalization import tokenize
 from .types import MemoryItem, MemoryType, MemoryStatus
 
@@ -136,6 +136,83 @@ class InMemoryMemoryRetriever(BaseMemoryRetriever):
         # Sort by score descending
         scored_items.sort(key=lambda x: x[1], reverse=True)
         return scored_items[:limit]
+
+    def retrieve_with_method(
+        self,
+        query: str,
+        **filtres
+    ) -> Tuple[List[Tuple[MemoryItem, float]], Dict[str, Any]]:
+        """
+        Comme `retrieve`, mais dit **par quel chemin** le classement a été obtenu.
+
+        `retrieve()` note par similarité de Jaccard : deux textes qui ne
+        partagent aucun jeton ont un score nul, même quand ils disent la même
+        chose. Avec un encodeur disponible (ADR-015), le classement passe par le
+        sens ; sans encodeur, il reste lexical — et la différence est
+        **rapportée**, jamais devinée par l'appelant.
+
+        Args:
+            query: Requête.
+            **filtres: Mêmes filtres que `retrieve`.
+
+        Returns:
+            Le classement, et un rapport `{"method": ..., ...}`.
+        """
+        from src.embeddings.registry import active_embedder
+        from src.embeddings.semantic_index import rank_or_fallback
+
+        limit = filtres.get("limit", 10)
+        min_score = filtres.get("min_score", 0.0)
+
+        lexical = lambda: [(item.id, score) for item, score in self.retrieve(query, **filtres)]  # noqa: E731
+        encodeur = active_embedder()
+        if encodeur is None:
+            classes, rapport = lexical(), {
+                "method": "lexical",
+                "reason": "Aucun encodeur disponible : classement par termes communs (ADR-015).",
+            }
+        else:
+            # Les candidats sont les mémoires que les filtres laissent passer,
+            # pas seulement celles qu'un score lexical aurait retenues : c'est
+            # tout l'intérêt du chemin sémantique.
+            candidats = self._candidats_textuels(**filtres)
+            classes, rapport = rank_or_fallback(
+                query, candidats, lexical, encodeur, "memory",
+                limit=limit, min_score=min_score,
+            )
+
+        par_id = {item.id: item for item in self._items_par_id(classes)}
+        resultats = [(par_id[item_id], score) for item_id, score in classes if item_id in par_id]
+        return resultats, rapport
+
+    def _candidats_textuels(self, **filtres) -> List[Tuple[str, str]]:
+        """Retourne les mémoires textuelles que les filtres laissent passer."""
+        items = self._store.list_items(
+            memory_type=filtres.get("memory_type"),
+            user_id=filtres.get("user_id"),
+            session_id=filtres.get("session_id"),
+            agent_id=filtres.get("agent_id"),
+            tags=filtres.get("tags"),
+            status=MemoryStatus.ACTIVE,
+            limit=10000,
+            offset=0,
+        )
+        maintenant = time.time()
+        return [
+            (item.id, item.content)
+            for item in items
+            if isinstance(item.content, str)
+            and (item.expires_at is None or item.expires_at >= maintenant)
+        ]
+
+    def _items_par_id(self, classes: List[Tuple[str, float]]) -> List[MemoryItem]:
+        """Retrouve les mémoires correspondant à un classement d'identifiants."""
+        items = []
+        for item_id, _ in classes:
+            item = self._store.get(item_id)
+            if item is not None:
+                items.append(item)
+        return items
 
     def retrieve_by_id(self, item_id: str) -> Optional[MemoryItem]:
         """Retrieve a memory item by its ID."""

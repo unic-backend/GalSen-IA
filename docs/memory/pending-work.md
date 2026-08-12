@@ -28,6 +28,14 @@ gets re-argued at every review.
 
 ## P1 — High · a Phase 2 exit criterion depends on it, or it removes a demonstrated risk
 
+- **Move the search providers onto the semantic path.** `KnowledgeSearchProvider` and
+  `MemorySearchProvider` still score by proportion of query terms found, while
+  `src/embeddings/semantic_index.py::rank_or_fallback` is built and tested and waits for
+  them. The memory *retriever* was converted (VOLET 27); the *search service* was not, so
+  `/search` answers lexically even when an encoder is installed.
+  *Deciding criterion:* it finishes work already paid for — the store, the ranking and the
+  fallback exist; only the wiring is missing.
+
 - **Decide on eight optional dependencies, or drop the capabilities they carry.**
   `tests/test_requirements.py` now catches imports of packages that are neither installed
   nor declared, and it found eight on its first run: `PyPDF2`, `python-docx`, `openpyxl`,
