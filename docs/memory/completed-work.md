@@ -314,3 +314,12 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Non vérifié ici, et écrit dans l'ADR** : l'encodage réel. `huggingface.co` répond **403** à travers le mandataire, les poids sont inatteignables. Ce qui est testé du vrai fournisseur, c'est qu'il **signale** sa dépendance manquante et **lève** au lieu de rendre un vecteur de complaisance.
 - **Reste ouvert** : les fournisseurs de `src/services/search/` utilisent encore le chemin lexical.
 - Suite complète : **2212 tests passent**, 7 ignorés (17 ajoutés), en ordre de fichier et aléatoire.
+
+### 2026-08-12 (VOLET 28 — la base de connaissances contient enfin quelque chose)
+- **Deux moteurs ne se rencontraient pas** : `TextFileLoader` versait **un fichier entier en un seul élément**, pendant que `SimpleChunker` (moteur documentaire) dormait à côté. Un document de cinquante pages devenait un bloc que la recherche notait une fois et qu'une citation désignait en entier — c'est-à-dire pas du tout. `src/knowledge_engine/ingestion.py` les branche, sans écrire un troisième découpeur.
+- **Chaque bloc porte sa provenance** : titre, auteur, URL, catégorie de fiabilité, hachage du fichier, position dans le document. Réingérer le même fichier **met à jour** au lieu d'empiler (identifiant déduit du hachage + position).
+- **La base contient 250 passages** issus de la documentation du dépôt (`scripts/seed_knowledge.py`), persistés en SQLite, couverture de citation **1.0**.
+- **Rien n'a été écrit de mémoire.** Aucune affirmation agricole, sanitaire ou économique sur le Sénégal n'a été inventée : ce serait le pire usage de ce dépôt, avec des conséquences hors du dépôt. Le corpus sénégalais s'ingère depuis de vrais documents déclarés dans un manifeste — format et règles dans `docs/knowledge/README.md`.
+- **28.3 — les sources voyagent avec la réponse.** `retrieve_reliable()` rendait des connaissances **sans jamais dire d'où elles venaient** : une réponse enrichie par la base était indiscernable d'une réponse inventée. Elle porte désormais `sources` (passages regroupés par document) et `citation_coverage`.
+- **Défaut trouvé en écrivant les tests** : le constructeur par défaut de `KnowledgeSource` met `location="unknown"`, qui passait pour une vraie provenance. Une entrée « unknown » citée comme source renvoie le lecteur nulle part en lui donnant l'impression d'une référence — les valeurs de remplissage sont maintenant reconnues comme absence.
+- Suite complète : **2227 tests passent**, 7 ignorés (15 ajoutés).

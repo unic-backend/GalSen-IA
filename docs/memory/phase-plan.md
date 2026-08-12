@@ -8,9 +8,9 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : **28 — Base de connaissances** (le 27 est terminé)
-**Phase courante** : 28.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
-**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLET 27**
+**VOLET en cours** : **29 — Gestionnaire d'agents** (26 sauf 26.1, 27 et 28 terminés)
+**Phase courante** : 29.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
+**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 et 28**
 **Cadence** : **un VOLET par tour** — demandé par l'utilisateur le 2026-08-12.
 La limite des 25 minutes de `.claude/rules/work-cadence.md` continue de s'appliquer.
 
@@ -46,11 +46,14 @@ VOLET 27 — Récupération sémantique                          → 4 phases �
   Reste ouvert : les fournisseurs de `src/services/search/` utilisent encore le
   chemin lexical. `rank_or_fallback` les attend — inscrit au backlog.
 
-VOLET 28 — Une base de connaissances qui contient quelque chose → 4 phases
-  Le RAG sur 0 élément ne prouve rien.
-  Ch. 28.1  Ingestion de documents (le moteur existe)       → 2 phases
-  Ch. 28.2  Un corpus de départ : Sénégal, agriculture, santé → 1 phase
-  Ch. 28.3  Citation des sources, mesurée                   → 1 phase
+VOLET 28 — Base de connaissances                            → 4 phases — **terminé**
+  Ch. 28.1  Ingestion : découpage + provenance par bloc     → **terminées**
+  Ch. 28.2  Corpus de départ : 250 passages, tous vérifiables → **terminée**
+  Ch. 28.3  Citation des sources + couverture mesurée       → **terminée**
+  **Le corpus sénégalais dépend de toi** : il s'ingère depuis de vrais documents
+  déclarés dans un manifeste (`docs/knowledge/README.md`). Rien n'a été écrit de
+  mémoire — servir des affirmations inventées à un agriculteur serait le pire
+  usage possible de ce dépôt.
 
 VOLET 29 — Gestionnaire d'agents                            → 5 phases
   Ch. 29.1  Décomposition d'objectif                        → 2 phases

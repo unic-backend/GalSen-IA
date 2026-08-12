@@ -550,12 +550,20 @@ class KnowledgeManagerImpl(KnowledgeManager):
                     "de générer une information trompeuse."
                 )
 
+            # Les sources voyagent avec la réponse (VOLET 28, ch. 03). Sans
+            # elles, une réponse enrichie par la base est indiscernable d'une
+            # réponse inventée par le modèle — et c'est précisément ce qui
+            # distingue une plateforme de connaissances d'un générateur de texte.
+            from .citations import build_citations, citation_coverage
+
             return {
                 "items": reliable_items,
                 "reliable": len(reliable_items) > 0,
                 "best_priority": KnowledgePriority(best_priority).name if reliable_items else None,
                 "best_confidence": best_confidence,
                 "reason": reason,
+                "sources": build_citations(reliable_items),
+                "citation_coverage": citation_coverage(reliable_items),
             }
 
     def get_related(self, knowledge_id: str) -> List[KnowledgeItem]:
