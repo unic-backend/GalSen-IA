@@ -35,6 +35,25 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **MCP: a server behind a whitelist, a client that connects to nothing yet** (`src/mcp/`,
+  VOLET 34 ch. 09, ADR-017 §6)
+  - JSON-RPC 2.0 with **no dependency** — `initialize`, `tools/list`, `tools/call`, `ping`.
+    The protocol is public and about a hundred lines; a dependency for it would contradict
+    ADR-014 for nothing
+  - **Eight tools exposed out of twenty-one.** `terminal`, `gui`, `screen`, `filesystem`,
+    `database`, `email`, `calendar`, `git`, `github`, `api`, `browser` and `model` are
+    refused, each with the reason returned to the caller. Serving the whole catalogue would
+    hand an outside agent the platform's hands
+  - **No anonymous call**: without an identity resolver the server refuses everything. A
+    server that serves without an identity can neither authorise nor trace
+  - **The audit records tool, operation and subject — never the arguments.** Arguments
+    carry somebody's text and the audit persists
+  - The client half **pins** its servers (no dynamic discovery) and treats a third-party
+    tool description as data: neutralised, marked third-party, and flagged when it carries
+    imperatives aimed at a model. The flag never deletes the suspicious text — erasing the
+    attempt would erase the evidence of it
+  - `tests/test_mcp.py` — 35 tests, including the poisoned description from the published
+    threat model
 - **A linter runs in CI and in the test suite** (`pyproject.toml`, `ruff==0.15.8`)
   - Nothing checked `.claude/rules/coding-conventions.md`; the conventions held because one
     author applied them

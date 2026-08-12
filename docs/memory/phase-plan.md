@@ -10,7 +10,7 @@ exécuter, et une seule.
 
 **VOLET en cours** : **34 — Agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`)
 **Phases**         : 24, réparties sur 14 chapitres
-**Phase courante** : **chapitre 09 — MCP : serveur d'abord, client ensuite** (2 phases), en attente
+**Phase courante** : **chapitre 10 — carte du dépôt pour l'agent de code**, en attente
 **Cadence** : **un chapitre par tour** — demandé par l'utilisateur le 2026-08-12
 (auparavant : un VOLET, puis une phase).
 **En attente de ta décision** : **ADR-018 est *proposé***, pas accepté. Il ne change rien
@@ -23,7 +23,8 @@ tant que tu n'as pas tranché A / B / C. Les chapitres 05+ tiennent sous chaque 
 **chapitre 05** — la vue (`src/tools/screen/`),
 **chapitre 06** — la main sous portillon (`src/tools/gui/`) — 21 outils au catalogue,
 **chapitre 07** — plusieurs racines et des opérations annulables (`src/storage/`),
-**chapitre 08** — le bac à sable et ses tests d'évasion (`src/sandbox/`)
+**chapitre 08** — le bac à sable et ses tests d'évasion (`src/sandbox/`),
+**chapitre 09** — MCP : serveur en liste blanche, client épinglé (`src/mcp/`)
 **Bloqué**         : la phase **4.1** demande ta décision sur ADR-014 (souveraineté
 contre bascule vers le cloud). Elle ne peut pas être prise à ta place.
 **Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 33**,

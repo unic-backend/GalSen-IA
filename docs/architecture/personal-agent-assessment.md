@@ -119,6 +119,30 @@ a click. The platform backends still need a machine with a desktop.
 application-shaped page is out of reach. The brief's "browser/computer-use
 agents" has, today, **no counterpart here**.
 
+### 2.5 MCP: served before consumed
+
+> **Added 2026-08-12 by VOLET 34 chapter 09** (`src/mcp/`).
+
+The server speaks JSON-RPC 2.0 with no dependency — `initialize`, `tools/list`,
+`tools/call`, `ping`. Three properties matter more than the protocol:
+
+- **The exposure is a whitelist of eight**, not the catalogue of twenty-one.
+  `terminal`, `gui`, `screen`, `filesystem`, `database`, `email`, `calendar`,
+  `git`, `github`, `api`, `browser`, `model` are refused **with a reason**.
+  Serving the whole catalogue would hand an outside agent the platform's hands.
+- **No anonymous call.** Without an identity resolver the server refuses
+  everything: a server that serves without an identity can neither authorise nor
+  trace, and "the risk stays on our side" stops being true.
+- **The audit records the tool, the operation and the subject — never the
+  arguments.** Arguments carry somebody's text, and the audit persists.
+
+The client half decides *before* connecting and connects to nothing: servers are
+**pinned** (no dynamic discovery), and a third-party tool description is treated
+as data — neutralised, marked as third-party, and flagged when it contains
+imperatives aimed at a model. That is tool poisoning, the most documented
+client-side MCP vulnerability, and the flag never deletes the suspicious text:
+erasing the attempt would erase the evidence of the attempt.
+
 ---
 
 ## 3. Tools: twenty-one enabled, all importable
@@ -198,9 +222,9 @@ preferences), **proactive discovery** (nothing runs unprompted), and a
 | Security, approval, logs | **present and ahead of the brief** |
 | Continuous improvement, style learning | **absent** |
 | Proactive opportunity discovery | **absent** |
-| MCP | **absent** |
+| MCP | **partial** — server delivered, whitelisted and identified (ch. 09); client decides before connecting but connects to nothing |
 
-**Four of fifteen are absent, four partial, seven present.** The four that are
+**Three of fifteen are absent, five partial, seven present.** The four that are
 present are the ones that are hardest to retrofit — permissions, approval,
 audit, ownership — and they are why the missing six can be built without turning
 this into a tool that deletes a user's drive on a bad inference.
