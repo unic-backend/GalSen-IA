@@ -63,12 +63,6 @@ gets re-argued at every review.
 
 ## P2 — Medium · real value, no criterion waits on it
 
-- **Validate agent outputs.** Chapter 02 of VOLET_06 lists "validate outputs" as a
-  pipeline step and nothing implements it: no schema stands between an agent's dictionary
-  and the aggregated response, and an empty pipeline returns `success` having run nothing.
-  *Deciding criterion:* technical feasibility — the aggregator cannot report what it
-  cannot check.
-
 - **Decide whether analytics data is retained.** Trends and anomaly detection are the
   chapter 09 capabilities `/analytics` declares unavailable, and both need history that
   survives a restart — counters and workflow history are process-memory only (ADR-009).

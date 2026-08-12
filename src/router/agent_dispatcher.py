@@ -11,12 +11,21 @@ Two calling conventions are supported, in this order:
 2. **Legacy** — the module exposes a plain `execute(input_data)` function. This
    is the contract that existed before the integration layer, and it keeps
    working so that older agents and tests are unaffected.
+
+Whatever the convention, the result is checked against the output contract
+(`output_validation`) before leaving this class. The legacy convention makes the
+check necessary rather than defensive: `execute()` returns whatever its author
+wrote, and a non-dictionary used to raise an `AttributeError` in the middle of
+aggregation — failing the whole request, including the agents that had already
+succeeded.
 """
 
 import importlib
 import inspect
 import logging
 from typing import Any, Dict, Optional, Type
+
+from .output_validation import validated
 
 
 class AgentDispatcher:
@@ -128,8 +137,23 @@ class AgentDispatcher:
                     f"Le module '{module_path}' ne contient pas de fonction 'execute'",
                 )
 
-            self.logger.info(f"Agent '{agent_id}' exécuté avec succès.")
-            return result
+            # Frontière : c'est ici qu'une sortie d'agent entre dans la
+            # plateforme. La valider une fois évite que chaque code en aval —
+            # agrégateur, routeur, historique — se défende contre une forme
+            # inattendue, ce qu'aucun d'eux ne faisait.
+            verifie = validated(result, agent_id)
+            if verifie is not result:
+                self.logger.error(
+                    "Agent '%s' : sortie rejetée — %s", agent_id, verifie["error"],
+                )
+                return verifie
+
+            # Le message d'origine annonçait le succès quel que soit le statut
+            # rendu, y compris pour une erreur.
+            self.logger.info(
+                "Agent '%s' exécuté ; statut : %s.", agent_id, verifie["status"],
+            )
+            return verifie
 
         except Exception as error:
             self.logger.error(f"Erreur lors de l'exécution de l'agent '{agent_id}': {error}")

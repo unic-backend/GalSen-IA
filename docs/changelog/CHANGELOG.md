@@ -11,6 +11,30 @@ capability answers `503` until an operator configures a model provider. Release 
 `docs/changelog/releases/`.
 
 ## [Unreleased]
+### Fixed
+- **One response carried two contradictory verdicts** (VOLET 06, ch. 02, step 6)
+  - "Validate outputs" was declared by the manual and implemented nowhere: nothing stood
+    between an agent's dictionary and the aggregated response
+  - `skipped` is a declared agent status, and it entered **none** of the aggregator's three
+    lists: the agent vanished from `agent_results` and the aggregate stayed `success`,
+    while the router — counting failures by subtraction, `total - success - approvals` —
+    put that same agent in `failed_agents` and returned `partial_success`. Both statuses
+    were in the same response, one at `status`, the other at `aggregated_result.status`
+  - A result that was not a dictionary raised `AttributeError` mid-aggregation and failed
+    the **whole** request, including the agents that had already succeeded
+  - `src/router/output_validation.py` holds the contract and, more importantly,
+    `overall_status()` — the single rule now called by the aggregator *and* the router, so
+    they cannot disagree again. An invalid result is neither dropped nor guessed: it
+    becomes an error naming the clauses it broke, the original kept under `invalid_output`
+  - The check is applied at the boundary, in `AgentDispatcher.dispatch`, which also stops
+    logging "exécuté avec succès" for results that carry an error status
+  - **Behaviour change**: an empty pipeline now returns `error`, not `success`. Disable
+    every agent and every request was declared served without anyone having handled it
+  - `metadata.skipped_agents` is reported; an agent that chose not to act is neither a
+    success nor a failure
+  - `tests/test_output_validation.py` — 22 tests, including the end-to-end check that the
+    router's status and the aggregator's status are the same value
+
 ### Added
 - **The audit log and the approval queue now survive a restart** (ADR-005)
   - `src/storage/sqlite_audit_store.py` and `src/storage/sqlite_approval_store.py` join the

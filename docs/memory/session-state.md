@@ -13,7 +13,8 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Date** : 2026-08-12
 
 **En cours** : rien. Le backlog est la file de travail courante (les VOLETs 26–33 sont
-clos). Prochain P2 à prendre : **valider les sorties d'agents**.
+clos). Reste en P2 : **décider si les données d'analytique sont conservées** (à prendre
+après C4).
 
 **Terminé dans cette session**
 - **VOLETs 26 à 33** : souveraineté des modèles (ADR-014, SamP/ToP), embeddings et
@@ -25,11 +26,14 @@ clos). Prochain P2 à prendre : **valider les sorties d'agents**.
   base de connaissances ne réécrit plus à chaque recherche ; la mesure ne dérive plus.
 - **P2 — l'audit et les approbations persistent** : `src/storage/sqlite_audit_store.py`,
   `src/storage/sqlite_approval_store.py`, choisis par `GALSEN_STORAGE_BACKEND=sqlite`.
-- Suite complète : **2339 tests passent**, 7 ignorés.
+- **P2 — validation des sorties d'agents** (`src/router/output_validation.py`) : un agent
+  `skipped` faisait rendre `success` à l'agrégateur et `partial_success` au routeur, dans
+  la même réponse. Une seule règle de statut désormais.
+- Suite complète : **2361 tests passent**, 7 ignorés.
 
 **Prochaine étape**
-P2 « valider les sorties d'agents » : aucun schéma ne se tient entre le dictionnaire d'un
-agent et la réponse agrégée, et un pipeline vide rend `success` sans avoir rien exécuté.
+Le backlog n'a plus de P2 prenable maintenant : « conserver les données d'analytique »
+attend C4. Les P1/P0 restants dépendent de l'opérateur (voir ci-dessous).
 
 **Bloqué / à surveiller**
 - **`git push origin v0.1.0`** : le proxy git de l'environnement refuse les étiquettes

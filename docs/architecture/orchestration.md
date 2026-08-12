@@ -217,24 +217,40 @@ the belief that a failed pipeline leaves no trace.
 
 ## Aggregation (chapter 07)
 
-`ResultAggregator.aggregate()` is small and behaves consistently:
+`ResultAggregator.aggregate()` applies the output contract
+(`src/router/output_validation.py`) and then reads the single status rule:
 
 | Input | Status returned | Extra keys |
 |-------|-----------------|------------|
-| all successful | `success` | — |
-| any error | `partial_success` (or `error` if nothing succeeded) | `errors` |
+| all successful, or successful and `skipped` | `success` | — |
+| any error or invalid output | `partial_success` (or `error` if nothing succeeded) | `errors` |
 | any approval pending, no error | `requires_approval` | `approval_request_ids` |
-| empty | `success` | — |
+| empty | `error` | `errors` |
 
-The empty case is worth a second look: **no agent ran, and the status is `success`.**
-It is defensible (nothing failed) and misleading (nothing happened either), and it is
-reachable — the default workflow has an empty pipeline and empty execution groups, so
-`process_request()` without a workflow returns `success` having done nothing at all.
+**Chapter 02's step 6 — "validate outputs" — was declared and did not exist.** Nothing
+stood between an agent's dictionary and the aggregated response, and three things
+followed, all measured before the contract existed:
 
-**Output validation does not exist.** Chapter 02's workflow step 6 is "validate outputs";
-no schema, no contract and no check stands between an agent's dictionary and the
-aggregated response. An agent returning `{"status": "success"}` with no result at all
-aggregates as a success.
+- **Results with an undeclared status were dropped.** The aggregator sorted on three
+  statuses; anything else entered none of the three lists, left `agent_results`, and the
+  overall status stayed `success`. An agent had run, produced something, and the response
+  did not mention it.
+- **`skipped` is a declared status** (`AgentResult.STATUS_SKIPPED`, and `RetryManager`
+  treats it as terminal). The aggregator erased it and returned `success`; the router
+  counted it in `failed_agents` and returned `partial_success`. **One response carried
+  both verdicts** — `response["status"]` and `response["aggregated_result"]["status"]`
+  were computed by two rules that disagreed.
+- **A result that was not a dictionary raised `AttributeError`** mid-aggregation, turned
+  higher up into a failure of the *whole* request: one badly written agent took down the
+  agents that had already succeeded.
+
+An invalid result is now neither dropped nor guessed: it becomes an error naming the
+clause it broke, with the original output kept under `invalid_output`. `overall_status()`
+is called by the aggregator **and** by the router, so the two cannot diverge again.
+
+The empty case changed with it: **no agent ran is an `error`, not a `success`.** It is
+reachable by configuration — disable every agent in the pipeline and each request was
+declared served without anyone having handled it.
 
 ## Observability (chapter 08)
 

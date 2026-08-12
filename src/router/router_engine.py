@@ -30,6 +30,12 @@ from .agent_dispatcher import AgentDispatcher
 from .workflow_history import WorkflowHistory
 from .decision_trace import decision_trace, recommended_agents, selection_appliquee
 from .logger import Logger
+from .output_validation import (
+    STATUS_REQUIRES_APPROVAL,
+    STATUS_SKIPPED,
+    STATUS_SUCCESS,
+    counts,
+)
 from ..agent.context import AgentContext
 from ..audit_engine.types import AuditEventType, AuditStatus, generate_request_id
 from ..integration.engine_registry import get_shared_registry
@@ -257,36 +263,38 @@ class RouterEngine:
             end_time = time.time()
             execution_time = end_time - start_time
 
-            successful_agents = sum(
-                1 for r in all_agent_results if r.get('status') == 'success'
-            )
-            pending_approval_agents = sum(
-                1 for r in all_agent_results if r.get('status') == 'requires_approval'
-            )
-            failed_agents = (
-                len(all_agent_results) - successful_agents - pending_approval_agents
-            )
+            # Les résultats validés par l'agrégateur, et non les bruts : le
+            # routeur comptait sur les seconds, si bien qu'une sortie non
+            # conforme y était comptée selon une forme que plus rien en aval
+            # n'utilisait.
+            all_agent_results = final_result["agent_results"]
+
+            # Comptés explicitement, jamais déduits par soustraction : le calcul
+            # `total - succès - approbations` rangeait les agents `skipped`
+            # parmi les échecs, sans que rien ne le dise, pendant que
+            # l'agrégateur les effaçait et rendait `success`. La même réponse
+            # portait les deux verdicts.
+            comptes = counts(all_agent_results)
+            successful_agents = comptes[STATUS_SUCCESS]
+            pending_approval_agents = comptes[STATUS_REQUIRES_APPROVAL]
+            skipped_agents = comptes[STATUS_SKIPPED]
+            failed_agents = comptes["error"] + comptes["invalid"]
+
             # Quels agents ont échoué, et pas seulement combien : l'analyse des
             # défaillances du chapitre 06 (VOLET 18) demande de nommer la cause,
             # et un compteur ne dit pas si c'est toujours le même agent.
             failing_agents = [
                 r.get('agent') for r in all_agent_results
-                if r.get('status') not in ('success', 'requires_approval') and r.get('agent')
+                if r.get('status') == 'error' and r.get('agent')
             ]
 
-            if failed_agents > 0:
-                status = "partial_success"
-            elif pending_approval_agents > 0:
-                # Aucune erreur mais au moins une action attend une décision
-                # humaine : la requête est suspendue (ADR-006).
-                status = "requires_approval"
-            else:
-                status = "success"
+            # Une seule règle, partagée avec l'agrégateur (`output_validation`).
+            status = final_result["status"]
 
             approval_request_ids = [
                 r.get('approval_request_id')
                 for r in all_agent_results
-                if r.get('status') == 'requires_approval'
+                if r.get('status') == STATUS_REQUIRES_APPROVAL
                 and r.get('approval_request_id')
             ]
 
@@ -316,6 +324,9 @@ class RouterEngine:
                     "successful_agents": successful_agents,
                     "failed_agents": failed_agents,
                     "pending_approval_agents": pending_approval_agents,
+                    # Un agent qui a décidé de ne pas agir n'est ni un succès ni
+                    # une panne ; il était compté parmi les échecs.
+                    "skipped_agents": skipped_agents,
                     # Ce que le planificateur a décidé, et ce qui a tourné
                     # (VOLET 22, ch. 03 étape 10). La décision existe et n'est
                     # pas suivie ; l'enregistrer est la seule façon de le voir.

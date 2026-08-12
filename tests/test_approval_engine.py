@@ -31,6 +31,7 @@ from src.approval_engine.types import (
 from src.agent.base_agent import BaseAgent
 from src.agent.context import AgentContext
 from src.integration.engine_registry import EngineRegistry, get_shared_registry
+from src.router.output_validation import EMPTY_PIPELINE_ERROR
 from src.router.result_aggregator import ResultAggregator
 from src.router.retry_manager import RetryManager
 
@@ -573,8 +574,18 @@ def test_aggregate_errors_priority():
 
 
 def test_aggregate_empty():
-    """Aucun agent exécuté : succès sans résultat."""
+    """
+    Aucun agent exécuté : la requête n'a **pas** été traitée.
+
+    Ce cas rendait `success` — défendable (rien n'a échoué) et trompeur (rien
+    n'est arrivé non plus), comme `docs/architecture/orchestration.md` le
+    signalait déjà. Il est atteignable par configuration : que tous les agents
+    du pipeline soient désactivés et chaque requête est déclarée servie sans que
+    personne ne l'ait traitée. C'est le faux positif le plus coûteux de la
+    plateforme, et il est silencieux.
+    """
     aggregator = ResultAggregator()
     combined = aggregator.aggregate([])
-    assert combined["status"] == "success"
+    assert combined["status"] == "error"
     assert combined["aggregated_result"] is None
+    assert combined["errors"] == [EMPTY_PIPELINE_ERROR]

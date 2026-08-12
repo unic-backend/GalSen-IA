@@ -2,10 +2,27 @@
 Result Aggregator for the Router Engine.
 
 Collects and combines results from multiple agents.
+
+L'agrégation ne filtre plus les résultats qu'elle ne reconnaît pas : elle les
+valide (`output_validation`). Trier sur trois statuts alors que quatre sont
+déclarés faisait **disparaître** de la réponse tout agent rendant `skipped`, un
+statut absent des trois listes, tout en laissant le statut global à `success`.
+Le statut global lui-même est calculé par `overall_status()`, la même fonction
+que celle du routeur : les deux le déduisaient séparément et ne rendaient pas la
+même chose.
 """
 
 import logging
 from typing import List, Dict, Any
+
+from .output_validation import (
+    EMPTY_PIPELINE_ERROR,
+    STATUS_ERROR,
+    STATUS_REQUIRES_APPROVAL,
+    STATUS_SUCCESS,
+    overall_status,
+    validated,
+)
 
 
 class ResultAggregator:
@@ -23,48 +40,55 @@ class ResultAggregator:
             results: Liste des dictionnaires de résultat retournés par les agents.
 
         Returns:
-            Dictionnaire contenant le résultat agrégé.
+            Dictionnaire contenant le résultat agrégé. `agent_results` porte
+            **tous** les résultats, quel que soit leur statut : un agent qui a
+            tourné doit apparaître dans la réponse, même — surtout — quand ce
+            qu'il a rendu ne respecte pas le contrat.
         """
         if not results:
+            # Rien n'a tourné : la requête n'a pas été traitée. Rendre `success`
+            # ici déclarait servie toute requête d'une plateforme dont les
+            # agents seraient tous désactivés.
+            self.logger.warning(EMPTY_PIPELINE_ERROR)
             return {
-                "status": "success",
+                "status": STATUS_ERROR,
                 "aggregated_result": None,
-                "agent_results": []
+                "agent_results": [],
+                "errors": [EMPTY_PIPELINE_ERROR],
             }
 
-        # Séparer les résultats réussis, les erreurs et les actions en attente
-        # d'approbation humaine (ADR-006).
-        successful_results = [r for r in results if r.get('status') == 'success']
-        error_results = [r for r in results if r.get('status') == 'error']
-        approval_results = [r for r in results if r.get('status') == 'requires_approval']
+        # Une sortie non conforme devient une erreur qui nomme sa clause, au
+        # lieu de sortir silencieusement de l'agrégation.
+        checked = [validated(resultat) for resultat in results]
+        for original, verifie in zip(results, checked):
+            if verifie is not original:
+                self.logger.error(
+                    "Sortie d'agent rejetée : %s", verifie["error"],
+                )
 
-        if len(error_results) > 0:
-            # Il y a eu des erreurs
-            aggregated = {
-                "status": "partial_success" if successful_results else "error",
-                "agent_results": results,  # Tous les résultats, y compris les erreurs
-                "errors": [r.get('error') for r in error_results if r.get('error')],
-                "aggregated_result": self._combine_successful_results(successful_results) if successful_results else None
-            }
-        elif len(approval_results) > 0:
-            # Aucune erreur mais au moins une action en attente d'approbation :
-            # la requête ne peut pas être considérée comme terminée.
-            approval_request_ids = [
-                r.get('approval_request_id') for r in approval_results if r.get('approval_request_id')
+        successful_results = [r for r in checked if r["status"] == STATUS_SUCCESS]
+        error_results = [r for r in checked if r["status"] == STATUS_ERROR]
+        approval_results = [
+            r for r in checked if r["status"] == STATUS_REQUIRES_APPROVAL
+        ]
+
+        aggregated: Dict[str, Any] = {
+            "status": overall_status(checked),
+            "agent_results": checked,
+            # Toujours une liste, éventuellement vide : « aucune contribution
+            # réussie » et « rien à combiner » se distinguaient auparavant selon
+            # la branche, `None` d'un côté et `[]` de l'autre, pour le même fait.
+            "aggregated_result": self._combine_successful_results(successful_results),
+        }
+
+        if error_results:
+            aggregated["errors"] = [
+                r.get("error") for r in error_results if r.get("error")
             ]
-            aggregated = {
-                "status": "requires_approval",
-                "agent_results": results,
-                "approval_request_ids": approval_request_ids,
-                "aggregated_result": self._combine_successful_results(successful_results)
-            }
-        else:
-            # Toutes les exécutions ont réussi
-            aggregated = {
-                "status": "success",
-                "agent_results": successful_results,
-                "aggregated_result": self._combine_successful_results(successful_results)
-            }
+        if approval_results:
+            aggregated["approval_request_ids"] = [
+                r["approval_request_id"] for r in approval_results
+            ]
 
         return aggregated
 
