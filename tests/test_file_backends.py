@@ -282,3 +282,51 @@ def test_le_service_complet_ecrit_et_relit_sur_disque(tmp_path, monkeypatch):
     assert resultat.success is True
     relu = FileManagerImpl().get_file(resultat.file_id)
     assert relu.data == b"bonjour"
+
+
+def test_le_meme_identifiant_ne_s_ecrase_pas(magasin):
+    """Écraser en silence perdrait le fichier d'origine sans le dire."""
+    fichier = _fichier()
+    magasin.save(fichier)
+
+    with pytest.raises(ValueError, match="existe déjà"):
+        magasin.save(fichier)
+
+
+def test_la_pagination_est_appliquee(magasin):
+    """`offset` et `limit` doivent découper la liste, pas seulement la tronquer."""
+    for index in range(5):
+        magasin.save(_fichier(f"f{index}.pdf"))
+
+    page = magasin.list_files(limit=2, offset=1)
+
+    # Du plus récent au plus ancien : f4, f3, f2, f1, f0 → offset 1, limite 2.
+    assert [r.name for r in page] == ["f3.pdf", "f2.pdf"]
+
+
+def test_le_magasin_s3_se_construit_sans_boto3(tmp_path, monkeypatch):
+    """
+    Sa construction ne doit pas exiger `boto3` : la plateforme démarre sans, et
+    un magasin qui refuserait d'exister empêcherait de lire la configuration.
+    """
+    monkeypatch.setenv("GALSEN_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("GALSEN_FILE_BACKEND", "s3")
+
+    assert type(FileManagerImpl()._store).__name__ == "S3FileStore"
+
+
+def test_un_envoi_s3_sans_boto3_echoue_franchement(tmp_path, monkeypatch):
+    """
+    Un fichier « déposé » alors que rien ne l'a reçu serait pire que l'échec.
+    L'import paresseux doit donc lever à l'écriture, pas retomber en silence.
+    """
+    from src.services.file.store_s3 import S3FileStore
+
+    magasin = S3FileStore(bucket="seau-de-test", data_directory=str(tmp_path / "s3"))
+    monkeypatch.setattr(magasin, "_client", lambda: (_ for _ in ()).throw(
+        ImportError("No module named 'boto3'")))
+
+    with pytest.raises(IOError, match="seau-de-test"):
+        magasin.save(_fichier())
+
+    assert magasin.count() == 0

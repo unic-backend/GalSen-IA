@@ -2,9 +2,14 @@
 Tests unitaires pour le service Cloud.
 
 Couvre :
-- CloudFileItem, CloudSyncResult, CloudStats
-- InMemoryCloudStore : CRUD, filtrage, mise à jour, stats
+- CloudFileItem, CloudSyncResult, CloudStats — désormais la **forme de réponse**
+  des routes dépréciées `/cloud/*`, plus un type stocké (ADR-016)
 - CloudManagerImpl : upload, validation, inférence de catégorie, dégradation gracieuse
+
+Les tests de `InMemoryCloudStore` ont disparu avec lui : le service ne stocke
+plus rien. Le contrat de magasin est couvert par `test_services.py` et
+`test_file_backends.py`, sur le magasin réellement utilisé. Ce que ce
+changement apporte de neuf est dans `test_cloud_adapter.py`.
 """
 
 import os
@@ -133,189 +138,6 @@ class TestCloudTypes:
         assert stats.total_size == 10000
 
 
-class TestInMemoryCloudStore:
-    """Vérifie le stockage en mémoire des fichiers cloud."""
-
-    @pytest.fixture(autouse=True)
-    def _setup(self):
-        from src.services.cloud import InMemoryCloudStore, CloudFileItem, CloudProvider, CloudFileCategory
-        self.store = InMemoryCloudStore()
-        self.file_a = CloudFileItem(
-            name="doc.pdf", content_type="application/pdf", size=2048,
-            provider=CloudProvider.S3, category=CloudFileCategory.DOCUMENT,
-            uploaded_by="user1",
-        )
-        self.file_b = CloudFileItem(
-            name="photo.jpg", content_type="image/jpeg", size=102400,
-            provider=CloudProvider.LOCAL, category=CloudFileCategory.IMAGE,
-            uploaded_by="user1",
-        )
-        self.file_c = CloudFileItem(
-            name="data.csv", content_type="text/csv", size=500,
-            provider=CloudProvider.GCS, category=CloudFileCategory.DATA,
-            uploaded_by="user2",
-        )
-
-    def test_save_and_get(self):
-        """save() puis get() doivent retourner le même fichier."""
-        fid = self.store.save(self.file_a, b"data")
-        retrieved = self.store.get(fid)
-        assert retrieved is not None
-        assert retrieved.id == self.file_a.id
-        assert retrieved.name == "doc.pdf"
-
-    def test_save_and_get_data(self):
-        """save() puis get_data() doivent retourner les données binaires."""
-        data = b"contenu du fichier"
-        fid = self.store.save(self.file_a, data)
-        retrieved_data = self.store.get_data(fid)
-        assert retrieved_data == data
-
-    def test_save_duplicate_raises(self):
-        """save() d'un identifiant existant doit lever ValueError."""
-        self.store.save(self.file_a, b"data")
-        with pytest.raises(ValueError, match="existe déjà"):
-            self.store.save(self.file_a, b"other")
-
-    def test_get_missing_returns_none(self):
-        """get() d'un identifiant inconnu doit retourner None."""
-        assert self.store.get("nonexistent") is None
-
-    def test_get_data_missing_returns_none(self):
-        """get_data() d'un identifiant inconnu doit retourner None."""
-        assert self.store.get_data("nonexistent") is None
-
-    def test_list_files_ordered_by_recency(self):
-        """list_files() doit trier du plus récent au plus ancien."""
-        self.store.save(self.file_c, b"c")
-        self.store.save(self.file_a, b"a")
-        self.store.save(self.file_b, b"b")
-        all_files = self.store.list_files(limit=10)
-        assert len(all_files) == 3
-        assert all_files[0].name == "photo.jpg"   # dernier inséré
-        assert all_files[1].name == "doc.pdf"      # deuxième
-        assert all_files[2].name == "data.csv"     # premier inséré
-
-    def test_list_files_filter_provider(self):
-        """list_files() doit filtrer par fournisseur."""
-        self.store.save(self.file_a, b"a")  # S3
-        self.store.save(self.file_b, b"b")  # LOCAL
-        self.store.save(self.file_c, b"c")  # GCS
-        s3_files = self.store.list_files(limit=10, provider="s3")
-        assert len(s3_files) == 1
-        assert s3_files[0].name == "doc.pdf"
-
-    def test_list_files_filter_category(self):
-        """list_files() doit filtrer par catégorie."""
-        self.store.save(self.file_a, b"a")  # DOCUMENT
-        self.store.save(self.file_b, b"b")  # IMAGE
-        self.store.save(self.file_c, b"c")  # DATA
-        images = self.store.list_files(limit=10, category="image")
-        assert len(images) == 1
-        assert images[0].name == "photo.jpg"
-
-    def test_list_files_filter_uploaded_by(self):
-        """list_files() doit filtrer par uploader."""
-        self.store.save(self.file_a, b"a")  # user1
-        self.store.save(self.file_b, b"b")  # user1
-        self.store.save(self.file_c, b"c")  # user2
-        user1_files = self.store.list_files(limit=10, uploaded_by="user1")
-        assert len(user1_files) == 2
-
-    def test_list_files_combined_filters(self):
-        """list_files() doit combiner plusieurs filtres."""
-        self.store.save(self.file_a, b"a")  # S3, DOCUMENT, user1
-        self.store.save(self.file_b, b"b")  # LOCAL, IMAGE, user1
-        self.store.save(self.file_c, b"c")  # GCS, DATA, user2
-        result = self.store.list_files(limit=10, provider="s3", uploaded_by="user1")
-        assert len(result) == 1
-        assert result[0].name == "doc.pdf"
-
-    def test_delete(self):
-        """delete() doit supprimer un fichier et ses données."""
-        fid = self.store.save(self.file_a, b"data")
-        assert self.store.delete(fid)
-        assert self.store.get(fid) is None
-        assert self.store.get_data(fid) is None
-
-    def test_delete_missing(self):
-        """delete() d'un fichier inconnu doit retourner False."""
-        assert not self.store.delete("nonexistent")
-
-    def test_update_metadata(self):
-        """update_metadata() doit mettre à jour les métadonnées."""
-        fid = self.store.save(self.file_a, b"data")
-        assert self.store.update_metadata(fid, {"projet": "GalSen", "version": "1.0"})
-        retrieved = self.store.get(fid)
-        assert retrieved.metadata["projet"] == "GalSen"
-        assert retrieved.metadata["version"] == "1.0"
-
-    def test_update_metadata_missing(self):
-        """update_metadata() d'un fichier inconnu doit retourner False."""
-        assert not self.store.update_metadata("nonexistent", {})
-
-    def test_update_metadata_preserves_existing(self):
-        """update_metadata() ne doit pas effacer les métadonnées existantes."""
-        self.file_a.metadata["original"] = "valeur"
-        fid = self.store.save(self.file_a, b"data")
-        self.store.update_metadata(fid, {"ajout": "nouveau"})
-        retrieved = self.store.get(fid)
-        assert retrieved.metadata["original"] == "valeur"
-        assert retrieved.metadata["ajout"] == "nouveau"
-
-    def test_stats(self):
-        """stats() doit retourner des statistiques correctes."""
-        self.store.save(self.file_a, b"a")  # S3, DOCUMENT, 2048
-        self.store.save(self.file_b, b"b")  # LOCAL, IMAGE, 102400
-        self.store.save(self.file_c, b"c")  # GCS, DATA, 500
-        stats = self.store.stats()
-        assert stats["total"] == 3
-        assert stats["total_size"] == 2048 + 102400 + 500
-        assert stats["by_category"]["document"] == 1
-        assert stats["by_category"]["image"] == 1
-        assert stats["by_category"]["data"] == 1
-        assert stats["by_provider"]["s3"] == 1
-        assert stats["by_provider"]["local"] == 1
-        assert stats["by_provider"]["gcs"] == 1
-
-    def test_clear(self):
-        """clear() doit supprimer tous les fichiers."""
-        self.store.save(self.file_a, b"a")
-        self.store.save(self.file_b, b"b")
-        assert self.store.clear() == 2
-        assert self.store.count() == 0
-        assert self.store.total_size() == 0
-
-    def test_count(self):
-        """count() doit retourner le nombre total de fichiers."""
-        assert self.store.count() == 0
-        self.store.save(self.file_a, b"a")
-        assert self.store.count() == 1
-        self.store.save(self.file_b, b"b")
-        assert self.store.count() == 2
-
-    def test_total_size(self):
-        """total_size() doit retourner la somme des tailles."""
-        self.store.save(self.file_a, b"a")  # size=2048
-        self.store.save(self.file_b, b"b")  # size=102400
-        assert self.store.total_size() == 2048 + 102400
-
-    def test_list_with_limit(self):
-        """list_files() doit respecter la limite."""
-        self.store.save(self.file_a, b"a")
-        self.store.save(self.file_b, b"b")
-        self.store.save(self.file_c, b"c")
-        assert len(self.store.list_files(limit=2)) == 2
-
-    def test_list_with_offset(self):
-        """list_files() doit respecter l'offset."""
-        self.store.save(self.file_a, b"a")
-        self.store.save(self.file_b, b"b")
-        self.store.save(self.file_c, b"c")
-        results = self.store.list_files(limit=10, offset=1)
-        assert len(results) == 2
-
-
 class TestCloudManager:
     """Vérifie le gestionnaire cloud (best-effort)."""
 
@@ -331,7 +153,9 @@ class TestCloudManager:
         )
         assert result.success
         assert result.file_id is not None
-        assert result.file_id.startswith("cloud_")
+        # Un seul stockage, un seul espace d'identifiants : le préfixe est
+        # celui du service de fichiers (ADR-016).
+        assert result.file_id.startswith("file_")
 
     def test_upload_and_download(self):
         """upload() puis download() doivent retourner les mêmes données."""
@@ -369,7 +193,7 @@ class TestCloudManager:
             name="test.txt", content_type="text/plain", data=b"",
         )
         assert not result.success
-        assert "vides" in result.message.lower()
+        assert "vide" in result.message.lower()
 
     def test_upload_exceeds_max_size(self):
         """upload() avec des données trop volumineuses doit échouer."""
@@ -390,7 +214,10 @@ class TestCloudManager:
         )
         assert result.success
         item = self.manager.get_file(result.file_id)
-        assert item.provider.value == "s3"
+        # `provider` était une déclaration de l'appelant, jamais vérifiée : ce
+        # fichier vit en mémoire du processus, et la plateforme répondait « s3 ».
+        # Il porte désormais le magasin qui détient réellement les octets.
+        assert item.provider.value == "local"
         assert item.uploaded_by == "admin"
         assert item.metadata["env"] == "production"
 
@@ -410,14 +237,20 @@ class TestCloudManager:
         assert len(files) == 2
 
     def test_list_files_filter_provider(self):
-        """list_files(provider=...) doit filtrer."""
+        """
+        list_files(provider=...) porte sur le magasin actif.
+
+        Le filtre triait auparavant des valeurs déclarées à l'envoi : deux
+        fichiers du même magasin ressortaient sous deux fournisseurs différents
+        selon ce que l'appelant avait écrit.
+        """
         from src.services.cloud import CloudProvider
         self.manager.upload(name="a.txt", content_type="text/plain", data=b"a")
         self.manager.upload(name="b.txt", content_type="text/plain", data=b"b",
                             provider=CloudProvider.S3)
-        s3_files = self.manager.list_files(provider="s3")
-        assert len(s3_files) == 1
-        assert s3_files[0].name == "b.txt"
+
+        assert len(self.manager.list_files(provider="local")) == 2
+        assert self.manager.list_files(provider="s3") == []
 
     def test_list_files_filter_category(self):
         """list_files(category=...) doit filtrer."""
@@ -472,18 +305,21 @@ class TestCloudManager:
         assert len(self.manager.list_files()) == 0
 
     def test_store_failure_graceful(self):
-        """Une panne du store ne doit pas crasher le manager."""
-        from src.services.cloud import CloudStore
-        broken_store = MagicMock(spec=CloudStore)
-        broken_store.save.side_effect = RuntimeError("Stockage indisponible")
-        broken_store.get.side_effect = RuntimeError("Stockage indisponible")
-        broken_store.get_data.side_effect = RuntimeError("Stockage indisponible")
-        broken_store.list_files.side_effect = RuntimeError("Stockage indisponible")
-        broken_store.delete.side_effect = RuntimeError("Stockage indisponible")
-        broken_store.update_metadata.side_effect = RuntimeError("Stockage indisponible")
-        broken_store.stats.side_effect = RuntimeError("Stockage indisponible")
-        broken_store.clear.side_effect = RuntimeError("Stockage indisponible")
-        manager = type(self.manager)(store=broken_store)
+        """
+        Une panne du stockage ne doit pas faire tomber le service.
+
+        Le magasin est désormais celui du service de fichiers : la panne est
+        injectée là, et la dégradation gracieuse doit traverser les deux façades.
+        """
+        from src.services.file.interfaces import FileStore
+        from src.services.file.manager import FileManagerImpl
+
+        broken_store = MagicMock(spec=FileStore)
+        for operation in ("save", "get", "get_by_name", "list_files", "delete",
+                          "update_metadata", "stats", "clear", "count", "total_size"):
+            getattr(broken_store, operation).side_effect = RuntimeError(
+                "Stockage indisponible")
+        manager = type(self.manager)(files=FileManagerImpl(store=broken_store))
 
         result = manager.upload(name="test.txt", content_type="text/plain", data=b"data")
         assert not result.success

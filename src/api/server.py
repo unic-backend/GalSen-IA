@@ -1847,12 +1847,21 @@ async def list_files(
 
 
 @app.delete("/file/{file_id}", tags=["file"],
-            dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_DELETE))])
-async def delete_file(file_id: str):
-    """Supprime un fichier."""
-    success = file_manager.delete_file(file_id)
-    if not success:
+            dependencies=[Depends(rate_limit_dependency)])
+async def delete_file(
+    file_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_DELETE)),
+):
+    """Supprime un fichier appartenant à l'appelant.
+
+    La permission seule ne suffit pas : elle dit qu'un sujet peut supprimer
+    *ses* fichiers, pas ceux d'autrui (ADR-010). Le fichier d'un autre répond
+    404, comme à la lecture.
+    """
+    file = file_manager.get_file(file_id)
+    if file is None or not _appartient_au_sujet(ctx, file.uploaded_by):
         raise HTTPException(status_code=404, detail=f"Fichier {file_id} introuvable")
+    file_manager.delete_file(file_id)
     return {"file_id": file_id, "status": "deleted"}
 
 
@@ -1861,8 +1870,11 @@ async def delete_file(file_id: str):
 # =========================================================================
 
 @app.post("/cloud/upload", tags=["cloud"], deprecated=True,
-          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
-async def cloud_upload(request: CloudUploadRequest):
+          dependencies=[Depends(rate_limit_dependency)])
+async def cloud_upload(
+    request: CloudUploadRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_WRITE)),
+):
     """Téléverse un fichier vers le cloud."""
     import base64
     try:
@@ -1878,7 +1890,11 @@ async def cloud_upload(request: CloudUploadRequest):
                 else CloudProvider.S3 if request.provider == "s3"
                 else CloudProvider.GCS if request.provider == "gcs"
                 else CloudProvider.AZURE,
-        uploaded_by=request.uploaded_by,
+        # Le fichier appartient à l'appelant (ADR-010). Les routes `/cloud/*`
+        # ne l'attribuaient à personne : partageant désormais le stockage du
+        # service de fichiers, elles auraient déposé des fichiers sans
+        # propriétaire au milieu de ceux des autres.
+        uploaded_by=_proprietaire_effectif(ctx, request.uploaded_by),
         metadata=request.metadata,
     )
     if not result.success:
@@ -1887,15 +1903,24 @@ async def cloud_upload(request: CloudUploadRequest):
 
 
 @app.post("/cloud/list", tags=["cloud"], deprecated=True,
-          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def cloud_list_files(request: CloudListRequest):
-    """Liste les fichiers cloud avec filtres."""
+          dependencies=[Depends(rate_limit_dependency)])
+async def cloud_list_files(
+    request: CloudListRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Liste les fichiers de l'appelant.
+
+    Le filtre `uploaded_by` demandé n'est honoré que pour un administrateur,
+    comme sur `/file/list`. Sans cela, la route dépréciée rendait les fichiers
+    de tout le monde — et depuis qu'elle partage le stockage du service de
+    fichiers, elle aurait contourné le contrôle de la route qui la remplace.
+    """
     files = cloud_manager.list_files(
         limit=request.limit,
         offset=request.offset,
         provider=request.provider,
         category=request.category,
-        uploaded_by=request.uploaded_by,
+        uploaded_by=_proprietaire_effectif(ctx, request.uploaded_by),
     )
     return {
         "files": [f.to_dict() for f in files],
@@ -1912,19 +1937,32 @@ async def cloud_stats():
 
 
 @app.get("/cloud/{file_id}", tags=["cloud"], deprecated=True,
-         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def cloud_get_file(file_id: str):
-    """Retourne les métadonnées d'un fichier cloud."""
+         dependencies=[Depends(rate_limit_dependency)])
+async def cloud_get_file(
+    file_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Retourne les métadonnées d'un fichier appartenant à l'appelant."""
     file = cloud_manager.get_file(file_id)
-    if file is None:
+    if file is None or not _appartient_au_sujet(ctx, file.uploaded_by):
         raise HTTPException(status_code=404, detail=f"Fichier cloud {file_id} introuvable")
     return file.to_dict()
 
 
 @app.get("/cloud/{file_id}/download", tags=["cloud"], deprecated=True,
-         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def cloud_download(file_id: str):
-    """Télécharge un fichier cloud."""
+         dependencies=[Depends(rate_limit_dependency)])
+async def cloud_download(
+    file_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_READ)),
+):
+    """Télécharge un fichier appartenant à l'appelant.
+
+    C'est la route qui rend le **contenu** : la laisser sans contrôle de
+    propriété donnait les octets d'autrui, pas seulement ses métadonnées.
+    """
+    fichier = cloud_manager.get_file(file_id)
+    if fichier is None or not _appartient_au_sujet(ctx, fichier.uploaded_by):
+        raise HTTPException(status_code=404, detail=f"Fichier cloud {file_id} introuvable")
     data = cloud_manager.download(file_id)
     if data is None:
         raise HTTPException(status_code=404, detail=f"Fichier cloud {file_id} introuvable")
@@ -1933,12 +1971,16 @@ async def cloud_download(file_id: str):
 
 
 @app.delete("/cloud/{file_id}", tags=["cloud"], deprecated=True,
-            dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_DELETE))])
-async def cloud_delete(file_id: str):
-    """Supprime un fichier cloud."""
-    success = cloud_manager.delete(file_id)
-    if not success:
+            dependencies=[Depends(rate_limit_dependency)])
+async def cloud_delete(
+    file_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_DELETE)),
+):
+    """Supprime un fichier appartenant à l'appelant."""
+    fichier = cloud_manager.get_file(file_id)
+    if fichier is None or not _appartient_au_sujet(ctx, fichier.uploaded_by):
         raise HTTPException(status_code=404, detail=f"Fichier cloud {file_id} introuvable")
+    cloud_manager.delete(file_id)
     return {"file_id": file_id, "status": "deleted"}
 
 

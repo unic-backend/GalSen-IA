@@ -356,9 +356,17 @@ class EngineRegistry:
         return FileManagerImpl()
 
     def _build_cloud_service(self):
-        """Construit le service cloud (pur en mémoire, toujours disponible)."""
+        """
+        Construit le service cloud, **sur le service de fichiers du registre**.
+
+        Depuis ADR-016 le service cloud ne stocke plus rien : il délègue. Lui
+        laisser construire son propre service de fichiers ferait deux magasins
+        sur un même répertoire, chacun avec son index en mémoire — un fichier
+        déposé par `/cloud/*` resterait invisible de `/file/*`, et
+        réciproquement. Mesuré avant cette correction.
+        """
         from ..services.cloud.manager import CloudManagerImpl
-        return CloudManagerImpl()
+        return CloudManagerImpl(files=self.get("file"))
 
     def _build_calendar_service(self):
         """Construit le service de calendrier (pur en mémoire, toujours disponible)."""

@@ -1,21 +1,56 @@
 """
-Gestionnaire du service Cloud.
+Gestionnaire du service Cloud — adaptateur sur le service de fichiers (ADR-016).
 
-Fournit `CloudManagerImpl`, une façade best-effort conforme à
-`CloudManager` : chaque appel est protégé et ne lève jamais ; en cas
-d'échec, un avertissement est journalisé et une valeur vide est retournée.
+Ce service **ne stocke plus rien lui-même**. Il traduit les routes `/cloud/*`,
+dépréciées, vers le service de fichiers, qui est le chemin d'écriture unique de
+la plateforme.
+
+## Pourquoi les quatre magasins cloud ont disparu
+
+ADR-016 a mesuré que `file` et `cloud` étaient une même conception écrite deux
+fois : mêmes routes, même interface de magasin méthode pour méthode, même
+gestionnaire. Les backends `filesystem` et `s3` — la seule chose que le service
+cloud avait de plus — sont passés sous le service de fichiers. Il ne restait
+donc que la duplication.
+
+## Ce que `provider` valait, et ce qu'il vaut maintenant
+
+`CloudFileItem.provider` était **une déclaration de l'appelant, jamais
+vérifiée**. Mesuré avant ce changement : un téléversement avec `provider="s3"`
+sur une plateforme configurée en mémoire enregistrait `s3`, et `/cloud/stats`
+rapportait `by_provider: {"s3": 1}` pour un fichier qui vivait en RAM.
+
+Le champ reste dans la réponse — la route est dépréciée, pas modifiée — mais il
+porte désormais **le magasin qui détient réellement les octets**. Un appelant
+qui demande `s3` sur une plateforme en `filesystem` obtient `local` : c'est un
+changement de valeur, et c'est la fin d'une valeur fausse.
+
+`CloudFileItem` n'est plus un type stocké. C'est la **forme de réponse** des
+routes dépréciées, construite à la demande depuis un `FileItem`.
 """
 
 import logging
 import os
 from typing import Any, Dict, List, Optional
 
-from .interfaces import CloudManager, CloudStore
-from .store import InMemoryCloudStore
-from .types import CloudFileItem, CloudFileCategory, CloudProvider, CloudSyncResult
-from src.storage.paths import storage_backend
+from src.services.file.manager import FileManagerImpl
+
+from .interfaces import CloudManager
+from .types import CloudFileCategory, CloudFileItem, CloudProvider, CloudSyncResult
 
 logger = logging.getLogger(__name__)
+
+# Le magasin qui détient les octets → le fournisseur annoncé. Seul `s3` est un
+# fournisseur distant ; tout le reste est local à la machine, et le dire
+# autrement serait reproduire le champ faux qu'on retire.
+FOURNISSEUR_PAR_MAGASIN = {
+    "S3FileStore": CloudProvider.S3,
+    "FileSystemFileStore": CloudProvider.LOCAL,
+    "SQLiteFileStore": CloudProvider.LOCAL,
+    "InMemoryFileStore": CloudProvider.LOCAL,
+}
+
+ANCIENNE_VARIABLE = "GALSEN_CLOUD_BACKEND"
 
 
 def _infer_category(content_type: str) -> CloudFileCategory:
@@ -44,59 +79,58 @@ def _infer_category(content_type: str) -> CloudFileCategory:
 
 
 class CloudManagerImpl(CloudManager):
-    """Façade du service cloud, toujours disponible en mémoire."""
+    """Façade des routes `/cloud/*`, servie par le service de fichiers."""
 
-    # Magasin choisi pour ce service seulement, quand le magasin général ne
-    # convient pas. Deux implémentations livrées — disque et S3 — n'étaient
-    # atteignables par aucune configuration : elles existaient, étaient
-    # exportées et testées, et aucun déploiement ne pouvait les sélectionner
-    # (VOLET 24, ch. 03 étape 4). Un connecteur qu'on ne peut pas configurer
-    # n'est pas une intégration, c'est du code que seuls les tests maintiennent
-    # en vie.
-    BACKEND_ENV = "GALSEN_CLOUD_BACKEND"
-    BACKENDS = ("in-memory", "sqlite", "filesystem", "s3")
-
-    def __init__(self, store: Optional[CloudStore] = None) -> None:
+    def __init__(self, files: Optional[FileManagerImpl] = None) -> None:
+        """
+        Args:
+            files: Service de fichiers à utiliser ; un nouveau sinon.
+        """
         self._logger = logging.getLogger(f"{__name__}.CloudManagerImpl")
-        self._store = store if store is not None else self._build_store()
+        self._files = files if files is not None else FileManagerImpl()
+        self._avertir_ancienne_variable()
 
-    def _build_store(self) -> CloudStore:
+    def _avertir_ancienne_variable(self) -> None:
         """
-        Construit le magasin demandé par la configuration.
+        Signale `GALSEN_CLOUD_BACKEND`, qui ne sélectionne plus rien.
 
-        `GALSEN_CLOUD_BACKEND` prime sur `GALSEN_STORAGE_BACKEND` : `filesystem`
-        et `s3` n'ont de sens que pour ce service, et les imposer aux autres par
-        la variable générale serait faux.
-
-        Une valeur inconnue **n'est pas devinée** : elle est signalée et le
-        magasin par défaut s'applique, comme partout ailleurs dans la
-        configuration de la plateforme.
+        L'ignorer en silence serait le défaut que ce dépôt traque partout
+        ailleurs : un opérateur ayant écrit `filesystem` là croirait ses
+        fichiers sur disque alors qu'ils seraient en mémoire.
         """
-        demande = os.getenv(self.BACKEND_ENV, "").strip().lower()
-        if demande and demande not in self.BACKENDS:
+        if os.getenv(ANCIENNE_VARIABLE, "").strip():
             self._logger.error(
-                "%s='%s' inconnu (valeurs acceptées : %s) — magasin par défaut appliqué",
-                self.BACKEND_ENV, demande, ", ".join(self.BACKENDS),
+                "%s n'a plus d'effet (ADR-016) : le service de fichiers choisit le "
+                "magasin. Déclarer GALSEN_FILE_BACKEND à la place.",
+                ANCIENNE_VARIABLE,
             )
-            demande = ""
 
-        if not demande:
-            demande = storage_backend()
+    @property
+    def provider(self) -> CloudProvider:
+        """Retourne le fournisseur qui détient réellement les octets."""
+        return FOURNISSEUR_PAR_MAGASIN.get(
+            type(self._files._store).__name__, CloudProvider.LOCAL
+        )
 
-        if demande == "sqlite":
-            from src.storage.sqlite_cloud_store import SQLiteCloudStore
-            return SQLiteCloudStore()
-        if demande == "filesystem":
-            from .store_fs import FileSystemCloudStore
-            return FileSystemCloudStore()
-        if demande == "s3":
-            # boto3 est importé paresseusement par le magasin : la construction
-            # n'échoue pas ici, et un envoi vers un S3 injoignable rapporte une
-            # vraie erreur plutôt que de retomber en silence sur la mémoire —
-            # un fichier « déposé » en RAM serait pire que l'échec.
-            from .store_s3 import S3CloudStore
-            return S3CloudStore()
-        return InMemoryCloudStore()
+    def _en_element_cloud(self, fichier) -> CloudFileItem:
+        """
+        Présente un fichier sous la forme attendue par les routes `/cloud/*`.
+
+        Args:
+            fichier: `FileItem` ou `FileSummary` du service de fichiers.
+        """
+        return CloudFileItem(
+            id=fichier.id,
+            name=fichier.name,
+            content_type=fichier.content_type,
+            size=fichier.size,
+            provider=self.provider,
+            category=_infer_category(fichier.content_type),
+            uploaded_by=fichier.uploaded_by,
+            metadata=dict(fichier.metadata),
+            created_at=fichier.created_at,
+            updated_at=fichier.updated_at,
+        )
 
     def upload(
         self,
@@ -108,53 +142,49 @@ class CloudManagerImpl(CloudManager):
         max_size: int = 100 * 1024 * 1024,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> CloudSyncResult:
-        """Téléverse un fichier vers le cloud."""
-        if not name or not name.strip():
-            return CloudSyncResult(False, "Le nom du fichier est requis.")
-        if not data:
-            return CloudSyncResult(False, "Les données du fichier sont vides.")
-        if len(data) > max_size:
-            return CloudSyncResult(
-                False,
-                f"Le fichier dépasse la taille maximale de {max_size} octets.",
+        """
+        Téléverse un fichier par le service de fichiers.
+
+        `provider` est accepté pour ne pas casser les appelants de la route
+        dépréciée, et **ignoré** : le magasin qui détient les octets est décidé
+        par la configuration (`GALSEN_FILE_BACKEND`), pas par l'appelant.
+        Enregistrer sa demande revenait à enregistrer une croyance.
+        """
+        if provider is not None and provider != self.provider:
+            self._logger.info(
+                "Fournisseur « %s » demandé et ignoré : les octets vont dans %s "
+                "(ADR-016).",
+                getattr(provider, "value", provider), self.provider.value,
             )
 
-        try:
-            category = _infer_category(content_type)
-            item = CloudFileItem(
-                name=name.strip(),
-                content_type=content_type,
-                size=len(data),
-                provider=provider,
-                category=category,
-                uploaded_by=uploaded_by,
-                metadata=metadata or {},
-            )
-            file_id = self._store.save(item, data)
-            return CloudSyncResult(
-                True,
-                f"Fichier '{name}' téléversé avec succès.",
-                file_id=file_id,
-            )
-        except Exception as error:
-            self._logger.warning("Échec du téléversement '%s' : %s", name, error)
-            return CloudSyncResult(False, f"Échec du téléversement : {error}")
+        resultat = self._files.upload_file(
+            name=name.strip() if isinstance(name, str) else name,
+            content_type=content_type,
+            data=data,
+            uploaded_by=uploaded_by,
+            metadata=metadata,
+            max_size=max_size,
+        )
+        if not resultat.success:
+            # `FileUploadResult` nomme son champ `error` ; le traduire ici évite
+            # de rendre un message vide sur un refus, ce qui laisserait
+            # l'appelant sans la raison.
+            return CloudSyncResult(False, resultat.error or "Téléversement refusé.")
+        return CloudSyncResult(
+            True,
+            f"Fichier '{name}' téléversé avec succès.",
+            file_id=resultat.file_id,
+        )
 
     def get_file(self, file_id: str) -> Optional[CloudFileItem]:
-        """Retourne un fichier cloud par identifiant."""
-        try:
-            return self._store.get(file_id)
-        except Exception as error:
-            self._logger.warning("Échec de la lecture du fichier cloud %s : %s", file_id, error)
-            return None
+        """Retourne les métadonnées d'un fichier."""
+        fichier = self._files.get_file(file_id)
+        return self._en_element_cloud(fichier) if fichier is not None else None
 
     def download(self, file_id: str) -> Optional[bytes]:
-        """Télécharge les données d'un fichier cloud."""
-        try:
-            return self._store.get_data(file_id)
-        except Exception as error:
-            self._logger.warning("Échec du téléchargement %s : %s", file_id, error)
-            return None
+        """Retourne le contenu d'un fichier, ou None s'il est absent."""
+        fichier = self._files.get_file(file_id)
+        return fichier.data if fichier is not None else None
 
     def list_files(
         self,
@@ -164,47 +194,62 @@ class CloudManagerImpl(CloudManager):
         category: Optional[str] = None,
         uploaded_by: Optional[str] = None,
     ) -> List[CloudFileItem]:
-        """Retourne les fichiers filtrés."""
-        try:
-            return self._store.list_files(
-                limit=limit,
-                offset=offset,
-                provider=provider,
-                category=category,
-                uploaded_by=uploaded_by,
-            )
-        except Exception as error:
-            self._logger.warning("Échec du filtrage des fichiers cloud : %s", error)
+        """
+        Retourne les fichiers filtrés.
+
+        Le filtre `provider` porte sur le magasin actif : tous les fichiers y
+        sont, ou aucun. Il filtrait auparavant sur une valeur déclarée à
+        l'envoi, donc sur ce que l'appelant avait cru.
+        """
+        if provider is not None and provider != self.provider.value:
             return []
 
+        resumes = self._files.list_files(
+            limit=limit, offset=offset, uploaded_by=uploaded_by,
+        )
+        elements = [self._en_element_cloud(resume) for resume in resumes]
+        if category is not None:
+            elements = [e for e in elements if e.category.value == category]
+        return elements
+
     def delete(self, file_id: str) -> bool:
-        """Supprime un fichier cloud ; retourne False si absent."""
-        try:
-            return self._store.delete(file_id)
-        except Exception as error:
-            self._logger.warning("Échec de la suppression du fichier cloud %s : %s", file_id, error)
-            return False
+        """Supprime un fichier ; retourne False s'il est absent."""
+        return self._files.delete_file(file_id)
 
     def update_metadata(self, file_id: str, metadata: Dict[str, Any]) -> bool:
-        """Met à jour les métadonnées d'un fichier."""
-        try:
-            return self._store.update_metadata(file_id, metadata)
-        except Exception as error:
-            self._logger.warning("Échec de la mise à jour des métadonnées %s : %s", file_id, error)
-            return False
+        """Met à jour les métadonnées d'un fichier ; False s'il est absent."""
+        return self._files.update_metadata(file_id, metadata)
 
     def stats(self) -> Dict[str, Any]:
-        """Retourne des statistiques agrégées."""
-        try:
-            return self._store.stats()
-        except Exception as error:
-            self._logger.warning("Échec du calcul des statistiques cloud : %s", error)
+        """
+        Retourne les statistiques, dans la forme attendue par `/cloud/stats`.
+
+        `by_provider` ne compte plus des déclarations d'appelants : tous les
+        fichiers sont dans le magasin actif, et c'est ce qu'il annonce.
+        """
+        etat = self._files.stats()
+        if not etat:
+            # Le service de fichiers rend un dictionnaire vide quand son magasin
+            # est en panne. Rendre « zéro fichier » ici dirait qu'il n'y en a
+            # pas, alors que personne n'a pu compter.
             return {}
+
+        total = etat.get("total", 0)
+        return {
+            "total": total,
+            "total_size": etat.get("total_size", 0),
+            "by_category": self._par_categorie(),
+            "by_provider": {self.provider.value: total} if total else {},
+        }
+
+    def _par_categorie(self) -> Dict[str, int]:
+        """Compte les fichiers par catégorie cloud, déduite du type MIME."""
+        comptes: Dict[str, int] = {}
+        for resume in self._files.list_files(limit=10_000):
+            categorie = _infer_category(resume.content_type).value
+            comptes[categorie] = comptes.get(categorie, 0) + 1
+        return comptes
 
     def clear(self) -> int:
         """Supprime tous les fichiers et retourne le nombre supprimé."""
-        try:
-            return self._store.clear()
-        except Exception as error:
-            self._logger.warning("Échec de la suppression des fichiers cloud : %s", error)
-            return 0
+        return self._files.clear()

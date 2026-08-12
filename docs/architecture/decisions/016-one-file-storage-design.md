@@ -171,9 +171,40 @@ service.
      fixing the two cases found two more — `/calendar/stats` and `/email/stats` — in a
      released version.
 
+- **`CloudFileItem` is retired and the four cloud stores are deleted** (step 3). The
+  `cloud` service stores nothing: it translates the deprecated routes onto the file
+  service. **951 lines of duplicated storage code removed.**
+
+  `provider` was the one field distinguishing `CloudFileItem` from `FileItem`, and it was
+  **a caller's claim that nothing verified**. Measured before the change: uploading with
+  `provider="s3"` on a platform configured in memory recorded `s3`, and `/cloud/stats`
+  reported `by_provider: {"s3": 1}` for a file living in RAM. The field stays in the
+  response — the route is announced, not modified — but now carries the store that
+  actually holds the bytes.
+
+  Merging the stores exposed a hole that had been hidden by the duplication:
+
+  - **The deprecated routes enforced no ownership at all** (ADR-010). While `/cloud/*` had
+    its own store, the leak was confined to files uploaded through it. Sharing the file
+    service's store made it a **bypass of the very route that replaces it**: measured, a
+    second subject listed and downloaded another subject's file through `/cloud/list` and
+    `/cloud/{id}/download` while `/file/list` correctly returned nothing. All five routes
+    now apply the same rule as `/file/*`, and `/cloud/upload` attributes the file to its
+    caller.
+  - `DELETE /file/{file_id}` had the same gap and is fixed with them: holding the
+    permission means a subject may delete *its own* files.
+  - The cloud service must share the file service **instance**, not build its own. Two
+    `FileSystemFileStore` objects on one directory each keep their own in-memory index, so
+    a file written through one façade was invisible from the other. Measured, then wired
+    through the engine registry.
+
+  No migration is needed: criterion C4 is still open, no deployment has ever held
+  `/cloud/*` data.
+
 ### Staged, and not done yet
 
-- Retiring `CloudFileItem` in favour of `FileItem`, and deleting the cloud stores.
+- Setting a `Sunset` date on `/cloud/*`, now that nothing depends on a second storage
+  design.
 
 Each is a separate change with its own tests, and each is safe to take in any order once
 this decision exists. What the backlog asked for — *"nothing says which one a caller

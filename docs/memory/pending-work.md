@@ -54,10 +54,11 @@ gets re-argued at every review.
   triggers the image build: `git push origin v0.1.0`.
   *Deciding criterion:* maintenance cost — one command, and criterion C4 needs it.
 
-- **Finish applying ADR-016.** One step remains: retire `CloudFileItem` in favour of
-  `FileItem` and delete the cloud stores, which removes the second half of the duplicated
-  design. `/cloud/*` already announces its end of life, so a `Sunset` date can be set once
-  this is done.
+- **Set a `Sunset` date on `/cloud/*`.** ADR-016 is applied: the duplicated design is
+  gone and the routes are announced as deprecated. What remains is choosing a removal
+  date, which ADR-011 says must be decided rather than invented — and it is only worth
+  deciding once a deployment exists to have clients (C4).
+  *Deciding criterion:* maintenance cost — small, and it closes ADR-016.
   *Deciding criterion:* maintenance cost — two route families do the same job until the
   next major version, which ADR-011 accepts on purpose. What made this P1 — *"nothing says
   which one a caller should use"* — is answered: a caller uses the file service.

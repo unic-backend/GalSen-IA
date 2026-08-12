@@ -29,9 +29,7 @@ from .cloud import (
     CloudManager,
     CloudManagerImpl,
     CloudProvider,
-    CloudStore,
     CloudSyncResult,
-    InMemoryCloudStore as InMemoryCloudStoreImpl,
     generate_cloud_file_id,
 )
 from .email import (
@@ -84,9 +82,7 @@ __all__ = [
     "CloudManager",
     "CloudManagerImpl",
     "CloudProvider",
-    "CloudStore",
     "CloudSyncResult",
-    "InMemoryCloudStoreImpl",
     "generate_cloud_file_id",
     # Calendar
     "CalendarEvent",

@@ -39,11 +39,15 @@ d'analytique » (à prendre après C4).
   défauts trouvés en l'inscrivant : aucune route paramétrée ne pouvait être dépréciée, et
   **quatre routes documentées étaient inatteignables** (`/file/stats`, `/cloud/stats`,
   `/calendar/stats`, `/email/stats`, captées par `/{id}` déclarée avant).
-- Suite complète : **2401 tests passent**, 7 ignorés.
+- **ADR-016 étape 3** : `CloudFileItem` retiré, quatre magasins cloud supprimés (**951
+  lignes**). En fusionnant les magasins, une fuite est apparue et a été fermée : les routes
+  `/cloud/*` n'appliquaient **aucune règle de propriété** et contournaient donc celle de
+  `/file/*`. `DELETE /file/{id}` avait le même manque.
+- Suite complète : **2360 tests passent**, 7 ignorés.
 
 **Prochaine étape**
-ADR-016, dernière étape : retirer `CloudFileItem` au profit de `FileItem` et supprimer les
-magasins du service cloud — c'est la seconde moitié de la conception dupliquée.
+ADR-016 est appliqué. Reste à lui fixer une date de retrait (`Sunset`) pour `/cloud/*`,
+ce qui n'a de sens qu'une fois un déploiement existant (C4).
 
 **Bloqué / à surveiller**
 - **`git push origin v0.1.0`** : le proxy git de l'environnement refuse les étiquettes

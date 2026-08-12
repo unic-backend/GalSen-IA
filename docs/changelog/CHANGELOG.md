@@ -11,6 +11,41 @@ capability answers `503` until an operator configures a model provider. Release 
 `docs/changelog/releases/`.
 
 ## [Unreleased]
+### Security
+- **The deprecated `/cloud/*` routes enforced no ownership** (ADR-010, ADR-016)
+  - While the cloud service had its own store the leak was confined to files uploaded
+    through it. Making it share the file service's store turned it into a **bypass of the
+    route that replaces it**: measured end to end, a second subject listed and downloaded
+    another subject's file through `/cloud/list` and `/cloud/{id}/download`, while
+    `/file/list` correctly returned nothing
+  - All five routes now apply the rule `/file/*` applies — another subject's file answers
+    `404`, never "exists but not yours" — and `/cloud/upload` attributes the file to its
+    caller instead of leaving it ownerless
+- **`DELETE /file/{file_id}` never checked ownership either**
+  - Holding `MEMORY_DELETE` was read as "may delete any file". It means a subject may
+    delete *its own* files; two subjects sharing a delete-capable role could delete each
+    other's
+
+### Removed
+- **`CloudFileItem` and the four cloud stores** — ADR-016 step 3, **951 lines**
+  - The cloud service stores nothing now: it translates the deprecated routes onto the
+    file service, which ADR-016 made the platform's single write path
+  - `provider` was the one field distinguishing `CloudFileItem` from `FileItem`, and it
+    was **a caller's claim nothing verified**: uploading with `provider="s3"` on a platform
+    configured in memory recorded `s3`, and `/cloud/stats` reported `by_provider:
+    {"s3": 1}` for a file living in RAM. The field stays in the response and now carries
+    the store that actually holds the bytes
+  - `GALSEN_CLOUD_BACKEND` no longer selects anything. Its presence is reported as an
+    error rather than ignored — an operator who wrote `filesystem` there would otherwise
+    believe their files were on disk
+  - The cloud service must share the file service **instance**: two `FileSystemFileStore`
+    objects on one directory each keep their own in-memory index, so a file written through
+    one façade was invisible from the other. Measured, then wired through the engine registry
+  - No migration needed — criterion C4 is open, no deployment has ever held `/cloud/*` data
+  - `tests/test_cloud_adapter.py` — 20 tests. The store-contract tests deleted with their
+    subject are covered by `test_file_backends.py` and `test_services.py`, on the store
+    actually in use
+
 ### Fixed
 - **Four documented routes were unreachable** — found while deprecating `/cloud/*`
   - FastAPI keeps the first route whose path matches, and `/{id}` was declared before
