@@ -8,9 +8,9 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : **31 — Agent de développement** (26 sauf 26.1, 27 à 30 terminés)
-**Phase courante** : 31.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
-**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 30**
+**VOLET en cours** : **32 — Multimodal** (26 sauf 26.1, 27 à 31 terminés)
+**Phase courante** : 32.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
+**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 31**
 **Cadence** : **un VOLET par tour** — demandé par l'utilisateur le 2026-08-12.
 La limite des 25 minutes de `.claude/rules/work-cadence.md` continue de s'appliquer.
 
@@ -71,10 +71,12 @@ VOLET 30 — Routage de modèles par coût et par tâche         → 3 phases �
   qui filtre vraiment — et une règle morte pointant vers des fournisseurs
   qu'ADR-014 n'inscrit plus.
 
-VOLET 31 — Agent de développement autonome                  → 4 phases
-  Ch. 31.1  Carte du dépôt (motif OpenHands/Aider, pas leur code) → 2 phases
-  Ch. 31.2  Boucle éditer → tester → corriger               → 1 phase
-  Ch. 31.3  Passage obligatoire par le portillon (ADR-006)  → 1 phase
+VOLET 31 — Agent de développement autonome                  → 4 phases — **terminé**
+  Ch. 31.1  Carte du dépôt : 278 fichiers, symboles, tests   → **terminées**
+  Ch. 31.2  Boucle bornée éditer → tester → annuler          → **terminée**
+  Ch. 31.3  Portillon obligatoire **par construction**       → **terminée**
+  **Limite dite** : l'étape « proposer le code » appelle un modèle et dépend
+  de 26.1. La boucle ne fabrique aucun code — elle applique, vérifie, annule.
 
 VOLET 32 — Multimodal                                       → 3 phases
   Ch. 32.1  Parole vers texte (Whisper local)               → 2 phases
