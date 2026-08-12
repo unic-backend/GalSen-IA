@@ -485,3 +485,12 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Sans exécutant, un geste approuvé refuse franchement** : rapporter « fait » sans avoir agi serait le pire des comptes rendus.
 - **La détection de plateforme est celle du chapitre 05**, partagée (`BackendDePlateforme`) plutôt que réécrite.
 - **19 tests** (`tests/test_gui_tool.py`), avec un **vrai** moteur d'approbation et non une imitation : simuler le portillon ferait passer le test sur un objet qui n'est pas celui qui protège la plateforme. Suite complète : **2419 tests passent**, 7 ignorés ; `ruff` propre.
+
+### 2026-08-12 (VOLET 34, chapitre 07 — plusieurs racines, et des opérations qu'on peut défaire)
+- **`src/storage/roots.py`** : plusieurs racines nommées, déclarées par `GALSEN_STORAGE_ROOTS` (`projets:/home/awa/projets:rw`). **Rien n'a été élargi** : tout ce qui est hors racine reste refusé, liens symboliques compris, et un chemin relatif est **refusé comme ambigu** quand plusieurs racines existent plutôt que deviné. Une racine est en **lecture seule par défaut** : déclarer un répertoire et vouloir y écrire sont deux intentions.
+- **Les racines viennent de la configuration, jamais d'une requête** — ADR-016 a mesuré le prix de l'inverse la semaine dernière.
+- **`src/storage/reversible.py`** : déplacer, renommer, retirer, archiver, tous annulables. **Rien n'est supprimé** — un retrait déplace vers `.galsen-corbeille` dans la même racine, ce qui garde l'opération sur le même volume. Une suppression qu'un agent décide et qu'un humain découvre trois jours plus tard doit pouvoir se défaire ; `os.remove` ne le permet pas.
+- **Le journal précède l'acte** : l'entrée est écrite avant que le fichier bouge. L'ordre inverse laisserait une fenêtre où un déplacement a eu lieu sans que rien ne sache le défaire — le raisonnement d'ADR-016 sur les octets et l'index.
+- **Une annulation ne se rejoue pas**, et annuler ce qui a bougé depuis est refusé : écraser à l'aveugle serait une seconde perte déguisée en réparation.
+- **Archiver ne supprime pas l'original** : « archiver » et « supprimer après avoir archivé » sont deux décisions ; les fondre ferait disparaître des données au premier échec de compression.
+- **28 tests** (`tests/test_storage_roots_and_reversible.py`). Suite complète : **2447 tests passent**, 7 ignorés ; `ruff` propre.

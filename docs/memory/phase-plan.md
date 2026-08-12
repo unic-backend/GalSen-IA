@@ -10,7 +10,7 @@ exécuter, et une seule.
 
 **VOLET en cours** : **34 — Agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`)
 **Phases**         : 24, réparties sur 14 chapitres
-**Phase courante** : **chapitre 07 — le stockage local réel : plusieurs racines, opérations réversibles** (2 phases), en attente
+**Phase courante** : **chapitre 08 — le bac à sable d'exécution, avec son test d'évasion** (2 phases), en attente
 **Cadence** : **un chapitre par tour** — demandé par l'utilisateur le 2026-08-12
 (auparavant : un VOLET, puis une phase).
 **En attente de ta décision** : **ADR-018 est *proposé***, pas accepté. Il ne change rien
@@ -21,7 +21,8 @@ tant que tu n'as pas tranché A / B / C. Les chapitres 05+ tiennent sous chaque 
 3.1 **ADR-017** — les capacités manquantes arrivent comme outils, pas comme une seconde architecture,
 4.1 **ADR-018 (proposé)** — souverain par défaut, avec une dérogation cadrée,
 **chapitre 05** — la vue (`src/tools/screen/`),
-**chapitre 06** — la main sous portillon (`src/tools/gui/`) — 21 outils au catalogue
+**chapitre 06** — la main sous portillon (`src/tools/gui/`) — 21 outils au catalogue,
+**chapitre 07** — plusieurs racines et des opérations annulables (`src/storage/roots.py`, `reversible.py`)
 **Bloqué**         : la phase **4.1** demande ta décision sur ADR-014 (souveraineté
 contre bascule vers le cloud). Elle ne peut pas être prise à ta place.
 **Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 33**,

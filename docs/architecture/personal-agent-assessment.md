@@ -53,11 +53,17 @@ Absolute paths, `..` segments and symlinks are all resolved against one declared
 root before any operation. Writing is **off by default**: an agent reports what
 should change instead of changing it.
 
-**Against the brief**, which asks for `C:\`, external drives and project folders:
-the mechanism is right and the reach is one directory. What is missing is not
-safety — it is **multiple declared roots**, and reversibility for move/rename/
-archive. That is chapter 07, and it must not be bought by widening the root to
-the whole machine.
+**Chapter 07 landed on 2026-08-12**, and it did not widen anything. `src/storage/roots.py`
+lets an operator declare several named roots — `projets:/home/awa/projets:rw`,
+`documents:C:\Users\awa\Documents:rw` — each read-only unless `:rw` says
+otherwise. Everything outside them is still refused, symlinks included, and a
+relative path is **refused as ambiguous** when several roots exist rather than
+guessed.
+
+`src/storage/reversible.py` makes move, rename, remove and archive undoable, and
+**nothing is deleted**: a removal moves into `.galsen-corbeille` inside the same
+root. The journal is written *before* the file moves — the reverse order would
+leave a window where something moved and nothing knew how to put it back.
 
 ### 2.2 Commands: no shell, and it holds
 
@@ -172,9 +178,9 @@ preferences), **proactive discovery** (nothing runs unprompted), and a
 | Brief | Verdict |
 |---|---|
 | Access desktop environments | **partial** — reads the accessibility tree; platform backends need a desktop to verify |
-| Navigate local storage, multiple drives | **partial** — one declared root, no drive concept |
+| Navigate local storage, multiple drives | **present** — several named roots, read-only by default (ch. 07) |
 | Understand file structures | present (read, list, search) |
-| Organise, rename, move, archive | **absent** — writing is off, no reversible operation |
+| Organise, rename, move, archive | **present** — reversible, journalled, nothing deleted (ch. 07) |
 | Analyse existing projects | **partial** — file-level, no repository map |
 | Write / modify / debug code | present, gated (VOLET 31) |
 | Run commands and scripts | **partial** — six executables, no sandbox |
@@ -187,7 +193,7 @@ preferences), **proactive discovery** (nothing runs unprompted), and a
 | Proactive opportunity discovery | **absent** |
 | MCP | **absent** |
 
-**Four of fifteen are absent, seven partial, four present.** The four that are
+**Four of fifteen are absent, five partial, six present.** The four that are
 present are the ones that are hardest to retrofit — permissions, approval,
 audit, ownership — and they are why the missing six can be built without turning
 this into a tool that deletes a user's drive on a bad inference.
