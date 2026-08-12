@@ -181,19 +181,43 @@ class MemoryManager(MemoryManagerInterface):
         Returns:
             Liste de tuples (élément de mémoire, score de pertinence).
         """
+        return self.search_memory_with_method(
+            query, memory_type=memory_type, user_id=user_id, session_id=session_id,
+            agent_id=agent_id, tags=tags, limit=limit,
+        )[0]
+
+    def search_memory_with_method(
+        self,
+        query: str,
+        **filtres,
+    ) -> Tuple[List[Tuple[MemoryItem, float]], Dict[str, Any]]:
+        """
+        Recherche en mémoire, en disant par quel chemin le classement est venu.
+
+        Le récupérateur sait chercher par le sens depuis le VOLET 27 ; le
+        service de recherche appelait encore le chemin lexical, si bien que
+        `/search` répondait par termes communs **même avec un encodeur
+        installé**. C'est cette marche qui manquait.
+
+        Args:
+            query: Requête.
+            **filtres: Mêmes filtres que `search_memory`.
+
+        Returns:
+            Les couples (mémoire, score) et un rapport `{"method": ...}`.
+        """
         self._logger.debug(f"Recherche de mémoire avec la requête : {query}")
-        # Utiliser le récupérateur pour obtenir les éléments et les scores
-        results = self._retriever.retrieve(
-            query=query,
-            memory_type=memory_type,
-            user_id=user_id,
-            session_id=session_id,
-            agent_id=agent_id,
-            tags=tags,
-            limit=limit
-        )
-        # Optionnellement, nous pourrions classer les résultats à nouveau, mais le récupérateur les note déjà
-        return results
+
+        avec_methode = getattr(self._retriever, "retrieve_with_method", None)
+        if avec_methode is None:
+            # Un récupérateur personnalisé peut ne pas connaître cette méthode :
+            # il garde le chemin historique, et le rapport le dit plutôt que de
+            # laisser croire au sémantique.
+            return self._retriever.retrieve(query=query, **filtres), {
+                "method": "lexical",
+                "reason": "Ce récupérateur ne propose pas de classement sémantique.",
+            }
+        return avec_methode(query, **filtres)
 
     def forget_memory(self, item_id: str) -> bool:
         """Oublier un élément de mémoire : il est archivé, pas effacé.

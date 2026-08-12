@@ -127,6 +127,11 @@ class SearchResponse:
     search_id: str = field(default_factory=generate_search_id)
     execution_time_ms: float = 0.0
     sources_used: List[str] = field(default_factory=list)
+    # Par quel chemin chaque source a classé ses résultats — sémantique ou
+    # lexical. Un appelant qui ne peut pas faire la différence finira par
+    # construire sur l'idée que la similarité est comprise, et se trompera
+    # exactement le jour où cela compte (ADR-015).
+    methods: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """Sérialise la réponse complète en dictionnaire."""
@@ -137,6 +142,7 @@ class SearchResponse:
             "search_id": self.search_id,
             "execution_time_ms": self.execution_time_ms,
             "sources_used": self.sources_used,
+            "methods": self.methods,
             # Ce que le classement ne dit pas. Les scores de deux sources ne
             # sont pas comparables — proportion de termes ici, similarité de
             # Jaccard là — donc l'ordre entre résultats de sources différentes

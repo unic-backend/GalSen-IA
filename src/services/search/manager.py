@@ -8,7 +8,7 @@ Les résultats sont fusionnés et triés par pertinence.
 
 import logging
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .interfaces import SearchManager, SearchProvider
 from .types import (
@@ -138,6 +138,7 @@ class SearchManagerImpl(SearchManager):
         start_time = time.time()
         all_results: List[SearchResultItem] = []
         sources_used: List[str] = []
+        methods: Dict[str, Any] = {}
 
         # Déterminer les sources à interroger
         target_sources = query.sources or list(SearchSource)
@@ -151,6 +152,11 @@ class SearchManagerImpl(SearchManager):
                 results = provider.search(provider_query)
                 all_results.extend(results)
                 sources_used.append(source.value)
+                # Rapporté par source : deux sources peuvent avoir classé
+                # différemment, et une méthode globale serait fausse pour l'une.
+                methode = getattr(provider, "last_method", None)
+                if methode:
+                    methods[source.value] = methode
             except Exception as error:
                 self._logger.warning(
                     "Échec de la recherche sur la source %s : %s",
@@ -173,6 +179,7 @@ class SearchManagerImpl(SearchManager):
             query=query.query,
             execution_time_ms=execution_time,
             sources_used=sources_used,
+            methods=methods,
         )
 
     def search_single_source(

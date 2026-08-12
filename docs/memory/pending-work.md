@@ -28,14 +28,6 @@ gets re-argued at every review.
 
 ## P1 — High · a Phase 2 exit criterion depends on it, or it removes a demonstrated risk
 
-- **Move the search providers onto the semantic path.** `KnowledgeSearchProvider` and
-  `MemorySearchProvider` still score by proportion of query terms found, while
-  `src/embeddings/semantic_index.py::rank_or_fallback` is built and tested and waits for
-  them. The memory *retriever* was converted (VOLET 27); the *search service* was not, so
-  `/search` answers lexically even when an encoder is installed.
-  *Deciding criterion:* it finishes work already paid for — the store, the ranking and the
-  fallback exist; only the wiring is missing.
-
 - **Decide on eight optional dependencies, or drop the capabilities they carry.**
   `tests/test_requirements.py` now catches imports of packages that are neither installed
   nor declared, and it found eight on its first run: `PyPDF2`, `python-docx`, `openpyxl`,
@@ -46,23 +38,14 @@ gets re-argued at every review.
   *Deciding criterion:* honesty of the catalogue — either the image carries them, or the
   catalogue stops offering them.
 
-- **Put something in the knowledge base.** It holds **0 items, 0 indexed documents, 0
-  graph nodes**, and `docs/knowledge/` does not exist. The Knowledge Engine, the RAG tool,
-  the search service and the retrieval ranking are all built and retrieving from nothing.
-  VOLET 05 added the surrounding discipline (domains, lifecycle, role-gated reads,
-  governance and quality reports) — every one of those reports currently describes an
-  empty base.
-  *Deciding criterion:* strategic alignment — the vision says to prioritise African data
-  and use cases, and the Knowledge Leadership pillar has no evidence under it at all. No
-  code is wrong, which is why no test caught this.
-
-- **Semantic search does not exist.** Only the keyword half is built, nothing analyses
-  intent, and the ranking score is term overlap. VOLET 14 measured what it would take:
-  `EmbeddingsTool` already turns text into vectors and **nothing indexes them** — this is
-  a wiring and modelling job, not research. One of the five index types in the manual is
-  built.
-  *Deciding criterion:* user impact — retrieval quality caps out at exact term matching,
-  which matters the day the base holds real documents, not before.
+- **Build the Senegalese corpus.** The base now holds **250 verifiable passages** from the
+  project's own documentation (VOLET 28), and the ingestion path chunks, keeps provenance
+  per passage and cites sources. What is missing is the corpus that matters: agriculture,
+  health, education. It is ingested from **real declared documents** — the manifest format
+  is in `docs/knowledge/README.md`. Nothing is written from memory: fabricating knowledge
+  served to farmers as fact is the most damaging thing this repository could do.
+  *Deciding criterion:* strategic alignment — the Knowledge Leadership pillar still has no
+  Senegalese evidence under it, and this one depends on documents, not on code.
 
 - **Two search sources of four still have no provider** (document, vision). Memory was
   wired on 2026-08-11, and the unjustified merge weights were **removed** rather than
@@ -75,9 +58,11 @@ gets re-argued at every review.
   *Deciding criterion:* strategic alignment — nothing else on this list can be validated
   in production until this is true.
 
-- **Tag the first release.** `git tag` is empty while `release_check.py` expects `v0.1.0`
-  and semantic versioning is already decided. A rollback target has to be nameable.
-  *Deciding criterion:* maintenance cost — cheap, and criterion C4 needs it.
+- **Push the `v0.1.0` tag.** It exists locally on `383fcf7` with its release notes, but the
+  environment that prepared it cannot push tag refs (the git proxy answers 403), so
+  `git fetch --tags` finds nothing. One command from a normal clone publishes it and
+  triggers the image build: `git push origin v0.1.0`.
+  *Deciding criterion:* maintenance cost — one command, and criterion C4 needs it.
 
 - **Decide between three ways to write a file to disk.** `LocalDiskStorageConnector`
   (ADR-007), `SQLiteFileStore` and `FileSystemCloudStore` arrived from two branches, they

@@ -43,8 +43,7 @@ VOLET 27 — Récupération sémantique                          → 4 phases �
   Ch. 27.1  ADR-015 : embeddings locaux, et leur prix réel  → **terminée**
   Ch. 27.2  Fournisseur d'embeddings + magasin de vecteurs  → **terminées**
   Ch. 27.3  Mémoire au sémantique, méthode rapportée        → **terminée**
-  Reste ouvert : les fournisseurs de `src/services/search/` utilisent encore le
-  chemin lexical. `rank_or_fallback` les attend — inscrit au backlog.
+  Ch. 27.4  Service de recherche au sémantique (backlog, 2026-08-12) → **terminée**
 
 VOLET 28 — Base de connaissances                            → 4 phases — **terminé**
   Ch. 28.1  Ingestion : découpage + provenance par bloc     → **terminées**

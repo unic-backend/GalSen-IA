@@ -373,3 +373,59 @@ def test_sans_encodeur_la_memoire_reste_lexicale_et_le_dit(tmp_path, monkeypatch
 
     assert rapport["method"] == METHOD_LEXICAL
     assert [item.id for item, _ in resultats] == ["m1"]
+
+
+# ----------------------------------------------------------------------
+# Le service de recherche est passé au chemin sémantique (backlog P1)
+# ----------------------------------------------------------------------
+
+def test_la_recherche_de_connaissances_dit_sa_methode(tmp_path, monkeypatch):
+    """
+    `/search` répondait lexicalement **même avec un encodeur installé** : le
+    récupérateur de mémoire avait été converti au VOLET 27, le service de
+    recherche non. C'est la marche qui manquait.
+    """
+    monkeypatch.setenv("GALSEN_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("GALSEN_STORAGE_BACKEND", "in-memory")
+    from src.knowledge_engine.knowledge_manager import KnowledgeManagerImpl
+    from src.knowledge_engine.types import KnowledgeItem
+
+    manager = KnowledgeManagerImpl()
+    manager.add_knowledge(KnowledgeItem(content="Le sorgho souffre de la sécheresse"))
+
+    _resultats, rapport = manager.search_knowledge_with_method("sécheresse", role="admin")
+
+    assert rapport["method"] in ("lexical", "semantic")
+    if rapport["method"] == "lexical":
+        assert rapport["reason"], "Un repli lexical doit dire pourquoi"
+
+
+def test_la_recherche_de_connaissances_passe_au_semantique(tmp_path, monkeypatch):
+    """
+    Avec un encodeur, une question sans terme commun doit retrouver le document.
+
+    C'est exactement ce que le classement lexical ne peut pas faire, et ce que
+    la référence mesurée du VOLET 33 (0,40) attend d'améliorer.
+    """
+    monkeypatch.setenv("GALSEN_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("GALSEN_STORAGE_BACKEND", "in-memory")
+    from src.embeddings.registry import reset_embedder, set_embedder
+    from src.knowledge_engine.knowledge_manager import KnowledgeManagerImpl
+    from src.knowledge_engine.types import KnowledgeItem
+
+    manager = KnowledgeManagerImpl()
+    # Aucun terme commun avec la requête : le classement lexical le note zéro.
+    attendu = manager.add_knowledge(KnowledgeItem(content="Le sorgho est atteint"))
+    manager.add_knowledge(KnowledgeItem(content="La pirogue rentre avec du poisson"))
+
+    set_embedder(EncodeurDeTest())
+    try:
+        resultats, rapport = manager.search_knowledge_with_method(
+            "soigner une maladie du mil", role="admin",
+        )
+    finally:
+        reset_embedder()
+
+    assert rapport["method"] == "semantic"
+    assert resultats, "Le chemin sémantique ne rend rien"
+    assert resultats[0][0].id == attendu

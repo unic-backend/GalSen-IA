@@ -434,14 +434,69 @@ class KnowledgeManagerImpl(KnowledgeManager):
             Le score vient de l'indexeur : c'est la proportion des termes de la
             requête présents dans le document, jamais une valeur déduite du rang.
         """
+        return self.search_knowledge_with_method(query, limit=limit, role=role)[0]
+
+    def search_knowledge_with_method(
+        self, query: str, limit: int = 10, role: Optional[str] = None
+    ) -> Tuple[List[Tuple[KnowledgeItem, float]], Dict[str, Any]]:
+        """
+        Recherche, en disant **par quel chemin** le classement a été obtenu.
+
+        Le classement lexical note par proportion de termes retrouvés : deux
+        textes qui disent la même chose avec d'autres mots ont un score nul.
+        Avec un encodeur (ADR-015), le classement passe par le sens ; sans
+        encodeur il reste lexical, et la différence est **rapportée** plutôt que
+        laissée à deviner.
+
+        Args:
+            query: Texte recherché.
+            limit: Nombre maximum de résultats.
+            role: Rôle de l'appelant, pour le contrôle d'accès (VOLET 05 ch. 07).
+
+        Returns:
+            Les couples (connaissance, score) et un rapport `{"method": ...}`.
+        """
+        from src.embeddings.registry import active_embedder
+        from src.embeddings.semantic_index import rank_or_fallback
+
         with self._lock:
-            results: List[Tuple[KnowledgeItem, float]] = []
-            for knowledge, score in self._search_index(query, limit):
-                if not can_read(role, knowledge):
+            def lexical() -> List[Tuple[str, float]]:
+                """Classement historique : proportion des termes retrouvés."""
+                return [
+                    (knowledge.id, score)
+                    for knowledge, score in self._search_index(query, limit)
+                    if can_read(role, knowledge)
+                ]
+
+            encodeur = active_embedder()
+            if encodeur is None:
+                classes, rapport = lexical(), {
+                    "method": "lexical",
+                    "reason": "Aucun encodeur disponible : classement par termes communs (ADR-015).",
+                }
+            else:
+                # Les candidats sont **toutes** les connaissances lisibles, et
+                # non celles qu'un score lexical aurait retenues : c'est tout
+                # l'intérêt du chemin sémantique. Au-delà de ~100 000 éléments,
+                # ce balayage devra être pré-filtré — c'est le déclencheur écrit
+                # dans ADR-015 pour passer à une base vectorielle.
+                candidats = [
+                    (item.id, item.content)
+                    for item in self._store.list_items()
+                    if isinstance(item.content, str) and can_read(role, item)
+                ]
+                classes, rapport = rank_or_fallback(
+                    query, candidats, lexical, encodeur, "knowledge", limit=limit,
+                )
+
+            resultats: List[Tuple[KnowledgeItem, float]] = []
+            for identifiant, score in classes[:limit]:
+                knowledge = self._store.get(identifiant)
+                if knowledge is None or not can_read(role, knowledge):
                     continue
-                results.append((knowledge, score))
+                resultats.append((knowledge, score))
                 self._increment_access_count(knowledge.id)
-            return results
+            return resultats, rapport
 
     def retrieve_for_prompt(self, prompt: str, max_items: int = 5,
                             statuses: Optional[Iterable[KnowledgeStatus]] = None,

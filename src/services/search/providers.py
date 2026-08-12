@@ -51,8 +51,13 @@ class KnowledgeSearchProvider(SearchProvider):
         journalisée et cette source ne rend rien, comme le prévoit le
         gestionnaire pour toute source défaillante.
         """
+        # `search_knowledge_with_method` plutôt que `..._with_scores` : le
+        # moteur sait chercher par le sens depuis ADR-015, et ce fournisseur
+        # appelait encore le chemin lexical — `/search` répondait donc par
+        # termes communs **même avec un encodeur installé**.
+        self.last_method = {"method": "lexical", "reason": "recherche non exécutée"}
         try:
-            trouves = self._knowledge_manager.search_knowledge_with_scores(
+            trouves, self.last_method = self._knowledge_manager.search_knowledge_with_method(
                 query.query, limit=query.limit, role=query.role
             )
         except Exception as error:
@@ -123,9 +128,10 @@ class MemorySearchProvider(SearchProvider):
             )
             return []
 
+        self.last_method = {"method": "lexical", "reason": "recherche non exécutée"}
         try:
-            trouves = self._memory_manager.search_memory(
-                query=query.query, user_id=query.subject, limit=query.limit,
+            trouves, self.last_method = self._memory_manager.search_memory_with_method(
+                query.query, user_id=query.subject, limit=query.limit,
             )
         except Exception as error:
             self._logger.warning("Recherche en mémoire impossible : %s", error)
