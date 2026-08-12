@@ -13,7 +13,7 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Date** : 2026-08-12
 
 **En cours** : **VOLET 34 — agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`),
-à **un chapitre par tour** (cadence demandée par l'utilisateur). Chapitres 01 à 10 faits.
+à **un chapitre par tour** (cadence demandée par l'utilisateur). Chapitres 01 à 11 faits.
 
 **Terminé dans cette session**
 - Le backlog (persistance audit/approbation, validation des sorties d'agents, ADR-016 en
@@ -25,12 +25,13 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
   tests d'évasion (`src/sandbox/`), **MCP** (`src/mcp/`) — serveur en liste blanche de huit
   outils, client épinglé — et la **compréhension du dépôt entier** (`repo_graph.py`,
   `symbol_index.py`), qui fait passer la boucle de code de 22 % à 87 % de modifications
-  réellement vérifiées.
-- Suite complète : **2536 tests passent**, 7 ignorés ; `ruff check .` propre.
+  réellement vérifiées, puis les **trois agents manquants** du brief
+  (`agents/organizer/`, `project_manager/`, `opportunity/`) — six spécialistes sur six.
+- Suite complète : **2571 tests passent**, 7 ignorés ; `ruff check .` propre.
 
 **Prochaine étape**
-**Chapitre 11 — les agents manquants** : organisateur de fichiers, chef de projet, analyste
-d'opportunités. Puis 12 (style de travail), 13 (modèle de sécurité), 14 (matériel et pile).
+**Chapitre 12 — style de travail et amélioration continue**. Puis 13 (modèle de sécurité)
+et 14 (matériel, pile logicielle, chemins de mise à niveau).
 
 **Bloqué / à surveiller**
 - **ADR-018 attend ta décision** : A / B / C sur la souveraineté. Recommandation : **B**.

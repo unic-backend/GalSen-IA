@@ -80,19 +80,23 @@ def test_chaque_outil_declare_s_importe(outils):
     assert manquants == [], "Outils déclarés et non chargeables : " + ", ".join(manquants)
 
 
-def test_les_agents_manquants_du_brief_le_sont_toujours():
+def test_les_six_specialistes_du_brief_existent():
     """
-    Trois des six spécialistes demandés n'existent pas : organisateur de
-    fichiers, chef de projet, analyste d'opportunités. Le jour où l'un arrive,
-    ce test échoue et le document doit être corrigé — c'est le but.
+    Ce test disait l'inverse jusqu'au 2026-08-12, et il a fait son travail.
+
+    Il affirmait que trois des six spécialistes demandés n'existaient pas, en
+    annonçant : *le jour où l'un arrive, ce test échoue et le document doit être
+    corrigé*. Le chapitre 11 les a livrés, le test a échoué, et il est retourné
+    ici — pas supprimé. Il garde désormais l'affirmation dans l'autre sens : ces
+    agents sont déclarés, donc joignables.
     """
     from src.router.agent_loader import AgentLoader
 
     agents = AgentLoader(os.path.join(RACINE, "agents", "registry.yaml")).get_all_agents()
 
-    assert len(agents) == 10
-    for absent in ("file_organizer", "project_manager", "opportunity_analyst"):
-        assert absent not in agents
+    assert len(agents) == 13
+    for present in ("organizer", "project_manager", "opportunity"):
+        assert present in agents, f"« {present} » n'est plus déclaré au registre"
 
 
 def test_le_navigateur_n_est_pas_un_navigateur():

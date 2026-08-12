@@ -63,3 +63,21 @@ agents:
     role: "Monitoring Agent"
     description: "Surveille les performances et les erreurs."
     module: "agents.monitor.agent"
+  - id: organizer
+    enabled: true
+    priority: 60
+    role: "File Organizer"
+    description: "Propose un rangement des fichiers ; n'exécute qu'approuvé."
+    module: "agents.organizer.agent"
+  - id: project_manager
+    enabled: true
+    priority: 75
+    role: "Project Manager"
+    description: "Rapporte l'état réel des tâches, sans estimation inventée."
+    module: "agents.project_manager.agent"
+  - id: opportunity
+    enabled: true
+    priority: 55
+    role: "Opportunity Analyst"
+    description: "Rassemble des signaux sourcés ; refuse de conclure sans source."
+    module: "agents.opportunity.agent"

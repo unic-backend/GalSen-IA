@@ -73,3 +73,68 @@ workflows:
         - reviewer
 
         - security
+
+  # Les trois agents personnels du VOLET 34 (ch. 11). Chacun a son propre
+  # pipeline plutôt qu'une place dans « standard » : ce dernier est un pipeline
+  # de développement logiciel, et y glisser un agent qui range des fichiers
+  # ferait tourner l'organisateur à chaque demande de code.
+  rangement:
+    description: "Propose un rangement des fichiers des racines déclarées ; rien n'est déplacé sans approbation"
+    version: "1.0"
+    owner: "unic-backend"
+
+    pipeline:
+
+      - organizer
+
+    execution:
+
+      parallel_agents: []
+
+      sequential_agents:
+
+        - organizer
+
+  suivi:
+    description: "Découpe la demande, puis rapporte l'état réel de chaque tâche"
+    version: "1.0"
+    owner: "unic-backend"
+
+    pipeline:
+
+      - planner
+
+      - project_manager
+
+    # L'ordre est une dépendance, pas une préférence : sans le plan du
+    # planificateur, le chef de projet n'a rien à rapporter et le dit.
+    execution:
+
+      parallel_agents: []
+
+      sequential_agents:
+
+        - planner
+
+        - project_manager
+
+  veille:
+    description: "Rassemble des signaux sourcés sur un sujet ; refuse de conclure sans source"
+    version: "1.0"
+    owner: "unic-backend"
+
+    pipeline:
+
+      - researcher
+
+      - opportunity
+
+    execution:
+
+      parallel_agents: []
+
+      sequential_agents:
+
+        - researcher
+
+        - opportunity

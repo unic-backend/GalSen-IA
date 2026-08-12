@@ -166,7 +166,7 @@ sandbox cannot simply be "re-enable Docker".
 
 ---
 
-## 4. Multi-agent: ten agents, and the honest bit
+## 4. Multi-agent: thirteen agents
 
 | Agent | Enabled | Brief's equivalent |
 |---|---|---|
@@ -175,9 +175,21 @@ sandbox cannot simply be "re-enable Docker".
 | security | yes | **security agent** |
 | researcher | yes | **research agent** |
 | documentation, deployment, monitor | yes | — |
+| **organizer** | yes | **file organiser** (ch. 11) |
+| **project_manager** | yes | **project manager** (ch. 11) |
+| **opportunity** | yes | **business opportunity analyst** (ch. 11) |
 
-Missing against the brief: **file organiser**, **project manager**, **business
-opportunity analyst**. Three of six requested specialists exist; three do not.
+> **Updated 2026-08-12 by VOLET 34 chapter 11.** All six requested specialists
+> now exist; this section previously read "three of six". Each of the three new
+> ones is built around its own failure mode rather than its feature:
+> `organizer` **proposes and never moves** — it is suspended in
+> `requires_approval` by construction, and every move it later performs is
+> reversible; `project_manager` reports task state from what agents actually
+> returned and **produces no deadline, estimate or percentage**, because none
+> exists anywhere in the platform; `opportunity` attaches a source to every
+> statement and answers `insufficient_evidence` rather than composing a
+> plausible market analysis — the failure that would cost a real person real
+> money. Reachable through three workflows: `rangement`, `suivi`, `veille`.
 
 Delegation between agents is bounded (depth 3, no cycles, no self-delegation),
 results are validated against a contract before aggregation, and every agent
@@ -229,14 +241,14 @@ preferences) and **proactive discovery** (nothing runs unprompted).
 | Run commands and scripts | **present** — six executables, plus a resource sandbox with its escape tests (ch. 08) |
 | See the screen | **partial** — contract, refusals and element identity delivered (ch. 05) |
 | Drive a GUI | **partial** — gate, refusals and action contract delivered (ch. 06); backends need a desktop |
-| Multi-agent collaboration | present, three specialists missing |
+| Multi-agent collaboration | **present** — all six requested specialists exist (ch. 11) |
 | Memory | present |
 | Security, approval, logs | **present and ahead of the brief** |
 | Continuous improvement, style learning | **absent** |
 | Proactive opportunity discovery | **absent** |
 | MCP | **partial** — server delivered, whitelisted and identified (ch. 09); client decides before connecting but connects to nothing |
 
-**Three of fifteen are absent, four partial, eight present.** The four that are
+**Two of fifteen are absent, four partial, nine present.** The four that are
 present are the ones that are hardest to retrofit — permissions, approval,
 audit, ownership — and they are why the missing six can be built without turning
 this into a tool that deletes a user's drive on a bad inference.

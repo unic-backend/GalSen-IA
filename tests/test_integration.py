@@ -31,10 +31,14 @@ from src.integration.engine_registry import (
 )
 from src.router.router_engine import RouterEngine
 
-# Agents declared in agents/registry.yaml, excluding the orchestrator itself
+# Agents declared in agents/registry.yaml, excluding the orchestrator itself and
+# `organizer`, whose normal outcome is `requires_approval` rather than `success`:
+# it proposes file moves and is gated by construction (VOLET 34, ch. 11). It is
+# covered by tests/test_agents_personal.py.
 AGENT_IDS = (
     "planner", "researcher", "coder", "reviewer", "tester",
     "security", "documentation", "deployment", "monitor",
+    "project_manager", "opportunity",
 )
 
 

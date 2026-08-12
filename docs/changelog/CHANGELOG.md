@@ -35,6 +35,24 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **The three specialists the brief asked for, each built around its failure mode**
+  (`agents/organizer/`, `agents/project_manager/`, `agents/opportunity/`, VOLET 34 ch. 11)
+  - **`organizer` proposes and never moves.** It is suspended in `requires_approval` by
+    construction; `apply_plan()` raises without an approved request, and every move goes
+    through `ReversibleFiles` so the whole plan can be undone. It never deletes, and it
+    never touches a file already sitting in a folder — that was a human's choice
+  - **`project_manager` reports what agents actually returned**, so a task whose agent has
+    not run is `not_started`, never `done`. It produces **no deadline, estimate or
+    percentage**: none of those exist anywhere in the platform, and producing them would
+    fabricate a project status. What it does not report is listed in the output
+  - **`opportunity` attaches a source to every statement, or does not make it.** With no
+    sourced signal it answers `insufficient_evidence` and says what would settle it,
+    instead of composing a plausible market analysis someone might spend money on. No
+    market size, no growth rate, no revenue projection, no recommendation to invest
+  - Three workflows (`rangement`, `suivi`, `veille`) make them reachable: an agent that no
+    workflow reaches is reachable by no path
+  - `tests/test_agents_personal.py` — 32 tests. The chapter-01 guard asserting these three
+    were missing failed, as it was written to; it was **inverted, not deleted**
 - **Whole-repository understanding for the coding agent** (`src/agent/repo_graph.py`,
   `src/agent/symbol_index.py`, VOLET 34 ch. 10)
   - The import graph answers *who breaks if I change this*: 310 code files, 1 194 internal
