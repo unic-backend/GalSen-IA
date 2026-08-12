@@ -1828,7 +1828,9 @@ async def list_files(
         uploaded_by=_proprietaire_effectif(ctx, request.uploaded_by),
     )
     return {
-        "files": [f.to_dict(include_data=False) for f in files],
+        # Des résumés, sans contenu (ADR-016) : la sérialisation était déjà
+        # sans les octets, mais le magasin les lisait quand même.
+        "files": [f.to_dict() for f in files],
         "total": len(files),
     }
 

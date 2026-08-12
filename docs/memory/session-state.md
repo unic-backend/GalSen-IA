@@ -13,8 +13,8 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Date** : 2026-08-12
 
 **En cours** : rien. Le backlog est la file de travail courante (les VOLETs 26–33 sont
-clos). Reste en P2 : **décider si les données d'analytique sont conservées** (à prendre
-après C4).
+clos). Reste : appliquer les étapes différées d'ADR-016, et « conserver les données
+d'analytique » (à prendre après C4).
 
 **Terminé dans cette session**
 - **VOLETs 26 à 33** : souveraineté des modèles (ADR-014, SamP/ToP), embeddings et
@@ -29,11 +29,14 @@ après C4).
 - **P2 — validation des sorties d'agents** (`src/router/output_validation.py`) : un agent
   `skipped` faisait rendre `success` à l'agrégateur et `partial_success` au routeur, dans
   la même réponse. Une seule règle de statut désormais.
-- Suite complète : **2361 tests passent**, 7 ignorés.
+- **P1 — ADR-016** : les services `file` et `cloud` sont une conception écrite deux fois.
+  Lister des fichiers chargeait leur contenu (60 Mo pour 30 fichiers) ; `FileSummary`
+  ramène le listage à 28 Ko. Un appelant utilise le **service de fichiers**.
+- Suite complète : **2368 tests passent**, 7 ignorés.
 
 **Prochaine étape**
-Le backlog n'a plus de P2 prenable maintenant : « conserver les données d'analytique »
-attend C4. Les P1/P0 restants dépendent de l'opérateur (voir ci-dessous).
+Étapes différées d'ADR-016, indépendantes : déplacer les backends `filesystem` et `s3`
+sous le service de fichiers, déprécier `/cloud/*` dans l'OpenAPI, retirer `CloudFileItem`.
 
 **Bloqué / à surveiller**
 - **`git push origin v0.1.0`** : le proxy git de l'environnement refuse les étiquettes

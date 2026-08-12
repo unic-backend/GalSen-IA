@@ -16,6 +16,7 @@ from .types import (
     DEFAULT_MAX_FILE_SIZE,
     FileCategory,
     FileItem,
+    FileSummary,
     FileUploadResult,
     get_category_for_content_type,
 )
@@ -109,8 +110,8 @@ class FileManagerImpl(FileManager):
         category: Optional[str] = None,
         content_type: Optional[str] = None,
         uploaded_by: Optional[str] = None,
-    ) -> List[FileItem]:
-        """Retourne les fichiers filtrés."""
+    ) -> List[FileSummary]:
+        """Retourne les fichiers filtrés, **sans leur contenu** (ADR-016)."""
         try:
             return self._store.list_files(
                 limit=limit,

@@ -54,12 +54,13 @@ gets re-argued at every review.
   triggers the image build: `git push origin v0.1.0`.
   *Deciding criterion:* maintenance cost — one command, and criterion C4 needs it.
 
-- **Decide between three ways to write a file to disk.** `LocalDiskStorageConnector`
-  (ADR-007), `SQLiteFileStore` and `FileSystemCloudStore` arrived from two branches, they
-  overlap, and nothing says which one a caller should use.
-  *Deciding criterion:* maintenance cost — three implementations of one job is the debt
-  that compounds, and the decision framework's *"does it introduce unnecessary
-  complexity?"* is already answered yes.
+- **Finish applying ADR-016.** The decision is written and the measured defect is fixed;
+  three staged steps remain: move the filesystem and S3 backends under the file service,
+  mark `/cloud/*` deprecated in the OpenAPI description and the ADR-011 index, and retire
+  `CloudFileItem` in favour of `FileItem`. Each is independent and safe in any order.
+  *Deciding criterion:* maintenance cost — two route families do the same job until the
+  next major version, which ADR-011 accepts on purpose. What made this P1 — *"nothing says
+  which one a caller should use"* — is answered: a caller uses the file service.
 
 ## P2 — Medium · real value, no criterion waits on it
 

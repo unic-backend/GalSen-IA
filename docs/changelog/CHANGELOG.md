@@ -11,6 +11,31 @@ capability answers `503` until an operator configures a model provider. Release 
 `docs/changelog/releases/`.
 
 ## [Unreleased]
+### Changed
+- **Listing files no longer reads their contents** — ADR-016
+  - The backlog asked which of three ways to write a file to disk should win. Measuring
+    first changed the question: there were not three ways but **one design implemented
+    twice**, plus `LocalDiskStorageConnector`, which is registered at start-up and which
+    **nothing calls**
+  - The `file` and `cloud` services have the same routes, the same store interface method
+    for method, and the same manager — 1 368 lines across six store files doing one job
+    twice. Their single real difference was a defect: `FileItem` carries its bytes, so
+    `SELECT * FROM files` loaded every file's content on every listing. Measured here, 30
+    files of 2 MB: **652 ms and 60 MB read** for a response that discards them
+    (`to_dict(include_data=False)`). The cloud service already kept metadata and bytes in
+    two tables
+  - `FileStore.list_files()` now returns `FileSummary` — the same fields without `data` —
+    and `SQLiteFileStore` selects the columns it needs. Same 30 files: **27 ms and 28 KB**
+  - A `FileItem` with an empty `data` would have been simpler and wrong: empty bytes
+    meaning "not loaded" is indistinguishable from empty bytes meaning "this file is
+    empty". The type says what it holds; content is fetched one file at a time with `get`
+  - What an HTTP client receives is unchanged — the route already discarded the bytes
+  - ADR-016 also decides what the backlog actually asked: **a caller uses the file
+    service**. `/cloud/*` is deprecated rather than deleted (ADR-011, `v0.1.0` is out), and
+    the connector stays a connector, explicitly not a storage backend
+  - `tests/test_file_listing_without_content.py` — 7 tests, including one that compares the
+    memory a listing mobilises against the volume stored, so the bytes cannot come back
+
 ### Fixed
 - **One response carried two contradictory verdicts** (VOLET 06, ch. 02, step 6)
   - "Validate outputs" was declared by the manual and implemented nowhere: nothing stood
