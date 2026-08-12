@@ -9,27 +9,15 @@ Couvre :
 Utilise ``monkeypatch`` (built-in pytest) pour les mocks.
 """
 
-import json
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.client import GalSenClient
 from src.client.models import (
     ApiResponse,
-    CalendarEvent,
-    CloudFileItem,
-    CloudStats,
-    EmailMessage,
-    FileItem,
     HealthReport,
     MemoryItem,
-    MemorySearchResult,
     ModelGenerateResult,
-    ModelInfo,
-    NotificationItem,
-    NotificationStats,
 )
 
 

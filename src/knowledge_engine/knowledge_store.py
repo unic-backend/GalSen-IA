@@ -2,7 +2,7 @@
 Stockage en mémoire des connaissances pour le moteur de connaissances GalSen IA.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, List, Optional
 from .types import KnowledgeItem
 from .interfaces import KnowledgeStore
 import copy

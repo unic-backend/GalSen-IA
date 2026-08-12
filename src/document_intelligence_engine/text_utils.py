@@ -23,7 +23,7 @@ STOP_WORDS: Set[str] = frozenset({
     # Anglais
     "a", "an", "and", "are", "as", "at", "be", "been", "but", "by", "for",
     "from", "has", "have", "he", "her", "his", "i", "in", "is", "it", "its",
-    "of", "on", "or", "she", "that", "the", "their", "them", "there", "these",
+    "of", "or", "she", "that", "the", "their", "them", "there", "these",
     "they", "this", "to", "was", "were", "will", "with", "you", "your",
 })
 

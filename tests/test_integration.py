@@ -498,7 +498,7 @@ def run_all_tests():
         test_every_agent_runs_against_real_engines,
         test_agents_produce_verifiable_output,
         test_agent_errors_are_contained,
-        test_router_runs_the_full_pipeline,
+        test_router_runs_the_declared_pipeline,
         test_agents_see_previous_results,
         test_runtime_delegue_au_seul_orchestrateur,
         test_runtime_et_router_donnent_la_meme_execution,

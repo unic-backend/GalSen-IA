@@ -5,7 +5,7 @@ Abstract base class for memory indexing and an in-memory implementation.
 """
 
 import abc
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, Set
 from .types import MemoryItem, MemoryType
 
 

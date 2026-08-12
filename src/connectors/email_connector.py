@@ -17,7 +17,7 @@ import smtplib
 import socket
 import ssl
 import time
-from typing import List, Optional
+from typing import Optional
 
 from .interfaces import Connector
 from .types import ConnectorCheck, ConnectorDescription, ConnectorKind, ConnectorStatus

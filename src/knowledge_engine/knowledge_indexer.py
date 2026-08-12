@@ -4,7 +4,7 @@ Indexeur de connaissances pour recherche plein texte rapide.
 
 import logging
 import re
-from typing import Dict, Set, List, Optional
+from typing import Dict, Set, List
 from src.text_normalization import tokenize
 from .types import KnowledgeItem
 from .interfaces import KnowledgeIndexer, KnowledgeStore

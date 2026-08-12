@@ -17,7 +17,7 @@ aucun sujet et aucun identifiant de clé n'entre dans un rapport. Ce qui est
 mesuré est le comportement du système, pas ce que les gens demandent.
 """
 
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, Optional
 
 # Sources de données nommées par le chapitre 04, et ce qui les alimente.
 # Une source non branchée est déclarée comme telle : la liste du manuel ne doit

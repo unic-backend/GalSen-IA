@@ -2,8 +2,7 @@
 Graphe de connaissances pour le moteur de connaissances GalSen IA.
 """
 
-from typing import List, Tuple, Dict, Set, Optional
-from .types import KnowledgeItem
+from typing import List
 from .interfaces import KnowledgeGraph
 import threading
 

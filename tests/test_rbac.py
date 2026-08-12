@@ -8,13 +8,9 @@ avec FastAPI.
 
 import logging
 import os
-import sys
-from typing import Any, Dict
 from unittest.mock import patch
 
 import pytest
-from fastapi import HTTPException
-from fastapi.testclient import TestClient
 
 
 # =========================================================================
@@ -76,7 +72,7 @@ class TestParseApiKeyMappings:
     def test_empty_env(self):
         """Variable d'environnement vide → mapping vide."""
         with patch.dict(os.environ, {"GALSEN_API_KEYS": ""}, clear=False):
-            from src.api.rbac import hash_api_key, parse_api_key_mappings
+            from src.api.rbac import parse_api_key_mappings
             assert parse_api_key_mappings() == {}
 
     def test_keys_without_role_default_to_user(self):

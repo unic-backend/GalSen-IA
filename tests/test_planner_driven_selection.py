@@ -12,7 +12,6 @@ Elle est désormais suivie, pour les workflows qui le **déclarent**
 
 import os
 
-import pytest
 import yaml
 
 os.environ.setdefault("GALSEN_API_KEYS", "test-key-0123456789abcdef")

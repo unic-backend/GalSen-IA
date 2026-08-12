@@ -24,7 +24,6 @@ import sys
 import threading
 import datetime
 
-import pytest
 
 # S'assurer que le chemin d'importation est correct
 # La racine du dépôt doit être importable : convention unique `src.<module>`.

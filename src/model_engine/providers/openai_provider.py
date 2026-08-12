@@ -8,7 +8,7 @@ before any call is made.
 
 import json
 import os
-from typing import List, Optional, Dict, Any
+from typing import List
 import urllib.request
 import urllib.error
 

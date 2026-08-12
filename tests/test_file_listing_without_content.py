@@ -17,7 +17,6 @@ ne lit pas de contenu**, et le type dit ce qu'il contient.
 
 import os
 import sys
-import tempfile
 
 import pytest
 

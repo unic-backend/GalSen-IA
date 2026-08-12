@@ -2,7 +2,7 @@
 Récupérateur de connaissances pour le moteur de connaissances GalSen IA.
 """
 
-from typing import List, Tuple, Optional
+from typing import List
 from .types import KnowledgeItem
 from .interfaces import KnowledgeRetriever, KnowledgeIndexer
 

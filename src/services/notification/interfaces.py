@@ -29,8 +29,15 @@ class NotificationStore(ABC):
         SQLite le remplaçait. Une intention explicite lève l'ambiguïté.
         """
 
+    @abstractmethod
     def get(self, notification_id: str) -> Optional[Notification]:
-        """Retourne une notification par identifiant, ou None si absente."""
+        """
+        Retourne une notification par identifiant, ou None si absente.
+
+        Le décorateur manquait : un magasin qui aurait oublié cette méthode
+        héritait d'un corps vide et rendait `None` pour **toute** notification,
+        au lieu d'échouer à l'instanciation.
+        """
 
     @abstractmethod
     def list_notifications(

@@ -4,7 +4,7 @@ Récupérateur de documents simple pour le moteur d'intelligence documentaire Ga
 
 from typing import List, Optional
 from .interfaces import DocumentRetriever
-from .types import DocumentItem, DocumentChunk
+from .types import DocumentChunk
 
 
 class SimpleRetriever(DocumentRetriever):

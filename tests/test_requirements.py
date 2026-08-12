@@ -54,7 +54,7 @@ def _declarees(nom: str) -> set:
         ligne = ligne.split("#", 1)[0].strip()
         if not ligne or ligne.startswith("-"):
             continue
-        declarees.add(re.split(r"[=<>!~\[]", ligne, 1)[0].strip().lower())
+        declarees.add(re.split(r"[=<>!~\[]", ligne, maxsplit=1)[0].strip().lower())
     return declarees
 
 

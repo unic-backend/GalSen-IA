@@ -14,7 +14,6 @@ from .interfaces import FileManager, FileStore
 from .store import InMemoryFileStore
 from .types import (
     DEFAULT_MAX_FILE_SIZE,
-    FileCategory,
     FileItem,
     FileSummary,
     FileUploadResult,

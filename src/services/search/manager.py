@@ -8,7 +8,7 @@ Les résultats sont fusionnés et triés par pertinence.
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from .interfaces import SearchManager, SearchProvider
 from .types import (

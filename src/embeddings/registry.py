@@ -17,7 +17,7 @@ import threading
 from typing import Any, Dict, Optional
 
 from .interfaces import EmbeddingProvider
-from .sentence_transformers_provider import (
+from .sentence_transformers_provider import (  # noqa: F401  (réexport public)
     MODEL_VARIABLE as EMBEDDING_MODEL_VARIABLE,
     SentenceTransformersEmbedder,
 )

@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 
 from ..approval_engine.types import ApprovalRequest
 from ..audit_engine.types import AuditEvent, AuditEventType, AuditStatus, generate_request_id
-from ..integration.engine_registry import EngineRegistry, EngineUnavailableError, get_shared_registry
+from ..integration.engine_registry import EngineRegistry, get_shared_registry
 from .blackboard import Blackboard
 
 # Profondeur maximale de délégation d'agent à agent. Trois niveaux suffisent à un

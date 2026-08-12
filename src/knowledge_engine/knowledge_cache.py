@@ -4,9 +4,8 @@ Cache de connaissances pour le moteur de connaissances GalSen IA.
 
 import time
 import threading
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 from collections import OrderedDict
-from .types import KnowledgeItem
 from .interfaces import KnowledgeCache
 
 

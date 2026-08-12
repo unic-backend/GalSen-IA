@@ -641,7 +641,7 @@ class TestCheckHealth:
         assert "storage_backend" in result
         assert "configured_providers" in result
         # Vérifier que chaque composant est un dict
-        for comp_name, comp_data in result["components"].items():
+        for comp_data in result["components"].values():
             assert isinstance(comp_data, dict)
             assert "status" in comp_data
 
@@ -782,7 +782,7 @@ class TestSingletonPattern:
 def test_app(start_time, version, mock_memory_manager, mock_model_manager,
              mock_knowledge_manager, mock_tool_engine):
     """Crée une application FastAPI de test avec les endpoints de santé."""
-    from fastapi import Depends, HTTPException
+    from fastapi import HTTPException
 
     app = FastAPI()
 

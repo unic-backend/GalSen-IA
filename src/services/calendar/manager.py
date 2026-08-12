@@ -7,7 +7,6 @@ d'échec, un avertissement est journalisé et une valeur vide est retournée.
 """
 
 import logging
-import os
 from typing import Any, Dict, List, Optional
 
 from .interfaces import CalendarManager, CalendarStore

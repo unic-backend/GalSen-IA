@@ -6,6 +6,8 @@ Tests simples pour l'outil de mémoire.
 import os
 import sys
 
+import pytest
+
 # Add the src directory to the path so we can import from src.tool.base
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -41,7 +43,7 @@ def test_store_and_retrieve():
         assert retrieved["content"] == "Bonjour le monde"
         assert retrieved["memory_type"] == "short_term"
         assert retrieved["user_id"] == "user123"
-        assert set(retrait := retrieved["tags"]) == {"salut", "test"}
+        assert set(retrieved["tags"]) == {"salut", "test"}
         print("+ Item retrieved correctly")
 
         # Search for the item
@@ -97,39 +99,24 @@ def test_error_handling():
     tool = MemoryTool()
     try:
         # Unknown operation
-        try:
+        with pytest.raises(ValueError, match="Opération 'unknown_operation' inconnue"):
             tool.execute("unknown_operation")
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert "Opération 'unknown_operation' inconnue" in str(e)
-            print("+ Unknown operation triggers ValueError")
+        print("+ Unknown operation triggers ValueError")
 
         # Store with missing required fields? Actually content is not required but we can test invalid enum
-        try:
-            tool.execute(
-                "store",
-                {"content": "test", "memory_type": "invalid_type"},
-            )
-            assert False, "Should have raised ValueError for invalid memory_type"
-        except ValueError as e:
-            assert "Type de mémoire invalide" in str(e)
-            print("+ Invalid memory_type triggers ValueError")
+        with pytest.raises(ValueError, match="Type de mémoire invalide"):
+            tool.execute("store", {"content": "test", "memory_type": "invalid_type"})
+        print("+ Invalid memory_type triggers ValueError")
 
         # Retrieve with empty ID
-        try:
+        with pytest.raises(ValueError, match="L'ID de l'élément doit être une chaîne non vide"):
             tool.execute("retrieve", "")
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert "L'ID de l'élément doit être une chaîne non vide" in str(e)
-            print("+ Empty ID triggers ValueError")
+        print("+ Empty ID triggers ValueError")
 
         # Search with empty query
-        try:
+        with pytest.raises(ValueError, match="La requête de recherche doit être une chaîne non vide"):
             tool.execute("search", "", limit=5)
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert "La requête de recherche doit être une chaîne non vide" in str(e)
-            print("+ Empty query triggers ValueError")
+        print("+ Empty query triggers ValueError")
 
     finally:
         pass

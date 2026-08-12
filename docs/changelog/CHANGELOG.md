@@ -11,6 +11,40 @@ capability answers `503` until an operator configures a model provider. Release 
 `docs/changelog/releases/`.
 
 ## [Unreleased]
+### Fixed
+- **Three live `NameError` crashes, found by configuring a linter** — none was visible to
+  the test suite
+  - `SimpleStreamHandler.collect_stream_response_async` → `NameError: chrunk`. A comment
+    next to it read *"probablement une typo, devrait être chunk"* and the typo stayed
+  - `WeightedResponseRanker.rank_responses` → `NameError: weights`. The name existed in a
+    different method
+  - `InMemoryModelStore.cleanup_expired` → `NameError: ModelStatus`, **as soon as one model
+    exists**. On an empty store the loop body never runs, which is why every test passed
+- **A weight was declared twice and one value silently lost.** `"accuracy"` appeared twice
+  in the same dict literal; Python keeps the last and discards the first
+- **A documented override did nothing.** `ObjectDetector.detect` read `min_area` from its
+  arguments — documented as *"min_area to override"* — and then compared against
+  `self.min_area`
+- **Two tests could not fail.** `assert False` raised an `AssertionError` that the
+  `except Exception` below caught, and the guard then looked for the word "error" in the
+  message — which the assertion message itself contained. Converted to `pytest.raises`
+- **An abstract method was not abstract.** `NotificationStore.get` had an empty body and no
+  `@abstractmethod`: a store forgetting to implement it would have returned `None` for
+  every notification instead of failing at instantiation
+- **221 dead imports** removed. One was a deliberate re-export, caught by the suite and
+  restored with the reason written next to it
+
+### Added
+- **A linter runs in CI and in the test suite** (`pyproject.toml`, `ruff==0.15.8`)
+  - Nothing checked `.claude/rules/coding-conventions.md`; the conventions held because one
+    author applied them
+  - The ruleset is chosen to be **kept**: `F`, `E9`, `E7`, `B` — defects, not preferences.
+    What is left out is written down with its cost: modernising annotations flags 3 183
+    places, sorting imports touches 216 files. Both are mass rewrites for zero defect, and
+    both would make `git blame` unreadable on 278 files
+  - `tests/test_lint.py` — 8 tests: the repository passes its own linter, the core ruleset
+    cannot be silently disabled, and each defect above is pinned as a regression
+
 ### Security
 - **The deprecated `/cloud/*` routes enforced no ownership** (ADR-010, ADR-016)
   - While the cloud service had its own store the leak was confined to files uploaded

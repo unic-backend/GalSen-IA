@@ -23,10 +23,9 @@ from abc import ABC, abstractmethod
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
-from email.utils import formataddr, formatdate
+from email.utils import formatdate
 from typing import Dict, List, Optional, Tuple
 
-from .types import EmailMessage, EmailSendResult
 
 logger = logging.getLogger(__name__)
 

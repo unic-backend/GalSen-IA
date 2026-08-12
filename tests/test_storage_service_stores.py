@@ -26,9 +26,7 @@ Et le branchement des managers (GALSEN_STORAGE_BACKEND) :
 import os
 import sys
 import threading
-import tempfile
 
-import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -38,7 +36,7 @@ from src.storage.sqlite_email_store import SQLiteEmailStore
 from src.storage.sqlite_file_store import SQLiteFileStore
 
 from src.services.notification.types import Notification, NotificationType, NotificationPriority
-from src.services.calendar.types import CalendarEvent, EventStatus, EventVisibility
+from src.services.calendar.types import CalendarEvent, EventStatus
 from src.services.email.types import EmailMessage, EmailAttachment, EmailStatus
 from src.services.file.types import FileItem, FileCategory
 
@@ -219,8 +217,10 @@ class TestSQLiteNotificationStore:
                 errors.append(exc)
 
         threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
-        for t in threads: t.start()
-        for t in threads: t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
         assert errors == []
         assert store.count() == 50
@@ -349,8 +349,10 @@ class TestSQLiteCalendarStore:
                 errors.append(exc)
 
         threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
-        for t in threads: t.start()
-        for t in threads: t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
         assert errors == []
         assert store.count() == 50
@@ -504,8 +506,10 @@ class TestSQLiteEmailStore:
                 errors.append(exc)
 
         threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
-        for t in threads: t.start()
-        for t in threads: t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
         assert errors == []
         assert store.count() == 50
@@ -663,8 +667,10 @@ class TestSQLiteFileStore:
                 errors.append(exc)
 
         threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
-        for t in threads: t.start()
-        for t in threads: t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
         assert errors == []
         assert store.count() == 50

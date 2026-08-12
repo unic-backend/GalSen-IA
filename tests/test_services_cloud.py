@@ -14,7 +14,6 @@ changement apporte de neuf est dans `test_cloud_adapter.py`.
 
 import os
 import sys
-from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock
 
 import pytest

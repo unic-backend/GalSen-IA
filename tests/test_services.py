@@ -10,8 +10,7 @@ Couvre :
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -483,7 +482,7 @@ class TestSearchManager:
     def test_search_calls_all_providers(self):
         """search() doit appeler tous les fournisseurs enregistrés."""
         query = self.SearchQuery(query="test", sources=[self.SearchSource.KNOWLEDGE, self.SearchSource.MEMORY])
-        response = self.manager.search(query)
+        self.manager.search(query)
         self.knowledge_provider.search.assert_called_once()
         self.memory_provider.search.assert_called_once()
 
@@ -613,7 +612,6 @@ class TestFileTypes:
     def test_file_item_from_mapping(self):
         """from_mapping() doit reconstruire un fichier depuis un dictionnaire."""
         from src.services.file import FileItem
-        import base64
         original = FileItem(name="doc.pdf", content_type="application/pdf", size=100, data=b"pdf content")
         d = original.to_dict(include_data=True)
         restored = FileItem.from_mapping(d)

@@ -5,7 +5,6 @@ Interfaces pour le moteur de connaissances GalSen IA.
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Tuple, Iterable
 from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority, KnowledgeStatus
-import datetime
 
 
 class KnowledgeStore(ABC):

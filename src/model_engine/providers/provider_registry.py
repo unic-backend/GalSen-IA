@@ -29,7 +29,7 @@ from typing import Dict, List, Optional
 from urllib.parse import urlparse
 
 from .anthropic_provider import AnthropicProvider
-from .base import ModelDescriptor, ModelProvider, ProviderInfo, ProviderStatus
+from .base import ModelDescriptor, ModelProvider, ProviderInfo
 from .google_provider import GoogleProvider
 from .hosted_provider import HostedProvider
 from .local_provider import LocalProvider

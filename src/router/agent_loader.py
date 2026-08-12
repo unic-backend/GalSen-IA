@@ -6,7 +6,7 @@ Charge les agents depuis le registre d'agents.
 
 import yaml
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 
 class AgentLoader:

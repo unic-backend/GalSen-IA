@@ -11,8 +11,7 @@ Couvre :
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock
 
 import pytest
 

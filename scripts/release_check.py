@@ -152,7 +152,7 @@ def controler_changelog() -> Resultat:
 
     apres = contenu.split("## [Unreleased]", 1)[1]
     section = apres.split("\n## ", 1)[0]
-    entrees = [l for l in section.splitlines() if l.strip().startswith("- ")]
+    entrees = [ligne for ligne in section.splitlines() if ligne.strip().startswith("- ")]
     if entrees:
         return Resultat(OK, f"{len(entrees)} entrée(s) à publier")
 
@@ -229,7 +229,7 @@ def controler_suite(ignorer: bool) -> Resultat:
     except (OSError, subprocess.SubprocessError) as erreur:
         return Resultat(ECHEC, f"pytest n'a pas pu s'exécuter : {erreur}")
 
-    derniere = [l for l in resultat.stdout.strip().splitlines() if l.strip()]
+    derniere = [ligne for ligne in resultat.stdout.strip().splitlines() if ligne.strip()]
     resume = derniere[-1] if derniere else "sortie vide"
     if resultat.returncode != 0:
         return Resultat(ECHEC, resume)
@@ -302,7 +302,7 @@ def controler_image() -> Resultat:
         return Resultat(ECHEC, f"la construction n'a pas pu s'exécuter : {erreur}")
 
     if construction.returncode != 0:
-        derniere = [l for l in construction.stderr.strip().splitlines() if l.strip()]
+        derniere = [ligne for ligne in construction.stderr.strip().splitlines() if ligne.strip()]
         return Resultat(ECHEC, derniere[-1] if derniere else "construction échouée")
     return Resultat(OK, f"galsen-ia:{__version__} construite")
 

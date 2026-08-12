@@ -6,7 +6,7 @@ Provides web browsing capabilities to fetch and interact with web pages.
 
 import re
 import html
-from typing import Any, Dict, List
+from typing import Any, List
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError

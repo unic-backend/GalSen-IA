@@ -46,6 +46,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      - name: Lint
+        # Placé **avant** la suite : ruff s'exécute en une seconde et attrape ce
+        # qu'un test ne voit qu'en passant par la ligne fautive — la mise en
+        # place a trouvé trois `NameError` vivants sur des chemins que la suite
+        # n'empruntait pas. Configuration et périmètre → `pyproject.toml`.
+        run: ruff check .
+
       - name: Check that the API imports the way the Dockerfile starts it
         # Le Dockerfile lance `uvicorn src.api.server:app` : cet import doit
         # réussir depuis la racine du dépôt, sans PYTHONPATH particulier.

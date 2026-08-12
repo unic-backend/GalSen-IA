@@ -3,7 +3,7 @@ Indexeur de documents en mémoire pour le moteur d'intelligence documentaire Gal
 """
 
 import re
-from typing import List, Tuple, Dict, Any
+from typing import List
 from .interfaces import DocumentIndexer
 from .types import DocumentItem
 from collections import defaultdict

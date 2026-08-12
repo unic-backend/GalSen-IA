@@ -43,11 +43,17 @@ d'analytique » (à prendre après C4).
   lignes**). En fusionnant les magasins, une fuite est apparue et a été fermée : les routes
   `/cloud/*` n'appliquaient **aucune règle de propriété** et contournaient donc celle de
   `/file/*`. `DELETE /file/{id}` avait le même manque.
-- Suite complète : **2360 tests passent**, 7 ignorés.
+- **Un linter** (`pyproject.toml`, `ruff`), lancé par la CI et par la suite. Il a trouvé
+  **trois `NameError` vivants**, une clé de poids déclarée deux fois, une surcharge
+  documentée sans effet, une méthode abstraite qui ne l'était pas, et **deux tests qui ne
+  pouvaient pas échouer**. 221 imports morts retirés.
+- Suite complète : **2363 tests passent**, 7 ignorés ; `ruff check .` propre.
 
 **Prochaine étape**
-ADR-016 est appliqué. Reste à lui fixer une date de retrait (`Sunset`) pour `/cloud/*`,
-ce qui n'a de sens qu'une fois un déploiement existant (C4).
+Le backlog ne contient plus que du travail qui dépend de toi (voir ci-dessous) ou d'une
+décision à prendre après C4. Élargir le linter — annotations, tri des imports, formateur,
+vérificateur de types — attend un deuxième contributeur : le coût est un `git blame`
+illisible sur 278 fichiers pour zéro défaut corrigé.
 
 **Bloqué / à surveiller**
 - **`git push origin v0.1.0`** : le proxy git de l'environnement refuse les étiquettes

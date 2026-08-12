@@ -9,7 +9,6 @@ registre qui les inventorie.
 Aucun appel réseau n'est fait : les connecteurs de test sont écrits pour ça.
 """
 
-import os
 
 import pytest
 

@@ -2,8 +2,14 @@
 Validateur de connaissances pour le moteur de connaissances GalSen IA.
 """
 
-from typing import List, Tuple
-from .types import KnowledgeItem, KnowledgeSource, SourceCategory, KnowledgePriority
+from typing import List
+from .types import (
+    KnowledgeItem,
+    KnowledgePriority,
+    KnowledgeSource,
+    Language,
+    SourceCategory,
+)
 from .interfaces import KnowledgeValidator
 import re
 from datetime import datetime, timezone
@@ -57,7 +63,7 @@ class KnowledgeValidatorImpl(KnowledgeValidator):
 
         # Vérifier si la langue est dans notre énumération (on accepte toute chaîne pour l'extensibilité)
         # Mais on pourrait alerter si non reconnue
-        known_langs = {l.value for l in __import__('src.knowledge_engine.types', fromlist=['Language']).Language}
+        known_langs = {langue.value for langue in Language}
         if lang_str not in known_langs:
             # Avertissement mais pas d'erreur - on accepte les nouvelles langues
             pass

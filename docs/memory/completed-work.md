@@ -453,3 +453,14 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **`GALSEN_CLOUD_BACKEND` ne sélectionne plus rien** et sa présence est signalée en erreur, jamais ignorée : un opérateur ayant écrit `filesystem` là croirait ses fichiers sur disque.
 - **Aucune migration nécessaire** : le critère C4 est ouvert, aucun déploiement n'a jamais détenu de données `/cloud/*`.
 - **20 tests** (`tests/test_cloud_adapter.py`). Les tests de contrat de magasin supprimés avec leur sujet sont couverts par `test_file_backends.py` et `test_services.py`, sur le magasin réellement utilisé. Suite complète : **2360 tests passent**, 7 ignorés, en ordre de fichier **et** aléatoire.
+
+### 2026-08-12 (Backlog — un linter, et sept défauts qu'aucun test ne voyait)
+- **`pyproject.toml` + `ruff==0.15.8`**, lancé par la CI **et** par la suite (`tests/test_lint.py`). Rien ne vérifiait `.claude/rules/coding-conventions.md` : les conventions tenaient parce qu'un seul auteur les appliquait.
+- **Trois `NameError` vivants**, invisibles pour la suite : `collect_stream_response_async` (faute de frappe `chrunk`, qu'un commentaire signalait sans la corriger), `rank_responses` (`weights`, défini dans une autre méthode), `cleanup_expired` (`ModelStatus` jamais importé — **et seulement dès qu'un modèle existe** : sur un magasin vide la boucle ne s'exécute pas, ce qui explique que tout passait).
+- **Une clé de poids déclarée deux fois** (`"accuracy"`) : Python garde la dernière et jette la première, en silence.
+- **Une surcharge documentée qui ne faisait rien** : `ObjectDetector.detect` lisait `min_area` des arguments puis comparait à `self.min_area`.
+- **Deux tests qui ne pouvaient pas échouer** : `assert False` levait une `AssertionError` que le `except Exception` juste en dessous rattrapait, et la garde cherchait le mot « error »… dans le message de l'assertion elle-même. Convertis en `pytest.raises`.
+- **Une méthode abstraite qui ne l'était pas** : `NotificationStore.get`, corps vide sans `@abstractmethod` — un magasin l'oubliant aurait rendu `None` pour toute notification au lieu d'échouer à l'instanciation.
+- **221 imports morts** retirés. L'un était un réexport public volontaire : la suite l'a attrapé, il est restauré avec la raison écrite à côté.
+- **Ce qui est délibérément hors du périmètre, et pourquoi** : moderniser les annotations signale **3 183** écarts, trier les imports touche **216 fichiers**. Deux réécritures de masse pour zéro défaut corrigé, et un `git blame` illisible sur 278 fichiers. Elles se prendront quand un deuxième contributeur arrivera — c'est là que l'uniformité paie plus qu'elle ne coûte. Même raisonnement pour `ruff format` et un vérificateur de types.
+- **8 tests** (`tests/test_lint.py`), dont un par défaut ci-dessus, épinglé. Suite complète : **2363 tests passent**, 7 ignorés, en ordre de fichier **et** aléatoire ; `ruff check .` est propre.

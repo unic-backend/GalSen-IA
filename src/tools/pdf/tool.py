@@ -12,7 +12,7 @@ Exemple:
 """
 
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict
 
 from src.tool.base import BaseTool
 

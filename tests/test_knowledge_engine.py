@@ -2,10 +2,11 @@
 Test du moteur de connaissances GalSen IA.
 """
 
-import asyncio
 import tempfile
 import os
 import json
+
+import pytest
 from src.knowledge_engine import (
     KnowledgeManagerImpl,
     KnowledgeItem,
@@ -89,7 +90,7 @@ def test_knowledge_basic():
             source=source
         )
         km.add_knowledge(bad_k)
-        assert False, "Should have rejected empty content"
+        raise AssertionError("Un contenu vide aurait dû être refusé")
     except ValueError as e:
         print(f"OK Validation correctly rejected empty content: {e}")
 
@@ -597,12 +598,9 @@ def test_knowledge_priority_validation():
         source=KnowledgeSource(id="unknown", type="file", location="unknown"),
         priority=KnowledgePriority.P1
     )
-    try:
+    with pytest.raises(ValueError, match="traceable"):
         km.add_knowledge(untraceable)
-        assert False, "P1 with untraceable source should be rejected"
-    except ValueError as e:
-        assert "traceable" in str(e)
-        print(f"OK P1 untraceable source rejected: {e}")
+    print("OK P1 untraceable source rejected")
 
     # P1 avec source traçable : accepté
     traceable_p1 = KnowledgeItem(
@@ -649,12 +647,9 @@ def test_knowledge_priority_validation():
         source=KnowledgeSource(id="src-invalid", type="file", location="/tmp/inv.txt")
     )
     invalid_priority.priority = "P5"
-    try:
+    with pytest.raises(ValueError, match="Invalid priority"):
         km.add_knowledge(invalid_priority)
-        assert False, "Invalid priority should be rejected"
-    except ValueError as e:
-        assert "Invalid priority" in str(e)
-        print(f"OK Invalid priority rejected: {e}")
+    print("OK Invalid priority rejected")
 
     # Filtres du stockage par priorité
     p1_items = km.get_store().list_items(priority=KnowledgePriority.P1)

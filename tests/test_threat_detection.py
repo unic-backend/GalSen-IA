@@ -22,7 +22,7 @@ from src.api import server as server_module  # noqa: E402
 from src.api.server import app  # noqa: E402
 from src.api.threat_detection import (  # noqa: E402
     DEFAULT_THRESHOLD, THRESHOLD_ENV, UNAVAILABLE_METHODS, ThreatDetector,
-    failure_threshold, get_shared_detector, reset_detector, severity_for,
+    failure_threshold, reset_detector, severity_for,
     window_seconds,
 )
 

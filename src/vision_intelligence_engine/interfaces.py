@@ -3,7 +3,7 @@ Interfaces for the Vision Intelligence Engine components.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Tuple
 from .types import ImageItem, ImageType
 
 

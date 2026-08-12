@@ -2,7 +2,6 @@
 Image loader using PIL (Pillow) to load various image formats.
 """
 
-from typing import Dict, Any
 from .interfaces import ImageLoader
 from .types import ImageItem, ImageType
 import os
@@ -48,16 +47,6 @@ class PILImageLoader(ImageLoader):
                 buffer = BytesIO()
                 img.save(buffer, format=img.format)
                 image_bytes = buffer.getvalue()
-
-                # Extract basic metadata
-                metadata = {
-                    "width": img.width,
-                    "height": img.height,
-                    "format": img.format,
-                    "mode": img.mode,
-                    "size": os.path.getsize(source),
-                    "filename": os.path.basename(source),
-                }
 
                 # Determine image type from extension
                 ext = os.path.splitext(source)[1].lower()

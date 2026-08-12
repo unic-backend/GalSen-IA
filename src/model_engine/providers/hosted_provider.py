@@ -15,7 +15,7 @@ _call_api to make the actual API call.
 
 import abc
 import os
-from typing import List, Optional
+from typing import List
 
 from .base import (
     GenerationRequest,

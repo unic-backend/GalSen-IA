@@ -8,7 +8,6 @@ date n'est inventée quand l'historique n'en fournit pas.
 
 import datetime
 
-import pytest
 
 from src.knowledge_engine.knowledge_lifecycle import (
     DEFAULT_REVALIDATION_DAYS, REVALIDATION_DAYS_ENV, approved_at,

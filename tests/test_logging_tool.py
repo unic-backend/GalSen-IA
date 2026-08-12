@@ -2,7 +2,6 @@
 Tests for the Logging tool.
 """
 
-from unittest.mock import MagicMock
 
 import pytest
 

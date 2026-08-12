@@ -18,7 +18,6 @@ class WeightedResponseRanker(ResponseRanker):
         # La somme des poids devrait idéalement être 1.0, mais ce n'est pas strictement requis
         self._default_weights = {
             "relevance": 0.3,
-            "accuracy": 0.3,
             "accuracy": 0.25,
             "coherence": 0.2,
             "completeness": 0.15,
@@ -44,9 +43,6 @@ class WeightedResponseRanker(ResponseRanker):
 
         if not model_items:
             return []
-
-        # Utiliser les critères fournis ou les défauts
-        weights = criteria.get("weights", self._default_weights) if criteria else self._default_weights
 
         # Calculer le score pour chaque paire (modèle, réponse)
         scored_results = []
@@ -96,6 +92,11 @@ class WeightedResponseRanker(ResponseRanker):
 
         # Concision (inverse de la verbosité excessive)
         scores["conciseness"] = self._score_conciseness(response_str, criteria)
+
+        # Les poids : ceux du critère fourni, sinon ceux par défaut. Ils étaient
+        # lus depuis une variable que cette méthode ne définit pas — `weights`
+        # existe dans `rank_responses`, pas ici.
+        weights = (criteria or {}).get("weights") or self._default_weights
 
         # Calculer la moyenne pondérée
         total_score = 0.0

@@ -22,3 +22,8 @@ pytest-cov==7.1.0
 # taux, RBAC, authentification). starlette attend `httpx2` ; avec l'ancien
 # `httpx` il fonctionne mais avertit à chaque import.
 httpx2==2.10.0
+
+# Linter, configuré par `pyproject.toml`. Version figée pour la même raison que
+# le reste : un linter qui change tout seul fait échouer la CI sur un commit qui
+# n'a rien changé.
+ruff==0.15.8

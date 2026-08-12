@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from src.api import server as server_module  # noqa: E402
 from src.api.server import app  # noqa: E402
 from src.api.rate_limiter import set_valid_api_key_digests  # noqa: E402
-from src.api.rbac import RBACManager, hash_api_key, key_fingerprint  # noqa: E402
+from src.api.rbac import hash_api_key, key_fingerprint  # noqa: E402
 
 
 @pytest.fixture

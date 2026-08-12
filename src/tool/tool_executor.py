@@ -4,10 +4,9 @@ Tool Executor for GalSen IA.
 Executes tools synchronously and asynchronously.
 """
 
-import asyncio
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from .tool_loader import ToolLoader
 from .base import BaseTool
 

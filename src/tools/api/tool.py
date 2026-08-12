@@ -8,7 +8,7 @@ import json
 import urllib.request
 import urllib.parse
 import urllib.error
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 from src.tool.base import BaseTool
 
 

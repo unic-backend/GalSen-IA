@@ -6,11 +6,8 @@ from typing import List, Tuple
 from .interfaces import ImageClassifier
 from .types import ImageItem
 import logging
-import os
 import numpy as np
 import cv2
-from urllib import request
-import zipfile
 from PIL import Image
 
 logger = logging.getLogger(__name__)
@@ -104,11 +101,10 @@ class SimpleHistogramClassifier(ImageClassifier):
             img_array = np.array(img)
             # Convert to HSV
             hsv_image = cv2.cvtColor(img_array, cv2.COLOR_RGB2HSV)
-            # Calculate histogram for each channel
+            # Seul l'histogramme de teinte sert à déterminer la couleur
+            # dominante. Ceux de saturation et de valeur étaient calculés à
+            # chaque classification et jamais lus.
             hist_h = cv2.calcHist([hsv_image], [0], None, [180], [0, 180])
-            hist_s = cv2.calcHist([hsv_image], [1], None, [256], [0, 256])
-            hist_v = cv2.calcHist([hsv_image], [2], None, [256], [0, 256])
-            # We'll use the hue histogram to determine the dominant color range
             # Find the peak in the hue histogram
             hist_h = hist_h.flatten()
             # Lissage gaussien de l'histogramme, en NumPy plutôt qu'en SciPy.

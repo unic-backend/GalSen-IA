@@ -24,7 +24,7 @@ import os
 import threading
 import time
 
-from fastapi import Depends, HTTPException, Request, Security
+from fastapi import HTTPException, Request, Security
 from fastapi.security.api_key import APIKeyHeader
 
 from src.api.rbac import hash_api_key, key_fingerprint

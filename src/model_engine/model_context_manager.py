@@ -2,10 +2,9 @@
 Gestionnaire de contexte pour le moteur de modèles GalSen IA.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict
 from .types import ModelItem
 from .interfaces import ModelContextManager
-import re
 
 
 class SimpleModelContextManager(ModelContextManager):

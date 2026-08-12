@@ -2,8 +2,7 @@
 Gestionnaire de nouvelle tentative pour le moteur de modèles GalSen IA.
 """
 
-from typing import Any, Callable, Optional
-from .types import ModelItem
+from typing import Any, Callable
 from .interfaces import RetryManager
 import time
 import random

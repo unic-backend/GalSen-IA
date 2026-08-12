@@ -9,7 +9,7 @@ d'entité et un backend de stockage spécifiques (SQLite, in-memory, etc.).
 """
 
 import abc
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Generic, List, Optional, TypeVar
 
 # Type générique représentant l'entité persistée
 T = TypeVar("T")

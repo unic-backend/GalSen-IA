@@ -20,14 +20,12 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.knowledge_engine.citations import (  # noqa: E402
-    PROVENANCE_INCONNUE,
     build_citations,
     citation_coverage,
 )
 from src.knowledge_engine.ingestion import DocumentIngestor  # noqa: E402
 from src.knowledge_engine.knowledge_manager import KnowledgeManagerImpl  # noqa: E402
 from src.knowledge_engine.types import (  # noqa: E402
-    KnowledgeDomain,
     KnowledgeItem,
     KnowledgeSource,
     KnowledgeStatus,

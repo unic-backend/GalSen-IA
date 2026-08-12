@@ -6,6 +6,8 @@ Tests simples pour l'outil RAG.
 import os
 import sys
 
+import pytest
+
 # Add the src directory to the path so we can import from src.tool.base
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -101,36 +103,27 @@ def test_error_handling():
     tool = RAGTool()
     try:
         # Unknown operation
-        try:
+        with pytest.raises(ValueError, match="Opération 'unknown_operation' inconnue"):
             tool.execute("unknown_operation")
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert "Opération 'unknown_operation' inconnue" in str(e)
-            print("+ Unknown operation triggers ValueError")
+        print("+ Unknown operation triggers ValueError")
 
         # Add with missing content (should still work? content is required by KnowledgeItem? It will raise)
-        try:
+        # Ce bloc ne pouvait pas échouer : `assert False` levait une
+        # `AssertionError` que le `except Exception` rattrapait, et le corps se
+        # contentait d'imprimer. Un contenu manquant serait passé inaperçu.
+        with pytest.raises(Exception) as capture:
             tool.execute("add", {"knowledge_type": "fact"})
-            assert False, "Should have raised ValueError due to missing content"
-        except Exception as e:
-            # Expecting some validation error (maybe from KnowledgeItem __post_init__ or validation)
-            print("+ Missing required fields triggers exception:", type(e).__name__)
+        print("+ Missing required fields triggers exception:", type(capture.value).__name__)
 
         # Get with empty ID
-        try:
+        with pytest.raises(ValueError, match="L'ID de la connaissance doit être une chaîne non vide"):
             tool.execute("get", "")
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert "L'ID de la connaissance doit être une chaîne non vide" in str(e)
-            print("+ Empty ID triggers ValueError")
+        print("+ Empty ID triggers ValueError")
 
         # Search with empty query
-        try:
+        with pytest.raises(ValueError, match="La requête de recherche doit être une chaîne non vide"):
             tool.execute("search", "", limit=5)
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert "La requête de recherche doit être une chaîne non vide" in str(e)
-            print("+ Empty query triggers ValueError")
+        print("+ Empty query triggers ValueError")
 
     finally:
         pass

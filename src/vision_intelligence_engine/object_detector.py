@@ -65,7 +65,7 @@ class ContourObjectDetector(ObjectDetector):
             detections = []
             for contour in contours:
                 area = cv2.contourArea(contour)
-                if area < self.min_area:
+                if area < min_area:
                     continue
                 # Get bounding box
                 x, y, w, h = cv2.boundingRect(contour)

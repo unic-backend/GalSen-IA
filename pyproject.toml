@@ -1,0 +1,95 @@
+# Configuration des outils de qualité — GalSen IA
+#
+# Rien ne vérifiait les conventions de `.claude/rules/coding-conventions.md` :
+# elles tenaient parce qu'un seul auteur les appliquait. Ce fichier existe pour
+# que le deuxième contributeur n'ait pas à les deviner.
+#
+#     ruff check .          # lit ce fichier
+#     ruff format --diff .  # ce que le formateur changerait
+#
+# Ce que la mise en place a trouvé, avant même d'être configurée : trois pannes
+# vivantes (`NameError` sur un nom mal orthographié, sur une variable jamais
+# définie, sur un type jamais importé), une clé de dictionnaire écrite deux fois
+# dont la première valeur était perdue, un paramètre documenté comme
+# surchargeable puis ignoré, et 221 imports morts. Détail → CHANGELOG.
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["docs", ".venv", "venv", "data"]
+
+[tool.ruff.lint]
+# **Un ensemble que le dépôt passe réellement.** Une configuration qui signale
+# trois mille écarts est une configuration que personne ne lit, et le silence
+# qui s'ensuit vaut moins que pas de linter du tout.
+#
+# Ce qui est activé attrape des défauts, pas des préférences :
+#   F   — pyflakes : noms indéfinis, imports morts, clés dupliquées. Le cœur.
+#   E9  — erreurs de syntaxe et d'exécution.
+#   E7  — comparaisons et déclarations douteuses (`== True`, `l` ambigu).
+#   B   — bugbear : pièges connus (argument par défaut mutable, boucle qui
+#         capture une variable, `except` trop large sur `assert`).
+#
+# Ce qui est **délibérément absent**, et pourquoi :
+#   UP  — moderniser les annotations (`Dict[str, X]` → `dict[str, X]`,
+#         `Optional[X]` → `X | None`) signale **3 183 écarts** sur ce dépôt.
+#         C'est une réécriture de toutes les signatures pour zéro défaut
+#         corrigé, et un `git blame` illisible sur 278 fichiers.
+#   I   — trier les imports touche 216 fichiers, pour la même raison. Les deux
+#         se prendront le jour où un deuxième contributeur arrive : c'est là que
+#         l'uniformité commence à payer plus qu'elle ne coûte.
+#   E501 — la longueur de ligne : le formateur s'en charge, et le signaler deux
+#         fois donnerait deux verdicts sur le même fait.
+select = ["F", "E9", "E7", "B"]
+
+ignore = [
+    # Une exception relevée sans `from` : correct en soi, mais le dépôt convertit
+    # souvent une erreur technique en message métier, où la chaîne d'origine
+    # n'apporte rien à l'appelant.
+    "B904",
+    # `zip()` sans `strict=`. Les treize occurrences apparient des séquences dont
+    # l'égalité de longueur est déjà garantie — souvent par un contrôle explicite
+    # juste au-dessus. Imposer `strict=True` transformerait un écart bénin en
+    # exception en production, pour un défaut qui n'existe pas ici.
+    "B905",
+]
+
+[tool.ruff.lint.flake8-bugbear]
+# `Depends(...)` de FastAPI est un appel de fonction en valeur par défaut, et
+# c'est **la** façon de déclarer une dépendance : sans cette liste, les routes
+# de l'API seraient signalées à tort.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Header",
+    # Fabriques de dépendances du projet, appelées à l'import par construction :
+    # `Depends(require_permission(Permission.MEMORY_WRITE))` est la déclaration
+    # de permission d'une route, pas un argument par défaut muable.
+    "src.api.server.require_permission",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Les tests insèrent la racine du dépôt dans `sys.path` avant d'importer `src`,
+# donc leurs imports ne peuvent pas être en tête de fichier.
+"tests/*" = ["E402"]
+"scripts/*" = ["E402"]
+# Un `__init__.py` réexporte : un nom importé et non utilisé y est le but.
+"__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src", "agents", "tools", "workflows"]
+
+[tool.ruff.format]
+# Le formateur reste **hors du chemin critique** pour l'instant : il est
+# disponible (`ruff format`) et n'est pas imposé en CI. Reformater 278 fichiers
+# d'un coup rendrait illisible tout `git blame` et toute revue en cours, pour un
+# gain de style. La bascule se décidera quand un deuxième contributeur arrivera
+# — c'est le jour où l'uniformité commence à payer.
+quote-style = "preserve"
+
+[tool.pytest.ini_options]
+# Réunis ici plutôt que dispersés en ligne de commande : la suite doit se lancer
+# de la même façon en local et en CI.
+testpaths = ["tests"]
+python_files = ["test_*.py"]

@@ -9,7 +9,7 @@ Tout backend de stockage (mémoire, disque, S3, MinIO) peut être branché
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from .types import FileCategory, FileItem, FileSummary, FileUploadResult
+from .types import FileItem, FileSummary, FileUploadResult
 
 
 class FileStore(ABC):

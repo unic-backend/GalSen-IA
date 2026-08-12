@@ -4,7 +4,7 @@ API Server for GalSen IA platform.
 Expose les fonctionnalités du noyau via une API RESTful.
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Request, Security
+from fastapi import FastAPI, HTTPException, Depends, Request, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -16,7 +16,6 @@ import logging
 import threading
 import time
 import uuid
-import os
 
 # Import des moteurs existants
 from src.memory_engine.memory_manager import MemoryManager
@@ -109,7 +108,7 @@ from src.services.file.manager import FileManagerImpl
 from src.services.cloud.manager import CloudManagerImpl
 from src.services.cloud.types import CloudProvider
 from src.services.calendar.manager import CalendarManagerImpl
-from src.services.calendar.types import EventStatus, EventVisibility
+from src.services.calendar.types import EventStatus
 from src.services.email.manager import EmailManagerImpl
 
 logger = logging.getLogger(__name__)

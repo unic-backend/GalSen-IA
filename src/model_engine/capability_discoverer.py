@@ -2,7 +2,7 @@
 Découvreur de capacités pour le moteur de modèles GalSen IA.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from .types import ModelItem
 from .interfaces import CapabilityDiscoverer
 

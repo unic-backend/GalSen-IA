@@ -4,8 +4,7 @@ Interfaces pour le moteur de modèles GalSen IA.
 
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Tuple, AsyncGenerator
-from .types import ModelItem, ModelType, ModelPriority, ModelStatus
-import time
+from .types import ModelItem
 
 
 class ModelStore(ABC):

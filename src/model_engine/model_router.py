@@ -16,10 +16,10 @@ statut. Le routeur doit donc **interpréter la réponse** ; sans cela, une répo
 `unavailable` compterait comme un succès et la bascule ne se déclencherait jamais.
 """
 
-from typing import Optional, Dict, Any, Callable, List, Tuple
+from typing import Dict, Any, Callable, List
 from .types import ModelItem
 from .interfaces import ModelRouter
-from .providers.base import GenerationResponse, ProviderStatus
+from .providers.base import GenerationResponse
 import logging
 import time
 import random

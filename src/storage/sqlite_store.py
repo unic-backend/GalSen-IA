@@ -8,7 +8,7 @@ import json
 import os
 import sqlite3
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from src.memory_engine.types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
 from src.storage.encryption import decrypt, encrypt

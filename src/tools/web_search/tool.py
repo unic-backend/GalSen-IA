@@ -8,10 +8,9 @@ caching, rate limiting, and retry mechanisms.
 import html
 import re
 import time
-import json
 import threading
 from typing import List, Dict, Any, Optional
-from urllib.parse import urlencode, quote_plus
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 

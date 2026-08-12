@@ -12,7 +12,7 @@ execution is detected and refused.
 
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from src.agent.base_agent import BaseAgent
 from src.agent.context import AgentContext

@@ -7,7 +7,6 @@ de provenance et générateur d'identifiants.
 Ce module n'a aucune dépendance externe.
 """
 
-import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone

@@ -14,7 +14,6 @@ Le dernier test ouvre le fichier SQLite en binaire : c'est la seule preuve que
 le contenu n'y est pas en clair.
 """
 
-import os
 
 import pytest
 

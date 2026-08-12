@@ -9,7 +9,6 @@ des deux mondes — une réponse crédible obtenue sans travail.
 
 from pathlib import Path
 
-import pytest
 import yaml
 
 from src.router.agent_loader import AgentLoader

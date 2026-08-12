@@ -235,7 +235,6 @@ class SQLiteEmailStore(EmailStore):
             # Charger les messages sans pièces jointes pour le listing
             messages = []
             for row in rows:
-                d = dict(zip(self._COLUMNS, row))
                 messages.append(self._dict_to_item(row))
 
             # Filtrer en Python pour le recipient (vérification exacte)

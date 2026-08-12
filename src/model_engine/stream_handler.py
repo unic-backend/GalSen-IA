@@ -2,10 +2,9 @@
 Gestionnaire de flux pour le moteur de modèles GalSen IA.
 """
 
-from typing import AsyncGenerator, Any, Optional
+from typing import AsyncGenerator, Any
 from .types import ModelItem
 from .interfaces import StreamHandler
-import asyncio
 
 
 class SimpleStreamHandler(StreamHandler):
@@ -67,7 +66,7 @@ class SimpleStreamHandler(StreamHandler):
         """
         chunks = []
         async for chunk in stream:
-            chunks.append(chrunk)  # Note: probablement une typo, devrait être chunk
+            chunks.append(chunk)
         return "".join(chunks)
 
     def process_stream_chunk(self, chunk: Any) -> Any:

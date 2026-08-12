@@ -5,10 +5,9 @@ L'interface principale pour les agents afin d'interagir avec le système de mém
 """
 
 import logging
-import os
 import time
 from typing import Any, Dict, List, Optional, Tuple
-from .types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
+from .types import MemoryItem, MemoryType, MemoryStatus
 from .interfaces import (
     MemoryStore, MemoryRetriever, MemoryIndexer,
     MemorySummarizer, MemoryRanker, MemoryCache, MemoryManager as MemoryManagerInterface

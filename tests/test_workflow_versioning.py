@@ -8,8 +8,6 @@ deux définitions sous le même nom, et le taux de succès mélangeait exactemen
 qu'on cherchait à comparer.
 """
 
-import os
-import tempfile
 
 import pytest
 import yaml

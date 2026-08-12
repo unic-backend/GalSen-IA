@@ -85,12 +85,13 @@ gets re-argued at every review.
   until one exists.
   *Deciding criterion:* user impact — nobody uses the calendar tool today.
 
-- **No linter, formatter or type checker is configured.** No `setup.cfg`,
-  `pyproject.toml`, `.flake8` or pre-commit hook exists; the conventions in
-  `.claude/rules/coding-conventions.md` hold because one author applies them, not because
-  anything checks. Return type hints are the weakest at 88 % of functions.
-  *Deciding criterion:* maintenance cost — the cost of adding one is low, and it only
-  starts paying the day a second contributor arrives.
+- **Widen the linter, and add a formatter and a type checker.** `ruff check` runs in CI and
+  in the suite (`pyproject.toml`), and the repository passes it. What is deliberately left
+  out is written in the config: modernising annotations flags **3 183** places and sorting
+  imports touches **216 files** — mass rewrites for zero defect that would make `git blame`
+  unreadable. `ruff format` and a type checker belong to the same decision.
+  *Deciding criterion:* maintenance cost — all three start paying the day a second
+  contributor arrives, and that is the day to take the diff.
 
 - **Review the model catalogue periodically.** Context windows and prices are declared in
   `src/model_engine/providers/*_provider.py` and drift as vendors change them.

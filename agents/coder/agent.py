@@ -10,7 +10,6 @@ agent says so instead of returning invented code — a specification that is
 honest about its limits is usable; fabricated code is not.
 """
 
-import os
 import re
 from typing import Any, Dict, List
 

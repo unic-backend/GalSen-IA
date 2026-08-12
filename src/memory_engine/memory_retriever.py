@@ -6,9 +6,12 @@ Abstract base class for memory retrieval and an in-memory implementation.
 
 import abc
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from src.text_normalization import tokenize
 from .types import MemoryItem, MemoryType, MemoryStatus
+
+if TYPE_CHECKING:  # Annotation seulement : évite un import circulaire
+    from .memory_store import InMemoryMemoryStore
 
 
 class BaseMemoryRetriever(abc.ABC):

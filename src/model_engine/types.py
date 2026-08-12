@@ -4,7 +4,7 @@ Modèle de données pour le moteur de modèles GalSen IA.
 
 from enum import Enum
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 import time
 
 

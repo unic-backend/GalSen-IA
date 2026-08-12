@@ -5,7 +5,6 @@ Optimiseur de prompts pour le moteur de modèles GalSen IA.
 from typing import Dict, Any, Optional
 from .types import ModelItem
 from .interfaces import PromptOptimizer
-import re
 
 
 class TemplateBasedPromptOptimizer(PromptOptimizer):

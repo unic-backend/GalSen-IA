@@ -6,7 +6,6 @@ Charge les workflows depuis le registre de workflows.
 
 import logging
 import yaml
-import os
 from typing import Any, Dict, Iterable, List, Optional
 
 from .workflow_validator import ProblemeWorkflow, blocking_errors, validate_registry
