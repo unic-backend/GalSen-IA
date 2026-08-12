@@ -48,6 +48,9 @@ from src.api.health import (
 # Import de l'inventaire d'état local au processus (VOLET 02 ch. 10, ADR-009)
 from src.api.scaling import instance_id, scaling_report
 
+# Le chemin d'une requête, reconstitué depuis l'audit (phase 26.4)
+from src.api.tracing import build_trace
+
 # Une seule instance par répertoire de données (ADR-013)
 from src.api import instance_lock
 
@@ -1199,6 +1202,24 @@ async def analytics():
         audit_manager=registre.try_get("audit"),
         metrics=metrics_snapshot(),
     )
+
+
+@app.get("/trace/{request_id}", tags=["health"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.ADMIN_AUDIT))])
+async def request_trace(request_id: str):
+    """Le chemin d'une requête : ce qui a tourné, et où est passé le temps.
+
+    `/metrics` répond « combien », `/analytics` répond « qu'ont fait les agents
+    en général ». Aucune route ne répondait « qu'est-il arrivé à **cette**
+    requête », alors que l'audit portait déjà l'information : un `request_id` sur
+    chaque événement et une durée sur les appels d'outils et de modèles.
+    `POST /workflow/run` rend ce `request_id` — c'est lui qui s'utilise ici.
+
+    Rien n'est collecté en plus : la trace est une lecture de l'audit.
+    """
+    registre = get_shared_registry()
+    return build_trace(registre.try_get("audit"), request_id)
 
 
 @app.get("/knowledge/governance", tags=["knowledge"],

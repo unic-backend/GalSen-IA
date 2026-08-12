@@ -31,8 +31,6 @@ Le nouveau code appelle `RouterEngine.process_request` directement.
 import logging
 from typing import Any, Dict, Optional
 
-from ..router.router_engine import RouterEngine
-
 logger = logging.getLogger(__name__)
 
 
@@ -45,7 +43,18 @@ class AgentRuntime:
     """
 
     def __init__(self):
-        """Construit l'orchestrateur unique derrière cet adaptateur."""
+        """
+        Construit l'orchestrateur unique derrière cet adaptateur.
+
+        L'import est fait ici et non en tête de module : `RouterEngine` importe
+        `agent.context`, donc le paquet `src.agent`, donc ce fichier. Un import
+        au niveau module ferme le cycle et fait échouer `POST /workflow/run`
+        selon l'ordre des imports — mesuré : « cannot import name RouterEngine
+        from partially initialized module ». C'est aussi ce que fait
+        `src/api/server.py` avec `get_router_engine()`.
+        """
+        from ..router.router_engine import RouterEngine
+
         self._router = RouterEngine()
         logger.debug(
             "AgentRuntime initialisé — l'exécution est déléguée à RouterEngine."

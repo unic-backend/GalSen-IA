@@ -9,9 +9,10 @@ exécuter, et une seule.
 ---
 
 **VOLET en cours** : **26 — Fondations mesurables**
-**Phase courante** : 26.1 — en attente de confirmation
-**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **phase 26.0**
-**Cadence** : **une phase par tour** (défaut).
+**Phase courante** : 26.1 — **bloquée sur l'exploitant** (aucun modèle local joignable)
+**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**
+**Cadence** : **un VOLET par tour** — demandé par l'utilisateur le 2026-08-12.
+La limite des 25 minutes de `.claude/rules/work-cadence.md` continue de s'appliquer.
 
 Base du plan : `docs/architecture/assessment-2026-08-11.md`.
 
@@ -33,10 +34,10 @@ réels, placés en VOLET 26.
 VOLET 26 — Fondations mesurables                            → 6 phases
   Ce qui empêche tout le reste d'être vérifiable.
   Ch. 26.0  Souveraineté appliquée (ADR-014)                → 1 phase — **terminée**
-  Ch. 26.1  Un modèle **local** qui répond (critère C1)     → 1 phase (indivisible)
-  Ch. 26.2  Résoudre AgentRuntime vs RouterEngine (C4)      → 2 phases (26.2 mesure, 26.3 fusion)
-  Ch. 26.3  Traçage bout en bout router→agent→outil→modèle  → 1 phase
-  Ch. 26.4  Le garde de dépendances rate les paquets absents → 1 phase
+  Ch. 26.1  Un modèle **local** qui répond (critère C1)     → 1 phase — **bloquée : `ollama serve`**
+  Ch. 26.2  Résoudre AgentRuntime vs RouterEngine (C4)      → 2 phases — **terminées**
+  Ch. 26.3  Traçage bout en bout router→agent→outil→modèle  → 1 phase — **terminée**
+  Ch. 26.4  Le garde de dépendances rate les paquets absents → 1 phase — **terminée**
 
 VOLET 27 — Récupération sémantique                          → 4 phases
   Aujourd'hui tout est du Jaccard sur des jetons.

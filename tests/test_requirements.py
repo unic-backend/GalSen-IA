@@ -93,6 +93,25 @@ def _distributions(modules) -> set:
     return distributions
 
 
+def _modules_tiers_non_installes(modules) -> set:
+    """
+    Retourne les modules importés qui ne sont ni standard, ni du dépôt, ni installés.
+
+    C'est l'angle mort de `_distributions` : elle traduit un module en
+    distribution **via ce qui est installé**, donc un paquet absent de
+    l'environnement est aussi absent de la traduction, et passe inaperçu.
+    """
+    table = packages_distributions()
+    orphelins = set()
+    for module in modules:
+        if module in sys.stdlib_module_names or module in PREMIERE_PARTIE:
+            continue
+        if module in table:
+            continue
+        orphelins.add(module)
+    return orphelins
+
+
 def test_toute_dependance_importee_par_le_code_est_declaree():
     """
     Le contrôle qui rend la séparation sûre.
@@ -106,6 +125,70 @@ def test_toute_dependance_importee_par_le_code_est_declaree():
     assert manquantes == [], (
         f"importées par {'/'.join(SOURCES_EXECUTION)} mais absentes de "
         f"requirements.txt : {manquantes}"
+    )
+
+
+def test_aucun_import_ne_vise_un_paquet_ni_installe_ni_declare():
+    """
+    L'angle mort du contrôle précédent, trouvé pendant l'évaluation d'architecture.
+
+    `_distributions` traduit un module en distribution **via ce qui est
+    installé** : un paquet absent de l'environnement est donc absent de la
+    traduction, et son import ne déclenche rien. C'est ainsi que
+    `src/tools/embeddings/tool.py` importait `sentence_transformers` — déclaré
+    actif dans `tools/tools.yaml`, absent de `requirements.txt`, absent de la
+    machine — sans qu'aucun test ne le remarque. L'outil rapportait une erreur à
+    l'exécution, ce qui est honnête, mais le catalogue annonçait une capacité
+    que rien ne pouvait rendre.
+
+    Un module toléré ici doit l'être **explicitement**, avec sa raison.
+    """
+    # Modules importés à dessein sans être installés : l'import est protégé et
+    # la capacité se désactive en le disant. Chacun a été vérifié à la main le
+    # 2026-08-12 ; la liste n'est pas un tapis, elle est un inventaire.
+    TOLERES = {
+        # Outil d'embeddings : sa dépendance arrive au VOLET 27, avec l'ADR qui
+        # en pèse le prix (~90 Mo de poids et PyTorch). Jusque-là, l'outil dit
+        # qu'il lui manque sa bibliothèque au lieu de prétendre fonctionner.
+        "sentence_transformers",
+        # Chargeurs de formats du moteur documentaire : import protégé, le
+        # format devient simplement non pris en charge.
+        "PyPDF2", "docx", "openpyxl", "pptx", "markdown",
+        # OCR : sans `pytesseract` — et sans le binaire Tesseract — la lecture
+        # d'image renvoie son indisponibilité.
+        "pytesseract",
+        # Outil Docker : sans le client, l'outil rapporte qu'il ne peut pas
+        # joindre le démon.
+        "docker",
+        # `scipy` : lissage d'histogramme dans le classifieur d'images. Son
+        # absence fait tomber la classification dans son `except`, qui rend
+        # `[("unknown", 1.0)]` — un statut, pas une catégorie inventée.
+        "scipy",
+    }
+
+    orphelins = _modules_tiers_non_installes(_modules_importes(SOURCES_EXECUTION))
+    inattendus = sorted(orphelins - TOLERES)
+
+    assert inattendus == [], (
+        f"importés par le code, ni installés ni déclarés : {inattendus}. "
+        f"Déclarez-les dans requirements.txt, ou ajoutez-les à TOLERES avec la "
+        f"raison et la façon dont la capacité se désactive."
+    )
+
+
+def test_les_tolerances_sont_reellement_absentes():
+    """
+    Le contre-test : une tolérance qui ne sert plus doit se voir.
+
+    Le jour où `sentence-transformers` est installé et déclaré, cette liste
+    doit maigrir — sinon elle deviendrait un tapis sous lequel glisser les
+    imports suivants.
+    """
+    installes = packages_distributions()
+
+    assert "sentence_transformers" not in installes, (
+        "sentence-transformers est désormais installé : retirez-le de TOLERES "
+        "et déclarez-le dans requirements.txt (VOLET 27)."
     )
 
 

@@ -28,6 +28,16 @@ gets re-argued at every review.
 
 ## P1 — High · a Phase 2 exit criterion depends on it, or it removes a demonstrated risk
 
+- **Decide on eight optional dependencies, or drop the capabilities they carry.**
+  `tests/test_requirements.py` now catches imports of packages that are neither installed
+  nor declared, and it found eight on its first run: `PyPDF2`, `python-docx`, `openpyxl`,
+  `python-pptx`, `markdown`, `pytesseract`, `docker`, `scipy`. Every one is behind a
+  guarded import and degrades by reporting, so nothing crashes — but the PDF, DOCX, XLSX,
+  PPTX, OCR and Docker capabilities are advertised in the tool catalogue and cannot work
+  in the production image. They sit in a `TOLERES` list with a written reason each.
+  *Deciding criterion:* honesty of the catalogue — either the image carries them, or the
+  catalogue stops offering them.
+
 - **Put something in the knowledge base.** It holds **0 items, 0 indexed documents, 0
   graph nodes**, and `docs/knowledge/` does not exist. The Knowledge Engine, the RAG tool,
   the search service and the retrieval ranking are all built and retrieving from nothing.
