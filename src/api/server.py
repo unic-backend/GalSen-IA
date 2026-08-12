@@ -1791,6 +1791,17 @@ async def upload_file(
     }
 
 
+# Les chemins littéraux sont déclarés **avant** les chemins paramétrés : FastAPI
+# retient la première route qui correspond, donc `/file/{file_id}` captait
+# `/file/stats` et rendait « Fichier stats introuvable ». La route existait,
+# était documentée, et personne ne pouvait l'appeler.
+@app.get("/file/stats", tags=["file"],
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def file_stats():
+    """Statistiques agrégées des fichiers."""
+    return file_manager.stats()
+
+
 @app.get("/file/{file_id}", tags=["file"],
          dependencies=[Depends(rate_limit_dependency)])
 async def get_file(
@@ -1835,13 +1846,6 @@ async def list_files(
     }
 
 
-@app.get("/file/stats", tags=["file"],
-         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def file_stats():
-    """Statistiques agrégées des fichiers."""
-    return file_manager.stats()
-
-
 @app.delete("/file/{file_id}", tags=["file"],
             dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_DELETE))])
 async def delete_file(file_id: str):
@@ -1856,7 +1860,7 @@ async def delete_file(file_id: str):
 # Endpoints — Cloud Service
 # =========================================================================
 
-@app.post("/cloud/upload", tags=["cloud"],
+@app.post("/cloud/upload", tags=["cloud"], deprecated=True,
           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_WRITE))])
 async def cloud_upload(request: CloudUploadRequest):
     """Téléverse un fichier vers le cloud."""
@@ -1882,7 +1886,7 @@ async def cloud_upload(request: CloudUploadRequest):
     return {"file_id": result.file_id, "status": "uploaded"}
 
 
-@app.post("/cloud/list", tags=["cloud"],
+@app.post("/cloud/list", tags=["cloud"], deprecated=True,
           dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
 async def cloud_list_files(request: CloudListRequest):
     """Liste les fichiers cloud avec filtres."""
@@ -1899,7 +1903,15 @@ async def cloud_list_files(request: CloudListRequest):
     }
 
 
-@app.get("/cloud/{file_id}", tags=["cloud"],
+# Même raison que pour `/file/stats` ci-dessus.
+@app.get("/cloud/stats", tags=["cloud"], deprecated=True,
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def cloud_stats():
+    """Statistiques agrégées du stockage cloud."""
+    return cloud_manager.stats()
+
+
+@app.get("/cloud/{file_id}", tags=["cloud"], deprecated=True,
          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
 async def cloud_get_file(file_id: str):
     """Retourne les métadonnées d'un fichier cloud."""
@@ -1909,7 +1921,7 @@ async def cloud_get_file(file_id: str):
     return file.to_dict()
 
 
-@app.get("/cloud/{file_id}/download", tags=["cloud"],
+@app.get("/cloud/{file_id}/download", tags=["cloud"], deprecated=True,
          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
 async def cloud_download(file_id: str):
     """Télécharge un fichier cloud."""
@@ -1920,14 +1932,7 @@ async def cloud_download(file_id: str):
     return Response(content=data, media_type="application/octet-stream")
 
 
-@app.get("/cloud/stats", tags=["cloud"],
-         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def cloud_stats():
-    """Statistiques agrégées du stockage cloud."""
-    return cloud_manager.stats()
-
-
-@app.delete("/cloud/{file_id}", tags=["cloud"],
+@app.delete("/cloud/{file_id}", tags=["cloud"], deprecated=True,
             dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_DELETE))])
 async def cloud_delete(file_id: str):
     """Supprime un fichier cloud."""
@@ -1991,6 +1996,14 @@ async def calendar_list(request: CalendarListRequest):
     }
 
 
+# Même raison que pour `/file/stats` ci-dessus.
+@app.get("/calendar/stats", tags=["calendar"],
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def calendar_stats():
+    """Statistiques agrégées du calendrier."""
+    return calendar_manager.stats()
+
+
 @app.get("/calendar/{event_id}", tags=["calendar"],
          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
 async def calendar_get(event_id: str):
@@ -2032,13 +2045,6 @@ async def calendar_delete(event_id: str):
     if not success:
         raise HTTPException(status_code=404, detail=f"Événement {event_id} introuvable")
     return {"event_id": event_id, "status": "deleted"}
-
-
-@app.get("/calendar/stats", tags=["calendar"],
-         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def calendar_stats():
-    """Statistiques agrégées du calendrier."""
-    return calendar_manager.stats()
 
 
 # =========================================================================
@@ -2089,6 +2095,14 @@ async def email_list(request: EmailListRequest):
     }
 
 
+# Même raison que pour `/file/stats` ci-dessus.
+@app.get("/email/stats", tags=["email"],
+         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
+async def email_stats():
+    """Statistiques agrégées des emails."""
+    return email_manager.stats()
+
+
 @app.get("/email/{email_id}", tags=["email"],
          dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
 async def email_get(email_id: str):
@@ -2107,13 +2121,6 @@ async def email_delete(email_id: str):
     if not success:
         raise HTTPException(status_code=404, detail=f"Email {email_id} introuvable")
     return {"email_id": email_id, "status": "deleted"}
-
-
-@app.get("/email/stats", tags=["email"],
-         dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.MEMORY_READ))])
-async def email_stats():
-    """Statistiques agrégées des emails."""
-    return email_manager.stats()
 
 
 # L'interface web est servie sous `/ui` (ADR-008), montée plus haut. Un second

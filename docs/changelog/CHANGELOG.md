@@ -11,6 +11,36 @@ capability answers `503` until an operator configures a model provider. Release 
 `docs/changelog/releases/`.
 
 ## [Unreleased]
+### Fixed
+- **Four documented routes were unreachable** — found while deprecating `/cloud/*`
+  - FastAPI keeps the first route whose path matches, and `/{id}` was declared before
+    `/…/stats`. `GET /file/stats` answered `404 "Fichier stats introuvable"`; the same for
+    `/cloud/stats`, `/calendar/stats` and `/email/stats` — four endpoints of a released
+    version that nobody could call
+  - Writing the general rule as a test rather than fixing the two cases in front of me is
+    what found the other two: `tests/test_cloud_deprecation.py` fails if any literal path
+    is declared after a template that accepts it **for the same method** (the method
+    matters — `POST /file/list` coexists fine with `GET /file/{file_id}`)
+- **No parameterised route could be deprecated at all**
+  - The registry was keyed by exact path, and `request.url.path` is `/cloud/file_ab12`
+    while the registry holds `/cloud/{file_id}`. Three of the six `/cloud/*` routes are
+    parameterised, so half the announcement would have been silent — and nothing would have
+    reported it. Matching now uses the route template the router records while handling the
+    request
+
+### Deprecated
+- **`/cloud/*` — use `/file/*`** (ADR-016 step 2, ADR-011)
+  - The six routes carry RFC 8594 headers (`Deprecation`, `Link` naming the replacement) on
+    **every** response, errors included, and are marked `deprecated` in the OpenAPI
+    description: the header warns an automated client, the documentation warns a human
+    choosing a route
+  - They keep working. `v0.1.0` is released and ADR-011 refuses to delete a public route
+    without notice
+  - **No `Sunset` date**: removal follows the retirement of `CloudFileItem`, which is not
+    done. An invented date would be worse than none, because it would be believed
+  - This is the first entry in a registry that had deliberately stayed empty — registering
+    an example to prove the mechanism worked would have fabricated a fact
+
 ### Added
 - **The file service gains the `filesystem` and `s3` backends** — ADR-016, step 1
   - `GALSEN_FILE_BACKEND` selects `in-memory | sqlite | filesystem | s3`, taking precedence

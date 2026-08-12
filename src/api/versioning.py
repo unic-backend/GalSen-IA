@@ -14,10 +14,14 @@ Le mécanisme suit la RFC 8594 : une réponse dépréciée porte `Deprecation: t
 et, quand la date de retrait est connue, `Sunset: <date HTTP>`. Les deux en-têtes
 sont standards et déjà compris par des clients existants.
 
-**Le registre est vide.** Aucune route n'est dépréciée aujourd'hui, et en
-inscrire une pour montrer que le mécanisme fonctionne fabriquerait un fait —
-`.claude/rules/verification.md`. Le mécanisme est vérifié par les tests, pas par
-une fausse entrée.
+Le registre est resté **vide** tant qu'aucune route ne l'était réellement :
+inscrire une entrée pour montrer que le mécanisme fonctionne aurait fabriqué un
+fait (`.claude/rules/verification.md`). Il porte depuis ADR-016 les routes
+`/cloud/*`, qui font le même travail que `/file/*` avec un second type d'objet.
+
+L'index est tenu par **gabarit de route** (`/cloud/{file_id}`) et non par URL
+appelée : indexé par chemin exact, il ne pouvait reconnaître aucune route
+paramétrée, et l'annonce y aurait été silencieuse.
 """
 
 from dataclasses import dataclass
@@ -61,8 +65,35 @@ class Deprecation:
         }
 
 
-# Routes dépréciées, par chemin. Vide tant qu'aucune ne l'est réellement.
-DEPRECATIONS: Dict[str, Deprecation] = {}
+_MOTIF_CLOUD = (
+    "Le service de fichiers est le chemin d'écriture unique de la plateforme "
+    "(ADR-016) ; /cloud/* faisait le même travail avec un second type."
+)
+
+# Routes dépréciées, par **gabarit** de route (`/cloud/{file_id}`, pas
+# `/cloud/file_ab12`).
+#
+# Les six routes `/cloud/*` sont les premières inscrites ici. ADR-016 a mesuré
+# que les services `file` et `cloud` sont une même conception écrite deux fois ;
+# ADR-011 interdit d'en supprimer une de but en blanc sur une version publiée,
+# donc elles restent et s'annoncent.
+DEPRECATIONS: Dict[str, Deprecation] = {
+    annonce.path: annonce for annonce in (
+        Deprecation(path="/cloud/upload", since="0.1.0", reason=_MOTIF_CLOUD,
+                    replacement="/file/upload"),
+        Deprecation(path="/cloud/list", since="0.1.0", reason=_MOTIF_CLOUD,
+                    replacement="/file/list"),
+        Deprecation(path="/cloud/stats", since="0.1.0", reason=_MOTIF_CLOUD,
+                    replacement="/file/stats"),
+        Deprecation(path="/cloud/{file_id}", since="0.1.0", reason=_MOTIF_CLOUD,
+                    replacement="/file/{file_id}"),
+        # Le service de fichiers rend le contenu par `/file/{file_id}` ; aucune
+        # route de téléchargement séparée n'existe encore, et en annoncer une
+        # qui n'existe pas enverrait l'appelant sur un 404.
+        Deprecation(path="/cloud/{file_id}/download", since="0.1.0",
+                    reason=_MOTIF_CLOUD, replacement="/file/{file_id}"),
+    )
+}
 
 
 def deprecation_for(path: str) -> Optional[Deprecation]:
@@ -70,16 +101,19 @@ def deprecation_for(path: str) -> Optional[Deprecation]:
     return DEPRECATIONS.get(path)
 
 
-def deprecation_headers(path: str) -> Dict[str, str]:
+def deprecation_headers(path: Optional[str]) -> Dict[str, str]:
     """
     Retourne les en-têtes RFC 8594 à poser sur la réponse d'une route dépréciée.
 
     Args:
-        path: Chemin de la route servie.
+        path: **Gabarit** de la route servie (`/cloud/{file_id}`), pas l'URL
+            appelée. Voir `DeprecationHeadersMiddleware`.
 
     Returns:
         Un dictionnaire vide si la route n'est pas dépréciée.
     """
+    if path is None:
+        return {}
     annonce = deprecation_for(path)
     if annonce is None:
         return {}
@@ -102,12 +136,21 @@ class DeprecationHeadersMiddleware(BaseHTTPMiddleware):
     Un intergiciel plutôt qu'une dépendance par route : l'annonce doit valoir
     pour toutes les réponses d'une route dépréciée, y compris ses erreurs, et
     une dépendance oubliée redonnerait le silence qu'on cherche à supprimer.
+
+    La correspondance se fait sur le **gabarit** de la route, pas sur l'URL
+    appelée. `request.url.path` vaut `/cloud/file_ab12`, que le registre —
+    indexé par `/cloud/{file_id}` — ne pouvait pas reconnaître : une route
+    paramétrée était donc impossible à déprécier, et l'annonce aurait été
+    silencieuse là où elle compte le plus, sans que rien ne le signale.
     """
 
     async def dispatch(self, request: Request, call_next) -> Response:
         """Ajoute les en-têtes RFC 8594 quand la route est dépréciée."""
         reponse = await call_next(request)
-        for nom, valeur in deprecation_headers(request.url.path).items():
+        # Le routeur inscrit la route retenue dans le scope pendant le
+        # traitement ; elle porte le gabarit tel qu'il est déclaré.
+        route = request.scope.get("route")
+        for nom, valeur in deprecation_headers(getattr(route, "path", None)).items():
             reponse.headers[nom] = valeur
         return reponse
 

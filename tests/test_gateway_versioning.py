@@ -47,16 +47,42 @@ def route_depreciee():
     versioning.DEPRECATIONS.pop(annonce.path, None)
 
 
-def test_le_registre_est_vide(client):
+def test_le_registre_ne_contient_que_des_routes_reellement_depreciees(client):
     """
-    Aucune route n'est dépréciée aujourd'hui.
+    Le registre est resté vide tant qu'aucune route ne l'était : y inscrire un
+    exemple pour montrer que le mécanisme marche aurait fabriqué un fait
+    (`.claude/rules/verification.md`).
 
-    Y inscrire un exemple pour montrer que le mécanisme marche fabriquerait un
-    fait — `.claude/rules/verification.md`. Le mécanisme est prouvé par les
-    tests qui suivent, pas par une fausse entrée.
+    Il porte depuis ADR-016 les routes `/cloud/*`, et **elles seules** : chaque
+    entrée doit correspondre à une route réellement montée, sinon l'annonce
+    parle d'un chemin qui n'existe pas.
     """
-    assert versioning.DEPRECATIONS == {}
-    assert client.get("/api/versions", headers={"X-API-Key": CLE}).json()["deprecated_count"] == 0
+    from fastapi.routing import APIRoute
+
+    from src.api.server import app
+
+    montees = {route.path for route in app.routes if isinstance(route, APIRoute)}
+    assert set(versioning.DEPRECATIONS) <= montees
+    assert all(chemin.startswith("/cloud/") for chemin in versioning.DEPRECATIONS)
+
+    corps = client.get("/api/versions", headers={"X-API-Key": CLE}).json()
+    assert corps["deprecated_count"] == len(versioning.DEPRECATIONS)
+
+
+def test_chaque_remplacante_annoncee_existe(client):
+    """
+    Envoyer un appelant vers une route qui n'existe pas serait pire que de ne
+    rien annoncer : il migrerait vers un 404.
+    """
+    from fastapi.routing import APIRoute
+
+    from src.api.server import app
+
+    montees = {route.path for route in app.routes if isinstance(route, APIRoute)}
+    for annonce in versioning.DEPRECATIONS.values():
+        assert annonce.replacement in montees, (
+            f"{annonce.path} renvoie vers {annonce.replacement}, qui n'est pas montée"
+        )
 
 
 def test_la_route_dit_qu_il_n_y_a_pas_de_versionnage_d_url(client):
@@ -137,8 +163,7 @@ def test_le_rapport_liste_l_annonce_complete(client, route_depreciee):
     """Ce que `/api/versions` sert doit suffire à planifier une migration."""
     corps = client.get("/api/versions", headers={"X-API-Key": CLE}).json()
 
-    assert corps["deprecated_count"] == 1
-    annonce = corps["deprecations"][0]
-    assert annonce["path"] == "/live"
+    assert corps["deprecated_count"] == len(versioning.DEPRECATIONS)
+    annonce = next(a for a in corps["deprecations"] if a["path"] == "/live")
     assert annonce["replacement"] == "/health"
     assert annonce["sunset"].endswith("GMT")

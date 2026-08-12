@@ -153,9 +153,26 @@ service.
   An id is also validated before it becomes a filename or an object key: `../` used to
   write outside the data directory.
 
+- **`/cloud/*` is announced as deprecated** (step 2). The six routes carry RFC 8594
+  headers, are marked `deprecated` in the OpenAPI description, and each names its `/file/*`
+  replacement. No `Sunset` date is set: removal follows the retirement of `CloudFileItem`,
+  which is not done, and ADR-011 refuses an invented date because it would be believed.
+
+  Registering them exposed two defects, neither of which was about deprecation:
+
+  1. **The deprecation registry was keyed by exact path**, so no parameterised route could
+     ever be deprecated — `request.url.path` is `/cloud/file_ab12` and the registry holds
+     `/cloud/{file_id}`. Three of the six routes are parameterised, so half the
+     announcement would have been silent with nothing reporting it. Matching now uses the
+     route template the router records while handling the request.
+  2. **Four documented routes were unreachable.** FastAPI keeps the first route that
+     matches, and `/{id}` was declared before `/…/stats`: `GET /file/stats` answered
+     `404 "Fichier stats introuvable"`. Writing the general rule as a test rather than
+     fixing the two cases found two more — `/calendar/stats` and `/email/stats` — in a
+     released version.
+
 ### Staged, and not done yet
 
-- Deprecating `/cloud/*` in the OpenAPI description and the deprecation index of ADR-011.
 - Retiring `CloudFileItem` in favour of `FileItem`, and deleting the cloud stores.
 
 Each is a separate change with its own tests, and each is safe to take in any order once

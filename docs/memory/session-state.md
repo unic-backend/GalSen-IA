@@ -35,11 +35,15 @@ d'analytique » (à prendre après C4).
 - **ADR-016 étape 1** : les backends `filesystem` et `s3` sont sous le service de fichiers
   (`GALSEN_FILE_BACKEND`). Trois défauts corrigés au passage, dont un index tronqué qui
   faisait disparaître tous les fichiers en silence.
-- Suite complète : **2389 tests passent**, 7 ignorés.
+- **ADR-016 étape 2** : `/cloud/*` annoncée en fin de vie (RFC 8594 + OpenAPI). Deux
+  défauts trouvés en l'inscrivant : aucune route paramétrée ne pouvait être dépréciée, et
+  **quatre routes documentées étaient inatteignables** (`/file/stats`, `/cloud/stats`,
+  `/calendar/stats`, `/email/stats`, captées par `/{id}` déclarée avant).
+- Suite complète : **2401 tests passent**, 7 ignorés.
 
 **Prochaine étape**
-ADR-016, ce qui reste : déprécier `/cloud/*` dans l'OpenAPI et l'index d'ADR-011, puis
-retirer `CloudFileItem` et supprimer les magasins du service cloud.
+ADR-016, dernière étape : retirer `CloudFileItem` au profit de `FileItem` et supprimer les
+magasins du service cloud — c'est la seconde moitié de la conception dupliquée.
 
 **Bloqué / à surveiller**
 - **`git push origin v0.1.0`** : le proxy git de l'environnement refuse les étiquettes
