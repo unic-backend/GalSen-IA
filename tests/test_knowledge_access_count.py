@@ -107,3 +107,71 @@ def test_le_critere_de_popularite_cesse_d_etre_toujours_nul(base):
 
     assert classement[0][0].id == consultee
     assert classement[0][1] > classement[1][1] == 0.0
+
+
+# ----------------------------------------------------------------------
+# Le compteur ne doit plus coûter une écriture par résultat (backlog P2)
+# ----------------------------------------------------------------------
+
+def test_une_recherche_n_ecrit_qu_une_fois(base):
+    """
+    Le défaut mesuré : une lecture, une écriture et **une seconde lecture** par
+    résultat, pour rafraîchir le cache. Sur dix résultats — et le chemin
+    sémantique balaie toute la base — cela faisait trente accès disque pour un
+    signal de popularité.
+    """
+    from src.knowledge_engine.types import KnowledgeItem
+
+    for numero in range(5):
+        base.add_knowledge(KnowledgeItem(content=f"Le mil pousse en zone {numero}"))
+
+    ecritures = {"n": 0}
+    groupe_reel = base._store.record_accesses
+
+    def compter(identifiants):
+        ecritures["n"] += 1
+        return groupe_reel(identifiants)
+
+    base._store.record_accesses = compter
+    resultats = base.search_knowledge("mil", limit=5, role="admin")
+
+    assert resultats, "La recherche ne rend rien : le test ne prouverait rien"
+    assert ecritures["n"] == 1, (
+        f"{ecritures['n']} écritures pour une recherche : le tampon ne groupe pas"
+    )
+
+
+def test_le_total_reste_juste_apres_groupage(base):
+    """Grouper ne doit pas perdre de consultation."""
+    from src.knowledge_engine.types import KnowledgeItem
+
+    identifiant = base.add_knowledge(KnowledgeItem(content="Le sorgho résiste à la sécheresse"))
+
+    for _ in range(4):
+        base.search_knowledge("sorgho", role="admin")
+
+    assert base._store.get(identifiant).metadata["access_count"] == 4
+
+
+def test_le_mode_lecture_seule_n_ecrit_rien(base, monkeypatch):
+    """
+    Un déploiement en lecture seule ne peut pas écrire sur le chemin de lecture.
+
+    Le compteur le rendait impossible : chaque résultat de recherche écrivait.
+    """
+    from src.knowledge_engine.types import KnowledgeItem
+
+    identifiant = base.add_knowledge(KnowledgeItem(content="Le riz de la vallée"))
+    monkeypatch.setenv("GALSEN_KNOWLEDGE_TRACK_ACCESS", "false")
+
+    base.search_knowledge("riz", role="admin")
+    base.get_knowledge(identifiant)
+
+    # Absent ou nul : les deux disent « aucune écriture », et c'est ce qui est
+    # mesuré ici.
+    assert base._store.get(identifiant).metadata.get("access_count", 0) == 0
+
+
+def test_vider_un_tampon_vide_ne_coute_rien(base):
+    """Appeler le vidage sans consultation en attente ne doit rien écrire."""
+    assert base.flush_access_counts() == 0

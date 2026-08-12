@@ -69,15 +69,6 @@ gets re-argued at every review.
   is worthless for forensics. It stays P2 only because there is nothing to audit yet;
   **it becomes P1 the day C4 is met.**
 
-- **Deployment documentation.** Pairs with C4: a deployment nobody can reproduce is a
-  one-off.
-  *Deciding criterion:* maintenance cost.
-
-- **`_increment_access_count()` writes to the store on every search result**, which is now
-  the dominant cost of a cached query (measured in VOLET 05 phase 5.2).
-  *Deciding criterion:* performance impact — the read path writes, which also makes a
-  read-only deployment impossible.
-
 - **Validate agent outputs.** Chapter 02 of VOLET_06 lists "validate outputs" as a
   pipeline step and nothing implements it: no schema stands between an agent's dictionary
   and the aggregated response, and an empty pipeline returns `success` having run nothing.

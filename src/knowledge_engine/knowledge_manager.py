@@ -26,7 +26,25 @@ import datetime
 import logging
 import threading
 import os
+from collections import Counter
 from src.storage.paths import sqlite_enabled
+
+# Nombre de connaissances distinctes accumulées avant écriture groupée. Assez
+# grand pour qu'une recherche entière tienne dans un seul lot, assez petit pour
+# qu'un arrêt brutal ne perde qu'un signal négligeable.
+SEUIL_ACCES = 50
+
+TRACK_ACCESS_VARIABLE = "GALSEN_KNOWLEDGE_TRACK_ACCESS"
+
+
+def track_access_enabled() -> bool:
+    """
+    Indique si les consultations sont comptées.
+
+    `false` rend le chemin de lecture réellement en lecture seule — ce que le
+    compteur empêchait, puisqu'il écrivait à chaque résultat de recherche.
+    """
+    return os.getenv(TRACK_ACCESS_VARIABLE, "").strip().lower() not in ("false", "0", "no")
 
 
 class KnowledgeManagerImpl(KnowledgeManager):
@@ -79,6 +97,11 @@ class KnowledgeManagerImpl(KnowledgeManager):
 
         # Verrou pour les opérations qui nécessitent de la cohérence entre composants
         self._lock = threading.RLock()
+
+        # Consultations en attente d'écriture groupée. Verrou distinct du verrou
+        # principal : compter une consultation ne doit pas attendre une écriture.
+        self._acces_en_attente: Counter = Counter()
+        self._acces_lock = threading.RLock()
 
     # Méthodes de gestion des connaissances
     def add_knowledge(self, knowledge: KnowledgeItem) -> str:
@@ -207,19 +230,24 @@ class KnowledgeManagerImpl(KnowledgeManager):
         # Vérifier le cache d'abord
         cached = self._cache.get(f"knowledge:{knowledge_id}")
         if cached is not None:
-            # Incrémenter le compteur d'accès
             self._increment_access_count(knowledge_id)
+            # Le compteur est différé pour ne pas écrire à chaque résultat de
+            # recherche ; une lecture explicite, elle, doit laisser le total à
+            # jour derrière elle — sinon un appelant qui lit le magasin
+            # directement après verrait un compte en retard d'une consultation.
+            self.flush_access_counts()
             return cached
 
         # Sinon, lire depuis le stockage
         with self._lock:
             knowledge = self._store.get(knowledge_id)
             if knowledge:
-                # Mettre en cache
                 self._cache.set(f"knowledge:{knowledge_id}", knowledge)
-                # Incrémenter le compteur d'accès
                 self._increment_access_count(knowledge_id)
-            return knowledge
+        if knowledge:
+            # Hors du verrou principal : l'écriture groupée prend le sien.
+            self.flush_access_counts()
+        return knowledge
 
     def update_knowledge(self, knowledge: KnowledgeItem) -> bool:
         """
@@ -409,15 +437,14 @@ class KnowledgeManagerImpl(KnowledgeManager):
         Returns:
             Liste de connaissances pertinentes
         """
-        with self._lock:
-            results = []
-            for knowledge, score in self._search_index(query, limit):
-                if not can_read(role, knowledge):
-                    continue
-                results.append(knowledge)
-                # Incrémenter le compteur d'accès pour chaque résultat
-                self._increment_access_count(knowledge.id)
-            return results
+        # Délègue au chemin unique. Cette méthode gardait sa **propre** boucle
+        # sur l'index lexical : elle est l'entrée la plus utilisée — c'est elle
+        # que mesure le jeu d'évaluation — et elle serait restée lexicale le
+        # jour où un encodeur est installé, pendant que `..._with_scores`
+        # passerait au sémantique. Deux entrées, deux comportements, aucun
+        # moyen de le voir.
+        return [knowledge for knowledge, _ in
+                self.search_knowledge_with_method(query, limit=limit, role=role)[0]]
 
     def search_knowledge_with_scores(
         self, query: str, limit: int = 10, role: Optional[str] = None
@@ -496,6 +523,9 @@ class KnowledgeManagerImpl(KnowledgeManager):
                     continue
                 resultats.append((knowledge, score))
                 self._increment_access_count(knowledge.id)
+            # Un seul lot pour toute la requête, au lieu d'une écriture par
+            # résultat : c'est tout l'objet du tampon.
+            self.flush_access_counts()
             return resultats, rapport
 
     def retrieve_for_prompt(self, prompt: str, max_items: int = 5,
@@ -533,6 +563,7 @@ class KnowledgeManagerImpl(KnowledgeManager):
             # Incrémenter les compteurs d'accès
             for kid in [k.id for k in knowledge_items]:
                 self._increment_access_count(kid)
+            self.flush_access_counts()
             return knowledge_items
 
     def retrieve_reliable(self, prompt: str, max_items: int = 5,
@@ -788,10 +819,54 @@ class KnowledgeManagerImpl(KnowledgeManager):
         `record_access()` écrit le compteur sans toucher à la version, une
         consultation n'étant pas une nouvelle version de la connaissance.
         """
+        if not track_access_enabled():
+            # Un déploiement en lecture seule ne peut pas écrire sur le chemin de
+            # lecture. Le signal de popularité est perdu, et c'est le prix
+            # annoncé de ce mode.
+            return
+        with self._acces_lock:
+            self._acces_en_attente[knowledge_id] += 1
+            trop = len(self._acces_en_attente) >= SEUIL_ACCES
+        if trop:
+            self.flush_access_counts()
+
+    def flush_access_counts(self) -> int:
+        """
+        Écrit les consultations accumulées, en une seule transaction.
+
+        Chaque résultat de recherche coûtait auparavant une lecture, une
+        écriture, puis une seconde lecture pour rafraîchir le cache. Sur une
+        recherche de dix résultats — et le chemin sémantique balaie toute la
+        base — cela faisait trente accès disque pour un signal de popularité.
+
+        Le compteur est **groupé et différé**, ce qui a une conséquence à
+        assumer : un arrêt brutal perd les consultations non écrites. Pour un
+        signal d'usage, c'est un prix acceptable ; pour l'audit, ce ne le serait
+        pas, et l'audit n'emprunte pas ce chemin.
+
+        Returns:
+            Le nombre de connaissances mises à jour.
+        """
+        with self._acces_lock:
+            if not self._acces_en_attente:
+                return 0
+            en_attente = list(self._acces_en_attente.elements())
+            self._acces_en_attente.clear()
+
         try:
-            total = self._store.record_access(knowledge_id)
-            if total:
-                # Le cache doit refléter le magasin, jamais le devancer.
-                self._cache.set(f"knowledge:{knowledge_id}", self._store.get(knowledge_id))
-        except Exception as e:
-            self._logger.debug(f"Failed to increment access count for {knowledge_id}: {e}")
+            groupe = getattr(self._store, "record_accesses", None)
+            if groupe is not None:
+                touchees = groupe(en_attente)
+            else:
+                # Un magasin personnalisé peut ne connaître que l'unitaire.
+                touchees = sum(1 for identifiant in en_attente
+                               if self._store.record_access(identifiant))
+        except Exception as erreur:
+            self._logger.debug("Compteur de consultations non écrit : %s", erreur)
+            return 0
+
+        # Le cache est **invalidé**, pas rafraîchi : le rafraîchir demandait une
+        # relecture par élément, c'est-à-dire exactement le coût qu'on retire.
+        for identifiant in set(en_attente):
+            self._cache.delete(f"knowledge:{identifiant}")
+        return touchees

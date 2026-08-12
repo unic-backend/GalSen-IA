@@ -75,6 +75,22 @@ class InMemoryKnowledgeStore(KnowledgeStore):
             knowledge.metadata["access_count"] = total
             return total
 
+    def record_accesses(self, knowledge_ids) -> int:
+        """Compte plusieurs consultations d'un coup ; retourne le nombre mis à jour."""
+        from collections import Counter
+
+        touchees = 0
+        with self._lock:
+            for identifiant, nombre in Counter(knowledge_ids).items():
+                knowledge = self._data.get(identifiant)
+                if knowledge is None:
+                    continue
+                knowledge.metadata["access_count"] = (
+                    int(knowledge.metadata.get("access_count", 0)) + nombre
+                )
+                touchees += 1
+        return touchees
+
     def delete(self, knowledge_id: str) -> bool:
         """Supprime une connaissance."""
         with self._lock:

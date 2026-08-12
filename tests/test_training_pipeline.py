@@ -284,3 +284,29 @@ def test_sans_version_gardee_il_n_y_a_pas_de_version_courante(tmp_path):
     ))
 
     assert registre.latest("samp") is None
+
+
+def test_mesurer_ne_deplace_pas_ce_qu_on_mesure(monkeypatch):
+    """
+    Chercher incrémente le compteur de consultations, qui alimente le critère de
+    popularité du classement : une même base mesurée deux fois ne rendait pas le
+    même score. Constaté sur le corpus du dépôt — 0,4 sur une base neuve, 0,5
+    après quelques passages, sans qu'une ligne de code ait changé.
+
+    Un barème qui dérive à l'usage ne peut arbitrer aucun entraînement.
+    """
+    from src.knowledge_engine.knowledge_manager import TRACK_ACCESS_VARIABLE
+
+    monkeypatch.setenv(TRACK_ACCESS_VARIABLE, "true")
+    vu = []
+
+    def rechercher(question):
+        vu.append(os.environ.get(TRACK_ACCESS_VARIABLE))
+        return [{"location": "a.md"}]
+
+    evaluate_retrieval(rechercher, cases=[EvalCase(question="q", expected_source="a.md")])
+
+    assert vu == ["false"], "Le compteur doit être coupé pendant la mesure"
+    # Et l'environnement est rendu tel qu'il était : une mesure ne reconfigure
+    # pas la plateforme derrière elle.
+    assert os.environ[TRACK_ACCESS_VARIABLE] == "true"

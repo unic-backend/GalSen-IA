@@ -265,6 +265,46 @@ class SQLiteKnowledgeStore(KnowledgeStore):
                 )
             return total
 
+    def record_accesses(self, knowledge_ids) -> int:
+        """
+        Compte plusieurs consultations en **une seule transaction**.
+
+        `record_access()` lit la ligne, la réécrit, et le gestionnaire relisait
+        ensuite pour rafraîchir son cache : trois accès par résultat. Sur une
+        recherche qui rend dix résultats — et la recherche sémantique balaie
+        désormais toute la base — cela faisait trente accès disque pour un
+        signal de popularité.
+
+        Args:
+            knowledge_ids: Identifiants consultés, avec répétitions possibles.
+
+        Returns:
+            Le nombre de connaissances effectivement mises à jour.
+        """
+        from collections import Counter
+
+        comptes = Counter(knowledge_ids)
+        if not comptes:
+            return 0
+
+        with self._lock, self._get_connection() as conn:
+            lignes = conn.execute(
+                f"SELECT id, metadata FROM knowledge_items WHERE id IN "
+                f"({','.join('?' * len(comptes))})",
+                tuple(comptes),
+            ).fetchall()
+
+            mises_a_jour = []
+            for identifiant, metadata in lignes:
+                donnees = json.loads(metadata) if metadata else {}
+                donnees["access_count"] = int(donnees.get("access_count", 0)) + comptes[identifiant]
+                mises_a_jour.append((json.dumps(donnees, ensure_ascii=False), identifiant))
+
+            conn.executemany(
+                "UPDATE knowledge_items SET metadata = ? WHERE id = ?", mises_a_jour
+            )
+        return len(mises_a_jour)
+
     def delete(self, knowledge_id: str) -> bool:
         """Supprime une connaissance."""
         with self._lock:

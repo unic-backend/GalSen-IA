@@ -137,9 +137,19 @@ def evaluate_retrieval(
     cases: Optional[List[EvalCase]] = None,
     method: str = "",
     top_k: int = 5,
+    neutraliser_popularite: bool = True,
 ) -> EvalResult:
     """
     Mesure le taux de récupération sur le jeu d'évaluation.
+
+    **Mesurer ne doit pas déplacer ce qu'on mesure.** Chercher incrémente le
+    compteur de consultations, qui alimente le critère de popularité du
+    classement : une même base, mesurée deux fois, ne rend pas le même score.
+    Constaté sur le corpus du dépôt — 0,4 sur une base neuve, 0,5 après quelques
+    passages, sans qu'une ligne de code ait changé. Un barème qui dérive à
+    l'usage ne peut arbitrer aucun entraînement.
+
+    `neutraliser_popularite` coupe donc le compteur le temps de la mesure.
 
     Args:
         rechercher: Fonction `(question) -> éléments`. C'est l'appelant qui
@@ -157,6 +167,29 @@ def evaluate_retrieval(
     cas = cases if cases is not None else load_cases()
     resultat = EvalResult(method=method)
 
+    from src.knowledge_engine.knowledge_manager import TRACK_ACCESS_VARIABLE
+
+    ancien = os.environ.get(TRACK_ACCESS_VARIABLE)
+    if neutraliser_popularite:
+        os.environ[TRACK_ACCESS_VARIABLE] = "false"
+    try:
+        _mesurer(rechercher, cas, resultat, top_k)
+    finally:
+        if neutraliser_popularite:
+            if ancien is None:
+                os.environ.pop(TRACK_ACCESS_VARIABLE, None)
+            else:
+                os.environ[TRACK_ACCESS_VARIABLE] = ancien
+    return resultat
+
+
+def _mesurer(
+    rechercher: Callable[[str], Iterable[Any]],
+    cas: List[EvalCase],
+    resultat: "EvalResult",
+    top_k: int,
+) -> None:
+    """Exécute la mesure elle-même, sans se soucier de l'environnement."""
     for element in cas:
         resultat.cases += 1
         compte = resultat.by_language.setdefault(element.language, {"cases": 0, "hits": 0})
@@ -182,8 +215,6 @@ def evaluate_retrieval(
                 "expected": element.expected_source,
                 "got": sources[:3],
             })
-
-    return resultat
 
 
 def _source_de(element: Any) -> Optional[str]:
