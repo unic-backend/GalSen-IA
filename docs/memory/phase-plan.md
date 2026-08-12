@@ -10,14 +10,17 @@ exécuter, et une seule.
 
 **VOLET en cours** : **34 — Agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`)
 **Phases**         : 24, réparties sur 14 chapitres
-**Phase courante** : **5.1 — la vue : capture et lecture de l'arbre d'accessibilité, avec ses refus**, en attente
+**Phase courante** : **chapitre 06 — le contrôle GUI, sous portillon** (2 phases), en attente
+**Cadence** : **un chapitre par tour** — demandé par l'utilisateur le 2026-08-12
+(auparavant : un VOLET, puis une phase).
 **En attente de ta décision** : **ADR-018 est *proposé***, pas accepté. Il ne change rien
 tant que tu n'as pas tranché A / B / C. Les chapitres 05+ tiennent sous chaque option.
 **Terminées dans le VOLET 34** : 1.1 état des lieux (`personal-agent-assessment.md`),
 2.1 agents de code et multi-agents (`agent-foundations-comparison.md`),
 2.2 computer-use, bureau et MCP (`computer-use-comparison.md`),
 3.1 **ADR-017** — les capacités manquantes arrivent comme outils, pas comme une seconde architecture,
-4.1 **ADR-018 (proposé)** — souverain par défaut, avec une dérogation cadrée
+4.1 **ADR-018 (proposé)** — souverain par défaut, avec une dérogation cadrée,
+**chapitre 05 entier** — la vue (`src/tools/screen/`, 20e outil du catalogue)
 **Bloqué**         : la phase **4.1** demande ta décision sur ADR-014 (souveraineté
 contre bascule vers le cloud). Elle ne peut pas être prise à ta place.
 **Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 33**,

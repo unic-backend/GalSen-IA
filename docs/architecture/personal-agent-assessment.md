@@ -78,11 +78,20 @@ API, never a shell, from an allowlist of six executables
 Widening it is a security decision with a shape — an allowlist per task, not a
 global one — and it belongs with the sandbox (chapter 08), not before it.
 
-### 2.3 Sight and GUI: absent
+### 2.3 Sight: delivered as a tool. GUI: still absent
 
-Nothing captures a screen, moves a pointer or knows a window exists. The vision
-engine reads image files; it has never seen a desktop. This is the largest
-genuine gap in the brief, and chapters 05–06.
+**Chapter 05 landed on 2026-08-12.** `ScreenTool` reads the accessibility tree,
+returns elements carrying identity — role, label, bounds — and refuses with a
+named reason where no display exists. On this container it reports *"aucune
+session graphique détectée"* rather than an empty list.
+
+The platform backends (AT-SPI, UI Automation, macOS AX) are declared and report
+themselves unimplemented: verifying them needs a machine with a desktop, the way
+TEST 2 and TEST 6 need one with Docker. That dependency is stated rather than
+papered over with untested code.
+
+**Nothing still moves a pointer.** Reading and acting were separated on purpose:
+an agent can be given eyes without being given hands. Acting is chapter 06.
 
 ### 2.4 The browser is not a browser
 
@@ -93,12 +102,17 @@ agents" has, today, **no counterpart here**.
 
 ---
 
-## 3. Tools: nineteen enabled, all importable
+## 3. Tools: twenty enabled, all importable
+
+> **Updated 2026-08-12 by VOLET 34 chapter 05.** `screen` joined the catalogue:
+> it reads the accessibility tree and refuses, naming the reason, where there is
+> no display. Sight is therefore no longer absent — **GUI control still is**, and
+> the two were deliberately separated so an agent can be given eyes without hands.
 
 ```
-filesystem terminal git github web_search browser api database model memory
-rag embeddings ocr pdf email calendar logging metrics agri_advice   → enabled
-docker                                                              → disabled
+filesystem terminal screen git github web_search browser api database model
+memory rag embeddings ocr pdf email calendar logging metrics agri_advice → enabled
+docker                                                                   → disabled
 ```
 
 All twenty modules import cleanly. `docker` is off **for a stated security
@@ -151,14 +165,15 @@ preferences), **proactive discovery** (nothing runs unprompted), and a
 
 | Brief | Verdict |
 |---|---|
-| Access desktop environments | **absent** |
+| Access desktop environments | **partial** — reads the accessibility tree; platform backends need a desktop to verify |
 | Navigate local storage, multiple drives | **partial** — one declared root, no drive concept |
 | Understand file structures | present (read, list, search) |
 | Organise, rename, move, archive | **absent** — writing is off, no reversible operation |
 | Analyse existing projects | **partial** — file-level, no repository map |
 | Write / modify / debug code | present, gated (VOLET 31) |
 | Run commands and scripts | **partial** — six executables, no sandbox |
-| See the screen, drive a GUI | **absent** |
+| See the screen | **partial** — contract, refusals and element identity delivered (ch. 05) |
+| Drive a GUI | **absent** — chapter 06 |
 | Multi-agent collaboration | present, three specialists missing |
 | Memory | present |
 | Security, approval, logs | **present and ahead of the brief** |
@@ -166,7 +181,8 @@ preferences), **proactive discovery** (nothing runs unprompted), and a
 | Proactive opportunity discovery | **absent** |
 | MCP | **absent** |
 
-**Six of fourteen are absent, four partial, four present.** The four that are
+**Five of fifteen are absent, six partial, four present** (the row "see the
+screen, drive a GUI" split in two when chapter 05 delivered half of it). The four that are
 present are the ones that are hardest to retrofit — permissions, approval,
 audit, ownership — and they are why the missing six can be built without turning
 this into a tool that deletes a user's drive on a bad inference.

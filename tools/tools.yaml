@@ -1,6 +1,17 @@
 version: "1.0"
 
 tools:
+  # Lit l'écran par l'arbre d'accessibilité du système ; il n'agit pas — agir est
+  # le chapitre 06 du VOLET 34. Sur un serveur sans session graphique — le cas de
+  # l'image de production — il refuse en nommant la raison plutôt que de rendre
+  # une liste vide, qui se lirait « l'écran est vide ».
+  - id: screen
+    enabled: true
+    category: system
+    module: "tools.screen.tool"
+    class: "ScreenTool"
+    config: {}
+
   # Access is confined to the project root. Writing is disabled: agents report
   # what should change instead of changing it. Set allow_write to true only when
   # autonomous edits are actually wanted.

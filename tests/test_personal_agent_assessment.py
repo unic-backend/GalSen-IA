@@ -43,11 +43,11 @@ def test_le_compte_d_outils_actifs_est_celui_annonce(outils, document):
     """« dix-neuf activés » est un nombre, donc il se vérifie."""
     actifs = [outil for outil in outils if outil["enabled"]]
 
-    assert len(actifs) == 19, (
-        f"{len(actifs)} outils actifs — l'état des lieux en annonce 19. "
+    assert len(actifs) == 20, (
+        f"{len(actifs)} outils actifs — l'état des lieux en annonce 20. "
         "Mettre le document à jour, ou expliquer le nouvel outil."
     )
-    assert "nineteen enabled" in document
+    assert "twenty enabled" in document
 
 
 def test_l_outil_docker_reste_desactive(outils, document):
@@ -111,11 +111,12 @@ def test_le_navigateur_n_est_pas_un_navigateur():
     assert not operations & {"click", "type", "screenshot", "evaluate"}
 
 
-def test_aucune_capacite_de_vue_ni_de_pointeur_n_existe_encore():
+def test_la_vue_existe_et_la_main_toujours_pas():
     """
-    Le plus grand manque du brief, épinglé : rien ne capture d'écran et rien ne
-    déplace un pointeur. Ce test échouera quand le chapitre 05 livrera — et
-    l'état des lieux devra alors être daté et corrigé, pas laissé tel quel.
+    Ce test disait « ni vue ni pointeur ». Le chapitre 05 a livré la vue, il a
+    échoué, et l'état des lieux a été daté et corrigé — c'était exactement son
+    rôle. Il garde maintenant la moitié qui reste vraie : lire et agir sont
+    séparés, et un agent peut recevoir des yeux sans recevoir de main.
     """
     import importlib.util
 
@@ -126,10 +127,15 @@ def test_aucune_capacite_de_vue_ni_de_pointeur_n_existe_encore():
         except ModuleNotFoundError:
             return False
 
-    for module in ("src.tools.screen.tool", "src.tools.gui.tool"):
-        assert not existe(module), (
-            f"{module} existe désormais : l'état des lieux du VOLET 34 le dit absent."
-        )
+    assert existe("src.tools.screen.tool")
+    assert not existe("src.tools.gui.tool"), (
+        "Le contrôle GUI existe : le chapitre 06 a livré, l'état des lieux doit suivre."
+    )
+
+    # La vue ne doit pas avoir gagné de main au passage.
+    from src.tools.screen import ScreenTool
+
+    assert set(ScreenTool().available_operations()) == {"availability", "find", "snapshot"}
 
 
 def test_le_mode_souverain_est_actif_par_defaut(monkeypatch):
