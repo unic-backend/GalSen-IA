@@ -8,9 +8,13 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : **aucun — la série 26–33 est close** (26.1 exceptée)
-**Phase courante** : — . **26.1 reste la seule phase ouverte**, et elle dépend de toi : `ollama serve`.
-**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 33**
+**VOLET en cours** : **34 — Agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`)
+**Phases**         : 24, réparties sur 14 chapitres
+**Phase courante** : **1.1 — l'état des lieux du dépôt face au brief**, en attente de confirmation
+**Bloqué**         : la phase **4.1** demande ta décision sur ADR-014 (souveraineté
+contre bascule vers le cloud). Elle ne peut pas être prise à ta place.
+**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 33**,
+puis le backlog : persistance audit/approbation, validation des sorties d'agents, ADR-016, le linter
 **Cadence** : **un VOLET par tour** — demandé par l'utilisateur le 2026-08-12.
 La limite des 25 minutes de `.claude/rules/work-cadence.md` continue de s'appliquer.
 
