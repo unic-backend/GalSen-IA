@@ -311,3 +311,26 @@ def test_l_adr_017_ne_tranche_pas_la_souverainete():
 
     assert "does **not** decide" in texte
     assert "ADR-014" in texte
+
+
+def test_la_proposition_de_derogation_ne_change_rien_tant_qu_elle_est_proposee():
+    """
+    ADR-018 est **proposé**, pas accepté : la décision appartient au propriétaire.
+    Tant que son statut n'a pas changé, rien dans le code ne doit avoir bougé —
+    sinon la proposition aurait tranché la question qu'elle pose.
+    """
+    chemin = os.path.join(
+        RACINE, "docs", "architecture", "decisions",
+        "018-sovereign-by-default-with-a-scoped-derogation.md",
+    )
+    with open(chemin, encoding="utf-8") as fichier:
+        texte = fichier.read()
+
+    assert "**Proposed**" in texte
+
+    # Le registre ne connaît aucune dérogation tant que l'ADR n'est pas accepté.
+    import inspect
+
+    from src.model_engine.providers import provider_registry
+
+    assert "derogation" not in inspect.getsource(provider_registry).lower()
