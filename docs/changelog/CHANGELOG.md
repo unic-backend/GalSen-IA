@@ -11,6 +11,33 @@ capability answers `503` until an operator configures a model provider. Release 
 `docs/changelog/releases/`.
 
 ## [Unreleased]
+### Added
+- **The file service gains the `filesystem` and `s3` backends** — ADR-016, step 1
+  - `GALSEN_FILE_BACKEND` selects `in-memory | sqlite | filesystem | s3`, taking precedence
+    over `GALSEN_STORAGE_BACKEND` exactly as `GALSEN_CLOUD_BACKEND` does. An unknown value
+    is reported and the default applies — guessing `filesytem` would write files somewhere
+    the operator does not expect, and they would only find out by looking for them
+  - The port is not a copy. Both original stores share one structure — a JSON metadata index
+    beside a blob store — and differ only in the second. Two complete classes would have
+    written the index logic a third and fourth time, which is what ADR-016 objects to.
+    `IndexedFileStore` holds it once; a backend supplies three operations
+  - **Three defects of the originals are fixed rather than carried over**:
+    - A truncated index made every file disappear **silently** — `_load_index` caught
+      `JSONDecodeError` and restarted empty, so the store reported "0 files" while the bytes
+      were still on disk (measured on `FileSystemCloudStore`). An unreadable index now stops
+      the store from opening, and the offending file is kept: it is the only record of what
+      was stored
+    - The index was rewritten in place, which is what produced that truncated file. It is
+      written to a temporary file and renamed — `os.replace` is atomic. File contents too:
+      a half-written file used to be returned as-is by `get`
+    - `S3CloudStore.clear()` never deleted the objects. It emptied the local index and
+      reported N files removed while N objects stayed in the bucket, billed and readable
+  - An id is validated before becoming a filename or an object key; `../` used to write
+    outside the data directory
+  - Bytes are written **before** the index. The reverse order leaves an index entry pointing
+    at nothing — a file the platform lists and cannot serve
+  - `tests/test_file_backends.py` — 21 tests, one per defect above
+
 ### Changed
 - **Listing files no longer reads their contents** — ADR-016
   - The backlog asked which of three ways to write a file to disk should win. Measuring

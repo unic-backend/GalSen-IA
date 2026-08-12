@@ -11,6 +11,9 @@ Référence : VOLET 02, Chapitres 03 (Backend), 07 (Data).
 from .interfaces import FileManager, FileStore
 from .manager import FileManagerImpl
 from .store import InMemoryFileStore
+from .store_fs import FileSystemFileStore
+from .store_indexed import IndexCorrompu, IndexedFileStore
+from .store_s3 import S3FileStore
 from .types import (
     DEFAULT_MAX_FILE_SIZE,
     CONTENT_TYPE_CATEGORIES,
@@ -28,6 +31,7 @@ __all__ = [
     "CONTENT_TYPE_CATEGORIES",
     "DEFAULT_MAX_FILE_SIZE",
     "FileCategory",
+    "FileSystemFileStore",
     "FileItem",
     "FileSummary",
     "FileManager",
@@ -35,7 +39,10 @@ __all__ = [
     "FileStore",
     "FileUploadResult",
     "FileValidationError",
+    "IndexCorrompu",
+    "IndexedFileStore",
     "InMemoryFileStore",
+    "S3FileStore",
     "generate_file_id",
     "get_category_for_content_type",
     "is_content_type_allowed",

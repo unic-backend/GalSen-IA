@@ -117,6 +117,20 @@ def secure_database_file(chemin: str) -> None:
         pass
 
 
+def data_dir() -> str:
+    """
+    Retourne le répertoire de données de la plateforme.
+
+    Tous les magasins écrivent là — bases SQLite, verrou d'instance, fichiers
+    déposés (ADR-016). La variable était lue directement à plusieurs endroits,
+    et ce module existe pour que ce genre de règle n'ait qu'un seul endroit.
+
+    Returns:
+        `GALSEN_DATA_DIR`, ou `data` par défaut.
+    """
+    return os.getenv("GALSEN_DATA_DIR", "data")
+
+
 def default_sqlite_path(filename: str) -> str:
     """
     Résout le chemin par défaut d'un fichier SQLite.
@@ -127,4 +141,4 @@ def default_sqlite_path(filename: str) -> str:
     Returns:
         Chemin complet dans le répertoire de données configuré.
     """
-    return os.path.join(os.getenv("GALSEN_DATA_DIR", "data"), filename)
+    return os.path.join(data_dir(), filename)

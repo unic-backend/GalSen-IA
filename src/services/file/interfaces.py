@@ -105,8 +105,8 @@ class FileManager(ABC):
         category: Optional[str] = None,
         content_type: Optional[str] = None,
         uploaded_by: Optional[str] = None,
-    ) -> List[FileItem]:
-        """Retourne les fichiers filtrés."""
+    ) -> List[FileSummary]:
+        """Retourne les fichiers filtrés, **sans leur contenu** (ADR-016)."""
 
     @abstractmethod
     def delete_file(self, file_id: str) -> bool:

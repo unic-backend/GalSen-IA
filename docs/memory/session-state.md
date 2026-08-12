@@ -32,11 +32,14 @@ d'analytique » (à prendre après C4).
 - **P1 — ADR-016** : les services `file` et `cloud` sont une conception écrite deux fois.
   Lister des fichiers chargeait leur contenu (60 Mo pour 30 fichiers) ; `FileSummary`
   ramène le listage à 28 Ko. Un appelant utilise le **service de fichiers**.
-- Suite complète : **2368 tests passent**, 7 ignorés.
+- **ADR-016 étape 1** : les backends `filesystem` et `s3` sont sous le service de fichiers
+  (`GALSEN_FILE_BACKEND`). Trois défauts corrigés au passage, dont un index tronqué qui
+  faisait disparaître tous les fichiers en silence.
+- Suite complète : **2389 tests passent**, 7 ignorés.
 
 **Prochaine étape**
-Étapes différées d'ADR-016, indépendantes : déplacer les backends `filesystem` et `s3`
-sous le service de fichiers, déprécier `/cloud/*` dans l'OpenAPI, retirer `CloudFileItem`.
+ADR-016, ce qui reste : déprécier `/cloud/*` dans l'OpenAPI et l'index d'ADR-011, puis
+retirer `CloudFileItem` et supprimer les magasins du service cloud.
 
 **Bloqué / à surveiller**
 - **`git push origin v0.1.0`** : le proxy git de l'environnement refuse les étiquettes

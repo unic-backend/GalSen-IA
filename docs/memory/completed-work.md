@@ -424,3 +424,15 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **ADR-016 tranche ce que le backlog demandait** : un appelant utilise le **service de fichiers**. `/cloud/*` est déprécié et non supprimé (ADR-011, `v0.1.0` est publiée), et le connecteur reste un connecteur — explicitement pas un backend de stockage.
 - **Reste à appliquer** (étapes indépendantes, backlog) : déplacer les backends `filesystem` et `s3` sous le service de fichiers, marquer `/cloud/*` déprécié dans l'OpenAPI, retirer `CloudFileItem`.
 - **7 tests** (`tests/test_file_listing_without_content.py`), dont un qui compare la mémoire mobilisée par un listage au volume stocké : les octets ne peuvent pas revenir en silence. Suite complète : **2368 tests passent**, 7 ignorés.
+
+### 2026-08-12 (ADR-016 étape 1 — les backends `filesystem` et `s3` passent sous le service de fichiers)
+- **`GALSEN_FILE_BACKEND`** choisit `in-memory | sqlite | filesystem | s3`, et prime sur `GALSEN_STORAGE_BACKEND` comme le fait `GALSEN_CLOUD_BACKEND`. Une valeur inconnue est signalée, jamais devinée.
+- **Le port n'est pas une recopie.** Les deux magasins d'origine partagent une structure — un index JSON de métadonnées à côté d'un dépôt d'octets — et ne diffèrent que par le second. Deux classes complètes auraient écrit la logique d'index une troisième et une quatrième fois, ce qu'ADR-016 reproche précisément à l'existant. `IndexedFileStore` la tient une fois ; un backend fournit trois opérations.
+- **Trois défauts corrigés au lieu d'être recopiés** :
+  - **Un index tronqué faisait disparaître tous les fichiers, en silence** — `_load_index` attrapait `JSONDecodeError` et repartait vide, donc le magasin rapportait « 0 fichier » alors que les octets étaient sur le disque. Mesuré sur `FileSystemCloudStore`. Un index illisible **arrête** désormais l'ouverture, et le fichier fautif est conservé : c'est la seule trace de ce qui a été stocké.
+  - **L'index était réécrit en place**, ce qui produisait exactement ce fichier tronqué. Écrit à côté puis renommé (`os.replace` est atomique) ; les octets aussi — un fichier écrit à moitié était rendu tel quel par `get`.
+  - **`S3CloudStore.clear()` ne supprimait pas les objets** : il vidait l'index local et rapportait N fichiers supprimés pendant que N objets restaient dans le seau, facturés et lisibles.
+- **Traversée de chemin fermée** : un identifiant est validé avant de devenir un nom de fichier ou une clé d'objet — `../` écrivait hors du répertoire de données.
+- **Les octets sont écrits avant l'index** : l'ordre inverse laisse une entrée d'index pointant vers rien, c'est-à-dire un fichier que la plateforme liste et ne peut pas rendre.
+- **`data_dir()`** ajouté à `src/storage/paths.py` — la variable était relue ailleurs, et ce module existe pour que cette règle n'ait qu'un endroit.
+- **21 tests** (`tests/test_file_backends.py`), un par défaut ci-dessus. Le garde de configuration a d'ailleurs attrapé `GALSEN_FILE_BACKEND` non documentée dans `.env.example` — il a fait son travail. Suite complète : **2389 tests passent**, 7 ignorés.

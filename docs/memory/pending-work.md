@@ -54,10 +54,10 @@ gets re-argued at every review.
   triggers the image build: `git push origin v0.1.0`.
   *Deciding criterion:* maintenance cost — one command, and criterion C4 needs it.
 
-- **Finish applying ADR-016.** The decision is written and the measured defect is fixed;
-  three staged steps remain: move the filesystem and S3 backends under the file service,
-  mark `/cloud/*` deprecated in the OpenAPI description and the ADR-011 index, and retire
-  `CloudFileItem` in favour of `FileItem`. Each is independent and safe in any order.
+- **Finish applying ADR-016.** The decision is written, the measured defect is fixed and
+  the `filesystem` and `s3` backends are under the file service. Two steps remain: mark
+  `/cloud/*` deprecated in the OpenAPI description and the ADR-011 index, and retire
+  `CloudFileItem` in favour of `FileItem`, deleting the cloud stores.
   *Deciding criterion:* maintenance cost — two route families do the same job until the
   next major version, which ADR-011 accepts on purpose. What made this P1 — *"nothing says
   which one a caller should use"* — is answered: a caller uses the file service.

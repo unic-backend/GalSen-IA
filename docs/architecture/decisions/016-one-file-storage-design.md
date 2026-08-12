@@ -125,11 +125,38 @@ service.
 - `FileManagerImpl.list_files()` and `POST /file/list` follow the type. The route already
   discarded the content, so what callers receive over HTTP does not change.
 
-### Staged, and not done by this ADR
+### Applied since (2026-08-12)
 
-- Moving the filesystem and S3 backends under the file service.
+- **The filesystem and S3 backends are under the file service.**
+  `GALSEN_FILE_BACKEND` selects `in-memory | sqlite | filesystem | s3`, taking precedence
+  over `GALSEN_STORAGE_BACKEND` the way `GALSEN_CLOUD_BACKEND` does.
+
+  The port is not a copy. Both original stores share one structure — a JSON metadata index
+  beside a blob store — and differ only in the second. Porting them as two complete classes
+  would have written the index logic a third and a fourth time, which is what this ADR
+  objects to. `IndexedFileStore` holds it once; a backend provides three operations.
+
+  Three defects of the originals are fixed rather than carried over:
+
+  1. **A truncated index made every file disappear, silently.** `_load_index` caught
+     `JSONDecodeError` and restarted from an empty index, so the store reported "0 files"
+     while the bytes were still on disk — measured on `FileSystemCloudStore`. An unreadable
+     index now stops the store from opening, and the offending file is kept: it is the only
+     record of what was stored.
+  2. **The index was rewritten in place**, so any interrupted write produced exactly the
+     truncated file of point 1. It is written to a temporary file and renamed; `os.replace`
+     is atomic, and the old index stays valid until the last instant. File contents are
+     written the same way.
+  3. **`S3CloudStore.clear()` never deleted the objects.** It emptied the local index and
+     reported N files removed while N objects stayed in the bucket, billed and readable.
+
+  An id is also validated before it becomes a filename or an object key: `../` used to
+  write outside the data directory.
+
+### Staged, and not done yet
+
 - Deprecating `/cloud/*` in the OpenAPI description and the deprecation index of ADR-011.
-- Retiring `CloudFileItem` in favour of `FileItem`.
+- Retiring `CloudFileItem` in favour of `FileItem`, and deleting the cloud stores.
 
 Each is a separate change with its own tests, and each is safe to take in any order once
 this decision exists. What the backlog asked for — *"nothing says which one a caller
