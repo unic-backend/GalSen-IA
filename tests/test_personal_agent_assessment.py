@@ -189,3 +189,54 @@ def test_aucun_plafond_de_requete_n_est_annonce_sans_exister():
     source = inspect.getsource(router_engine)
 
     assert "max_iterations" not in source
+
+
+# ----------------------------------------------------------------------
+# Ce que la comparaison computer-use engage (phase 2.2)
+# ----------------------------------------------------------------------
+
+def test_playwright_reste_une_dependance_a_declarer():
+    """
+    La comparaison affirme que le paquet Playwright n'est pas installé — mesuré,
+    pas supposé, après avoir d'abord écrit le contraire. S'il arrive un jour, il
+    devra arriver **déclaré** dans un `requirements-*.txt`, avec son poids
+    annoncé, comme les embeddings et l'audio.
+    """
+    import importlib.util
+
+    try:
+        present = importlib.util.find_spec("playwright") is not None
+    except ModuleNotFoundError:
+        present = False
+
+    if not present:
+        return
+
+    fichiers = [
+        nom for nom in os.listdir(RACINE)
+        if nom.startswith("requirements") and nom.endswith(".txt")
+    ]
+    declare = any(
+        "playwright" in open(os.path.join(RACINE, nom), encoding="utf-8").read()
+        for nom in fichiers
+    )
+    assert declare, "Playwright est installé sans être déclaré dans un requirements-*.txt"
+
+
+def test_la_couche_gui_devra_nommer_ce_qu_elle_touche():
+    """
+    Exigence tirée de notre propre architecture, pas d'un benchmark : le
+    portillon d'approbation doit pouvoir **nommer** l'élément qu'une action va
+    toucher. Un clic en coordonnées produirait une demande d'approbation qui dit
+    « cliquer en (412, 380) » — un mystère à approuver.
+
+    Ce test garde la propriété pour le jour où le chapitre 06 livre : toute
+    demande d'approbation porte une description non vide.
+    """
+    from src.approval_engine.types import ApprovalRequest
+
+    demande = ApprovalRequest(agent_id="gui", request_id="r1", action="gui:click")
+
+    # Le champ existe et peut porter l'identité de la cible ; le chapitre 06
+    # devra le remplir, et ce test deviendra l'assertion qui l'y oblige.
+    assert hasattr(demande, "description")
