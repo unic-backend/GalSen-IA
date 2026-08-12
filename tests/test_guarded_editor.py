@@ -301,3 +301,66 @@ def test_la_carte_mesure_ce_qui_n_est_pas_couvert(depot):
     assert resume["files"] == 2
     assert resume["with_named_test"] == 1
     assert resume["coverage_by_convention"] == 0.5
+
+
+# ----------------------------------------------------------------------
+# Le graphe d'imports choisit les suites (VOLET 34, ch. 10)
+# ----------------------------------------------------------------------
+
+def _depot_avec_dependance(depot):
+    """Ajoute un module qu'aucun test ne nomme, mais que la chaîne d'imports atteint."""
+    (depot / "src" / "noyau.py").write_text(
+        "def doubler(valeur):\n    return valeur * 2\n", encoding="utf-8"
+    )
+    (depot / "src" / "calcul.py").write_text(
+        "from src.noyau import doubler\n\n\n"
+        "def additionner(a, b):\n    return doubler(a + b) // 2\n",
+        encoding="utf-8",
+    )
+    return depot
+
+
+def test_un_fichier_sans_test_nomme_est_quand_meme_verifie(editeur, depot):
+    """
+    Le gain mesurable du chapitre 10.
+
+    Aucun fichier ne s'appelle `test_noyau.py` : la convention de nom rendait
+    « appliqué mais **non vérifié** », et la modification restait en place. Le
+    graphe voit que `tests/test_calcul.py` atteint `src/noyau.py` par la chaîne
+    d'imports, lance ce test, et **annule** parce qu'il échoue.
+    """
+    _depot_avec_dependance(depot)
+    editeur_, contexte = editeur
+    assert RepoMap(str(depot)).build(["src"]).tests_for("src/noyau.py") is None
+
+    resultat = editeur_.propose(
+        "src/noyau.py", "def doubler(valeur):\n    return valeur * 3\n", "casser"
+    )
+    _approuver(contexte, resultat.approval_request_id)
+    applique = editeur_.apply(resultat.approval_request_id)
+
+    assert applique.tests_run == "tests/test_calcul.py"
+    assert applique.status == "reverted"
+    assert "valeur * 2" in (depot / "src" / "noyau.py").read_text(encoding="utf-8")
+
+
+def test_les_suites_lancees_sont_plafonnees(editeur, depot):
+    """
+    Un fichier central est importé par des dizaines de tests ; les lancer tous
+    reviendrait à passer la suite complète à chaque édition.
+    """
+    _depot_avec_dependance(depot)
+    for numero in range(5):
+        (depot / "tests" / f"test_appel_{numero}.py").write_text(
+            "import sys, os\n"
+            "sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))\n"
+            "from src.noyau import doubler\n\n"
+            "def test_double():\n    assert doubler(2) == 4\n",
+            encoding="utf-8",
+        )
+    editeur_, _ = editeur
+
+    suites = editeur_._tests_de("src/noyau.py")
+
+    assert len(suites) == 3
+    assert all(suite.startswith("tests/") for suite in suites)

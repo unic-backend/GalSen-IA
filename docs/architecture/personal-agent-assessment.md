@@ -199,8 +199,20 @@ write goes through the approval gate.
 | Backups | `VACUUM INTO` hot backup of the data directory |
 
 Missing: **working-style learning** (feedback is captured, nothing turns it into
-preferences), **proactive discovery** (nothing runs unprompted), and a
-**repository map** (the coder edits files; it has no model of a large codebase).
+preferences) and **proactive discovery** (nothing runs unprompted).
+
+> **Updated 2026-08-12 by VOLET 34 chapter 10.** The third gap listed here — the
+> coder having no model of a large codebase — is closed. `src/agent/repo_graph.py`
+> derives the import graph (310 code files, 1 194 internal edges) and answers
+> *who breaks if I change this*; `src/agent/symbol_index.py` indexes **5 762
+> symbols**, methods included, and turns `verification.md`'s "check who calls it
+> before changing a signature" into a query.
+>
+> The measured gain is in the coding loop: `GuardedEditor` picked the test to run
+> **by filename**, which found one for 67 of 308 files (21.75 %) and left the other
+> 78 % applied-but-unverified. Selecting by import reaches **270 of 310** (87 %).
+> Two cheap facts fell out of the graph: three import cycles, **none of them
+> blocking** — all deferred inside function bodies.
 
 ---
 
@@ -212,7 +224,7 @@ preferences), **proactive discovery** (nothing runs unprompted), and a
 | Navigate local storage, multiple drives | **present** — several named roots, read-only by default (ch. 07) |
 | Understand file structures | present (read, list, search) |
 | Organise, rename, move, archive | **present** — reversible, journalled, nothing deleted (ch. 07) |
-| Analyse existing projects | **partial** — file-level, no repository map |
+| Analyse existing projects | **present** — import graph, impact radius and symbol index over 310 files (ch. 10) |
 | Write / modify / debug code | present, gated (VOLET 31) |
 | Run commands and scripts | **present** — six executables, plus a resource sandbox with its escape tests (ch. 08) |
 | See the screen | **partial** — contract, refusals and element identity delivered (ch. 05) |
@@ -224,7 +236,7 @@ preferences), **proactive discovery** (nothing runs unprompted), and a
 | Proactive opportunity discovery | **absent** |
 | MCP | **partial** — server delivered, whitelisted and identified (ch. 09); client decides before connecting but connects to nothing |
 
-**Three of fifteen are absent, five partial, seven present.** The four that are
+**Three of fifteen are absent, four partial, eight present.** The four that are
 present are the ones that are hardest to retrofit — permissions, approval,
 audit, ownership — and they are why the missing six can be built without turning
 this into a tool that deletes a user's drive on a bad inference.

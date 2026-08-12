@@ -35,6 +35,26 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Whole-repository understanding for the coding agent** (`src/agent/repo_graph.py`,
+  `src/agent/symbol_index.py`, VOLET 34 ch. 10)
+  - The import graph answers *who breaks if I change this*: 310 code files, 1 194 internal
+    edges, transitive impact, and the tests that actually reach a file
+  - **The coding loop now verifies what it edits.** `GuardedEditor` picked its test suite
+    **by filename**, which found one for 67 of 308 files (21.75 %) and returned
+    "applied but **not verified**" for the rest — leaving the edit in place. Selecting by
+    import reaches 270 of 310 (87 %), capped at three suites so a central file does not
+    trigger the whole suite on every edit
+  - **Three import cycles, none blocking** — all deferred inside function bodies. The
+    distinction is in the code: a deferred cycle is a smell, a load-time cycle is an
+    `ImportError` at startup, and merging them would report failures that do not happen
+  - The symbol index holds **5 762 symbols including 3 393 methods**, which `RepoMap` never
+    saw because it stopped at the top level. `rename_impact()` turns
+    `verification.md`'s "check who calls it before changing a signature" into a query
+  - Stated limit, pinned by a test: with no type analysis, `obj.calculer()` counts as a use
+    of every `calculer` in the repository. Uses are a safe **superset** — missing a caller
+    is the failure the rule exists to prevent
+  - `tests/test_repo_graph.py` — 31 tests, on a toy repository for structural claims and on
+    the real one for the facts whose value is that they break
 - **MCP: a server behind a whitelist, a client that connects to nothing yet** (`src/mcp/`,
   VOLET 34 ch. 09, ADR-017 §6)
   - JSON-RPC 2.0 with **no dependency** — `initialize`, `tools/list`, `tools/call`, `ping`.

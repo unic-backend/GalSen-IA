@@ -13,7 +13,7 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Date** : 2026-08-12
 
 **En cours** : **VOLET 34 — agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`),
-à **un chapitre par tour** (cadence demandée par l'utilisateur). Chapitres 01 à 09 faits.
+à **un chapitre par tour** (cadence demandée par l'utilisateur). Chapitres 01 à 10 faits.
 
 **Terminé dans cette session**
 - Le backlog (persistance audit/approbation, validation des sorties d'agents, ADR-016 en
@@ -22,13 +22,15 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
   comparatives sourcées, **ADR-017** (les capacités manquantes arrivent comme outils),
   **ADR-018 proposé**, puis la vue (`src/tools/screen/`), la main sous portillon
   (`src/tools/gui/`), les racines et l'annulation (`src/storage/`), le bac à sable et ses
-  tests d'évasion (`src/sandbox/`), et **MCP** (`src/mcp/`) — serveur en liste blanche de
-  huit outils, client épinglé traitant les descriptions tierces comme des données.
-- Suite complète : **2503 tests passent**, 7 ignorés ; `ruff check .` propre.
+  tests d'évasion (`src/sandbox/`), **MCP** (`src/mcp/`) — serveur en liste blanche de huit
+  outils, client épinglé — et la **compréhension du dépôt entier** (`repo_graph.py`,
+  `symbol_index.py`), qui fait passer la boucle de code de 22 % à 87 % de modifications
+  réellement vérifiées.
+- Suite complète : **2536 tests passent**, 7 ignorés ; `ruff check .` propre.
 
 **Prochaine étape**
-**Chapitre 10 — carte du dépôt pour l'agent de code** (`VOLET_34.md`). Puis 11 (agents
-manquants), 12 (style de travail), 13 (modèle de sécurité), 14 (matériel et pile).
+**Chapitre 11 — les agents manquants** : organisateur de fichiers, chef de projet, analyste
+d'opportunités. Puis 12 (style de travail), 13 (modèle de sécurité), 14 (matériel et pile).
 
 **Bloqué / à surveiller**
 - **ADR-018 attend ta décision** : A / B / C sur la souveraineté. Recommandation : **B**.

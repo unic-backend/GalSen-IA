@@ -47,6 +47,11 @@ CHEMINS_INTERDITS = (
 # Tentatives maximales de la boucle éditer → tester → corriger.
 MAX_TENTATIVES = 3
 
+# Suites lancées au maximum après une modification (VOLET 34, ch. 10). Un
+# fichier central est importé par des dizaines de tests ; les lancer tous
+# reviendrait à passer la suite complète à chaque édition.
+LIMITE_SUITES = 3
+
 # Au-delà, ce n'est plus une correction ciblée : c'est une réécriture, et elle
 # mérite une relecture humaine complète plutôt qu'une approbation de passage.
 MAX_OCTETS = 200_000
@@ -280,16 +285,16 @@ class GuardedEditor:
         if not run_tests:
             return resultat
 
-        suite = self._test_de(chemin)
-        if suite is None:
+        suites = self._tests_de(chemin)
+        if not suites:
             resultat.detail = (
-                "Aucun test nommé ne couvre ce fichier : la modification est "
-                "appliquée mais **non vérifiée**."
+                "Aucun test n'atteint ce fichier, ni par import ni par nom : la "
+                "modification est appliquée mais **non vérifiée**."
             )
             return resultat
 
-        reussi, sortie = self.run_tests(suite)
-        resultat.tests_run = suite
+        reussi, sortie = self.run_tests(suites)
+        resultat.tests_run = ", ".join(suites)
         resultat.tests_passed = reussi
         resultat.output = sortie[-2000:]
 
@@ -319,30 +324,65 @@ class GuardedEditor:
     # ------------------------------------------------------------------
 
     def _test_de(self, chemin: str) -> Optional[str]:
-        """Retourne le test couvrant un fichier, via la carte du dépôt."""
+        """
+        Retourne le test couvrant un fichier, via la carte du dépôt.
+
+        Conservée pour ce qu'elle est : la convention de nom. `_tests_de` lui
+        est préférée — elle ne trouvait de test que pour 67 fichiers sur 308.
+        """
         from .repo_map import RepoMap
 
         return RepoMap(self.root).build().tests_for(chemin)
 
-    def run_tests(self, suite: str, timeout: int = 600) -> tuple:
+    def _tests_de(self, chemin: str) -> List[str]:
         """
-        Lance une suite de tests et retourne son verdict et sa sortie.
+        Retourne les suites à lancer après une modification.
+
+        Trois sources, dans l'ordre du plus précis au plus large :
+
+        1. les tests qui **importent le fichier** (graphe d'imports, ch. 10) ;
+        2. ceux qui importent son rayon d'impact, quand aucun ne le touche
+           directement ;
+        3. la convention de nom, en dernier recours.
+
+        Le nombre de suites est plafonné : un fichier central est importé par
+        des dizaines de tests, et les lancer tous reviendrait à passer la suite
+        complète à chaque édition. Le plafond est dit dans le résultat plutôt
+        que silencieux.
+        """
+        from .repo_graph import RepoGraph
+
+        graphe = RepoGraph(root=self.root).build()
+        prefixe = "tests/"
+        directs = [f for f in graphe.imported_by(chemin) if f.startswith(prefixe)]
+        suites = directs or graphe.tests_to_run(chemin)
+        if not suites:
+            nomme = self._test_de(chemin)
+            suites = [nomme] if nomme else []
+        return suites[:LIMITE_SUITES]
+
+    def run_tests(self, suite, timeout: int = 600) -> tuple:
+        """
+        Lance une ou plusieurs suites de tests et retourne le verdict.
 
         Args:
-            suite: Fichier de tests à lancer.
+            suite: Fichier de tests, ou liste de fichiers.
             timeout: Délai maximal, en secondes.
 
         Returns:
             `(réussi, sortie)`. Un délai dépassé compte comme un échec : une
             suite qui ne rend pas la main n'est pas une suite qui passe.
         """
+        suites = [suite] if isinstance(suite, str) else list(suite)
+        if not suites:
+            return False, "Aucune suite à lancer."
         try:
             execution = subprocess.run(
-                [sys.executable, "-m", "pytest", suite, "-q", "-p", "no:randomly"],
+                [sys.executable, "-m", "pytest", *suites, "-q", "-p", "no:randomly"],
                 cwd=self.root, capture_output=True, text=True, timeout=timeout,
             )
         except subprocess.TimeoutExpired:
-            return False, f"La suite « {suite} » n'a pas rendu la main en {timeout}s."
+            return False, f"« {', '.join(suites)} » n'a pas rendu la main en {timeout}s."
         except (OSError, subprocess.SubprocessError) as erreur:
             return False, f"pytest n'a pas pu s'exécuter : {erreur}"
         return execution.returncode == 0, execution.stdout + execution.stderr
