@@ -10,8 +10,9 @@ exécuter, et une seule.
 
 **VOLET en cours** : **34 — Agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`)
 **Phases**         : 24, réparties sur 14 chapitres
-**Phase courante** : **2.1 — comparaison des fondations open source (agents de code, multi-agents)**, en attente de confirmation
-**Terminée dans le VOLET 34** : 1.1 — état des lieux (`docs/architecture/personal-agent-assessment.md`)
+**Phase courante** : **2.2 — comparaison des fondations : computer-use, automatisation de bureau, MCP**, en attente de confirmation
+**Terminées dans le VOLET 34** : 1.1 état des lieux (`personal-agent-assessment.md`),
+2.1 comparaison agents de code et multi-agents (`agent-foundations-comparison.md`)
 **Bloqué**         : la phase **4.1** demande ta décision sur ADR-014 (souveraineté
 contre bascule vers le cloud). Elle ne peut pas être prise à ta place.
 **Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 33**,

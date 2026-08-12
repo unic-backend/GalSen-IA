@@ -144,3 +144,48 @@ def test_le_mode_souverain_est_actif_par_defaut(monkeypatch):
     monkeypatch.delenv("GALSEN_SOVEREIGN_MODE", raising=False)
 
     assert sovereign_mode() is True
+
+
+# ----------------------------------------------------------------------
+# Ce que la comparaison des fondations engage (phase 2.1)
+# ----------------------------------------------------------------------
+
+def test_la_boucle_d_agent_n_existe_toujours_pas():
+    """
+    Trouvaille de la phase 2.1. OpenHands a besoin d'un contrôleur qui borne les
+    itérations et le budget parce que son agent **boucle** jusqu'à
+    `AgentFinishAction`. Le routeur d'ici ne boucle pas : il parcourt un pipeline
+    déclaré une fois, dans l'ordre, et s'arrête. La sûreté est structurelle et
+    gratuite.
+
+    Le brief demande des « self-reflection and improvement loops ». Le jour où
+    cette boucle arrive, la garantie disparaît — et le plafond d'itérations doit
+    arriver **dans la même phase**, pas dans la suivante. Ce test échouera ce
+    jour-là, et c'est exactement son rôle.
+    """
+    import inspect
+
+    from src.router import router_engine
+
+    source = inspect.getsource(router_engine.RouterEngine.process_request)
+
+    assert "while " not in source, (
+        "Une boucle est apparue dans le routeur : elle doit être bornée par un "
+        "plafond d'itérations et un budget de requête (comparaison, §6)."
+    )
+    assert "for agent_id in ordered_agents:" in source
+
+
+def test_aucun_plafond_de_requete_n_est_annonce_sans_exister():
+    """
+    Le contre-test du précédent : tant qu'il n'y a pas de boucle, il ne doit pas
+    y avoir de plafond décoratif. Un `max_iterations` qui ne borne rien serait
+    la capacité déclarée sans preuve que ce dépôt traque partout.
+    """
+    import inspect
+
+    from src.router import router_engine
+
+    source = inspect.getsource(router_engine)
+
+    assert "max_iterations" not in source
