@@ -63,12 +63,6 @@ gets re-argued at every review.
 
 ## P2 — Medium · real value, no criterion waits on it
 
-- **Extend SQLite persistence (ADR-005) to the audit and approval engines.** The other
-  five services already have their store.
-  *Deciding criterion:* security implications — an audit trail that vanishes on restart
-  is worthless for forensics. It stays P2 only because there is nothing to audit yet;
-  **it becomes P1 the day C4 is met.**
-
 - **Validate agent outputs.** Chapter 02 of VOLET_06 lists "validate outputs" as a
   pipeline step and nothing implements it: no schema stands between an agent's dictionary
   and the aggregated response, and an empty pipeline returns `success` having run nothing.

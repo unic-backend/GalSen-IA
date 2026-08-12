@@ -11,8 +11,26 @@ capability answers `503` until an operator configures a model provider. Release 
 `docs/changelog/releases/`.
 
 ## [Unreleased]
-
-Nothing since `v0.1.0`.
+### Added
+- **The audit log and the approval queue now survive a restart** (ADR-005)
+  - `src/storage/sqlite_audit_store.py` and `src/storage/sqlite_approval_store.py` join the
+    seven existing stores and follow the same pattern: `prepare_connection`, an `RLock`,
+    JSON for the composed fields, the file brought back to `0600`
+  - Both managers select their store the way the other five services do —
+    `GALSEN_STORAGE_BACKEND=sqlite` is enough, and `in-memory` stays the default
+  - Audit filters are translated to **SQL** rather than applied in Python after reading: a
+    log is read with filters ("this agent's failures since yesterday"), and fetching
+    everything to sort afterwards would grow the cost with the log itself — at the worst
+    possible moment. An **unknown filter raises** instead of being ignored, because
+    ignoring it would return more rows than asked for, which a log reader would read as an
+    absence of filtering
+  - A decision applies only to a **pending** request: `_decide` filters on the status
+    inside its `UPDATE`, so two concurrent decisions cannot both succeed. Checking then
+    writing would leave a window where one request is both approved and rejected
+  - `tests/test_audit_approval_persistence.py` — 13 tests, including restart survival, the
+    nine audit fields round-tripping, and **filter-for-filter equivalence with the
+    in-memory stores**: two implementations of one contract drifting apart is the defect
+    this repository has already found three times
 
 ## [0.1.0] - 2026-08-11
 ### Security

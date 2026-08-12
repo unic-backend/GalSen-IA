@@ -10,39 +10,31 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 ## Dernière session
 
-**Date** : 2026-08-11
+**Date** : 2026-08-12
 
-**En cours** : rien. **Les quatre chantiers de `docs/deployment/audit-2026-08-11.md`
-sont terminés et poussés** (branche `claude/galsen-ia-phases-ukwz7p`). `v0.1.0` est
-étiquetée localement sur `383fcf7` — **pas encore poussée** : le proxy git de
-l'environnement refuse les étiquettes (403). Un `git push origin v0.1.0` depuis un
-clone normal publie la version et déclenche `release.yml`.
+**En cours** : rien. Le backlog est la file de travail courante (les VOLETs 26–33 sont
+clos). Prochain P2 à prendre : **valider les sorties d'agents**.
 
 **Terminé dans cette session**
-- Les 25 VOLETs (série close) puis le backlog : le planificateur pilote le pipeline.
-- **Chantier 1** — persistance : `src/storage/paths.py` point de décision unique (WAL,
-  0600), sauvegarde à chaud par `VACUUM INTO`. Deux défauts trouvés : l'image sans
-  `config/`, `agents/`, `workflows/` ; `SQLiteMemoryStore` ignorant `GALSEN_DATA_DIR`.
-- **Chantier 2** (ADR-012) — Caddy termine TLS, `api` ne publie plus de port, et
-  `X-Forwarded-*` n'est cru que d'un proxy déclaré : sans cela un en-tête forgé donnait
-  un quota illimité et l'invisibilité du détecteur de menaces.
-- **Chantier 3** (ADR-013) — verrou `flock` sur le répertoire de données : une deuxième
-  instance refuse de démarrer. **Redis écarté**, avec le déclencheur écrit.
-- Tests : **2164 passants**, 7 ignorés.
+- **VOLETs 26 à 33** : souveraineté des modèles (ADR-014, SamP/ToP), embeddings et
+  recherche sémantique (ADR-015), ingestion documentaire, agent de code sous portillon
+  d'approbation (`src/agent/guarded_editor.py`), infrastructure d'entraînement
+  (`src/training/` — capture consentie, barème, lignée).
+- **Backlog** : les huit dépendances optionnelles tranchées une par une (`scipy` retiré,
+  `docker` désactivé pour raison de sécurité, six déclarées) ; le chemin de lecture de la
+  base de connaissances ne réécrit plus à chaque recherche ; la mesure ne dérive plus.
+- **P2 — l'audit et les approbations persistent** : `src/storage/sqlite_audit_store.py`,
+  `src/storage/sqlite_approval_store.py`, choisis par `GALSEN_STORAGE_BACKEND=sqlite`.
+- Suite complète : **2339 tests passent**, 7 ignorés.
 
 **Prochaine étape**
-Pousser l'étiquette (`git push origin v0.1.0`) : `release.yml` construit alors l'image,
-vérifie qu'elle répond sur `/live` et publie les notes. Puis la liste de
-`docs/deployment/production-readiness.md` — DNS, ports 80/443, `.env`, TEST 2, TEST 6.
+P2 « valider les sorties d'agents » : aucun schéma ne se tient entre le dictionnaire d'un
+agent et la réponse agrégée, et un pipeline vide rend `success` sans avoir rien exécuté.
 
 **Bloqué / à surveiller**
-- **TEST 2 et TEST 6 non exécutés** : ils demandent un hôte Docker, absent de
-  l'environnement de travail. À la charge de l'opérateur avant publication.
-- **Chantier 4** : `release.yml`, `docs/deployment/rollback.md`,
-  `docs/deployment/production-readiness.md`, versions figées, outils de test sortis de
-  l'image de production.
-- **Une révocation de clé ne survit pas à un redémarrage** (`persistent: false`). Le
-  verrou ferme le cas « autre instance », pas le cas « redémarrage ». Suite naturelle :
-  persister la liste de révocation dans le répertoire de données.
+- **`git push origin v0.1.0`** : le proxy git de l'environnement refuse les étiquettes
+  (403). L'étiquette existe localement sur `383fcf7` ; à pousser depuis un clone normal.
 - **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192.
-- **La base de connaissances est toujours vide** : P1, ne dépend pas du code.
+- **La base de connaissances n'a que le corpus du dépôt** (250 passages de documentation).
+  Le corpus sénégalais demande de vrais documents déclarés — il ne s'invente pas.
+- **TEST 2 et TEST 6 non exécutés** : ils demandent un hôte Docker.
