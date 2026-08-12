@@ -10,8 +10,12 @@ exécuter, et une seule.
 
 **VOLET en cours** : **34 — Agent d'ordinateur personnel** (`docs/roadmap/VOLET_34.md`)
 **Phases**         : 24, réparties sur 14 chapitres
-**Phase courante** : **aucune.** VOLET 34 terminé (14/14), puis la **découverte proactive**
-(`src/proactive/`) livrée hors chapitre le 2026-08-12 : le brief n'a plus de capacité absente.
+**VOLET en attente** : **35 — IA internationale à profondeur sénégalaise**
+(`docs/roadmap/VOLET_35.md`, plan publié le 2026-08-12). **12 chapitres → 18 phases.**
+**Phase courante** : **chapitre 01 — les axes portée et sujet**, en attente de confirmation.
+L'ordre n'est pas négociable sur ce point : tout le reste lit l'axe de portée, et l'ajouter
+après le corpus voudrait dire ré-étiqueter chaque passage à la main.
+(VOLET 34 terminé 14/14, découverte proactive livrée hors chapitre.)
 **Cadence** : **un chapitre par tour** — demandé par l'utilisateur le 2026-08-12
 (auparavant : un VOLET, puis une phase).
 **ADR-018 : accepté en option B** le 2026-08-12, décidé par le propriétaire et **implémenté**

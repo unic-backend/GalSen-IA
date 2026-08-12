@@ -169,6 +169,48 @@ def test_un_flot_de_sortie_est_tronque_et_le_dit():
     assert "tronqué" in resultat.stdout
 
 
+def _plafond_de_processus(marge: int = 64) -> int:
+    """
+    Retourne un plafond de processus au-dessus de ce que la machine utilise déjà.
+
+    `RLIMIT_NPROC` borne l'**utilisateur**, pas le bac à sable — la politique le
+    dit depuis le chapitre 08. Un test qui fixe 32 sur une machine qui fait déjà
+    tourner des centaines de processus rend donc **tout `fork` impossible** : le
+    fils meurt avec « Resource temporarily unavailable » avant d'avoir rien
+    prouvé, et le test mesure le plafond au lieu de mesurer le nettoyage.
+
+    C'est exactement ce qui cassait ces deux tests sur les exécuteurs GitHub,
+    alors qu'ils passaient ici.
+    """
+    try:
+        vivants = sum(1 for entree in os.listdir("/proc") if entree.isdigit())
+    except OSError:
+        vivants = 0
+    return max(64, vivants + marge)
+
+
+def _fork_possible(policy: SandboxPolicy) -> bool:
+    """
+    Vérifie que l'environnement autorise réellement un `fork` sous cette politique.
+
+    Sans cette sonde, un environnement qui refuse les forks ferait échouer les
+    deux tests suivants sur une assertion trompeuse — ils affirmeraient que le
+    nettoyage ne marche pas, alors que rien n'a été lancé.
+    """
+    resultat = run_python(
+        "import os\n"
+        "try:\n"
+        "    pid = os.fork()\n"
+        "except OSError:\n"
+        "    raise SystemExit(1)\n"
+        "if pid == 0:\n"
+        "    os._exit(0)\n"
+        "os.waitpid(pid, 0)\n",
+        policy,
+    )
+    return resultat.exit_code == 0
+
+
 def test_ce_que_le_processus_a_lance_meurt_avec_lui():
     """
     Tuer le seul processus laisserait ses enfants tourner : le délai ne bornerait
@@ -180,7 +222,11 @@ def test_ce_que_le_processus_a_lance_meurt_avec_lui():
         "time.sleep(60)\n"
     )
 
-    resultat = run_python(code, SandboxPolicy(wall_seconds=2, processes=32))
+    politique = SandboxPolicy(wall_seconds=2, processes=_plafond_de_processus())
+    if not _fork_possible(politique):
+        pytest.skip("Cet environnement refuse les forks : rien à nettoyer à prouver.")
+
+    resultat = run_python(code, politique)
 
     assert resultat.timed_out is True
 
@@ -216,7 +262,13 @@ def test_aucun_descendant_ne_survit_a_une_execution_terminee_par_le_noyau():
         "    pass\n"
     )
 
-    resultat = run_python(code, SandboxPolicy(cpu_seconds=1, wall_seconds=25, processes=32))
+    politique = SandboxPolicy(
+        cpu_seconds=1, wall_seconds=25, processes=_plafond_de_processus()
+    )
+    if not _fork_possible(politique):
+        pytest.skip("Cet environnement refuse les forks : aucun descendant à faire survivre.")
+
+    resultat = run_python(code, politique)
     assert "SIGXCPU" in (resultat.killed_by or "")
 
     time.sleep(1)

@@ -33,6 +33,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Sans cela, le checkout ne récupère ni l'historique ni les étiquettes,
+          # et `test_release_check.py` cherche `v0.1.0` dans une liste vide : il
+          # échouait en rapportant « l'étiquette manque » alors qu'il mesurait un
+          # clone incomplet. Un contrôle de publication doit voir les
+          # publications.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5

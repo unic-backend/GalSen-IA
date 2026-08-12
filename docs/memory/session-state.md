@@ -12,7 +12,9 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-12
 
-**En cours** : rien. Le **VOLET 34 est terminé** — 14 chapitres sur 14 — et **ADR-018 est
+**En cours** : **VOLET 35 — plan publié, exécution en attente de confirmation**
+(`docs/roadmap/VOLET_35.md` : une base, deux axes — portée et sujet ; registre de sources ;
+acquisition sous approbation). Avant lui, le **VOLET 34 est terminé** — 14 chapitres sur 14 — et **ADR-018 est
 accepté en option B et implémenté**.
 
 **Terminé dans cette session**

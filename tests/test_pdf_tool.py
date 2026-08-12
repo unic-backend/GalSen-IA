@@ -21,12 +21,24 @@ def test_pdf_tool_initialization(pdf_tool):
 
 
 def test_pdf_tool_missing_dependencies():
-    """Test that an ImportError is raised when PyPDF2 is missing."""
-    with patch.dict("sys.modules", {"PyPDF2": None}):
-        from src.tools.pdf import tool as pdf_tool_module
+    """Test that an ImportError is raised when PyPDF2 is missing.
 
-        # Temporarily set PDF_AVAILABLE to False
-        original_pdf_available = pdf_tool_module.PDF_AVAILABLE
+    L'état d'origine est **capturé avant** le patch et remis tel quel. La version
+    précédente restaurait avec `__import__("PyPDF2")` *à l'intérieur* du bloc qui
+    neutralise ce module : la restauration levait alors
+    `ModuleNotFoundError: import of PyPDF2 halted; None in sys.modules`.
+
+    Le défaut ne se voyait pas ici — sans PyPDF2 installé, la branche n'était
+    jamais prise — et cassait la CI, où le paquet est présent. Un test dont le
+    résultat dépend d'une dépendance optionnelle installée ou non n'est pas un
+    test, c'est un tirage.
+    """
+    from src.tools.pdf import tool as pdf_tool_module
+
+    original_pdf_available = pdf_tool_module.PDF_AVAILABLE
+    original_module = pdf_tool_module.PyPDF2
+
+    with patch.dict("sys.modules", {"PyPDF2": None}):
         pdf_tool_module.PDF_AVAILABLE = False
         pdf_tool_module.PyPDF2 = None
 
@@ -35,9 +47,8 @@ def test_pdf_tool_missing_dependencies():
             with pytest.raises(ImportError, match="PyPDF2"):
                 tool._check_availability()
         finally:
-            # Restore original values
             pdf_tool_module.PDF_AVAILABLE = original_pdf_available
-            pdf_tool_module.PyPDF2 = __import__("PyPDF2") if original_pdf_available else None
+            pdf_tool_module.PyPDF2 = original_module
 
 
 def test_pdf_tool_extract_text(pdf_tool):
