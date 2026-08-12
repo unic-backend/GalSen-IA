@@ -84,6 +84,11 @@ class AgentContext:
         self.blackboard = blackboard if blackboard is not None else Blackboard()
         self.delegation_depth = delegation_depth
 
+        # Style de travail du sujet (VOLET 34, ch. 12), dérivé une seule fois
+        # par contexte : le dériver à chaque génération lirait la base à chaque
+        # invite pour un résultat identique.
+        self._style_hints: Optional[str] = None
+
         self._logger = logging.getLogger(f"{__name__}.{agent_id}")
 
     # ------------------------------------------------------------------
@@ -620,6 +625,30 @@ class AgentContext:
     # ------------------------------------------------------------------
     # Moteur de modèles
     # ------------------------------------------------------------------
+    def style_hints(self) -> str:
+        """
+        Retourne les préférences observées du sujet, prêtes pour une invite.
+
+        Vide quand aucun sujet n'est identifié ou qu'aucune préférence n'atteint
+        son seuil d'observations (VOLET 34, ch. 12). Le style est dérivé **une
+        fois** par contexte et n'est jamais deviné : sans retours consentis, la
+        plateforme répond comme elle répond à tout le monde.
+        """
+        if self._style_hints is not None:
+            return self._style_hints
+
+        self._style_hints = ""
+        if not self.user_id:
+            return self._style_hints
+
+        try:
+            from src.training.working_style import derive
+
+            self._style_hints = derive(self.user_id).prompt_hints()
+        except Exception as error:  # noqa: BLE001 - un style indisponible n'empêche pas de répondre
+            self._logger.debug(f"Style de travail indisponible: {error}")
+        return self._style_hints
+
     def generate(self, prompt: str, task_requirements: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Demande une génération de texte au moteur de modèles.
@@ -645,6 +674,14 @@ class AgentContext:
             return {"status": "unavailable", "text": "", "reason": "Moteur de modèles indisponible"}
 
         requirements = task_requirements or {}
+        # Le style observé du sujet enrichit l'invite (VOLET 34, ch. 12). Sans
+        # préférence établie, `style_hints()` rend une chaîne vide et l'invite
+        # part inchangée : une consigne de style inventée produirait des
+        # réponses ajustées à une personne qui n'existe pas.
+        indications = self.style_hints()
+        if indications:
+            prompt = f"{indications}\n\n{prompt}"
+
         started = time.time()
         model_id: Optional[str] = None
         try:
@@ -670,7 +707,13 @@ class AgentContext:
                 status=AuditStatus.SUCCESS,
                 model_id=model_id,
                 execution_time_seconds=time.time() - started,
-                metadata={"prompt_preview": self._clip(prompt, 200), "output_length": len(text)},
+                metadata={
+                    "prompt_preview": self._clip(prompt, 200),
+                    "output_length": len(text),
+                    # Tracé : une réponse produite sous des préférences apprises
+                    # doit pouvoir être expliquée par elles.
+                    "style_applied": bool(indications),
+                },
             )
             return {"status": "success", "text": text, "model_id": model_id}
         except Exception as error:

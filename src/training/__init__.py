@@ -14,6 +14,11 @@ obstacles, dans l'ordre, sont :
    augmente chaque jour qui passe, parce qu'une correction d'utilisateur non
    enregistrée est perdue pour toujours.
 
+Le VOLET 34 (ch. 12) ajoute la suite manquante : le signal capturé ne servait à
+rien tant que rien ne le lisait. `working_style.py` en **dérive** des préférences
+— avec leur nombre d'observations et leurs preuves — et `improvement.py` mesure
+si la plateforme s'améliore, ou refuse de conclure quand le volume ne le permet pas.
+
 Ce paquet traite ces trois-là. La recette d'entraînement, elle, vit dans
 `scripts/training/` : c'est du code qui a besoin d'un GPU, et il n'a pas sa place
 dans une image de production.
@@ -26,11 +31,17 @@ from .feedback import (
     SQLiteFeedbackStore,
     shared_feedback_store,
 )
+from .improvement import measure
+from .working_style import Preference, WorkingStyle, derive
 
 __all__ = [
     "Feedback",
     "FeedbackKind",
     "FeedbackStore",
+    "Preference",
     "SQLiteFeedbackStore",
+    "WorkingStyle",
+    "derive",
+    "measure",
     "shared_feedback_store",
 ]

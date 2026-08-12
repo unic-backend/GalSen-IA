@@ -35,6 +35,27 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Working style, derived from evidence and actually applied** (`src/training/working_style.py`,
+  `src/training/improvement.py`, VOLET 34 ch. 12)
+  - VOLET 33 captured the signal; **nothing read it back**, so the platform answered exactly
+    as it did on day one. Preferences are now derived from what a subject actually
+    corrected — length, formatting, language
+  - **Nothing is asserted below three concordant observations** and a 60% majority; each
+    preference carries its observation count and the feedback ids behind it. Below that it
+    is not a preference, it is a hesitation
+  - **Only consented feedback feeds the profile.** `feedback.py` states that a
+    non-consented return corrects *that* answer and nothing else; a durable profile is
+    something else. Per subject, never merged (ADR-010)
+  - The preferences reach the model: `AgentContext.generate()` prepends them to the prompt
+    (derived once per context) and the audit records `style_applied`. With no established
+    preference the prompt goes out **unchanged**
+  - `improvement.py` compares two equal windows on three rates and **refuses to conclude**
+    below 30 feedback items per window (`insufficient_data` — not "stable", not
+    "improving") or with no prior window (`no_baseline`: that is a first point, not an
+    improvement). Mean rating is computed over *rated* returns, since dividing by the total
+    would measure silence
+  - `tests/test_working_style.py` — 28 tests, two of which assert the text actually sent to
+    the model rather than the report about it
 - **The three specialists the brief asked for, each built around its failure mode**
   (`agents/organizer/`, `agents/project_manager/`, `agents/opportunity/`, VOLET 34 ch. 11)
   - **`organizer` proposes and never moves.** It is suspended in `requires_approval` by

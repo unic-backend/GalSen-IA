@@ -210,8 +210,19 @@ write goes through the approval gate.
 | Learning from use | consented capture, PII scrubbing, DPO pairs, lineage (VOLET 33) |
 | Backups | `VACUUM INTO` hot backup of the data directory |
 
-Missing: **working-style learning** (feedback is captured, nothing turns it into
-preferences) and **proactive discovery** (nothing runs unprompted).
+Missing: **proactive discovery** — nothing runs unprompted.
+
+> **Updated 2026-08-12 by VOLET 34 chapter 12.** Working-style learning is no
+> longer missing. `src/training/working_style.py` derives preferences from what a
+> subject actually corrected — length, formatting, language — each one carrying
+> its observation count and the feedback ids behind it, and **nothing is asserted
+> below three concordant observations**. Only consented feedback feeds it:
+> `feedback.py` says a non-consented return corrects *that* answer and nothing
+> else, and a durable profile is something else. The preferences reach the model:
+> `AgentContext.generate` prepends them to the prompt, and the audit records
+> `style_applied`. `src/training/improvement.py` compares two equal windows of
+> feedback and answers `insufficient_data` rather than calling a three-sample
+> difference a trend.
 
 > **Updated 2026-08-12 by VOLET 34 chapter 10.** The third gap listed here — the
 > coder having no model of a large codebase — is closed. `src/agent/repo_graph.py`
@@ -244,11 +255,11 @@ preferences) and **proactive discovery** (nothing runs unprompted).
 | Multi-agent collaboration | **present** — all six requested specialists exist (ch. 11) |
 | Memory | present |
 | Security, approval, logs | **present and ahead of the brief** |
-| Continuous improvement, style learning | **absent** |
+| Continuous improvement, style learning | **present** — preferences derived with evidence, applied to prompts; trends refused below sample size (ch. 12) |
 | Proactive opportunity discovery | **absent** |
 | MCP | **partial** — server delivered, whitelisted and identified (ch. 09); client decides before connecting but connects to nothing |
 
-**Two of fifteen are absent, four partial, nine present.** The four that are
+**One of fifteen is absent, four partial, ten present.** The four that are
 present are the ones that are hardest to retrofit — permissions, approval,
 audit, ownership — and they are why the missing six can be built without turning
 this into a tool that deletes a user's drive on a bad inference.
