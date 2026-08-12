@@ -28,16 +28,6 @@ gets re-argued at every review.
 
 ## P1 — High · a Phase 2 exit criterion depends on it, or it removes a demonstrated risk
 
-- **Decide on eight optional dependencies, or drop the capabilities they carry.**
-  `tests/test_requirements.py` now catches imports of packages that are neither installed
-  nor declared, and it found eight on its first run: `PyPDF2`, `python-docx`, `openpyxl`,
-  `python-pptx`, `markdown`, `pytesseract`, `docker`, `scipy`. Every one is behind a
-  guarded import and degrades by reporting, so nothing crashes — but the PDF, DOCX, XLSX,
-  PPTX, OCR and Docker capabilities are advertised in the tool catalogue and cannot work
-  in the production image. They sit in a `TOLERES` list with a written reason each.
-  *Deciding criterion:* honesty of the catalogue — either the image carries them, or the
-  catalogue stops offering them.
-
 - **Build the Senegalese corpus.** The base now holds **250 verifiable passages** from the
   project's own documentation (VOLET 28), and the ingestion path chunks, keeps provenance
   per passage and cites sources. What is missing is the corpus that matters: agriculture,

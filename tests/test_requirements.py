@@ -93,20 +93,50 @@ def _distributions(modules) -> set:
     return distributions
 
 
+# Modules dont le nom d'import diffère du nom de distribution. Sans cette table,
+# un paquet déclaré passerait pour absent parce qu'on importe `docx` et qu'on
+# installe `python-docx`.
+NOM_DE_DISTRIBUTION = {
+    "docx": "python-docx",
+    "pptx": "python-pptx",
+    "cv2": "opencv-python-headless",
+    "PIL": "pillow",
+    "yaml": "pyyaml",
+    "sentence_transformers": "sentence-transformers",
+    "faster_whisper": "faster-whisper",
+}
+
+
+def _toutes_declarations() -> set:
+    """Retourne les distributions déclarées dans tous les fichiers d'exigences."""
+    declarees = set()
+    for fichier in RACINE.glob("requirements*.txt"):
+        declarees |= _declarees(fichier.name)
+    return declarees
+
+
 def _modules_tiers_non_installes(modules) -> set:
     """
-    Retourne les modules importés qui ne sont ni standard, ni du dépôt, ni installés.
+    Retourne les modules importés qui ne sont **ni installés ni déclarés**.
 
     C'est l'angle mort de `_distributions` : elle traduit un module en
     distribution **via ce qui est installé**, donc un paquet absent de
     l'environnement est aussi absent de la traduction, et passe inaperçu.
+
+    Un paquet déclaré mais non installé ici n'est pas un problème : l'image
+    l'installera. Ne regarder que l'installation ferait donc sonner l'alarme au
+    moment même où le problème vient d'être corrigé.
     """
     table = packages_distributions()
+    declarees = _toutes_declarations()
     orphelins = set()
     for module in modules:
         if module in sys.stdlib_module_names or module in PREMIERE_PARTIE:
             continue
         if module in table:
+            continue
+        distribution = NOM_DE_DISTRIBUTION.get(module, module).lower()
+        if distribution in declarees or module.lower() in declarees:
             continue
         orphelins.add(module)
     return orphelins
@@ -143,32 +173,26 @@ def test_aucun_import_ne_vise_un_paquet_ni_installe_ni_declare():
 
     Un module toléré ici doit l'être **explicitement**, avec sa raison.
     """
-    # Modules importés à dessein sans être installés : l'import est protégé et
-    # la capacité se désactive en le disant. Chacun a été vérifié à la main le
-    # 2026-08-12 ; la liste n'est pas un tapis, elle est un inventaire.
+    # Modules importés à dessein sans être installés. La liste a été **décidée**
+    # le 2026-08-12, pas subie : chaque paquet a été pesé, et six des huit
+    # trouvés à l'origine en sont sortis — cinq déclarés (`pypdf`,
+    # `python-docx`, `openpyxl`, `python-pptx`, `markdown`), un remplacé par
+    # NumPy (`scipy`), un désactivé pour raison de sécurité (`docker`).
     TOLERES = {
-        # Recherche sémantique (ADR-015) : déclarée dans
-        # `requirements-embeddings.txt`, hors de l'image parce que
-        # `sentence-transformers` tire PyTorch. Sans elle, la récupération reste
-        # lexicale **et le dit** dans chaque réponse.
-        "sentence_transformers",
-        # Transcription (VOLET 32) : déclarée dans `requirements-audio.txt`.
-        # Sans elle, un fichier audio est refusé à l'ingestion en le disant —
-        # jamais transcrit à vide, ce qui reviendrait à inventer un silence.
-        "faster_whisper", "whisper",
-        # Chargeurs de formats du moteur documentaire : import protégé, le
-        # format devient simplement non pris en charge.
-        "PyPDF2", "docx", "openpyxl", "pptx", "markdown",
-        # OCR : sans `pytesseract` — et sans le binaire Tesseract — la lecture
-        # d'image renvoie son indisponibilité.
-        "pytesseract",
-        # Outil Docker : sans le client, l'outil rapporte qu'il ne peut pas
-        # joindre le démon.
+        # Client Docker : l'outil est **désactivé** dans `tools/tools.yaml` pour
+        # une raison de sécurité, pas par manque de dépendance. Il sait lancer et
+        # détruire des conteneurs ; depuis l'intérieur du conteneur de
+        # production, cela suppose de monter /var/run/docker.sock, c'est-à-dire
+        # de donner à un agent l'équivalent de root sur l'hôte.
         "docker",
-        # `scipy` : lissage d'histogramme dans le classifieur d'images. Son
-        # absence fait tomber la classification dans son `except`, qui rend
-        # `[("unknown", 1.0)]` — un statut, pas une catégorie inventée.
-        "scipy",
+        # `PyPDF2` est archivé ; le code accepte `pypdf`, son successeur
+        # maintenu et déclaré. L'ancien nom reste dans un `except ImportError`
+        # pour les installations existantes.
+        "PyPDF2",
+        # `whisper` est l'implémentation de référence ; `faster-whisper`, quatre
+        # fois plus rapide sur CPU, est celle qui est déclarée. Le code accepte
+        # les deux.
+        "whisper",
     }
 
     orphelins = _modules_tiers_non_installes(_modules_importes(SOURCES_EXECUTION))
@@ -248,3 +272,68 @@ def test_la_ci_installe_le_fichier_de_developpement():
     for workflow in ("tests.yml", "release.yml"):
         contenu = _lire(os.path.join(".github", "workflows", workflow))
         assert "requirements-dev.txt" in contenu, f"{workflow} n'installe pas les outils de test"
+
+
+def test_l_outil_docker_reste_desactive():
+    """
+    Décision de sécurité, pas d'un manque de dépendance (2026-08-12).
+
+    `DockerTool` sait `run_container`, `stop_container` et `remove_container`.
+    Depuis l'intérieur du conteneur de production, cela suppose de monter
+    `/var/run/docker.sock` — c'est-à-dire de donner à un agent l'équivalent de
+    root sur l'hôte : il lui suffirait de lancer un conteneur privilégié montant
+    `/`. Le réactiver doit être une décision explicite, pas une régression.
+    """
+    import yaml
+
+    with open(RACINE / "tools" / "tools.yaml", encoding="utf-8") as fichier:
+        registre = yaml.safe_load(fichier)
+
+    docker = next(outil for outil in registre["tools"] if outil["id"] == "docker")
+    assert docker["enabled"] is False, (
+        "L'outil Docker donne à un agent l'équivalent de root sur l'hôte. "
+        "S'il doit être réactivé, que ce soit avec une décision écrite."
+    )
+
+
+def test_les_formats_du_corpus_sont_dans_l_image():
+    """
+    Le corpus sénégalais est fait de PDF, de DOCX et de tableaux.
+
+    Sans ces paquets, l'ingestion refuse exactement les fichiers pour lesquels
+    elle a été écrite — et le refus serait propre, donc silencieux.
+    """
+    execution = _declarees("requirements.txt")
+
+    for paquet in ("pypdf", "python-docx", "openpyxl", "python-pptx", "markdown", "pytesseract"):
+        assert paquet in execution, f"{paquet} manque aux dépendances d'exécution"
+
+
+def test_le_binaire_ocr_accompagne_son_enveloppe():
+    """
+    `pytesseract` seul ne lit rien : c'est une enveloppe autour d'un binaire.
+
+    Déclarer le paquet Python sans installer `tesseract-ocr` donnerait une
+    capacité annoncée qui échoue à la première image — le contraire de ce que
+    cette décision cherchait.
+    """
+    dockerfile = _lire("Dockerfile")
+
+    assert "tesseract-ocr" in dockerfile
+    # Les données françaises : reconnaître du français avec un modèle anglais
+    # rend un texte lisible et faux, ce qui est pire qu'un échec.
+    assert "tesseract-ocr-fra" in dockerfile
+
+
+def test_scipy_n_est_plus_une_dependance():
+    """
+    ~40 Mo pour un lissage d'histogramme, remplacé par NumPy déjà présent.
+
+    SciPy n'était d'ailleurs ni installé ni déclaré : la classification d'images
+    tombait dans son `except` et rendait `[("unknown", 1.0)]`.
+    """
+    for fichier in ("requirements.txt", "requirements-dev.txt"):
+        assert "scipy" not in _declarees(fichier)
+
+    orphelins = _modules_tiers_non_installes(_modules_importes(SOURCES_EXECUTION))
+    assert "scipy" not in orphelins, "scipy est encore importé quelque part"

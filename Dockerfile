@@ -62,8 +62,16 @@ RUN groupadd --system galsen && \
 
 # Installer uniquement les dépendances d'exécution légères
 # curl est nécessaire pour le healthcheck Docker
+# `curl` sert au healthcheck ; `tesseract-ocr` et ses données françaises servent
+# à l'OCR. Beaucoup de documents officiels de la région sont des numérisations :
+# sans le binaire, `pytesseract` n'est qu'une enveloppe vide et l'ingestion
+# accepte une image sans en tirer une ligne de texte (VOLET 28, VOLET 32).
+# `tesseract-ocr-fra` pèse quelques mégaoctets et évite de reconnaître le
+# français avec un modèle anglais, qui rend un texte lisible et faux.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    tesseract-ocr \
+    tesseract-ocr-fra \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 

@@ -148,8 +148,16 @@ tools:
     class: "CalendarTool"
     config: {}
 
+  # Désactivé pour une raison de sécurité, pas par manque de dépendance.
+  # L'outil sait `run_container`, `stop_container` et `remove_container`. Depuis
+  # l'intérieur du conteneur de production, cela suppose de monter
+  # /var/run/docker.sock — c'est-à-dire de donner à un agent l'équivalent de
+  # root sur la machine hôte : il lui suffirait de lancer un conteneur
+  # privilégié montant `/`. Aucune tâche de la plateforme ne demande cela.
+  # Le réactiver est une décision d'exploitation, à prendre en connaissance de
+  # cause et hors de l'image de production.
   - id: docker
-    enabled: true
+    enabled: false
     category: deployment
     module: "tools.docker.tool"
     class: "DockerTool"

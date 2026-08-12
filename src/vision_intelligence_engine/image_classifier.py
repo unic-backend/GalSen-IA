@@ -30,6 +30,37 @@ MODEL_URL = "https://github.com/opencv/opencv_3rdparty/raw/dnn_samples_face_dete
 # We'll implement a simple classifier that uses a histogram of the image and compares it to known histograms for basic categories.
 # This is not ideal, but it avoids the dependency issue.
 
+def _lisser_gaussien(valeurs, sigma: float = 2.0):
+    """
+    Lisse un histogramme par convolution gaussienne, en NumPy seul.
+
+    Équivaut à `scipy.ndimage.gaussian_filter1d` avec le mode « nearest » : le
+    noyau est tronqué à quatre écarts-types, comme SciPy le fait par défaut, et
+    les bords sont prolongés par la valeur extrême plutôt que par des zéros —
+    sans quoi le lissage creuserait un faux minimum aux deux extrémités.
+
+    Args:
+        valeurs: Histogramme à lisser.
+        sigma: Écart-type du noyau.
+
+    Returns:
+        L'histogramme lissé, de la même longueur.
+    """
+    valeurs = np.asarray(valeurs, dtype=np.float64)
+    if sigma <= 0 or valeurs.size == 0:
+        return valeurs
+
+    rayon = int(4.0 * sigma + 0.5)
+    axe = np.arange(-rayon, rayon + 1, dtype=np.float64)
+    noyau = np.exp(-(axe ** 2) / (2.0 * sigma ** 2))
+    noyau /= noyau.sum()
+
+    # Prolongement des bords avant convolution : `np.convolve(..., "same")`
+    # complète par des zéros, ce qui ferait chuter les extrémités.
+    etendu = np.pad(valeurs, rayon, mode="edge")
+    return np.convolve(etendu, noyau, mode="valid")
+
+
 class SimpleHistogramClassifier(ImageClassifier):
     """
     A simple image classifier based on color histograms.
@@ -80,9 +111,14 @@ class SimpleHistogramClassifier(ImageClassifier):
             # We'll use the hue histogram to determine the dominant color range
             # Find the peak in the hue histogram
             hist_h = hist_h.flatten()
-            # Smooth the histogram a bit to avoid noise
-            from scipy import ndimage
-            hist_smooth = ndimage.gaussian_filter1d(hist_h, sigma=2)
+            # Lissage gaussien de l'histogramme, en NumPy plutôt qu'en SciPy.
+            #
+            # `scipy.ndimage.gaussian_filter1d` faisait exactement cela — pour
+            # ~40 Mo de dépendance utilisée à cette seule ligne. SciPy n'était
+            # d'ailleurs ni installé ni déclaré : la classification tombait dans
+            # son `except` et rendait `[("unknown", 1.0)]`, un statut honnête
+            # mais une capacité morte. NumPy est déjà une dépendance.
+            hist_smooth = _lisser_gaussien(hist_h, sigma=2.0)
             peak = np.argmax(hist_smooth)
             # Find which category this peak falls into
             scores = {}

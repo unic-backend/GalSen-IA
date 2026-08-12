@@ -20,7 +20,10 @@ logger = logging.getLogger(__name__)
 
 # These will be set to the actual class if dependency is available
 try:
-    import PyPDF2
+    try:
+        import pypdf as PyPDF2  # successeur maintenu de PyPDF2
+    except ImportError:
+        import PyPDF2
     PDF_AVAILABLE = True
 except ImportError:  # pragma: no cover
     PDF_AVAILABLE = False
