@@ -423,19 +423,57 @@ def test_agents_see_previous_results():
     print("[OK] Agents read the results of the agents before them")
 
 
-def test_runtime_runs_the_full_pipeline():
-    """The Agent Runtime must run the same pipeline, including in parallel."""
-    print("Testing Agent Runtime pipeline...")
+def test_runtime_delegue_au_seul_orchestrateur():
+    """The Agent Runtime must run through the Router Engine, not beside it.
+
+    This assertion changed on purpose. It used to require the runtime to execute
+    **every** agent of the workflow — which is exactly what made it a second,
+    slower truth: it ran the whole pipeline whatever the request, while the
+    Router Engine runs what the planner selected. Pinning the old count would
+    have kept the duplication alive under a green test.
+    """
+    print("Testing Agent Runtime delegation...")
     runtime = AgentRuntime()
 
     result = runtime.execute_task("Analyser l'etat du projet", user_id="test_user")
 
     assert result["status"] in ("success", "partial_success")
     assert result["metadata"]["failed_agents"] == 0, "Des agents ont échoué dans le runtime"
-    assert result["metadata"]["total_agents_executed"] == len(AGENT_IDS)
+    # Le pipeline exécuté est celui décidé par le planificateur : au moins un
+    # agent, jamais plus que le registre complet.
+    executes = result["metadata"]["total_agents_executed"]
+    assert 1 <= executes <= len(AGENT_IDS)
+    # La trace de décision n'existait pas dans l'ancien chemin : sa présence
+    # prouve que c'est bien l'orchestrateur unique qui a tourné.
+    assert "decision" in result["metadata"]
+    # Et le contrat historique tient : la clé est `task_input`, pas `user_request`.
+    assert result["task_input"] == "Analyser l'etat du projet"
+    assert "user_request" not in result
 
-    print(f"[OK] Runtime executed {result['metadata']['total_agents_executed']} agents "
+    print(f"[OK] Runtime executed {executes} agents "
           f"in {result['execution_time_seconds']}s")
+
+
+def test_runtime_et_router_donnent_la_meme_execution():
+    """Un seul chemin d'exécution : les deux entrées doivent converger.
+
+    C'est la vérification qui empêche la duplication de revenir. Si quelqu'un
+    redonne un pipeline propre au runtime, les deux résultats divergeront ici.
+    """
+    from src.router.router_engine import RouterEngine
+
+    demande = "Analyser l'etat du projet"
+    par_le_runtime = AgentRuntime().execute_task(demande, user_id="test_user")
+    par_le_router = RouterEngine().process_request(demande, user_id="test_user")
+
+    assert (
+        [r.get("agent") for r in par_le_runtime["agent_results"]]
+        == [r.get("agent") for r in par_le_router["agent_results"]]
+    )
+    assert (
+        par_le_runtime["metadata"]["total_agents_executed"]
+        == par_le_router["metadata"]["total_agents_executed"]
+    )
 
 
 def run_all_tests():
@@ -462,7 +500,8 @@ def run_all_tests():
         test_agent_errors_are_contained,
         test_router_runs_the_full_pipeline,
         test_agents_see_previous_results,
-        test_runtime_runs_the_full_pipeline,
+        test_runtime_delegue_au_seul_orchestrateur,
+        test_runtime_et_router_donnent_la_meme_execution,
     )
 
     try:
