@@ -332,3 +332,14 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Défaut du lexique corrigé** : « sécurisée » ne déclenchait aucune analyse de sécurité — le lexique ne contenait que « sécurité » et « sécuriser ». Depuis que la recommandation pilote l'exécution, une intention manquée coûte un **agent absent**.
 - **Limite dite** : « raisonner » au sens d'un modèle qui délibère dépend de 26.1, toujours bloquée. Ce qui est livré est déterministe, donc rejouable et relisible — et c'est ce qui rend un plan critiquable.
 - Suite complète : **2244 tests passent**, 7 ignorés (17 ajoutés).
+
+### 2026-08-12 (VOLET 30 — routage des modèles par tâche, par famille et par coût)
+- **Correction de mon propre diagnostic** : l'évaluation d'architecture disait « le moteur existe, la politique n'existe pas ». Faux. `ProviderSelector.TASK_REQUIREMENTS` porte huit types de tâche avec leur contexte minimal, et filtre déjà sur le coût. Mesurer avant d'écrire a évité de reconstruire ce qui marchait.
+- **Ce qui manquait vraiment, et deux de ces trois points mentaient à l'appelant** :
+  - **Une règle morte** : `SimpleModelSelector` filtrait le raisonnement complexe sur `OPENAI_GPT4`, `ANTHROPIC_CLAUDE3_OPUS`, `GOOGLE_GEMINI_PRO`. Depuis ADR-014 ces fournisseurs ne sont plus inscrits — la branche **ne pouvait plus jamais s'exécuter** tout en donnant l'impression d'un routage soigné.
+  - **`max_cost` et `required_capabilities` acceptés puis ignorés**, suivis d'un `pass` commenté « dans une implémentation réelle ». Poser un plafond qui n'existe pas est pire que ne pas en proposer.
+  - **La politique était en dur**, alors qu'elle dépend des modèles installés sur la machine — donc du déploiement, pas de l'architecture.
+- `config/model_routing.yaml` porte la politique ; `src/model_engine/routing_policy.py` la lit et y ajoute les **familles SamP et ToP** (ADR-014). Elles n'existent pas encore : quand aucun modèle de la famille n'est servi, la décision **le dit** et retombe sur le meilleur disponible — router en silence ferait croire à l'appelant qu'il parle à SamP.
+- **Un tarif inconnu n'est pas un tarif infini** : un modèle local est gratuit et n'annonce rien. L'écarter faute de tarif déclaré éliminerait précisément les modèles souverains.
+- **30.2** : le coût est ventilé **par route**. `InMemoryCostTracker` savait ventiler par `operation_type` depuis le début et tout le monde lui passait la valeur par défaut : le total était connu, « qu'est-ce qui coûte cher » ne l'était pas.
+- Suite complète : **2262 tests passent**, 7 ignorés (18 ajoutés).

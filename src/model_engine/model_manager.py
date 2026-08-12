@@ -247,7 +247,12 @@ class ModelManagerImpl(ModelManager):
             stop_sequences=kwargs.get("stop_sequences", []),
         )
 
-        response = self._call_provider(selection.provider, request, model_item)
+        response = self._call_provider(
+            selection.provider, request, model_item,
+            # La route est celle que l'appelant a annoncée : c'est elle qui
+            # permettra de dire quelle politique coûte quoi.
+            route=kwargs.get("task_type") or "unspecified",
+        )
         self._record_generation(model_item, prompt, response)
         return response
 
@@ -528,7 +533,8 @@ class ModelManagerImpl(ModelManager):
     # Utilitaires internes de génération
     # ------------------------------------------------------------------
     def _call_provider(self, provider, request: GenerationRequest,
-                       model_item: ModelItem) -> GenerationResponse:
+                       model_item: ModelItem,
+                       route: str = "unspecified") -> GenerationResponse:
         """
         Appelle un fournisseur en appliquant les protections du moteur.
 
@@ -563,7 +569,12 @@ class ModelManagerImpl(ModelManager):
 
         if response.succeeded:
             self._tt.track_usage(model_item, response.prompt_tokens, response.completion_tokens)
-            self._ct.track_cost(model_item, response.total_tokens)
+            # Le coût est ventilé **par route** (VOLET 30, ch. 02). Le suiveur
+            # sait ventiler par `operation_type` depuis le début, et tout le
+            # monde lui passait la valeur par défaut : le coût total était connu,
+            # et « qu'est-ce qui coûte cher » ne l'était pas. Une politique de
+            # routage qu'on ne peut pas mesurer ne peut pas être améliorée.
+            self._ct.track_cost(model_item, response.total_tokens, operation_type=f"route:{route}")
             model_item.usage_count += 1
             self.update_model(model_item)
 

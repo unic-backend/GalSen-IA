@@ -68,35 +68,62 @@ class SimpleModelSelector(ModelSelector):
         max_cost = context.get("max_cost")
         required_capabilities = context.get("required_capabilities", [])
 
-        # Filtrer par type de task si spécifié
-        if task_type:
-            # Par exemple, pour le raisonnement complexe, préférer les modèles plus puissants
-            if task_type == "reasoning" and complexity == "high":
-                preferred_types = [
-                    ModelType.OPENAI_GPT4,
-                    ModelType.ANTHROPIC_CLAUDE3_OPUS,
-                    ModelType.GOOGLE_GEMINI_PRO
-                ]
-                filtered = [m for m in models if m.model_type in preferred_types]
-                if filtered:
-                    models = filtered
+        # Famille visée (ADR-014) : SamP raisonne et parle, ToP code et voit.
+        #
+        # Cette branche filtrait sur `OPENAI_GPT4`, `ANTHROPIC_CLAUDE3_OPUS` et
+        # `GOOGLE_GEMINI_PRO`. Depuis ADR-014 ces fournisseurs ne sont plus
+        # inscrits : la règle **ne pouvait plus jamais s'appliquer**, tout en
+        # donnant l'impression que le raisonnement complexe était routé avec soin.
+        from .routing_policy import shared_policy
 
-        # Filtrer par coût maximal si spécifié
+        politique = shared_policy()
+        decision = politique.decide({"task_type": task_type, "complexity": complexity})
+        if decision.family:
+            de_la_famille = [
+                modele for modele in models
+                if politique.family_of(modele.name) == decision.family
+            ]
+            if de_la_famille:
+                models = de_la_famille
+
+        # Plafond de coût. Il était accepté puis suivi d'un `pass` commenté
+        # « dans une implémentation réelle » : l'appelant croyait poser une
+        # limite qui n'existait pas. Un modèle sans tarif connu **passe** le
+        # filtre — un modèle local est gratuit, et l'écarter faute de tarif
+        # déclaré éliminerait précisément les modèles souverains.
         if max_cost is not None:
-            # Dans une implémentation réelle, nous comparerions le coût estimé
-            # Pour l'instant, nous supposons que tous les modèles sont dans les limites
-            pass
+            dans_le_budget = [
+                modele for modele in models
+                if self._cout_entree(modele) is None or self._cout_entree(modele) <= float(max_cost)
+            ]
+            if dans_le_budget:
+                models = dans_le_budget
 
-        # Filtrer par capacités requises
+        # Capacités exigées, même histoire : acceptées et ignorées.
         if required_capabilities:
-            # Dans une implémentation réelle, nous vérifierions les capacités du modèle
-            # Pour l'instant, nous supposons que tous les modèles ont les capacités requises
-            pass
+            capables = [
+                modele for modele in models
+                if set(required_capabilities) <= set(modele.supported_features or [])
+            ]
+            if capables:
+                models = capables
 
         # Sélectionner le meilleur parmi ceux restants
         if models:
             return self._select_by_priority_and_factors(models)
         return None
+
+    @staticmethod
+    def _cout_entree(modele) -> Optional[float]:
+        """
+        Retourne le tarif d'entrée pour 1000 jetons, ou None s'il est inconnu.
+
+        Un tarif inconnu n'est pas un tarif infini : un modèle local est gratuit
+        et n'annonce rien. Confondre les deux écarterait les modèles souverains.
+        """
+        tarifs = (modele.metadata or {}).get("pricing_per_1k_tokens") or {}
+        valeur = tarifs.get("input")
+        return float(valeur) if isinstance(valeur, (int, float)) else None
 
     def _select_by_priority_and_factors(self, models: List[ModelItem]) -> ModelItem:
         """Sélectionne un modèle basé sur la priorité et d'autres facteurs."""

@@ -8,9 +8,9 @@ exécuter, et une seule.
 
 ---
 
-**VOLET en cours** : **30 — Routage de modèles** (26 sauf 26.1, 27, 28, 29 terminés)
-**Phase courante** : 30.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
-**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27, 28 et 29**
+**VOLET en cours** : **31 — Agent de développement** (26 sauf 26.1, 27 à 30 terminés)
+**Phase courante** : 31.1 — en attente de confirmation. 26.1 reste **bloquée sur l'exploitant**.
+**Terminées** : VOLETs 01 à 25, 4 chantiers de mise en ligne, **VOLET 26 sauf 26.1**, **VOLETs 27 à 30**
 **Cadence** : **un VOLET par tour** — demandé par l'utilisateur le 2026-08-12.
 La limite des 25 minutes de `.claude/rules/work-cadence.md` continue de s'appliquer.
 
@@ -63,10 +63,13 @@ VOLET 29 — Gestionnaire d'agents                            → 5 phases — *
   26.1. La décomposition, l'assignation et la délégation sont déterministes et
   vérifiées ; l'affinage par modèle rapporte son indisponibilité.
 
-VOLET 30 — Routage de modèles par coût et par tâche         → 3 phases
-  Le moteur existe (6 423 lignes) ; la politique n'existe pas.
-  Ch. 30.1  Politique : question simple → petit modèle      → 2 phases
-  Ch. 30.2  Mesure du coût et de la qualité par route       → 1 phase
+VOLET 30 — Routage de modèles par coût et par tâche         → 3 phases — **terminé**
+  Ch. 30.1  Politique en configuration + familles SamP/ToP  → **terminées**
+  Ch. 30.2  Coût ventilé par route                          → **terminée**
+  **Correction de mon évaluation** : la politique existait, en dur dans
+  `ProviderSelector`. Ce qui manquait : la configuration, les familles, le coût
+  qui filtre vraiment — et une règle morte pointant vers des fournisseurs
+  qu'ADR-014 n'inscrit plus.
 
 VOLET 31 — Agent de développement autonome                  → 4 phases
   Ch. 31.1  Carte du dépôt (motif OpenHands/Aider, pas leur code) → 2 phases
