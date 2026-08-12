@@ -79,10 +79,17 @@ argument; it did not become a second command. Commands run through the process
 API, never a shell, from an allowlist of six executables
 (`python`, `python3`, `py`, `pytest`, `git`, `echo`), each with a timeout.
 
-**Against the brief**, which asks the agent to "run commands and scripts" and
-"use development tools": six executables is a deliberate floor, not an oversight.
-Widening it is a security decision with a shape — an allowlist per task, not a
-global one — and it belongs with the sandbox (chapter 08), not before it.
+**Chapter 08 landed on 2026-08-12** and did not widen the allowlist. It added
+`src/sandbox/`: kernel limits applied between `fork` and `exec` — CPU, memory,
+processes, file size, wall clock, captured output — and an environment
+**allowlist**, so agent code sees no secret the parent holds.
+
+What it does **not** confine is written in `policy.NON_GARANTI` and returned by
+`describe()`: the filesystem and the network. Without namespaces, a child reads
+and writes wherever the user can. Those two stay held by what already held them —
+declared roots (ch. 07), the approval gate, the executable allowlist. A sandbox
+that suggests a boundary it does not have is more dangerous than none, because
+one entrusts it with what one would not have.
 
 ### 2.3 Sight: delivered as a tool. GUI: still absent
 
@@ -183,7 +190,7 @@ preferences), **proactive discovery** (nothing runs unprompted), and a
 | Organise, rename, move, archive | **present** — reversible, journalled, nothing deleted (ch. 07) |
 | Analyse existing projects | **partial** — file-level, no repository map |
 | Write / modify / debug code | present, gated (VOLET 31) |
-| Run commands and scripts | **partial** — six executables, no sandbox |
+| Run commands and scripts | **present** — six executables, plus a resource sandbox with its escape tests (ch. 08) |
 | See the screen | **partial** — contract, refusals and element identity delivered (ch. 05) |
 | Drive a GUI | **partial** — gate, refusals and action contract delivered (ch. 06); backends need a desktop |
 | Multi-agent collaboration | present, three specialists missing |
@@ -193,7 +200,7 @@ preferences), **proactive discovery** (nothing runs unprompted), and a
 | Proactive opportunity discovery | **absent** |
 | MCP | **absent** |
 
-**Four of fifteen are absent, five partial, six present.** The four that are
+**Four of fifteen are absent, four partial, seven present.** The four that are
 present are the ones that are hardest to retrofit — permissions, approval,
 audit, ownership — and they are why the missing six can be built without turning
 this into a tool that deletes a user's drive on a bad inference.
