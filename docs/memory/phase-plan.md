@@ -40,10 +40,14 @@ deux agissent (`risk` → `verifier`, `geographic_scope` → `senegal`), huit ob
 dormir dans un document. Rien n'a été construit.
 **VOLET 36 TERMINÉ** — 8 chapitres sur 8, verdict de clôture critère par critère dans
 `docs/architecture/volet-36-plan.md` §14.
-**Phase courante** : aucune. **Prochain VOLET proposé : reprendre le VOLET 35** aux
-chapitres 03 + 04 + 05 (registre de sources, récupération par portée, la réponse dit sa
-portée) — c'est le tour 2 de la cadence déjà décidée. En attente de décision.
-**VOLET 35 en pause après le tour 1** : les chapitres 03 + 04 + 05 restent à faire.
+**VOLET 35, tour 2 terminé** (2026-08-13) : ch. 03 registre des sources
+(`corpus/sources/senegal.yaml`, `source_registry.py`, branché sur `ingest_file`), ch. 04
+récupération par portée (`scoped_retrieval.py` — une politique, pas un second
+récupérateur), ch. 05 la réponse dit sa portée (`scope_notice`, jusque dans
+`retrieve_for_prompt`).
+**Phase courante** : aucune. **Tour 3 proposé** : chapitres **06 + 07 + 09** — détection
+des manques mesurée, découverte de sources qui ne décide rien, contradictions rapportées
+jamais résolues. En attente de décision.
 **Cadence VOLET 35** : 4 tours, décidés avec le propriétaire le 2026-08-12 — 01+02, 03+04+05,
 06+07+09, 08+10. Les chapitres 11 et 12 attendent de vrais documents.
 (VOLET 34 terminé 14/14, découverte proactive livrée hors chapitre.)

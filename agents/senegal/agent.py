@@ -15,21 +15,22 @@ retrieval serves every question; this agent owns the decision to refuse, which
 no ranking function should ever own.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from src.agent.base_agent import BaseAgent
 from src.agent.context import AgentContext
 from src.agent.legacy import run_agent_module
-from src.knowledge_engine.scope import (
-    KnowledgeScope,
-    ScopeRefused,
-    parse_subject,
-    requires_national_source,
+from src.knowledge_engine.scope import ScopeRefused, parse_subject
+from src.knowledge_engine.scoped_retrieval import (
+    PORTEE_LOCALE,
+    apply_scope_policy,
+    scope_notice,
 )
 
-#: Le pays de cet agent. La portée est comparée à sa forme textuelle, celle qui
-#: est réellement stockée sur les éléments (`country:sn`).
-PORTEE_NATIONALE = str(KnowledgeScope.country_("SN"))
+#: Le pays de cet agent, tel qu'il est stocké sur les éléments (`country:sn`).
+#: Importé de la politique de portée : deux définitions du même pays finiraient
+#: par différer, et l'agent refuserait ou accepterait pour de mauvaises raisons.
+PORTEE_NATIONALE = PORTEE_LOCALE
 
 #: Nombre d'éléments interrogés. Le tri par portée se fait ensuite : filtrer
 #: d'abord sur le pays cacherait le fait qu'il n'y a rien, et rendrait un « rien
@@ -75,9 +76,6 @@ class SenegalIntelligenceAgent(BaseAgent):
             }
 
         elements = context.search_knowledge(question, limit=ELEMENTS_INTERROGES)
-        nationaux = [item for item in elements if self._portee(item) == PORTEE_NATIONALE]
-        national_exige = requires_national_source(sujet)
-
         if not elements:
             return {
                 "status": "empty_base",
@@ -86,41 +84,46 @@ class SenegalIntelligenceAgent(BaseAgent):
                     "Aucun élément dans la base ne concerne cette question. La base "
                     "est vide sur ce sujet — ce n'est pas une réponse négative."
                 ),
-                "what_would_settle_it": self._ce_qui_trancherait(sujet, national_exige),
+                "what_would_settle_it": [
+                    f"Ingérer un document déclaré `scope: {PORTEE_NATIONALE}` sur ce "
+                    "sujet (`docs/knowledge/README.md`)",
+                ],
                 "elements": [],
             }
 
-        if national_exige and not nationaux:
+        # L'arbitrage vit dans `scoped_retrieval` (VOLET 35, ch. 04) : cet agent
+        # ne réimplémente pas la règle, il l'applique. Une seconde version du
+        # refus finirait par refuser dans un cas et pas dans l'autre.
+        politique = apply_scope_policy(
+            elements, question=question, subject=sujet, scope=PORTEE_NATIONALE,
+        )
+        rapport = politique["scope_report"]
+
+        if not politique["allowed"]:
             return {
                 "status": "no_national_source",
                 "subject": sujet.value,
-                "reason": (
-                    f"« {sujet.value} » ne se transporte pas d'un pays à l'autre : "
-                    f"{len(elements)} élément(s) trouvé(s), aucun de portée "
-                    f"« {PORTEE_NATIONALE} ». Répondre avec de la connaissance "
-                    "mondiale donnerait une réponse fluide, plausible et fausse."
-                ),
-                "what_would_settle_it": self._ce_qui_trancherait(sujet, national_exige),
+                "reason": politique["reason"],
+                "what_would_settle_it": politique["what_would_settle_it"],
                 # Les éléments trouvés sont nommés sans être servis : ils
                 # existent, ils ne répondent simplement pas à cette question-là.
                 "found_but_not_national": [self._resume(item) for item in elements],
                 "elements": [],
+                "scope_report": rapport,
             }
 
-        retenus = nationaux if nationaux else elements
         return {
             "status": "grounded",
             "subject": sujet.value,
-            "national_subject": national_exige,
-            "elements": [self._resume(item) for item in retenus],
-            "national_sources": len(nationaux),
-            "global_sources": len(elements) - len(nationaux),
-            # Servir un élément mondial est permis hors sujets nationaux, mais
-            # jamais silencieusement : sa portée est rendue avec lui.
-            "note": (
-                "Chaque élément porte sa portée. Un élément « global » répond à "
-                "une question générale, pas à une question de droit sénégalais."
-            ),
+            "national_subject": rapport["national_subject"],
+            "elements": [self._resume(item) for item in politique["items"]],
+            "national_sources": rapport["local_sources"],
+            "global_sources": rapport["global_sources"],
+            # La réponse dit sa portée (ch. 05), comme elle dit déjà sa méthode
+            # de récupération : un lecteur doit voir qu'une réponse sur le
+            # Sénégal a été construite avec des sources sénégalaises — ou non.
+            "scope_notice": scope_notice(rapport),
+            "scope_report": rapport,
         }
 
     @staticmethod
@@ -137,20 +140,6 @@ class SenegalIntelligenceAgent(BaseAgent):
             "subject": item.get("subject"),
             "status": item.get("status"),
         }
-
-    @staticmethod
-    def _ce_qui_trancherait(sujet, national_exige: bool) -> List[str]:
-        """Nomme ce qu'il faudrait ingérer pour que la question trouve réponse."""
-        pistes = [
-            "Ingérer des documents déclarés `scope: country:sn` sur ce sujet "
-            "(`docs/knowledge/README.md`)",
-        ]
-        if national_exige:
-            pistes.append(
-                f"Pour « {sujet.value} », la source doit être nationale : Journal "
-                "officiel, ministère compétent, ou administration concernée."
-            )
-        return pistes
 
 
 def execute(input_data: Any) -> Dict[str, Any]:

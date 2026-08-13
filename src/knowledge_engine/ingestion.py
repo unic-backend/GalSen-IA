@@ -35,6 +35,7 @@ from src.document_intelligence_engine.simple_chunker import SimpleChunker
 from src.document_intelligence_engine.types import DocumentItem, DocumentType
 
 from .languages import parse_language
+from .source_registry import SourceRefused, check_source
 from .scope import KnowledgeScope, KnowledgeSubject, parse_subject
 from .types import (
     ContentType,
@@ -171,6 +172,9 @@ class DocumentIngestor:
             ValueError: Si le titre est vide.
             ScopeRefused: Si la portée ou le sujet sont malformés.
             LanguageRefused: Si la langue est inconnue.
+            SourceRefused: Si l'URL est sur la liste de refus du registre, ou si
+                la catégorie déclarée affirme une autorité que le registre
+                n'accorde pas à ce domaine (VOLET 35, ch. 03).
         """
         # Les deux axes sont résolus **avant** toute lecture de fichier : une
         # portée fautive doit refuser l'ingestion, pas la laisser écrire cent
@@ -178,6 +182,13 @@ class DocumentIngestor:
         portee = str(KnowledgeScope.parse(scope))
         sujet = parse_subject(subject)
         langue = parse_language(language)
+
+        # Le registre des sources décide de l'autorité, pas celui qui ingère
+        # (VOLET 35, ch. 03). Une URL de la liste de refus est écartée **avec sa
+        # raison**, et une catégorie d'autorité exige un domaine inscrit.
+        verdict = check_source(url or "", source_category)
+        if not verdict["allowed"]:
+            raise SourceRefused(verdict["reason"])
 
         if not title or not title.strip():
             raise ValueError(

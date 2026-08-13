@@ -35,6 +35,33 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Reliability now comes from a registry, not from the document claiming it**
+  (`corpus/sources/senegal.yaml`, `src/knowledge_engine/source_registry.py`)
+  - `SourceCategory` existed and `retrieve_reliable()` weighed answers with it, but the
+    category was declared by whoever ingested: a blog filed as `government` weighed as
+    much as the official gazette
+  - Two refusals, both wired into `ingest_file`: a denied URL (social networks, video
+    platforms, messaging apps, anonymous content) is rejected **with its reason** — a
+    silent down-rank would let it in and let it weigh a little, which is worse — and an
+    authority category (`official`, `government`, `peer_reviewed`) requires a registered
+    domain, so declaring a blog as official becomes impossible rather than merely dishonest
+  - Domain matching compares labels, not string endings: `ifan.ucad.sn` inherits from
+    `ucad.sn`, `faux-ansd.sn` inherits nothing. A document with no URL gets no verdict —
+    its provenance is the manifest — and a **missing registry refuses** authority
+    categories rather than accepting them all
+- **Retrieval reads the scope axis, and the answer says what it was built from**
+  (`src/knowledge_engine/scoped_retrieval.py`)
+  - A policy, **not a second retriever**: `retrieve_reliable()` still does the searching;
+    this module orders and arbitrates. Two retrieval paths would stop returning the same
+    thing for the same question and nobody would know which one answered
+  - One prohibition: a national subject with no local source gets no answer. It does not
+    depend on how many items were found — a hundred global passages are not a national
+    source, they are a hundred ways to answer about the wrong country. Everything else:
+    local first, global still there
+  - The `senegal` agent now applies that policy instead of reimplementing it
+  - `scope_notice()` travels with the result, including through `retrieve_for_prompt`. The
+    case that matters is an answer about Senegal built from **no** Senegalese source:
+    without that sentence it reads exactly like a well-sourced answer
 - **Two agents that propose and never apply** (`agents/knowledge_architect/`,
   `agents/data_engineer/`)
   - `knowledge_architect` proposes the manifest entry a human writes by hand today —

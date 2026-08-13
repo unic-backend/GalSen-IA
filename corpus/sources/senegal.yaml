@@ -1,0 +1,108 @@
+# Registre des sources — Sénégal (VOLET 35, ch. 03).
+#
+# Ce fichier dit **qui fait autorité**, et sur quoi. Il ne contient aucun
+# document et aucune affirmation : il rattache un domaine internet à une
+# catégorie de source, pour que déclarer un blog comme « government » devienne
+# impossible au lieu d'être seulement malhonnête.
+#
+# La fiabilité vient d'ici, jamais du document qui la revendique.
+#
+# Ajouter une source est une modification relue de ce fichier. Les URL sont
+# celles des institutions ; elles ne sont **pas** visitées par la plateforme —
+# aucune collecte automatique n'existe (VOLET 36, ch. H).
+
+sources:
+  - name: "ANSD — Agence nationale de la statistique et de la démographie"
+    scope: country:sn
+    subjects: [economics, society, education, health]
+    category: government
+    base_url: https://www.ansd.sn
+
+  - name: "ISRA — Institut sénégalais de recherches agricoles"
+    scope: country:sn
+    subjects: [agriculture, science, environment]
+    category: institutional
+    base_url: https://www.isra.sn
+
+  - name: "ANACIM — Agence nationale de l'aviation civile et de la météorologie"
+    scope: country:sn
+    subjects: [environment, geography, agriculture]
+    category: government
+    base_url: https://www.anacim.sn
+
+  - name: "DGID — Direction générale des impôts et domaines"
+    scope: country:sn
+    subjects: [economics, law, administration]
+    category: government
+    base_url: https://www.impotsetdomaines.gouv.sn
+
+  - name: "Journal officiel de la République du Sénégal"
+    scope: country:sn
+    subjects: [law, administration]
+    category: official
+    base_url: https://www.jo.gouv.sn
+
+  - name: "Gouvernement du Sénégal — portail des services publics"
+    scope: country:sn
+    subjects: [administration, society]
+    category: government
+    base_url: https://www.sec.gouv.sn
+
+  - name: "Ministère de la Santé et de l'Action sociale"
+    scope: country:sn
+    subjects: [health]
+    category: government
+    base_url: https://www.sante.gouv.sn
+
+  - name: "UCAD — Université Cheikh Anta Diop de Dakar"
+    scope: country:sn
+    subjects: [science, education, history, culture, languages]
+    category: peer_reviewed
+    base_url: https://www.ucad.sn
+
+  - name: "IFAN — Institut fondamental d'Afrique noire"
+    scope: country:sn
+    subjects: [history, culture, languages, society]
+    category: peer_reviewed
+    base_url: https://ifan.ucad.sn
+
+  - name: "Organisation des Nations unies pour l'alimentation et l'agriculture (FAO)"
+    scope: global
+    subjects: [agriculture, fisheries, environment, economics]
+    category: institutional
+    base_url: https://www.fao.org
+
+  - name: "Organisation mondiale de la santé (OMS)"
+    scope: global
+    subjects: [health]
+    category: institutional
+    base_url: https://www.who.int
+
+# Ce qui ne peut soutenir aucune affirmation, quelle que soit la catégorie
+# déclarée. Le refus est **explicite et motivé** : rétrograder en silence
+# laisserait la source entrer et peser un peu, ce qui est pire que de la refuser.
+#
+# Ce n'est pas un jugement sur ces plateformes : une vidéo peut être excellente.
+# C'est qu'aucune d'elles ne permet de savoir **qui** affirme, ni de retrouver
+# l'affirmation si elle change.
+deny:
+  - domain: facebook.com
+    reason: "Réseau social : ni auteur vérifiable, ni permanence de la publication."
+  - domain: x.com
+    reason: "Réseau social : ni auteur vérifiable, ni permanence de la publication."
+  - domain: twitter.com
+    reason: "Réseau social : ni auteur vérifiable, ni permanence de la publication."
+  - domain: instagram.com
+    reason: "Réseau social : ni auteur vérifiable, ni permanence de la publication."
+  - domain: tiktok.com
+    reason: "Plateforme vidéo : aucune source citable, aucune version stable."
+  - domain: youtube.com
+    reason: "Plateforme vidéo : le contenu peut être modifié ou retiré sans trace."
+  - domain: whatsapp.com
+    reason: "Messagerie : contenu privé, non attribuable, non vérifiable."
+  - domain: telegram.org
+    reason: "Messagerie : contenu privé, non attribuable, non vérifiable."
+  - domain: pinterest.com
+    reason: "Agrégateur d'images : la source d'origine est perdue."
+  - domain: quora.com
+    reason: "Contenu anonyme sans revue : l'autorité y est déclarée, pas établie."

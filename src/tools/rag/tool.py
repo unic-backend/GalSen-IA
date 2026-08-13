@@ -538,15 +538,24 @@ class RAGTool(BaseTool):
             min_confidence=min_confidence if min_confidence is not None else 0.5,
             role=role,
         )
+        # La réponse dit sa portée (VOLET 35, ch. 05), comme elle dit déjà si la
+        # récupération était sémantique ou lexicale (ADR-015). Une réponse sur le
+        # Sénégal construite sans aucune source sénégalaise doit le **dire** —
+        # sinon elle se lit exactement comme une réponse bien sourcée.
+        from src.knowledge_engine.scoped_retrieval import apply_scope_policy, scope_notice
+
+        politique = apply_scope_policy(reliable["items"], question=prompt, limit=max_items)
         result = {
             "items": [
                 self._envelopper(self._serialize_item(k, iso_dates=True))
-                for k in reliable["items"]
+                for k in politique["items"]
             ],
             "reliable": reliable["reliable"],
             "best_priority": reliable["best_priority"],
             "best_confidence": reliable["best_confidence"],
             "reason": reliable["reason"],
+            "scope_report": politique["scope_report"],
+            "scope_notice": scope_notice(politique["scope_report"]),
         }
         logger.debug(
             f"Retrieve for prompt (reliable) returned {len(result['items'])} items via RAG tool"

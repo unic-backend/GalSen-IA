@@ -24,7 +24,8 @@ entités et relations avec provenance obligatoire, sans base graphe. **Chapitre 
 terminé** — dix axes attachés au plan existant, deux qui agissent. **Chapitre G terminé**
 — `knowledge_architect` et `data_engineer` : proposer, jamais appliquer. **Chapitre H
 terminé** — les capacités différées sont mesurées à chaque scan. **VOLET 36 TERMINÉ,
-8 chapitres sur 8.**
+8 chapitres sur 8.** Puis **VOLET 35, tour 2** (ch. 03, 04, 05) : registre des sources,
+récupération par portée, la réponse dit d'où elle vient.
 
 **Terminé dans cette session**
 - **A.1 → A.3** : l'enveloppe de confiance et ses neuf chemins (RAG, MCP, recherche web,
@@ -53,12 +54,18 @@ terminé** — les capacités différées sont mesurées à chaque scan. **VOLET
   objet pour la connaissance, files, acquisition automatisée restent différés, avec leurs
   déclencheurs **mesurés** au lieu d'être écrits. Le détecteur se tait tant que rien n'est
   franchi.
-- Suite complète : **2824 tests passent**, 8 ignorés ; `ruff` propre.
+- **VOLET 35, tour 2** : la fiabilité vient du **registre** (`corpus/sources/senegal.yaml`)
+  et plus du document qui la revendique — URL refusée avec sa raison, autorité usurpée
+  impossible. La récupération lit la portée : sujet national sans source locale → pas de
+  réponse ; sinon le local passe devant sans effacer le mondial. La réponse **dit** avec
+  quelles sources elle est construite.
+- Suite complète : **2842 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-**Rien n'est en cours.** Le VOLET 36 est clos, verdict mesuré dans son plan (§14).
-Proposition : **reprendre le VOLET 35** aux chapitres 03 + 04 + 05 — registre de sources,
-récupération par portée, la réponse dit sa portée. En attente de décision.
+**Rien n'est en cours.** VOLET 36 clos ; VOLET 35 avancé jusqu'au chapitre 05.
+Proposition : **tour 3 du VOLET 35** — chapitres 06 + 07 + 09 : détection des manques
+mesurée sur de vraies questions, découverte de sources qui **ne décide rien**,
+contradictions entre sources **rapportées, jamais résolues**. En attente de décision.
 **L3** (normalisation par langue) reste à faire ; **VOLET 35** est en pause après le tour 1
 (chapitres 03, 04, 05).
 
