@@ -126,6 +126,10 @@ class SearchResponse:
     search_id: str = field(default_factory=generate_search_id)
     execution_time_ms: float = 0.0
     sources_used: List[str] = field(default_factory=list)
+    # Les sources demandées qu'aucun fournisseur ne sert, **avec leur raison**.
+    # `sources_used` seul laisse croire qu'une source a été interrogée sans
+    # rien trouver, alors qu'elle n'a pas été interrogée du tout.
+    sources_unavailable: Dict[str, str] = field(default_factory=dict)
     # Par quel chemin chaque source a classé ses résultats — sémantique ou
     # lexical. Un appelant qui ne peut pas faire la différence finira par
     # construire sur l'idée que la similarité est comprise, et se trompera
@@ -141,6 +145,7 @@ class SearchResponse:
             "search_id": self.search_id,
             "execution_time_ms": self.execution_time_ms,
             "sources_used": self.sources_used,
+            "sources_unavailable": self.sources_unavailable,
             "methods": self.methods,
             # Ce que le classement ne dit pas. Les scores de deux sources ne
             # sont pas comparables — proportion de termes ici, similarité de

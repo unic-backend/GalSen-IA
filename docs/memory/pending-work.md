@@ -37,11 +37,17 @@ gets re-argued at every review.
   *Deciding criterion:* strategic alignment — the Knowledge Leadership pillar still has no
   Senegalese evidence under it, and this one depends on documents, not on code.
 
-- **Two search sources of four still have no provider** (document, vision). Memory was
-  wired on 2026-08-11, and the unjustified merge weights were **removed** rather than
-  justified: scores from two engines are not comparable, and the response now says so.
-  *Deciding criterion:* user impact — both remaining sources need their engine to produce
-  searchable text first, which neither does today.
+- **One search source of four has no provider, and it never will** (vision).
+  *Corrected on 2026-08-13:* this entry claimed **both** remaining sources were waiting on
+  their engine to produce searchable text. That was true for vision and **false for
+  documents** — `DocumentManagerImpl.search_documents()` has always indexed what it loads;
+  only the provider was missing. It is written and registered now, so three sources of four
+  answer.
+  Vision analyses an image and produces no indexed text, so there is nothing to search:
+  `/search` reports it in `sources_unavailable` **with that reason** rather than letting a
+  caller believe four sources were queried.
+  *Deciding criterion:* user impact — closed for documents; for vision the gap is the
+  absence of searchable text, not the absence of code.
 
 - **Deploy the platform somewhere reachable** (criterion C4). The Dockerfile, the compose
   file and CI exist; nobody has ever reached this API over a network.

@@ -22,6 +22,17 @@ from .types import (
 logger = logging.getLogger(__name__)
 
 
+#: Pourquoi une source connue n'a pas de fournisseur. Une raison écrite vaut
+#: mieux qu'une absence silencieuse : elle dit s'il manque du code ou s'il
+#: manque la chose elle-même.
+RAISONS_D_ABSENCE = {
+    SearchSource.VISION: (
+        "Le moteur visuel analyse une image et n'en produit aucun texte indexé : "
+        "il n'y a rien à chercher. Ce n'est pas un fournisseur qui manque."
+    ),
+}
+
+
 class SearchManagerImpl(SearchManager):
     """
     Façade du service de recherche unifiée.
@@ -134,10 +145,18 @@ class SearchManagerImpl(SearchManager):
         )
 
     def search(self, query: SearchQuery) -> SearchResponse:
-        """Exécute une recherche sur toutes les sources disponibles."""
+        """
+        Exécute une recherche sur toutes les sources disponibles.
+
+        Une source sans fournisseur est **rapportée** et non ignorée : sans
+        cela, `sources_used` laisse croire qu'on a interrogé les quatre sources
+        et qu'aucune n'avait de réponse, alors que l'une n'a jamais été
+        interrogée.
+        """
         start_time = time.time()
         all_results: List[SearchResultItem] = []
         sources_used: List[str] = []
+        sources_absentes: Dict[str, str] = {}
         methods: Dict[str, Any] = {}
 
         # Déterminer les sources à interroger
@@ -146,6 +165,10 @@ class SearchManagerImpl(SearchManager):
         for source in target_sources:
             provider = self._providers.get(source)
             if provider is None:
+                sources_absentes[source.value] = RAISONS_D_ABSENCE.get(
+                    source,
+                    "Aucun fournisseur enregistré pour cette source.",
+                )
                 continue
             try:
                 provider_query = self._build_provider_query(query, source)
@@ -179,6 +202,7 @@ class SearchManagerImpl(SearchManager):
             query=query.query,
             execution_time_ms=execution_time,
             sources_used=sources_used,
+            sources_unavailable=sources_absentes,
             methods=methods,
         )
 

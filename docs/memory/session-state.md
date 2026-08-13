@@ -79,7 +79,13 @@ deux derniers chapitres demandent de vrais documents.
   VOLET 36 étaient au registre sans qu'aucun pipeline ne les cite — donc **inatteignables**,
   la sélection ne pouvant que restreindre. Les axes `risk` et `geographic_scope` changent
   maintenant réellement ce qui tourne.
-- Suite complète : **2899 tests passent**, 8 ignorés ; `ruff` propre.
+- **Troisième source de recherche branchée** (`DocumentSearchProvider`) : le backlog la
+  disait en attente de son moteur, à tort — l'index existait, le fournisseur manquait. Le
+  branchement a révélé une **fuite** : le magasin documentaire n'a pas de propriétaire, et
+  `/search` est multi-utilisateur. Un document n'est désormais rendu que s'il **se
+  déclare** public ou possédé ; les retenus sont comptés. La vision reste absente **avec sa
+  raison** dans `sources_unavailable`.
+- Suite complète : **2910 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
 **Rien n'est en cours.** VOLET 36 clos ; VOLET 35 avancé jusqu'au chapitre 05.

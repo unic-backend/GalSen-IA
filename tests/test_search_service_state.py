@@ -65,15 +65,25 @@ def test_la_route_rapporte_l_indisponibilite_au_lieu_de_zero_resultat(cle, monke
 
 
 def test_les_sources_declarees_depassent_les_sources_branchees():
-    """Document et vision sont déclarées et n'ont toujours aucun fournisseur.
+    """La vision est déclarée et n'a toujours aucun fournisseur.
 
-    La mémoire en a un depuis qu'elle filtre réellement ses résultats. Les deux
-    autres restent déclarées et vides : `/search/status` doit continuer de le
-    dire plutôt que de laisser croire à quatre sources.
+    Le test a suivi la mesure, le 2026-08-13 : il affirmait que **document et**
+    vision étaient vides. C'était faux pour les documents — le moteur indexait
+    déjà ce qu'il chargeait, seul le fournisseur manquait, et il existe
+    désormais.
+
+    Ce qu'il garde est ce qui doit rester vrai : **une source déclarée sans
+    fournisseur ne doit jamais se lire comme une source interrogée sans
+    résultat**. Pour la vision ce n'est pas du code qui manque, c'est du texte
+    à indexer.
     """
     branchees = set(server_module.search_manager.registered_sources())
-    assert {SearchSource.KNOWLEDGE, SearchSource.MEMORY} <= branchees
-    assert {SearchSource.DOCUMENT, SearchSource.VISION} & branchees == set()
+
+    assert {SearchSource.KNOWLEDGE, SearchSource.MEMORY, SearchSource.DOCUMENT} <= branchees
+    assert SearchSource.VISION not in branchees
+    # L'absence est rapportée, pas déduite du silence.
+    reponse = server_module.search_manager.search(SearchQuery(query="mil"))
+    assert SearchSource.VISION.value in reponse.sources_unavailable
 
 
 def test_la_route_repond_des_qu_une_source_est_branchee(cle, monkeypatch):
