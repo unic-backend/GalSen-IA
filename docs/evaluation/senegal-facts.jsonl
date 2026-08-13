@@ -1,0 +1,28 @@
+// Jeu de référence factuel — Sénégal (VOLET 36, ch. C).
+//
+// ÉTAT : 0 entrée vérifiée. Ce n'est pas un oubli, c'est la mesure.
+// Le dépôt ne détient aujourd'hui aucun document sénégalais ; une entrée
+// « vérifiée » exige un document que le projet possède réellement, cité.
+//
+// Les entrées ci-dessous portent le statut « to_source » : elles nomment une
+// question, la FORME de la réponse attendue, et le TYPE de source qui la
+// trancherait. Elles ne contiennent aucune réponse, et `score_entry()` REFUSE
+// de les noter.
+//
+// Pourquoi : une entrée écrite de mémoire ferait de chaque mesure future une
+// mesure de cette mémoire. Un jeu de référence faux est pire qu'un jeu vide —
+// le vide se voit, le faux se cite.
+//
+// Pour qu'une entrée devienne « verified » : ingérer le document (manifeste,
+// `docs/knowledge/README.md`), puis renseigner `expected_claims` et `source`
+// avec le passage exact qui les établit.
+{"question": "Combien d'habitants compte le Sénégal au dernier recensement ?", "status": "to_source", "expected_shape": "Un effectif, l'année du recensement, et la publication qui le porte.", "source_type": "ANSD — Agence nationale de la statistique et de la démographie"}
+{"question": "Quelles pièces faut-il pour une première demande de carte nationale d'identité ?", "status": "to_source", "expected_shape": "La liste des pièces exigées, le lieu de dépôt et le délai annoncé.", "source_type": "Ministère de l'Intérieur"}
+{"question": "Quel est le délai de préavis légal en cas de licenciement ?", "status": "to_source", "expected_shape": "Une durée par catégorie de travailleur, avec l'article du Code du travail.", "source_type": "Journal officiel — Code du travail"}
+{"question": "Quelles variétés de mil sont recommandées pour le bassin arachidier ?", "status": "to_source", "expected_shape": "Des noms de variétés, leur cycle en jours, et la zone où elles sont conseillées.", "source_type": "ISRA — Institut sénégalais de recherches agricoles"}
+{"question": "Quel prix au producteur a été retenu pour la campagne arachidière en cours ?", "status": "to_source", "expected_shape": "Un prix au kilogramme, la campagne concernée, et l'acte qui le fixe.", "source_type": "Ministère de l'Agriculture — comité national interprofessionnel de l'arachide"}
+{"question": "Quand commence l'hivernage dans la région de Kaolack ?", "status": "to_source", "expected_shape": "Une période, exprimée en décades ou en mois, adossée à une série d'observations.", "source_type": "ANACIM — Agence nationale de l'aviation civile et de la météorologie"}
+{"question": "Quelles périodes de repos biologique s'appliquent à la pêche artisanale ?", "status": "to_source", "expected_shape": "Des périodes, les zones et les espèces concernées, et l'arrêté qui les institue.", "source_type": "Ministère des Pêches et de l'Économie maritime"}
+{"question": "Comment immatriculer un terrain relevant du domaine national ?", "status": "to_source", "expected_shape": "Les étapes de la procédure, l'autorité compétente à chaque étape, et le texte qui la fonde.", "source_type": "Journal officiel — loi sur le domaine national"}
+{"question": "Quel est le barème de l'impôt sur le revenu des personnes physiques ?", "status": "to_source", "expected_shape": "Les tranches, leurs taux, et l'année d'application.", "source_type": "DGID — Direction générale des impôts et domaines"}
+{"question": "Quel est le taux de scolarisation au cycle primaire ?", "status": "to_source", "expected_shape": "Un taux, l'année scolaire de référence, et la publication qui le porte.", "source_type": "ANSD / Ministère de l'Éducation nationale"}

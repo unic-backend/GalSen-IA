@@ -35,6 +35,22 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Unsupported claims are counted, and cited sources are checked against what they
+  are made to say** (`src/knowledge_engine/factual_evaluation.py`)
+  - Citation coverage counted items carrying a source; retrieval evaluation measured the
+    search. Neither said whether an **answer** was true — an answer could show 100 %
+    citation coverage while claiming what no cited passage says
+  - The evaluator never asks the generating model whether it was right: it would measure
+    that model's confidence in itself. This half is mechanical, so it works with C1 closed
+  - Support is **lexical**, and the module says so. The dangerous case is a claim that
+    contradicts its passage — it shares nearly every word with it, so overlap alone would
+    call it supported. Polarity is compared separately: `DISPUTED`, never `SUPPORTED`
+  - What it cannot measure travels in every report: factual correctness, contradiction
+    between sources, semantic relevance — named with their reason, carrying no number
+  - `docs/evaluation/senegal-facts.jsonl`: **10 questions, 0 verified entries**. Entries
+    name the question, the expected *shape* of an answer and the institution that would
+    settle it — never an answer — and `score_entry()` refuses to score them. A benchmark
+    written from memory would make every future measurement a measurement of that memory
 - **Wolof, Pulaar and Serer can be declared, stored and retrieved** (`Language.WO`,
   `Language.FF`, `Language.SRR`; `src/knowledge_engine/languages.py`)
   - A Wolof document could previously only enter the base labelled as a language that is

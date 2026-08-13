@@ -23,8 +23,11 @@ et `/security/posture` le mesure. C'était le P0 du VOLET 36.
 **Chapitre B terminé** (L1 + L2) : `WO`, `FF`, `SRR` déclarables et filtrables
 (`src/knowledge_engine/languages.py`, `GET /knowledge/languages`). **L3 — normalisation
 par langue — reste à faire**, nommé dans `blocked_on` du rapport.
-**Phase courante** : **C — l'évaluation factuelle, moitié mécanique** (justesse des
-citations et affirmations non étayées, mesurables sans modèle), en attente de confirmation.
+**Chapitre C terminé** : évaluation factuelle mécanique (`factual_evaluation.py`,
+`docs/evaluation/senegal-facts.jsonl` — 10 questions, 0 entrée vérifiée,
+`GET /knowledge/factual-benchmark`). La moitié qui demande un modèle est nommée, pas faite.
+**Phase courante** : **D — les agents `verifier` et `senegal`** (chacun refuse plutôt que
+deviner dans son mode de défaillance), en attente de confirmation.
 **VOLET 35 en pause après le tour 1** : les chapitres 03 + 04 + 05 restent à faire.
 **Cadence VOLET 35** : 4 tours, décidés avec le propriétaire le 2026-08-12 — 01+02, 03+04+05,
 06+07+09, 08+10. Les chapitres 11 et 12 attendent de vrais documents.

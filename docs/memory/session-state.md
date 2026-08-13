@@ -16,7 +16,9 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Chapitre A terminé** — les **9 chemins d'entrée externe** sont enveloppés par la barrière
 de confiance (`src/security/trust.py`) ; il y en avait un seul. **Chapitre B terminé** —
 `WO`, `FF`, `SRR` déclarables, filtrables et retrouvables, avec le rapport de capacités
-honnête (`src/knowledge_engine/languages.py`, `GET /knowledge/languages`).
+honnête (`src/knowledge_engine/languages.py`, `GET /knowledge/languages`). **Chapitre C
+terminé** — l'évaluation factuelle mécanique (`factual_evaluation.py`) et le jeu de
+référence sénégalais, **0 entrée vérifiée et le disant**.
 
 **Terminé dans cette session**
 - **A.1 → A.3** : l'enveloppe de confiance et ses neuf chemins (RAG, MCP, recherche web,
@@ -25,11 +27,15 @@ honnête (`src/knowledge_engine/languages.py`, `GET /knowledge/languages`).
 - **B (L1 + L2)** : les trois langues nationales entrent dans `Language`, l'ingestion et le
   manifeste les acceptent et **refusent une langue inconnue**. Le rapport dit capacité par
   capacité ce qui est réel — et marque `unknown`, pas `no`, ce qui n'a jamais été mesuré ici.
-- Suite complète : **2713 tests passent** (A.3) ; `ruff` propre.
+- **C** : affirmations non étayées comptées, sources citées confrontées à ce qu'on leur
+  fait dire, contradiction distinguée de l'absence. Ce qui demande un modèle est **nommé**,
+  pas fait. Le jeu de référence ne porte que des questions `to_source` — aucune réponse
+  écrite de mémoire, et `score_entry()` refuse de les noter.
+- Suite complète : **2744 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-**Chapitre C — l'évaluation factuelle, moitié mécanique** : justesse des citations et
-affirmations non étayées, mesurables sans modèle. En attente de confirmation.
+**Chapitre D — les agents `verifier` et `senegal`** : chacun refuse plutôt que deviner
+dans son mode de défaillance. En attente de confirmation.
 **L3** (normalisation par langue) reste à faire ; **VOLET 35** est en pause après le tour 1
 (chapitres 03, 04, 05).
 

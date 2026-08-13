@@ -92,6 +92,26 @@ def test_les_langues_publient_ce_qui_n_est_pas_acquis(cles):
     assert "comprend le wolof" in corps["caveat"]
 
 
+def test_le_jeu_de_reference_factuel_publie_son_vide(cles):
+    """
+    La route dit qu'aucune entrée n'est vérifiée (VOLET 36, ch. C).
+
+    Publier un 0 est le contraire d'un aveu de faiblesse : c'est ce qui
+    distingue une mesure absente d'une mesure réussie.
+    """
+    with TestClient(app) as client:
+        reponse = client.get(
+            "/knowledge/factual-benchmark", headers={"X-API-Key": cles["readonly"]}
+        )
+
+    assert reponse.status_code == 200
+    corps = reponse.json()
+    assert corps["verified"] == 0
+    assert corps["scorable"] == 0
+    assert corps["to_source"] > 0
+    assert corps["source_types"], "Aucune entrée ne nomme l'institution qui trancherait"
+
+
 @pytest.mark.parametrize("route", ["/knowledge/governance", "/knowledge/quality"])
 def test_routes_reservees_a_la_supervision(cles, route):
     """Un rôle en lecture seule n'accède pas aux métriques de gouvernance."""

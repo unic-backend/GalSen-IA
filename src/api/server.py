@@ -1340,6 +1340,26 @@ async def knowledge_languages():
     return languages_report()
 
 
+@app.get("/knowledge/factual-benchmark", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def knowledge_factual_benchmark():
+    """L'état réel du jeu de référence factuel sénégalais (VOLET 36, ch. C).
+
+    **Il ne porte aucune entrée vérifiée**, et la route le publie plutôt que de
+    le taire : une entrée de référence exige un document que le projet détient,
+    et le dépôt n'en détient encore aucun. Les entrées `to_source` nomment la
+    question et l'institution qui la trancherait — elles ne notent rien, et
+    `score_entry()` refuse de les utiliser.
+
+    Une entrée écrite de mémoire ferait de chaque mesure future une mesure de
+    cette mémoire.
+    """
+    from src.knowledge_engine.factual_evaluation import benchmark_report
+
+    return benchmark_report()
+
+
 # Endpoints d'approbation humaine (ADR-006)
 # Un agent peut suspendre une action dans l'état `requires_approval` ; un
 # opérateur humain consulte la file d'attente et approuve ou refuse chaque
