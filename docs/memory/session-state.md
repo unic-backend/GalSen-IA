@@ -91,7 +91,9 @@ corpus.
 **Bloqué / à surveiller**
 - **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192. Il bloque la
   mesure de la génération et du récupérateur sémantique, en wolof comme ailleurs.
-- **`git push origin v0.1.0`** : le proxy refuse les étiquettes (403). L'étiquette existe
-  localement sur `383fcf7` ; à pousser depuis un clone normal.
+- **`git push origin v0.1.0`** : **le seul échec de CI restant**, mesuré le 2026-08-13
+  (run 31703243054 : 2891 passent, 1 échec). Réessayé le jour même → 403, et aucun outil
+  d'API disponible ne crée d'étiquette. À pousser depuis un clone normal ; le test reste
+  rouge en attendant, à dessein.
 - **Le corpus sénégalais** demande de vrais documents déclarés — il ne s'invente pas.
 - **TEST 2 et TEST 6 non exécutés** : ils demandent un hôte Docker.

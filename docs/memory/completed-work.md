@@ -756,3 +756,9 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Le rapport de capacités a suivi la mesure** : `normalization` passe de « bloquée par L3 » à **`partial` pour le wolof, avec la raison qui reste** — le pliage des accents fond « ñ » et « n », deux lettres en wolof. Il est symétrique (il ne peut pas faire perdre une correspondance, seulement en créer une de trop) et un vrai analyseur morphologique manque toujours.
 - **Le test de garde du chapitre B a suivi lui aussi** : il exigeait que le rapport nomme la phase à venir ; cette phase est faite, et il épingle maintenant le comportement réel.
 - **3 tests ajoutés** (`tests/test_languages.py`, 11 au total). Suite complète : **2891 tests passent**, 8 ignorés ; `ruff` propre.
+
+### 2026-08-13 (vérification finale — la CI mesurée sur GitHub, pas en local)
+- **Critère 7 du VOLET 36 refermé par une mesure** : run GitHub `31703243054` (commit `748cc33`) → **2891 passent, 5 ignorés, 1 échec**. Le seul échec est `test_release_check.py::test_l_etiquette_de_la_version_courante_existe_bien`.
+- **Trois des quatre échecs de CI documentés au 2026-08-12 sont refermés** (PDF, deux tests du bac à sable). Le quatrième reste rouge **et doit le rester** : l'étiquette `v0.1.0` n'a jamais été poussée.
+- **Réessayé aujourd'hui, refusé à nouveau** : `git push origin v0.1.0` → HTTP 403 (le mandataire refuse les étiquettes), et **aucun outil d'API disponible ne crée d'étiquette** — vérifié, pas supposé. Le point reste à l'opérateur.
+- **Le test n'est ni ignoré ni affaibli.** Il dit la vérité ; l'affaiblir ferait disparaître la seule trace du travail restant, et c'est exactement ce que `.claude/rules/verification.md` interdit.

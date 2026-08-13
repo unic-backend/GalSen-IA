@@ -32,6 +32,19 @@ l'environnement, et il porte **quatre** tests :
 automatique ne partira, et personne ne peut distinguer « ça casse » de « ça casse
 comme d'habitude ». C'est le premier chantier, et il est court.
 
+#### Mesure du 2026-08-13 — trois des quatre sont refermés
+
+Run GitHub `31703243054` (commit `748cc33`) : **2891 passent, 5 ignorés, 1 échec.**
+
+| Test | État mesuré |
+|---|---|
+| `test_pdf_tool.py::test_pdf_tool_missing_dependencies` | **Réparé** — le module était capturé avant le remplacement d'import |
+| les deux tests du bac à sable | **Réparés** — sonde `_fork_possible()` : ils s'ignorent là où le runner ne peut pas forker, au lieu d'échouer |
+| `test_release_check.py::test_l_etiquette_...` | **Toujours rouge, et c'est correct.** L'étiquette n'est toujours pas poussée ; `git push origin v0.1.0` refusé à nouveau aujourd'hui (403) et aucun outil d'API disponible ne crée d'étiquette. **Il ne reste que ce point, et il est à toi.** |
+
+Le test n'est ni ignoré ni affaibli : il dit la vérité, et l'affaiblir ferait
+disparaître la seule trace du travail restant.
+
 ### 1.2 L'étiquette `v0.1.0` n'est jamais partie
 
 ```
@@ -132,7 +145,8 @@ certificat passe par lui.
 
 ## 6. Ordre recommandé
 
-1. **Réparer la CI** (4 tests : 2 à rendre portables, 1 étiquette à pousser, 1 antérieur).
+1. **Réparer la CI** — fait au 2026-08-13 sauf l'étiquette : il ne reste que
+   `git push origin v0.1.0`.
 2. `git push origin v0.1.0`.
 3. `ollama serve` + un modèle → ferme C1, débloque toute la génération.
 4. Écrire le `.env` (§3), `GALSEN_STORAGE_BACKEND=sqlite` compris.
