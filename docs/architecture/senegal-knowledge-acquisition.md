@@ -1,6 +1,11 @@
 # Senegal Knowledge Acquisition — Architecture
 
-**Status: design only. No production code has been modified for this document.**
+**Status: direction accepted by the owner, 2026-08-13. No production code has been
+modified for this document.**
+
+The owner accepted the reasoning of §0 — the previous deferral was circular — and
+attached one requirement: **the pilot keeps its human gates, and the path out of them is
+written down rather than improvised.** That path is §13.
 
 Date: 2026-08-13. Every claim about the existing repository below was read from the
 source in this session; the file and symbol are named so it can be checked. Everything
@@ -516,6 +521,10 @@ Each step is independently verifiable and ends where the repository can be left 
 | 9 | Manifest proposal via the existing `ingestion` workflow | `knowledge_architect` yields a `DRAFT`, applies nothing |
 | 10 | **Pilot run**, human-approved, against the real registry | The §8.4 report |
 | 11 | Answer, cite, distinguish (A11–A13) | Acceptance tests |
+| 12 | **Replace the provisional thresholds of §13.4 with the pilot's measured ones** | The configuration file carries numbers the pilot produced, not the ones written here |
+
+Levels L1–L3 (§13) are **after** step 12, one level at a time, per source, and each is
+its own decision. Nothing in steps 0–11 depends on them.
 
 Steps 1–9 touch no third-party server. **The first outbound request of this project
 happens at step 10, under explicit approval.**
@@ -587,6 +596,189 @@ the measurement that would settle it.
 
 ---
 
+## 13. Autonomy maturity — from the gated pilot to automated re-acquisition
+
+### 13.1 The distinction that must survive
+
+**The pilot (§8) is level L0: both human gates are mandatory, without exception.** Nothing
+in this section applies to it. L0 is not a temporary inconvenience to be optimised away —
+it is how the thresholds of every later level get *measured* instead of guessed. A level
+promoted before its evidence exists is a level whose criteria were invented.
+
+### 13.2 What becomes automatic — and what the target diagram actually says
+
+The owner's target:
+
+```
+TRUSTED + VERIFIED SOURCE
+        ↓
+AUTOMATED RE-ACQUISITION
+        ↓
+AUTOMATED QUALITY CHECKS
+        ↓
+AUTOMATED PROVENANCE
+        ↓
+AUTOMATED DUPLICATE CHECK
+        ↓
+AUTOMATED SECURITY CHECK
+        ↓
+AUTOMATED CONTRADICTION DETECTION
+        ↓
+        ┌─────────────────────┐
+        │                     │
+        ▼                     ▼
+ LOW-RISK VERIFIED       ANOMALY / CONFLICT
+        │                     │
+        ▼                     ▼
+ AUTO-INGEST           HUMAN REVIEW
+```
+
+Read precisely, this diagram already contains its own limits, and they are worth making
+explicit because they are what keeps it safe:
+
+- **It starts at `TRUSTED + VERIFIED SOURCE`, not at `SOURCE`.** Autonomy is a property
+  earned by a *source*, one at a time, never a mode the platform is switched into.
+- **It says `RE-ACQUISITION`, not `ACQUISITION`.** The automatic path re-visits ground a
+  human already walked. Reaching a *new* class of document — a new section of a site, a
+  new document type — leaves the automatic path and returns to a gate.
+- **Every check between the top and the fork is a check that already exists** in this
+  design (§6). Automation adds no new judgement; it removes a wait.
+- **The fork is the whole safety property.** `AUTO-INGEST` is the branch for the boring
+  case: a document that is new, complete, unique, clean and consistent with what is
+  already held. Everything else — anomaly, conflict, or simply *unknown* — goes right.
+
+One correction to how the fork is easy to read: **`UNKNOWN` belongs on the right-hand
+branch.** A document whose licence, date, language or authority cannot be established is
+not "not an anomaly"; it is undecided, and undecided means a person. Sending unknowns
+left would make automation an eraser of gaps, which is the exact failure this repository
+is built against.
+
+### 13.3 The four levels
+
+| Level | Discovery | Fetch | Ingest | What it means |
+|---|---|---|---|---|
+| **L0 — Pilot** | automatic | **human batch approval** | **human review of the manifest** | The state after §9 step 10. Where every threshold below is measured. |
+| **L1 — Trusted fetch** | automatic | **automatic** for an enabled, promoted source | human review | Fetching stops being a decision; ingesting does not. Cheap and reversible: fetched bytes that nobody approves are simply discarded. |
+| **L2 — Automated re-acquisition** | automatic | automatic | **automatic for re-acquisition of an already-ingested document**, human for anything new | The target diagram. A circular published quarterly updates itself; a document never seen before still waits. |
+| **L3 — Automated ingest of new low-risk documents** | automatic | automatic | **automatic when every §13.5 condition holds**, human otherwise | The furthest this design goes. It is not "unattended"; it is "attended by exception". |
+
+**There is no L4.** No level exists in which a document enters the trusted knowledge layer
+with no human able to see why it did. §13.7 is what makes that true.
+
+### 13.4 Promotion is earned, per source, and measured
+
+A source moves up a level only when its own record justifies it. The criteria are
+mechanical and they are read from the acquisition records, not asserted:
+
+| To reach | The source must show |
+|---|---|
+| **L1** | ≥ 10 documents acquired at L0; 0 trust-boundary hits; 0 robots violations; `access_policy.robots_txt` and `terms_reviewed` no longer `unknown`; `last_verified` within 90 days |
+| **L2** | ≥ 30 documents at L1; provenance completeness 100 %; quarantine rate < 10 %; licence known (not `unknown`); ≥ 1 successful re-acquisition cycle reviewed by a human |
+| **L3** | ≥ 90 days at L2; quarantine rate < 5 %; 0 conflicts that a human resolved *against* the pipeline's classification; the six §13.5 conditions implemented and tested |
+
+Two rules about these numbers, stated plainly:
+
+1. **They are provisional.** They were chosen to be conservative, not because anything
+   measured them — nothing could, since the pilot has not run. They belong in a reviewed
+   configuration file (`DEVELOPER` level, §4.2), and the pilot's real numbers are what
+   should replace them. A threshold nobody revisited after the first evidence arrived is
+   a threshold that was decorative.
+2. **Promotion is a reviewed commit, never an automatic consequence.** The pipeline may
+   *report* "source S now meets the L2 criteria". It may not promote S. Automating
+   promotion would make the level system self-widening, which is the one failure that
+   removes every other guard at once.
+
+Demotion, by contrast, **is** automatic — §13.8.
+
+### 13.5 "Low-risk" defined mechanically
+
+A document takes the `AUTO-INGEST` branch only if **all** of the following hold. Any
+single failure, and any `unknown`, sends it right.
+
+1. **Source**: `TIER_A_PRIMARY_OFFICIAL` or `TIER_A_ACADEMIC`, `enabled: true`, at the
+   required level, `last_verified` fresh.
+2. **Subject**: not in the excluded set — **health** (`health_policy.py` imposes its own
+   source floor and post-generation refusals), **law** and **administration** (national
+   subjects that never fall back to global knowledge, ADR-019). These three are where a
+   wrong document does the most damage outside the repository, and they keep a human at
+   L3 regardless of the source's record.
+3. **Provenance**: every §5.2 field present, and `publication_date` known — the one place
+   where L3 is stricter than manual ingestion, because no person is reading the date.
+4. **Novelty**: not an exact duplicate, not a near-duplicate, and — at L2 — a re-fetch of
+   a document already ingested from the same canonical URL.
+5. **Security**: `trust.inspect()` returns no match.
+6. **Consistency**: `detect_contradictions()` finds no conflict against existing items of
+   the same scope × subject.
+
+Condition 2 is the one that will be argued about later. It is written here so that
+widening it is a visible decision with a diff, not a quiet re-reading of the word
+"low-risk".
+
+### 13.6 What never becomes automatic, at any level
+
+- **Enabling a source, or changing its tier.** The registry is `DEVELOPER`-level; a
+  fetched document can never edit the file that says who is trustworthy. This is the
+  single most important line in this section.
+- **Resolving a contradiction.** Reported, never resolved — unchanged from §6.3.
+- **Upgrading a licence from `unknown` to reproducible.**
+- **Overriding `robots.txt`, a rate limit, or an authentication boundary.**
+- **Answering a health question.** `health_policy.py` applies whatever the ingestion path
+  was.
+- **Deleting or downgrading an existing validated item.** Automation may add; it may not
+  retract.
+
+### 13.7 Auto-ingested is not invisible
+
+Every automatically ingested item carries, in its provenance: `autonomy_level`, the
+source's level at that moment, the six conditions with the value each was evaluated on,
+and an audit event. Three consequences that make automation reversible:
+
+- **Anything auto-ingested is listable and bulk-retractable** by source, by level, by date
+  range. If a source turns out to have been wrong for a month, one operation removes the
+  month.
+- **A human reviewing later sees the same evidence** the machine used, not a summary of it.
+- **"Nobody approved it" must never mean "nobody can tell why it entered."** That sentence
+  is the acceptance criterion for this subsection.
+
+### 13.8 The circuit breaker
+
+Autonomy suspends itself — automatically, back to L0 for that source, with a report —
+when any of these is observed:
+
+| Signal | Why it matters |
+|---|---|
+| `robots.txt` changed since last acquisition | The permission we relied on may have been withdrawn |
+| The domain's certificate or resolved owner changed | A trusted name can change hands; a lapsed domain is the classic supply-chain path |
+| A trust-boundary hit on any document from this source | One is enough |
+| Quarantine rate over the level's threshold across a rolling window | The source's output changed shape |
+| A human resolved a conflict *against* the pipeline's classification | Our model of this source is wrong |
+| No successful acquisition for N days, then a sudden burst | Either the site was rebuilt or we are being served something else |
+
+**Suspension is cheap and re-promotion is expensive** — deliberately. The asymmetry is
+the point: a false suspension costs a review, a false continuation costs the base's
+credibility.
+
+### 13.9 Where the levels attach to the existing measured-trigger machinery
+
+`deferred_triggers.py` already measures a capability's trigger at every proactive scan
+instead of leaving it in prose — §0 is a case study in what happens when a trigger
+measures the wrong thing. The levels reuse that mechanism exactly: each level's criteria
+in §13.4 become a measured trigger per source, reported by the scan, and *only* reported.
+The scan's job is to say "S meets L2"; a person's job is to agree.
+
+### 13.10 What is unknown about this section
+
+- Every threshold in §13.4 and §13.8 (`10`, `30`, `90 days`, `10 %`, `5 %`, `N days`).
+  None was measured; the pilot is what measures them.
+- Whether any Senegalese source publishes predictably enough for L2 to ever be met —
+  re-acquisition assumes documents get updated at a rhythm, and that rhythm is unmeasured
+  (§12).
+- Whether the excluded subjects in §13.5 are the right three. Health, law and
+  administration are the defensible starting set; agriculture and health advice overlap in
+  ways that may argue for a fourth.
+
+---
+
 ## Summary
 
 The path from zero documents to a cited answer is: **one decision (ADR-021), six small
@@ -598,3 +790,8 @@ layer that already refuses unsourced material.
 
 The single most important property: **the first outbound HTTP request of this project
 happens at step 10, after an explicit human approval, against a registry a human wrote.**
+
+And the property that keeps it true afterwards (§13): **autonomy is earned by one source
+at a time, on evidence the pilot produces; it is granted by a reviewed commit and revoked
+automatically; and no level ever exists in which a document enters the base with nobody
+able to see why.**

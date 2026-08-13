@@ -12,8 +12,11 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-13
 
-**En cours** : rien. **VOLET 36 terminé (8/8)**, **VOLET 35 à 10 chapitres sur 12** —
-les deux derniers demandent de vrais documents sénégalais et ne peuvent pas être faits ici.
+**En cours** : **acquisition de connaissance sénégalaise** — conception écrite et
+**approuvée par le propriétaire** (`docs/architecture/senegal-knowledge-acquisition.md`,
+13 sections). Aucun code de production modifié. **Prochaine action = ADR-021** (étape 0).
+Contexte : VOLET 36 terminé (8/8), VOLET 35 à 10/12 — les chapitres 11 et 12 sont
+précisément ce que ce pipeline débloque.
 
 **Terminé dans cette session**
 - VOLET 36 complet (A→H) : barrière de confiance sur les **9 chemins externes**, trois
@@ -36,7 +39,10 @@ les deux derniers demandent de vrais documents sénégalais et ne peuvent pas ê
 - Suite complète : **2925 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-Rien n'est en cours. Ce qui reste dépend du propriétaire — voir
+**ADR-021** — rouvrir `automated_acquisition`, corriger son déclencheur (l'actuel est
+circulaire : il mesure le résultat de la capacité manquante), inscrire la limite de portée
+et ce qui reste différé. Ensuite seulement les étapes 1→12 de l'ordre d'implémentation.
+Le reste dépend toujours du propriétaire — voir
 `docs/deployment/etat-du-projet.md` §4 : `ollama serve`, `git push origin v0.1.0`, les
 premiers vrais documents sénégalais, ADR-020, la cible de déploiement.
 
