@@ -10,6 +10,7 @@ Aucune requête réseau.
 """
 
 import os
+import re
 import sys
 
 import pytest
@@ -121,7 +122,10 @@ def test_le_seul_chemin_vers_parsed_passe_par_la_barriere():
     from src.acquisition.record import TRANSITIONS
 
     assert AcquisitionStatus.PARSED in TRANSITIONS[AcquisitionStatus.FETCHED]
-    # Et la seule fonction qui produit cette transition est `cross_boundary`.
+    # Et la seule fonction qui **produit** cette transition est `cross_boundary`.
+    # C'est bien la transition qui est cherchée, pas la mention : `quality.py`
+    # lit le statut pour refuser d'évaluer un document non analysé, ce qui est
+    # l'inverse d'un contournement.
     racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     chemins = []
     for dossier, _, fichiers in os.walk(os.path.join(racine, "src")):
@@ -130,10 +134,14 @@ def test_le_seul_chemin_vers_parsed_passe_par_la_barriere():
                 continue
             chemin = os.path.join(dossier, fichier)
             with open(chemin, encoding="utf-8") as f:
-                if "AcquisitionStatus.PARSED" in f.read():
-                    chemins.append(os.path.basename(chemin))
+                # Les espaces sont écrasés : l'appel est écrit sur deux lignes
+                # dans `parsing.py`, et un test qui ne le voit pas à cause d'un
+                # retour à la ligne ne garde rien.
+                code = re.sub(r"\s+", "", f.read())
+            if "transition(AcquisitionStatus.PARSED" in code:
+                chemins.append(os.path.basename(chemin))
 
-    assert set(chemins) <= {"record.py", "parsing.py"}, (
+    assert chemins == ["parsing.py"], (
         f"Un autre module mène à PARSED sans passer par la barrière : {chemins}"
     )
 

@@ -24,6 +24,8 @@ from .gate import (
     plan_batch,
     submit_batch,
 )
+from .dedup import compare, dedup_report, find_duplicates, similarity
+from .quality import evaluate, quality_report
 from .parsing import boundary_report, cross_boundary, extract_text
 from .record import (
     STATUTS_TERMINAUX,
@@ -48,6 +50,12 @@ __all__ = [
     "boundary_report",
     "cross_boundary",
     "extract_text",
+    "compare",
+    "dedup_report",
+    "find_duplicates",
+    "similarity",
+    "evaluate",
+    "quality_report",
     "FetchRefused",
     "FetchResult",
     "GateRefused",
