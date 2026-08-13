@@ -69,14 +69,28 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - ALWAYS update `docs/memory/completed-work.md` and `CHANGELOG.md` after meaningful progress.
 
 ## Current Status
-Foundation phase is complete (ADR-001 Python, ADR-002 technology stack).
-The project is now building its **core engines** in `src/` — see `docs/architecture/overview.md`
-for the list, the shared conventions and what remains.
+*Measured 2026-08-13.* Foundation and core engines are done (ADR-001, ADR-002). Fourteen
+engines, **17 agents**, **21 enabled tools**, 76 API routes, 20 ADRs — see
+`docs/architecture/overview.md`, which is kept synchronized with the measured state.
 
-Persistence is decided and implemented (ADR-005, SQLite): memory, model and knowledge
-select their store through `GALSEN_STORAGE_BACKEND` (`in-memory` by default, `sqlite` to
-persist) and `GALSEN_DATA_DIR`. The audit and approval engines and the three backend
-services are still in-memory only — extending them reuses `src/storage/`, no new ADR.
+Persistence is decided and implemented (ADR-005, SQLite): every engine holding state —
+audit and approval included — selects its store through `GALSEN_STORAGE_BACKEND`
+(`in-memory` by default, `sqlite` to persist) and `GALSEN_DATA_DIR`.
+
+**The knowledge architecture is where the design lives now** (VOLETs 35 and 36, see the
+overview's *Knowledge architecture* section). Its rules are worth knowing before touching
+`src/knowledge_engine/`:
+
+- Two axes on every item: **scope** (where it holds) and **subject** (what it is about).
+  Law, administration and languages **never** fall back to global knowledge.
+- Reliability comes from `corpus/sources/senegal.yaml`, not from the document claiming it.
+- Nothing enters without a source; entities *and* relations carry their own provenance.
+- External text is **data with an origin**, never an instruction (`src/security/trust.py`).
+- `unknown` is not `no`, and every report shows its own gaps.
+
+Open, and depending on someone outside this repository: **C1** (`ollama serve`) gates
+generation and semantic retrieval; the base holds **0 Senegalese documents**; the `v0.1.0`
+tag has never been pushed and is the single red test in CI.
 
 ## Cerveau Local (nouveau)
 Le projet a maintenant un **Cerveau local** qui connecte les engines GalSen IA à Ollama.
