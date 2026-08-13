@@ -258,7 +258,23 @@ point, always.
 Steps 3 and 10 are the two human gates. Everything between them is mechanical and
 reversible: nothing has entered the knowledge layer yet.
 
-### 3.3 Re-acquisition
+### 3.3 What discovery reads before the document gate — and why that is not a hole
+
+Discovery reads `robots.txt`, a sitemap, a feed or a declared index page **before**
+`collection.decide()` runs on any document. That is a real ordering, and it deserves to
+be stated rather than discovered later.
+
+The gate of ADR-006 governs **documents**: they are what weighs, gets cited, and is kept.
+Reading a site's own published index is a different act — it is precisely the mechanism
+by which a site announces what it wants read. Refusing to read it would protect nobody
+and would force guessing instead.
+
+Those reads are still bounded by everything else: the source must be **enabled** in the
+registry (`discover()` raises otherwise), `robots.txt` applies, the per-host rate limit
+applies, same-domain applies, and the per-run ceiling applies. Today that guard is total
+rather than theoretical: **no source is enabled, so discovery can reach nothing at all.**
+
+### 3.4 Re-acquisition
 
 A source is re-checked on a schedule declared per source (default: never). Conditional
 GET means an unchanged document costs one 304. A changed document does **not** overwrite
@@ -514,7 +530,7 @@ Each step is independently verifiable and ends where the repository can be left 
 | 2 | S3 `AcquiredDocument` + status machine, in memory | **Done, 2026-08-13** — `src/acquisition/record.py`; 19 tests. Forbidden jumps refused, reasons mandatory, and leaving quarantine for `VERIFIED` requires a human actor |
 | 3 | S1 fetcher: real UA, rate limit, size ceiling, content-type allowlist, conditional GET, robots fetched first | **Done, 2026-08-13** — `src/acquisition/fetcher.py`; 16 tests against a loopback server, no third-party host. Cross-domain redirects refused, browser impersonation refused in code |
 | 4 | Wire `collection.decide()` before the fetch, and the ADR-006 batch approval | **Done, 2026-08-13** — `src/acquisition/gate.py`; 15 tests. A fetch without approval raises **and the injected fetcher records zero calls**; the approval carries the batch fingerprint, so adding a URL after the fact invalidates it rather than extending it |
-| 5 | S2 discovery: sitemap → RSS → declared index, depth 1, same-domain only | Fixture sitemaps; a test proving an off-domain link is dropped |
+| 5 | S2 discovery: sitemap → RSS → declared index, depth 1, same-domain only | **Done, 2026-08-13** — `src/acquisition/discovery.py`; 17 tests. Off-domain dropped with its reason, per-run ceiling, and `discover()` **refuses a source that is not enabled** |
 | 6 | S4 metadata + S5 language detection (`unknown` allowed) | Fixture PDF/HTML; a mismatch test |
 | 7 | Trust wrap + inspect on the acquisition path | Acceptance test A8 (§10) |
 | 8 | S6 near-duplicate + the ten checks of §6.2 | Per-check test, both directions |
