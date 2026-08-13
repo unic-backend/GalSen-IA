@@ -45,9 +45,14 @@ dormir dans un document. Rien n'a été construit.
 récupération par portée (`scoped_retrieval.py` — une politique, pas un second
 récupérateur), ch. 05 la réponse dit sa portée (`scope_notice`, jusque dans
 `retrieve_for_prompt`).
-**Phase courante** : aucune. **Tour 3 proposé** : chapitres **06 + 07 + 09** — détection
-des manques mesurée, découverte de sources qui ne décide rien, contradictions rapportées
-jamais résolues. En attente de décision.
+**VOLET 35, tour 3 terminé** (2026-08-13) : ch. 06 manques mesurés sur de vraies questions
+(`gaps.py`, détecteur `knowledge_gaps`), ch. 07 découverte qui propose depuis le registre et
+ne décide rien (`source_discovery.py`), ch. 09 contradictions rapportées jamais résolues
+(`contradictions.py`).
+**Phase courante** : aucune. **Tour 4 proposé** : chapitres **08 + 10** — collecte sous
+portillon (approbation, licence, `robots.txt`, provenance) et politique santé (plancher de
+sources, avertissement, refus en code). Les chapitres **11 et 12 attendent de vrais
+documents** et ne peuvent pas être faits ici. En attente de décision.
 **Cadence VOLET 35** : 4 tours, décidés avec le propriétaire le 2026-08-12 — 01+02, 03+04+05,
 06+07+09, 08+10. Les chapitres 11 et 12 attendent de vrais documents.
 (VOLET 34 terminé 14/14, découverte proactive livrée hors chapitre.)

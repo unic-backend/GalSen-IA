@@ -25,7 +25,8 @@ terminé** — dix axes attachés au plan existant, deux qui agissent. **Chapitr
 — `knowledge_architect` et `data_engineer` : proposer, jamais appliquer. **Chapitre H
 terminé** — les capacités différées sont mesurées à chaque scan. **VOLET 36 TERMINÉ,
 8 chapitres sur 8.** Puis **VOLET 35, tour 2** (ch. 03, 04, 05) : registre des sources,
-récupération par portée, la réponse dit d'où elle vient.
+récupération par portée, la réponse dit d'où elle vient. Puis **tour 3** (ch. 06, 07, 09) :
+manques mesurés, sources candidates du registre, contradictions rapportées.
 
 **Terminé dans cette session**
 - **A.1 → A.3** : l'enveloppe de confiance et ses neuf chemins (RAG, MCP, recherche web,
@@ -59,13 +60,18 @@ récupération par portée, la réponse dit d'où elle vient.
   impossible. La récupération lit la portée : sujet national sans source locale → pas de
   réponse ; sinon le local passe devant sans effacer le mondial. La réponse **dit** avec
   quelles sources elle est construite.
-- Suite complète : **2842 tests passent**, 8 ignorés ; `ruff` propre.
+- **VOLET 35, tour 3** : un manque est un couple sujet × portée que de **vraies questions**
+  ont touché sans réponse (journal d'audit existant, aucun second journal). La découverte
+  propose depuis le **registre** et ne décide rien. Les contradictions sont **rapportées,
+  jamais résolues** — aucun gagnant désigné, et deux pays ne se contredisent pas.
+- Suite complète : **2863 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
 **Rien n'est en cours.** VOLET 36 clos ; VOLET 35 avancé jusqu'au chapitre 05.
-Proposition : **tour 3 du VOLET 35** — chapitres 06 + 07 + 09 : détection des manques
-mesurée sur de vraies questions, découverte de sources qui **ne décide rien**,
-contradictions entre sources **rapportées, jamais résolues**. En attente de décision.
+Proposition : **tour 4 du VOLET 35** — chapitres 08 + 10 : collecte sous portillon
+(approbation, licence, `robots.txt`, provenance) et politique santé (plancher de sources,
+avertissement, refus en code). **Les chapitres 11 et 12 ne peuvent pas être faits ici** :
+ils demandent de vrais documents. En attente de décision.
 **L3** (normalisation par langue) reste à faire ; **VOLET 35** est en pause après le tour 1
 (chapitres 03, 04, 05).
 

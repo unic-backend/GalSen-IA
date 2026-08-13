@@ -35,6 +35,24 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Gaps are measured from real questions, candidate sources come only from the registry,
+  and contradictions are reported rather than resolved** (`src/knowledge_engine/gaps.py`,
+  `source_discovery.py`, `contradictions.py`)
+  - A gap is a `subject × scope` pair that **real questions** hit without an answer, read
+    from the audit trail the platform already writes. A gap nobody ever asked about is not
+    a gap, it is a guess about the future — and one unanswered search is an accident, not a
+    need, so the threshold is two
+  - Discovery proposes from the declared registry and **decides nothing**. "Search the web
+    and learn" is the fastest way to fill a knowledge base with confident nonsense; a
+    source outside the registry can be proposed by a person, never used by the platform.
+    Sources matching the requested scope come first — ANSD before FAO for a Senegalese gap
+  - Contradictions are found between passages of the **same subject and scope** that share
+    most of their terms and differ in polarity or in numbers. **No winner is named**: a
+    `winner` field would read as a conclusion and nobody would reopen the pair. The most
+    recent source is not automatically the right one. Two countries do not contradict each
+    other, they differ
+  - Blind spots are named (`not_detected`), and a guard test checks none of the three
+    modules reaches the network — collection is a later chapter, behind the approval gate
 - **Reliability now comes from a registry, not from the document claiming it**
   (`corpus/sources/senegal.yaml`, `src/knowledge_engine/source_registry.py`)
   - `SourceCategory` existed and `retrieve_reliable()` weighed answers with it, but the

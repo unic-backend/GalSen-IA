@@ -180,12 +180,18 @@ def _reference_de(passage: Any, rang: int) -> str:
     return f"passage #{rang}"
 
 
-def _termes(texte: str) -> List[str]:
-    """Découpe un texte en termes comparables, négations conservées."""
+def lexical_terms(texte: str) -> List[str]:
+    """
+    Découpe un texte en termes comparables, négations conservées.
+
+    Publique parce que la détection de contradictions (VOLET 35, ch. 09) compare
+    les mêmes termes que la mesure de soutien : deux découpages différents
+    diraient « étayé » ici et « contradictoire » là pour le même couple.
+    """
     return tokenize(texte, MOTS_VIDES)
 
 
-def _polarite(termes: Iterable[str]) -> bool:
+def carries_negation(termes: Iterable[str]) -> bool:
     """Indique si un texte porte une négation."""
     normalises = {normalize_token(terme) for terme in MARQUEURS_DE_NEGATION}
     return any(terme in normalises for terme in termes)
@@ -219,18 +225,18 @@ def assess_claim(claim: str, passages: Iterable[Any]) -> ClaimAssessment:
         Une affirmation trop courte pour être comparée rend `NOT_ASSESSABLE`
         plutôt qu'un verdict inventé.
     """
-    termes_affirmation = _termes(claim)
+    termes_affirmation = lexical_terms(claim)
     utiles = [terme for terme in termes_affirmation if terme not in MARQUEURS_DE_NEGATION]
     if len(utiles) < TERMES_MINIMUM:
         return ClaimAssessment(claim=claim, verdict=ClaimVerdict.NOT_ASSESSABLE)
 
-    negation_affirmation = _polarite(termes_affirmation)
+    negation_affirmation = carries_negation(termes_affirmation)
     meilleur_score = 0.0
     meilleure_reference: Optional[str] = None
     conteste = False
 
     for rang, passage in enumerate(passages, start=1):
-        termes_passage = set(_termes(_texte_de(passage)))
+        termes_passage = set(lexical_terms(_texte_de(passage)))
         if not termes_passage:
             continue
         recouvrement = sum(1 for terme in utiles if terme in termes_passage) / len(utiles)
@@ -240,7 +246,7 @@ def assess_claim(claim: str, passages: Iterable[Any]) -> ClaimAssessment:
         meilleure_reference = _reference_de(passage, rang)
         # La polarité se compare sur le passage retenu, pas sur l'ensemble :
         # c'est celui-là qu'on dirait « portant » l'affirmation.
-        conteste = _polarite(termes_passage) != negation_affirmation
+        conteste = carries_negation(termes_passage) != negation_affirmation
 
     score = round(meilleur_score, 4)
     if meilleur_score < SEUIL_DE_SOUTIEN:

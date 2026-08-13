@@ -239,6 +239,56 @@ def fichiers_a_ranger() -> List[Observation]:
     )]
 
 
+def manques_de_connaissance(audit: Any = None) -> List[Observation]:
+    """
+    Signale les couples sujet × portée que de vraies questions ont touchés sans
+    réponse (VOLET 35, ch. 06).
+
+    Une seule observation pour tous les manques : une par couple remplirait la
+    liste et rendrait la première invisible. Les sources candidates viennent du
+    registre (ch. 07) — **rien n'est collecté**, et la proposition ne décide rien.
+
+    Args:
+        audit: Moteur d'audit à lire ; celui du registre partagé par défaut.
+            Le paramètre existe parce que la mesure porte sur un journal
+            **partagé par le processus** : sans lui, un test ne peut pas
+            distinguer « aucun manque » de « les questions d'un autre test ».
+    """
+    from src.knowledge_engine.gaps import detect_gaps
+    from src.knowledge_engine.source_discovery import propose_for_gap
+
+    mesure = detect_gaps(audit=audit)
+    manques = mesure["gaps"]
+    if not manques:
+        return []
+
+    candidats = []
+    for manque in manques[:3]:
+        proposition = propose_for_gap(manque["subject"], manque["scope"])
+        candidats.append({
+            "subject": manque["subject"],
+            "scope": manque["scope"],
+            "unanswered": manque["unanswered"],
+            "candidate_sources": [source["name"] for source in proposition["candidates"]],
+        })
+
+    return [observation(
+        source="knowledge_gaps",
+        finding=(
+            f"{len(manques)} couple(s) sujet × portée demandés sans réponse, sur "
+            f"{mesure['measured_questions']} question(s) mesurée(s)."
+        ),
+        evidence={"gaps": candidats, "threshold": mesure["threshold"]},
+        suggested_action=(
+            "Les sources candidates viennent du registre déclaré. Ingérer un "
+            "document d'une de ces institutions comblerait le manque ; **rien "
+            "n'a été collecté** et aucune source hors registre n'est proposée."
+        ),
+        decided_by="owner",
+        priority="worth_doing",
+    )]
+
+
 def capacites_differees() -> List[Observation]:
     """
     Signale une capacité différée dont le déclencheur vient d'être franchi
@@ -298,6 +348,7 @@ DETECTEURS: Dict[str, Callable[[], List[Observation]]] = {
     "unorganised_files": fichiers_a_ranger,
     "security_posture": failles_de_posture,
     "deferred_capabilities": capacites_differees,
+    "knowledge_gaps": manques_de_connaissance,
 }
 
 
