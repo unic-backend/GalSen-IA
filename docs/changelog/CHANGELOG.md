@@ -11,6 +11,22 @@ capability answers `503` until an operator configures a model provider. Release 
 `docs/changelog/releases/`.
 
 ## [Unreleased]
+
+### Fixed — 2026-08-13
+- **`detect_contradictions()` ne compte plus les années comme des chiffres en désaccord.**
+  « 125 tonnes en 2022 » et « 130 tonnes en 2023 » étaient rapportés comme un conflit
+  numérique ; dans une base statistique, presque chaque passage porte une année. Les
+  années sont exclues des nombres comparés et servent désormais à écarter un couple dont
+  les périodes diffèrent. Même année et chiffres différents reste un conflit.
+- **`source_registry._domaine()` lit les URL relatives au protocole.** `//ansd.sn/x`
+  rendait une chaîne vide et recevait le traitement « aucune URL : la provenance est le
+  manifeste » — la porte exacte par laquelle une autorité usurpée pouvait passer. Un nom
+  de fichier (`rapport.pdf`) reste sans domaine ; les domaines inscrits au registre, qui
+  s'écrivent sans protocole, passent par `_domaine_declare()`.
+
+### Added — 2026-08-13
+- `docs/deployment/etat-du-projet.md` — rapport d'état au propriétaire : mesures, les
+  quatre points bloqués avec leur destinataire, et les cinq actions humaines dans l'ordre.
 ### Fixed
 - **The four VOLET 36 agents were unreachable** (`workflows/workflows.yaml`)
   - `senegal`, `verifier`, `knowledge_architect` and `data_engineer` were in the registry

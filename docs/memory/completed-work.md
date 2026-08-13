@@ -813,3 +813,11 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **`NON_DETECTE` nomme ce qui échappe désormais** : un diagnostic tourné autrement (« c'est sûrement une angine ») passe, et resserrer davantage refuserait des phrases utiles.
 - **9 tests ajoutés** (5 faux positifs + 4 vrais refus), en paramétrés : la liste est la mesure.
 - Suite complète : **2921 tests passent**, 8 ignorés ; `ruff` propre.
+
+### 2026-08-13 (les années comptaient comme des chiffres en désaccord — défaut trouvé en sondant `contradictions.py`)
+- **Faux conflit mesuré** : « La production atteint 125 tonnes en **2022** » et « … 130 tonnes en **2023** » étaient rapportés comme un désaccord de chiffres. Dans une base statistique, presque chaque passage porte une année : le rapport se serait rempli de conflits que personne ne peut trancher.
+- **Une année est une dimension, pas une valeur mesurée.** Elles sont exclues des nombres comparés et servent à écarter un couple dont les périodes diffèrent (`ANNEE_MINIMALE`/`ANNEE_MAXIMALE`, `_est_une_annee`, `_annees`).
+- **Deuxième défaut, même relecture** : `_domaine("//ansd.sn/x")` rendait `''` — une URL relative au protocole recevait le traitement « aucune URL, la provenance est le manifeste », c'est-à-dire **exactement la porte par laquelle une autorité usurpée passe**. Corrigé, sans inventer de domaine à partir d'un nom de fichier : `rapport.pdf` reste sans domaine, sinon l'ingestion d'un document local déjà détenu serait refusée. Les domaines **inscrits au registre** (`tiktok.com`, sans protocole) passent par `_domaine_declare()`.
+- **4 tests ajoutés**, dans les deux sens à chaque fois : années différentes → aucun conflit / même année et chiffres différents → conflit ; URL relative au protocole lue → oui / nom de fichier promu en domaine → non.
+- **Rapport au propriétaire écrit** : `docs/deployment/etat-du-projet.md` — état mesuré, quatre blocages nommés avec leur destinataire, cinq actions humaines dans l'ordre. Il remplace toute version antérieure de l'état du projet.
+- Suite complète : **2925 tests passent**, 8 ignorés ; `ruff` propre.
