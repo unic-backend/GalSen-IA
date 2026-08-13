@@ -100,6 +100,30 @@ def test_les_regles_d_un_agent_nomme_s_ajoutent_a_celles_de_l_etoile():
     assert robots_disallows(robots, "https://x.sn/b/p", agent="autre") is None
 
 
+def test_allow_l_emporte_sur_un_disallow_plus_general():
+    """
+    Défaut trouvé en relisant mon propre code (2026-08-13) : seul `Disallow`
+    était lu.
+
+    Un éditeur qui écrit `Disallow: /` puis `Allow: /public/` autorise
+    explicitement `/public/`. Ne lire que la première ligne refusait une source
+    par lecture incomplète — un refus qui a l'air prudent et qui écarte
+    exactement ce que l'éditeur voulait ouvrir.
+    """
+    robots = "User-agent: *\nDisallow: /\nAllow: /public/\n"
+
+    assert robots_disallows(robots, "https://www.ansd.sn/public/rapport.pdf") is None
+    assert robots_disallows(robots, "https://www.ansd.sn/prive/note.pdf") == "/"
+
+
+def test_la_regle_la_plus_specifique_gagne():
+    """C'est la convention du format : la longueur du préfixe tranche."""
+    robots = "User-agent: *\nAllow: /a/\nDisallow: /a/prive/\n"
+
+    assert robots_disallows(robots, "https://x.sn/a/public.pdf") is None
+    assert robots_disallows(robots, "https://x.sn/a/prive/note.pdf") == "/a/prive/"
+
+
 def test_une_licence_inconnue_degrade_au_lieu_de_bloquer():
     """
     Une source non reproductible reste une source qu'on peut nommer. Bloquer

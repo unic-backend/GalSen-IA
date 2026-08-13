@@ -76,10 +76,16 @@ def robots_disallows(robots_txt: str, url: str, agent: str = "*") -> Optional[st
     Un `robots.txt` vide ou absent n'interdit rien — c'est sa sémantique, et
     inventer une interdiction empêcherait de collecter une source parfaitement
     ouverte.
+
+    **`Allow` est lu, et la règle la plus spécifique gagne** — c'est la règle
+    usuelle du format. Ne lire que `Disallow` refuserait `/public/rapport.pdf`
+    sous un `Disallow: /` accompagné d'un `Allow: /public/` : un refus par
+    lecture incomplète, qui écarte une source que son éditeur autorise
+    explicitement.
     """
     chemin = _chemin(url)
     agent_courant: Optional[str] = None
-    interdits: List[str] = []
+    regles: List[tuple] = []
 
     for ligne in (robots_txt or "").splitlines():
         ligne = ligne.split("#", 1)[0].strip()
@@ -89,14 +95,19 @@ def robots_disallows(robots_txt: str, url: str, agent: str = "*") -> Optional[st
         cle = cle.lower()
         if cle == "user-agent":
             agent_courant = valeur.lower()
-        elif cle == "disallow" and agent_courant in ("*", agent.lower()):
+        elif cle in ("disallow", "allow") and agent_courant in ("*", agent.lower()):
             if valeur:
-                interdits.append(valeur)
+                regles.append((cle, valeur))
 
-    for interdit in interdits:
-        if chemin.startswith(interdit):
-            return interdit
-    return None
+    # La règle dont le préfixe est le plus long l'emporte. À longueur égale,
+    # `Allow` passe devant : c'est la convention du format, et elle va dans le
+    # sens le moins destructeur — on ne refuse pas ce qui est explicitement
+    # autorisé.
+    applicables = [(cle, valeur) for cle, valeur in regles if chemin.startswith(valeur)]
+    if not applicables:
+        return None
+    cle, valeur = max(applicables, key=lambda regle: (len(regle[1]), regle[0] == "allow"))
+    return valeur if cle == "disallow" else None
 
 
 def plan_collection(

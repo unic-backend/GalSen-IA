@@ -12,6 +12,29 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 ### Fixed
+- **The four VOLET 36 agents were unreachable** (`workflows/workflows.yaml`)
+  - `senegal`, `verifier`, `knowledge_architect` and `data_engineer` were in the registry
+    and cited by no workflow. The planner's selection **restricts** a pipeline and never
+    widens it, so the `risk` and `geographic_scope` axes were recommending agents no
+    execution could retain — a capability shipped that nothing reaches
+  - Three workflows: `question` (where the two acting axes become visible), `ingestion`
+    and `series`. `researcher` stays in `question` so the recommendation always has a
+    non-empty intersection; without it a plain request falls back to "whole pipeline",
+    the opposite of the sorting the axes promise
+- **`robots.txt` was only half read** (`src/knowledge_engine/collection.py`) — found while
+  re-reading my own code. Only `Disallow` was applied, so a publisher writing `Disallow: /`
+  followed by `Allow: /public/` had `/public/` refused: a refusal by incomplete reading,
+  which looks cautious and turns away exactly what the publisher meant to open. `Allow` is
+  read now, and the longest matching prefix wins, as the format requires
+- **The document search source leaked other people's documents when first wired**
+  (`src/services/search/providers.py`)
+  - The document engine is a platform-wide store with no notion of owner, and `/search` is
+    multi-user (ADR-010). A guard test caught it immediately: one user's search returned a
+    document another had registered
+  - A document is now returned only if it **declares itself** — public, or owned by the
+    request's subject. Anything declaring nothing is withheld, and the count of withheld
+    documents is reported: a source that filters silently reads like a source that found
+    nothing
 - **Three live `NameError` crashes, found by configuring a linter** — none was visible to
   the test suite
   - `SimpleStreamHandler.collect_stream_response_async` → `NameError: chrunk`. A comment
@@ -35,6 +58,19 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **A third search source answers, and the fourth says why it never will**
+  (`DocumentSearchProvider`, `SearchResponse.sources_unavailable`)
+  - The backlog said document and vision both waited on their engine to produce searchable
+    text. True for vision, **false for documents**: the index has always existed, only the
+    provider was missing. The backlog entry was corrected rather than worked around
+  - A source with no provider is reported **with its reason** instead of being skipped:
+    `sources_used` alone let a caller believe four sources were queried and one had nothing
+    to say. Vision's reason names what is actually missing — no indexed text, so nothing to
+    search; it is not a provider that is lacking
+- **ADR-020 (`proposed`) — what analytics may retain**, and it decides nothing. Three
+  options with their real cost, recommending aggregates-only after C4: an aggregate
+  answers "is the platform degrading?", while retained events answer a question the audit
+  trail already covers and carry the data whose retention needs a stated purpose
 - **Normalisation stopped applying French rules to non-French text**
   (`src/text_normalization.py`, `src/knowledge_engine/knowledge_indexer.py`)
   - Stripping a final `-s` is right in French and English. Applied to Wolof it mangled the

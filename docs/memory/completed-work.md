@@ -798,3 +798,9 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **L'argument qui tranche** : B garde la règle de vie privée applicable **par la forme** plutôt que par la vigilance — il n'y a rien de personnel dans la table. Une règle que le code rend impossible à enfreindre survit à un refactor ; une règle écrite en commentaire, non.
 - **Conséquence énoncée** : `trends` et `anomaly_detection` ne quittent `UNAVAILABLE_CAPABILITIES` **que le jour où elles sont calculées sur une vraie série** — jamais le jour où la table est créée, où une tendance serait une invention.
 - **Rien n'est implémenté** : l'ADR est `proposed`, `/analytics` est inchangé, et la décision appartient au propriétaire.
+
+### 2026-08-13 (relecture de mon propre travail — un défaut trouvé, et deux documents rattrapés)
+- **`robots.txt` n'était lu qu'à moitié** (`src/knowledge_engine/collection.py`) : seul `Disallow` était appliqué. Un éditeur qui écrit `Disallow: /` puis `Allow: /public/` autorise explicitement `/public/` — le refuser est un **refus par lecture incomplète**, qui a l'air prudent et écarte exactement ce que l'éditeur voulait ouvrir. `Allow` est désormais lu, et **la règle au préfixe le plus long gagne**, comme le veut le format.
+- **Vérifié, pas supposé, sur deux autres soupçons** : le filtre `action="search_knowledge"` de `detect_gaps` fonctionne bien (`AuditStore._matches` retombe sur `getattr`), et la partition par portée de `apply_scope_policy` ne peut pas écarter un élément à tort — l'égalité inclut la portée. Aucun des deux n'était un défaut.
+- **`CHANGELOG.md` et `docs/tasks/TASKS.md` avaient trois commits de retard** : workflows, source documentaire, ADR-020. La règle du dépôt les exige après tout travail significatif ; les oublier fait exactement ce que ce dépôt reproche à la documentation périmée.
+- **2 tests ajoutés**. Suite complète : **2912 tests passent**, 8 ignorés ; `ruff` propre.

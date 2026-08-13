@@ -1,4 +1,8 @@
 ## Done
+- [x] VOLET 36 — GalSen Intelligence Foundation (8 chapitres : barrière de confiance sur les 9 chemins d'entrée, langues du Sénégal + rapport de capacités, évaluation factuelle mécanique, 4 agents, entités/relations avec provenance, axes d'intention, capacités différées mesurées) — verdict de clôture dans `docs/architecture/volet-36-plan.md` §14
+- [x] VOLET 35 — IA internationale à profondeur sénégalaise, **10 chapitres sur 12** (registre des sources, récupération par portée, la réponse dit d'où elle vient, manques mesurés, découverte sans décision, contradictions rapportées, collecte sous portillon, politique santé). Les chapitres 11 et 12 attendent de **vrais documents** et ne peuvent pas être faits sans eux
+- [x] Trois workflows pour rendre les agents du VOLET 36 joignables (`question`, `ingestion`, `series`)
+- [x] Troisième source de recherche branchée (`document`), avec la règle de propriété qui empêche la fuite révélée par le branchement
 - [x] VOLET 16 — Authentication & Identity (ADR-010 : une clé appartient à un sujet ; critère C2 atteint sur mémoire, fichiers et notifications ; /auth/whoami ; taux d'authentification dans /metrics)
 - [x] VOLET 04 — Roadmap (10 chapitres, 13 phases : roadmap réelle, critères de sortie, versionnage, release_check, backlog P0–P3, registre de dette, /metrics, gouvernance)
 - [x] Reconciliation of the two development lines (4 phases: merge, green suite, Conseil Agricole on /ui, memory + ADRs)
