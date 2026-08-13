@@ -93,3 +93,15 @@ agents:
     role: "Senegal Intelligence"
     description: "Préfère les sources nationales ; refuse plutôt que de répondre mondial."
     module: "agents.senegal.agent"
+  - id: knowledge_architect
+    enabled: true
+    priority: 60
+    role: "Knowledge Architect"
+    description: "Propose une entrée de manifeste en DRAFT ; ne l'applique jamais."
+    module: "agents.knowledge_architect.agent"
+  - id: data_engineer
+    enabled: true
+    priority: 50
+    role: "Data Engineer"
+    description: "Décrit une série structurée ; refuse celle sans unité ni période."
+    module: "agents.data_engineer.agent"

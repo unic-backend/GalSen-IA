@@ -688,3 +688,15 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **`complexity` s'annonce grossier** et rend une étiquette, jamais un chiffre : deux signaux (nombre d'intentions, longueur) ne mesurent pas une difficulté, et un chiffre serait lu comme une estimation d'effort.
 - **Une ville suffit pour `geographic_scope`** : « les prix à Kaolack » est une question sénégalaise qui ne prononce jamais « Sénégal ».
 - **18 tests ajoutés** (`tests/test_planner_axes.py`). Suite complète : **2792 tests passent**, 8 ignorés ; `ruff` propre.
+
+### 2026-08-13 (VOLET 36, chapitre G — les agents `knowledge_architect` et `data_engineer`)
+- **`agents/knowledge_architect/`** : propose l'entrée de manifeste qu'un humain écrit aujourd'hui à la main — titre, portée, sujet, entités candidates — et **ne l'applique jamais**. Poser `scope: country:sn`, c'est décider seul quelles questions la plateforme s'autorise à répondre avec ce document ; `senegal` refuse un sujet national sans source nationale. La proposition sort en `DRAFT`.
+- **Ce qu'il ne devine pas** : la **catégorie de source** (elle dépend de qui publie, pas du texte) et la **langue** (aucun détecteur n'existe, ch. B). Les deux restent à `None`.
+- **Un classement incertain propose `unspecified` et le dit** (`uncertain`) : un sujet deviné rend le document trouvable sous une étiquette qu'il ne mérite pas, et introuvable sous la bonne.
+- **Les entités sont des candidats, jamais enregistrés** : une suite de mots capitalisés n'est pas une entité, et « vu dans un document » n'est pas une source — le magasin du chapitre E refuse.
+- **`agents/data_engineer/`** : **le refus vient avant le cas nominal**. Une série sans `units`, `period` et `source` déclarés est refusée — un chiffre de l'ANSD sans son année est un chiffre faux en attente d'être cité, et « 18 millions » est vrai, faux ou dénué de sens selon une année que personne n'a écrite.
+- **La déclaration ne se déduit pas du fichier** : « montant » ne dit pas si ce sont des FCFA, des milliers ou des dollars. Deviner serait indiscernable d'un fait pour tout lecteur suivant.
+- **Ambiguïté nommée plutôt que tranchée** : une colonne d'entiers à quatre chiffres (`2022`) est à la fois une année et un compte. Elle est rendue `number`, et c'est la déclaration `period` qui porte l'année — la raison même pour laquelle l'agent l'exige. Une colonne vide est `unknown`, jamais « texte ».
+- **Les marqueurs ont déménagé** (`src/knowledge_engine/markers.py`) : le chapitre F les portait dans le planificateur, le chapitre G leur donne un second lecteur. Deux copies d'une même liste divergent — un test vérifie qu'un seul fichier les porte.
+- **Le test de garde du registre a suivi la mesure** une seconde fois : 15 agents → **17**.
+- **18 tests ajoutés** (16 dans `tests/test_agents_architect_data.py`, 2 engendrés par la surface). Suite complète : **2810 tests passent**, 8 ignorés ; `ruff` propre.

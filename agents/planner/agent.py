@@ -14,60 +14,20 @@ from typing import Any, Dict, List, Tuple
 from src.agent.base_agent import BaseAgent
 from src.agent.context import AgentContext
 from src.agent.legacy import run_agent_module
+from src.knowledge_engine.markers import (
+    MARQUEURS_DE_FRAICHEUR,
+    contient,
+    est_senegalais,
+    sujets_a_risque,
+    sujets_reperes,
+)
 from src.knowledge_engine.scope import KnowledgeSubject
 from src.text_normalization import strip_accents as _sans_accents
 
 
-#: Marqueurs qui rattachent une demande au Sénégal (axe `geographic_scope`).
-#: Villes et régions, pas seulement le nom du pays : « les prix à Kaolack » est
-#: une question sénégalaise qui ne prononce jamais « Sénégal ».
-MARQUEURS_SENEGAL = (
-    "senegal", "senegalais", "dakar", "thies", "kaolack", "saint-louis",
-    "ziguinchor", "casamance", "touba", "diourbel", "matam", "tambacounda",
-    "louga", "fatick", "kolda", "kedougou", "sedhiou", "wolof", "pulaar",
-    "serere", "cfa",
-)
-
-#: Sujets où une réponse fausse coûte plus qu'ailleurs, et leurs marqueurs.
-#: L'axe `risk` en dépend, et il est l'un des deux qui agissent.
-MARQUEURS_DE_RISQUE = {
-    KnowledgeSubject.HEALTH.value: (
-        "sante", "maladie", "traitement", "medicament", "symptome", "grossesse",
-        "vaccin", "dosage", "paludisme", "diabete",
-    ),
-    KnowledgeSubject.LAW.value: (
-        "droit", "loi", "legal", "juridique", "contrat", "tribunal", "foncier",
-        "heritage", "succession", "licenciement", "amende",
-    ),
-    KnowledgeSubject.ECONOMICS.value: (
-        "impot", "taxe", "credit", "pret", "investir", "salaire", "fiscal",
-        "banque", "assurance",
-    ),
-}
-
-#: Marqueurs qui exigent de l'information à jour (axe `freshness`).
-MARQUEURS_DE_FRAICHEUR = (
-    "actuel", "actuellement", "aujourd", "recent", "dernier", "derniere",
-    "en vigueur", "maintenant", "2025", "2026", "cette annee",
-)
-
-#: Marqueurs de sujet (axe `domain`), rattachés aux valeurs de `KnowledgeSubject`.
-#: Volontairement courts : cet axe est **observé**, pas branché, et une liste
-#: longue donnerait l'illusion d'un classement fiable.
-MARQUEURS_DE_SUJET = {
-    KnowledgeSubject.AGRICULTURE.value: ("mil", "arachide", "culture", "semis", "recolte",
-                                         "agricole", "agriculture", "elevage"),
-    KnowledgeSubject.HEALTH.value: MARQUEURS_DE_RISQUE[KnowledgeSubject.HEALTH.value],
-    KnowledgeSubject.LAW.value: MARQUEURS_DE_RISQUE[KnowledgeSubject.LAW.value],
-    KnowledgeSubject.ECONOMICS.value: MARQUEURS_DE_RISQUE[KnowledgeSubject.ECONOMICS.value],
-    KnowledgeSubject.ADMINISTRATION.value: ("carte nationale", "passeport", "prefecture",
-                                            "demarche", "administratif", "etat civil"),
-    KnowledgeSubject.TECHNOLOGY.value: ("logiciel", "application", "api", "serveur",
-                                        "code", "base de donnees"),
-    KnowledgeSubject.EDUCATION.value: ("ecole", "universite", "scolaire", "eleve",
-                                       "etudiant", "formation"),
-    KnowledgeSubject.FISHERIES.value: ("peche", "pecheur", "piroque", "poisson"),
-}
+# Les marqueurs de sujet, de pays, de risque et de fraîcheur vivent dans
+# `src/knowledge_engine/markers.py` : le chapitre G leur a donné un second
+# lecteur, et deux copies d'une même liste divergent.
 
 #: L'agent que chacun des deux axes qui agissent recommande.
 AGENT_PAR_AXE = {"risk": "verifier", "geographic_scope": "senegal"}
@@ -204,21 +164,9 @@ class PlannerAgent(BaseAgent):
         qu'une mesure, et `declared` encore moins qu'une détection. Un axe lu
         sans sa méthode passerait pour une observation dans les trois cas.
         """
-        normalise = _sans_accents(request.lower())
-
-        def present(marqueurs) -> bool:
-            """Vraie si l'un des marqueurs commence un mot de la demande."""
-            return any(_motif(marqueur).search(normalise) for marqueur in marqueurs)
-
-        sujets = [
-            sujet for sujet, marqueurs in MARQUEURS_DE_SUJET.items()
-            if present(marqueurs)
-        ]
-        risques = [
-            sujet for sujet, marqueurs in MARQUEURS_DE_RISQUE.items()
-            if present(marqueurs)
-        ]
-        senegalais = present(MARQUEURS_SENEGAL)
+        sujets = sujets_reperes(request)
+        risques = sujets_a_risque(request)
+        senegalais = est_senegalais(request)
 
         return {
             "domain": {
@@ -245,7 +193,8 @@ class PlannerAgent(BaseAgent):
                 ),
             },
             "freshness": {
-                "value": "required" if present(MARQUEURS_DE_FRAICHEUR) else "unspecified",
+                "value": ("required" if contient(request, MARQUEURS_DE_FRAICHEUR)
+                          else "unspecified"),
                 "method": "keywords",
             },
             "research_required": {
@@ -428,11 +377,3 @@ _MOTIFS = {
     for mot in regle["keywords"]
 }
 
-
-def _motif(mot: str) -> "re.Pattern":
-    """Retourne le motif d'un marqueur, construit au premier usage."""
-    motif = _MOTIFS.get(mot)
-    if motif is None:
-        motif = re.compile(r"\b" + re.escape(_sans_accents(mot)))
-        _MOTIFS[mot] = motif
-    return motif

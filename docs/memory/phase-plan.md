@@ -33,9 +33,12 @@ par langue — reste à faire**, nommé dans `blocked_on` du rapport.
 graphe — le déclencheur qui la justifierait est écrit.
 **Chapitre F terminé** : dix axes attachés au plan existant (`agents/planner/agent.py`),
 deux agissent (`risk` → `verifier`, `geographic_scope` → `senegal`), huit observés.
-**Phase courante** : **G — les agents `knowledge_architect` et `data_engineer`**
-(proposer une entrée de manifeste ; refuser une série sans unité ni période), en attente
-de confirmation.
+**Chapitre G terminé** : `knowledge_architect` (propose en `DRAFT`, n'applique jamais) et
+`data_engineer` (refuse une série sans unité, période ni source), au registre — 17 agents.
+**Phase courante** : **H — le dernier chapitre du VOLET 36** : l'approfondissement de
+l'acquisition. Le plan le donne en **P3, déclencheurs non atteints** (§2.3 et audit §3.2) —
+la phase consiste donc à **mesurer les déclencheurs et rapporter**, pas à construire.
+En attente de confirmation.
 **VOLET 35 en pause après le tour 1** : les chapitres 03 + 04 + 05 restent à faire.
 **Cadence VOLET 35** : 4 tours, décidés avec le propriétaire le 2026-08-12 — 01+02, 03+04+05,
 06+07+09, 08+10. Les chapitres 11 et 12 attendent de vrais documents.

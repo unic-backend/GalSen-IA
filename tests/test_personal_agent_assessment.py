@@ -94,12 +94,12 @@ def test_les_six_specialistes_du_brief_existent():
 
     agents = AgentLoader(os.path.join(RACINE, "agents", "registry.yaml")).get_all_agents()
 
-    assert len(agents) == 15
+    assert len(agents) == 17
     for present in ("organizer", "project_manager", "opportunity"):
         assert present in agents, f"« {present} » n'est plus déclaré au registre"
     # Les deux agents du VOLET 36 (ch. D) ne viennent pas du brief personnel :
     # le compte les inclut, la liste ci-dessus reste celle des spécialistes.
-    for present in ("verifier", "senegal"):
+    for present in ("verifier", "senegal", "knowledge_architect", "data_engineer"):
         assert present in agents, f"« {present} » n'est plus déclaré au registre"
 
 

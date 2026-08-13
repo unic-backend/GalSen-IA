@@ -35,6 +35,26 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Two agents that propose and never apply** (`agents/knowledge_architect/`,
+  `agents/data_engineer/`)
+  - `knowledge_architect` proposes the manifest entry a human writes by hand today —
+    title, scope, subject, candidate entities — as `DRAFT`. Setting `scope: country:sn`
+    decides on its own which questions the platform may answer with that document, and
+    that decision belongs to a person
+  - It does not guess the source category (that depends on who publishes, not on the text)
+    or the language (no detector exists). An uncertain classification proposes
+    `unspecified` **and says so**: a guessed subject makes a document findable under a
+    label it does not deserve and invisible under the right one
+  - `data_engineer` **refuses before it describes**: a series without declared units,
+    period and source is rejected. An ANSD figure without its year is a wrong figure
+    waiting to be cited — "18 million" is true, false or meaningless depending on a year
+    nobody wrote down — and `montant` does not say whether it is FCFA, thousands, or
+    dollars
+  - A column of four-digit integers is ambiguous between a year and a count; it is
+    reported as `number`, and the declared `period` carries the year. An empty column is
+    `unknown`, never "text"
+  - The shared markers moved to `src/knowledge_engine/markers.py` now that a second
+    reader exists; a test asserts a single file carries them
 - **Ten axes describing a request, attached to the plan that already existed**
   (`agents/planner/agent.py`)
   - Not a module, not an agent, **not a second planner** — there is one, and a test pins

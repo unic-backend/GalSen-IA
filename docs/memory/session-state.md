@@ -21,7 +21,9 @@ terminé** — l'évaluation factuelle mécanique (`factual_evaluation.py`) et l
 référence sénégalais, **0 entrée vérifiée et le disant**. **Chapitre D terminé** — les
 agents `verifier` et `senegal`, chacun défini par son refus. **Chapitre E terminé** —
 entités et relations avec provenance obligatoire, sans base graphe. **Chapitre F
-terminé** — dix axes attachés au plan existant, deux qui agissent.
+terminé** — dix axes attachés au plan existant, deux qui agissent. **Chapitre G terminé**
+— `knowledge_architect` et `data_engineer` : proposer, jamais appliquer. **Il ne reste
+que le chapitre H.**
 
 **Terminé dans cette session**
 - **A.1 → A.3** : l'enveloppe de confiance et ses neuf chemins (RAG, MCP, recherche web,
@@ -43,12 +45,15 @@ terminé** — dix axes attachés au plan existant, deux qui agissent.
 - **F** : dix axes sur le plan existant — pas un second planificateur. `risk` recommande
   `verifier`, `geographic_scope` recommande `senegal` ; les huit autres sont **observés**
   avant d'être branchés, et `axes_effect` dit quel axe a ajouté quel agent.
-- Suite complète : **2792 tests passent**, 8 ignorés ; `ruff` propre.
+- **G** : `knowledge_architect` propose l'entrée de manifeste en `DRAFT` et ne l'applique
+  jamais ; `data_engineer` **refuse** une série sans unité, période ni source. Les
+  marqueurs partagés ont quitté le planificateur (`src/knowledge_engine/markers.py`).
+- Suite complète : **2810 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-**Chapitre G — les agents `knowledge_architect` et `data_engineer`** : proposer une entrée
-de manifeste sans jamais l'appliquer ; refuser une série sans unité ni période. En attente
-de confirmation.
+**Chapitre H — le dernier du VOLET 36** : l'approfondissement de l'acquisition est en
+**P3, déclencheurs non atteints**. La phase mesure les déclencheurs et rapporte ; elle ne
+construit pas d'infrastructure. En attente de confirmation.
 **L3** (normalisation par langue) reste à faire ; **VOLET 35** est en pause après le tour 1
 (chapitres 03, 04, 05).
 
