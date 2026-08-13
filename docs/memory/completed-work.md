@@ -665,3 +665,15 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Les deux agents sont au registre** (`agents/registry.yaml`, 13 agents) et répondent par leur point d'entrée historique.
 - **Un test de garde a suivi la mesure** : `test_les_six_specialistes_du_brief_existent` épinglait 13 agents au registre — il y en a 15. Le compte est corrigé et les deux nouveaux noms y sont épinglés, la liste des spécialistes du brief reste inchangée.
 - **15 tests ajoutés** (13 dans `tests/test_agents_verifier_senegal.py`). Suite complète : **2759 tests passent**, 8 ignorés ; `ruff` propre.
+
+### 2026-08-13 (VOLET 36, chapitre E — entités, relations et provenance)
+- **`src/knowledge_engine/entities.py`** + **`src/storage/sqlite_entity_store.py`** : les entités existent enfin comme objets. Le graphe existant stockait `nœud = identifiant de connaissance` — une personne, une loi, un lieu n'y existaient pas, et **une relation n'y portait aucune source**. « Cette loi abroge celle-là » se lisait comme un fait sans que personne puisse dire d'où il venait.
+- **Rien n'entre sans source** : une entité ou une relation sans provenance est **refusée**, pas signalée ni marquée « à vérifier ». Une entité extraite d'un texte par un modèle et rangée sans source serait de la connaissance par inférence — l'extraction propose, un document confirme.
+- **Les sources d'une relation sont distinctes de celles de ses extrémités** : savoir qui est ministre et savoir qu'il dirige tel ministère ne viennent pas du même document. Une relation porte aussi `valid_from` / `valid_to` — sans bornes, une base de relations devient fausse en vieillissant sans que rien ne le dise.
+- **`confidence` reste `None` quand la source n'en déclare pas** : un 0.5 par défaut serait un chiffre inventé, lu comme une mesure.
+- **Identifiant déterministe** (type + nom normalisé + portée) : la même institution ingérée deux fois se met à jour et réunit ses sources, au lieu de créer un doublon que plus rien ne rapprocherait.
+- **Pas de base graphe, et le déclencheur est écrit** : deux tables, des index sur `type`, `scope` et les deux extrémités. `DECLENCHEUR_BASE_GRAPHE` nomme les seuils (profondeur > 3, ~100 000 entités, requête > 200 ms) — la question se rouvre sur une mesure, pas sur un goût. Une profondeur au-delà du maximum **refuse et cite le déclencheur**.
+- **Le parcours rend le chemin** avec chaque voisin : un voisin de profondeur 2 sans son chemin est une affirmation sans raisonnement.
+- **Le magasin SQLite hérite du magasin mémoire** : le filtrage et le parcours sont identiques par construction, pas par relecture — c'est le mode de défaillance « deux implémentations d'une même règle » que ce dépôt a déjà payé.
+- **Aucune route publiée** : rien n'écrit encore d'entités (c'est le chapitre G). Une route qui construirait un magasin neuf à chaque appel rapporterait 0 en permanence — un chiffre faux vaut moins que pas de route.
+- **15 tests ajoutés** (`tests/test_entities.py`). Suite complète : **2774 tests passent**, 8 ignorés ; `ruff` propre.

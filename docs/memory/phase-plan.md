@@ -28,8 +28,12 @@ par langue — reste à faire**, nommé dans `blocked_on` du rapport.
 `GET /knowledge/factual-benchmark`). La moitié qui demande un modèle est nommée, pas faite.
 **Chapitre D terminé** : `agents/verifier/` (sans passage → `cannot_verify`) et
 `agents/senegal/` (sujet national sans source nationale → refus), au registre.
-**Phase courante** : **E — le magasin d'entités et de relations** (ontologie minimale,
-provenance obligatoire, sans base graphe), en attente de confirmation.
+**Chapitre E terminé** : entités et relations avec provenance obligatoire
+(`entities.py`, `sqlite_entity_store.py`), parcours jusqu'à la profondeur 3, sans base
+graphe — le déclencheur qui la justifierait est écrit.
+**Phase courante** : **F — les axes d'intention et de tâche** (`RISK` et
+`GEOGRAPHIC_SCOPE` changent le comportement, les autres sont observés), en attente de
+confirmation.
 **VOLET 35 en pause après le tour 1** : les chapitres 03 + 04 + 05 restent à faire.
 **Cadence VOLET 35** : 4 tours, décidés avec le propriétaire le 2026-08-12 — 01+02, 03+04+05,
 06+07+09, 08+10. Les chapitres 11 et 12 attendent de vrais documents.

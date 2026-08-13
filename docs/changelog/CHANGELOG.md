@@ -35,6 +35,21 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Entities and relations exist as objects, and neither enters without a source**
+  (`src/knowledge_engine/entities.py`, `src/storage/sqlite_entity_store.py`)
+  - The existing graph stored `node = knowledge id`: a person, a law, a place had no
+    existence in it, and **a relation carried no source at all**. "This law repeals that
+    one" read as a fact nobody could trace
+  - A relation's sources are **distinct** from its endpoints' — knowing who the minister
+    is and knowing they head that ministry need not come from the same document — and it
+    carries `valid_from` / `valid_to`, because a relation stops being true
+  - `confidence` stays `None` when the source declares none: a default 0.5 would be an
+    invented number read as a measurement
+  - Deterministic ids (type + normalised label + scope) merge a re-ingested entity instead
+    of creating a duplicate nothing would ever reconcile
+  - **No graph database**, and the trigger that would justify one is written down: depth
+    above 3, ~100 000 entities, or a measured query over 200 ms. A traversal deeper than
+    the maximum refuses and quotes it
 - **Two agents defined by what they refuse** (`agents/verifier/`, `agents/senegal/`)
   - `verifier` carries a verdict and stops there. It never rewrites the answer — measuring
     and correcting are two roles — and never asks the model whether it was right. With no
