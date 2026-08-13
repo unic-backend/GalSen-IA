@@ -511,7 +511,7 @@ Each step is independently verifiable and ends where the repository can be left 
 |---|---|---|
 | 0 | **ADR-021** — reopen `automated_acquisition`, fix its trigger, record the scope limit | **Done, 2026-08-13** — `docs/architecture/decisions/021-autonomous-knowledge-acquisition.md`, accepted |
 | 1 | Registry schema extension + tier defaulting + `enabled: false` | **Done, 2026-08-13** — `SourceTier`, `acquirable_sources()`, report carries `by_tier` / `tiers_defaulted` / `never_verified`; measured: 11 sources, 11 tiers defaulted, **0 enabled, 0 acquirable** |
-| 2 | S3 `AcquiredDocument` + status machine, in memory | Unit tests on every transition and every reason |
+| 2 | S3 `AcquiredDocument` + status machine, in memory | **Done, 2026-08-13** — `src/acquisition/record.py`; 19 tests. Forbidden jumps refused, reasons mandatory, and leaving quarantine for `VERIFIED` requires a human actor |
 | 3 | S1 fetcher: real UA, rate limit, size ceiling, content-type allowlist, conditional GET, robots fetched first | Tests against a local fixture server — **no third-party host in tests** |
 | 4 | Wire `collection.decide()` before the fetch, and the ADR-006 batch approval | A fetch attempted without approval raises, and the test proves it |
 | 5 | S2 discovery: sitemap → RSS → declared index, depth 1, same-domain only | Fixture sitemaps; a test proving an off-domain link is dropped |
