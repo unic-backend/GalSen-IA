@@ -11,6 +11,15 @@ document candidat qui n'est encore rien.
 Conception complète : `docs/architecture/senegal-knowledge-acquisition.md`.
 """
 
+from .fetcher import FetchRefused, FetchResult, fetch, fetch_robots, fetcher_report
+from .gate import (
+    CollectionBatch,
+    GateRefused,
+    acquire,
+    gate_report,
+    plan_batch,
+    submit_batch,
+)
 from .record import (
     STATUTS_TERMINAUX,
     TRANSITIONS,
@@ -22,6 +31,17 @@ from .record import (
 
 __all__ = [
     "AcquiredDocument",
+    "CollectionBatch",
+    "FetchRefused",
+    "FetchResult",
+    "GateRefused",
+    "acquire",
+    "fetch",
+    "fetch_robots",
+    "fetcher_report",
+    "gate_report",
+    "plan_batch",
+    "submit_batch",
     "AcquisitionRefused",
     "AcquisitionStatus",
     "STATUTS_TERMINAUX",

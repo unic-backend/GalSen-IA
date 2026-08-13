@@ -513,7 +513,7 @@ Each step is independently verifiable and ends where the repository can be left 
 | 1 | Registry schema extension + tier defaulting + `enabled: false` | **Done, 2026-08-13** — `SourceTier`, `acquirable_sources()`, report carries `by_tier` / `tiers_defaulted` / `never_verified`; measured: 11 sources, 11 tiers defaulted, **0 enabled, 0 acquirable** |
 | 2 | S3 `AcquiredDocument` + status machine, in memory | **Done, 2026-08-13** — `src/acquisition/record.py`; 19 tests. Forbidden jumps refused, reasons mandatory, and leaving quarantine for `VERIFIED` requires a human actor |
 | 3 | S1 fetcher: real UA, rate limit, size ceiling, content-type allowlist, conditional GET, robots fetched first | **Done, 2026-08-13** — `src/acquisition/fetcher.py`; 16 tests against a loopback server, no third-party host. Cross-domain redirects refused, browser impersonation refused in code |
-| 4 | Wire `collection.decide()` before the fetch, and the ADR-006 batch approval | A fetch attempted without approval raises, and the test proves it |
+| 4 | Wire `collection.decide()` before the fetch, and the ADR-006 batch approval | **Done, 2026-08-13** — `src/acquisition/gate.py`; 15 tests. A fetch without approval raises **and the injected fetcher records zero calls**; the approval carries the batch fingerprint, so adding a URL after the fact invalidates it rather than extending it |
 | 5 | S2 discovery: sitemap → RSS → declared index, depth 1, same-domain only | Fixture sitemaps; a test proving an off-domain link is dropped |
 | 6 | S4 metadata + S5 language detection (`unknown` allowed) | Fixture PDF/HTML; a mismatch test |
 | 7 | Trust wrap + inspect on the acquisition path | Acceptance test A8 (§10) |
