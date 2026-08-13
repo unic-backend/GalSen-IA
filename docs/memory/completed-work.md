@@ -791,3 +791,10 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Un test de garde a suivi la mesure** : il affirmait que *document et vision* n'avaient aucun fournisseur. Corrigé pour les documents, conservé pour la vision, et ce qu'il garde est ce qui doit rester vrai — une source déclarée sans fournisseur ne doit jamais se lire comme une source interrogée sans résultat.
 - **11 tests ajoutés** (`tests/test_search_document_source.py`).
 - Suite complète : **2910 tests passent**, 8 ignorés ; `ruff` propre.
+
+### 2026-08-13 (ADR-020 rédigé, `proposed` — la rétention analytique)
+- **`docs/architecture/decisions/020-analytics-retention.md`** : trois options (ne rien garder / **agrégats seuls** / événements avec fenêtre de rétention), avec leur coût réel et une recommandation — **B, et pas avant C4**.
+- **Pourquoi B** : la question posée est « la plateforme se dégrade-t-elle ? », et un agrégat y répond. L'option C répond à une autre question — « que s'est-il passé dans cette requête ? » — à laquelle l'audit répond déjà tant que le processus vit, et c'est justement la donnée dont la rétention exige un motif écrit.
+- **L'argument qui tranche** : B garde la règle de vie privée applicable **par la forme** plutôt que par la vigilance — il n'y a rien de personnel dans la table. Une règle que le code rend impossible à enfreindre survit à un refactor ; une règle écrite en commentaire, non.
+- **Conséquence énoncée** : `trends` et `anomaly_detection` ne quittent `UNAVAILABLE_CAPABILITIES` **que le jour où elles sont calculées sur une vraie série** — jamais le jour où la table est créée, où une tendance serait une invention.
+- **Rien n'est implémenté** : l'ADR est `proposed`, `/analytics` est inchangé, et la décision appartient au propriétaire.

@@ -71,10 +71,12 @@ gets re-argued at every review.
 
 ## P2 — Medium · real value, no criterion waits on it
 
-- **Decide whether analytics data is retained.** Trends and anomaly detection are the
-  chapter 09 capabilities `/analytics` declares unavailable, and both need history that
-  survives a restart — counters and workflow history are process-memory only (ADR-009).
-  This is a storage decision, so an ADR before code.
+- **Decide whether analytics data is retained.** **ADR-020 is written and `proposed`**
+  (2026-08-13): option A keep nothing, option B retain aggregates only on the existing
+  SQLite store, option C retain events with a retention window. The recommendation is B,
+  **after C4** — an aggregate answers "is the platform degrading?", and it keeps the
+  privacy rule enforceable by shape rather than by vigilance. Nothing is implemented; the
+  decision is the owner's.
   *Deciding criterion:* strategic alignment — worth taking **after C4**: before a
   deployment exists there is no operational history worth keeping.
 
