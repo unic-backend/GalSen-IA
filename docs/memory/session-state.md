@@ -20,7 +20,8 @@ honnête (`src/knowledge_engine/languages.py`, `GET /knowledge/languages`). **Ch
 terminé** — l'évaluation factuelle mécanique (`factual_evaluation.py`) et le jeu de
 référence sénégalais, **0 entrée vérifiée et le disant**. **Chapitre D terminé** — les
 agents `verifier` et `senegal`, chacun défini par son refus. **Chapitre E terminé** —
-entités et relations avec provenance obligatoire, sans base graphe.
+entités et relations avec provenance obligatoire, sans base graphe. **Chapitre F
+terminé** — dix axes attachés au plan existant, deux qui agissent.
 
 **Terminé dans cette session**
 - **A.1 → A.3** : l'enveloppe de confiance et ses neuf chemins (RAG, MCP, recherche web,
@@ -39,11 +40,15 @@ entités et relations avec provenance obligatoire, sans base graphe.
 - **E** : les entités existent comme objets ; une relation porte **ses propres** sources
   et ses bornes de validité. Rien n'entre sans source — refus, pas signalement. Parcours
   jusqu'à la profondeur 3 ; au-delà, le refus cite le déclencheur « base graphe ».
-- Suite complète : **2774 tests passent**, 8 ignorés ; `ruff` propre.
+- **F** : dix axes sur le plan existant — pas un second planificateur. `risk` recommande
+  `verifier`, `geographic_scope` recommande `senegal` ; les huit autres sont **observés**
+  avant d'être branchés, et `axes_effect` dit quel axe a ajouté quel agent.
+- Suite complète : **2792 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-**Chapitre F — les axes d'intention et de tâche** : `RISK` et `GEOGRAPHIC_SCOPE` changent
-le comportement, les autres sont seulement observés. En attente de confirmation.
+**Chapitre G — les agents `knowledge_architect` et `data_engineer`** : proposer une entrée
+de manifeste sans jamais l'appliquer ; refuser une série sans unité ni période. En attente
+de confirmation.
 **L3** (normalisation par langue) reste à faire ; **VOLET 35** est en pause après le tour 1
 (chapitres 03, 04, 05).
 

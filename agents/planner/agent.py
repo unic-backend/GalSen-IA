@@ -9,12 +9,76 @@ makes a plan reviewable.
 """
 
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from src.agent.base_agent import BaseAgent
 from src.agent.context import AgentContext
 from src.agent.legacy import run_agent_module
+from src.knowledge_engine.scope import KnowledgeSubject
 from src.text_normalization import strip_accents as _sans_accents
+
+
+#: Marqueurs qui rattachent une demande au Sénégal (axe `geographic_scope`).
+#: Villes et régions, pas seulement le nom du pays : « les prix à Kaolack » est
+#: une question sénégalaise qui ne prononce jamais « Sénégal ».
+MARQUEURS_SENEGAL = (
+    "senegal", "senegalais", "dakar", "thies", "kaolack", "saint-louis",
+    "ziguinchor", "casamance", "touba", "diourbel", "matam", "tambacounda",
+    "louga", "fatick", "kolda", "kedougou", "sedhiou", "wolof", "pulaar",
+    "serere", "cfa",
+)
+
+#: Sujets où une réponse fausse coûte plus qu'ailleurs, et leurs marqueurs.
+#: L'axe `risk` en dépend, et il est l'un des deux qui agissent.
+MARQUEURS_DE_RISQUE = {
+    KnowledgeSubject.HEALTH.value: (
+        "sante", "maladie", "traitement", "medicament", "symptome", "grossesse",
+        "vaccin", "dosage", "paludisme", "diabete",
+    ),
+    KnowledgeSubject.LAW.value: (
+        "droit", "loi", "legal", "juridique", "contrat", "tribunal", "foncier",
+        "heritage", "succession", "licenciement", "amende",
+    ),
+    KnowledgeSubject.ECONOMICS.value: (
+        "impot", "taxe", "credit", "pret", "investir", "salaire", "fiscal",
+        "banque", "assurance",
+    ),
+}
+
+#: Marqueurs qui exigent de l'information à jour (axe `freshness`).
+MARQUEURS_DE_FRAICHEUR = (
+    "actuel", "actuellement", "aujourd", "recent", "dernier", "derniere",
+    "en vigueur", "maintenant", "2025", "2026", "cette annee",
+)
+
+#: Marqueurs de sujet (axe `domain`), rattachés aux valeurs de `KnowledgeSubject`.
+#: Volontairement courts : cet axe est **observé**, pas branché, et une liste
+#: longue donnerait l'illusion d'un classement fiable.
+MARQUEURS_DE_SUJET = {
+    KnowledgeSubject.AGRICULTURE.value: ("mil", "arachide", "culture", "semis", "recolte",
+                                         "agricole", "agriculture", "elevage"),
+    KnowledgeSubject.HEALTH.value: MARQUEURS_DE_RISQUE[KnowledgeSubject.HEALTH.value],
+    KnowledgeSubject.LAW.value: MARQUEURS_DE_RISQUE[KnowledgeSubject.LAW.value],
+    KnowledgeSubject.ECONOMICS.value: MARQUEURS_DE_RISQUE[KnowledgeSubject.ECONOMICS.value],
+    KnowledgeSubject.ADMINISTRATION.value: ("carte nationale", "passeport", "prefecture",
+                                            "demarche", "administratif", "etat civil"),
+    KnowledgeSubject.TECHNOLOGY.value: ("logiciel", "application", "api", "serveur",
+                                        "code", "base de donnees"),
+    KnowledgeSubject.EDUCATION.value: ("ecole", "universite", "scolaire", "eleve",
+                                       "etudiant", "formation"),
+    KnowledgeSubject.FISHERIES.value: ("peche", "pecheur", "piroque", "poisson"),
+}
+
+#: L'agent que chacun des deux axes qui agissent recommande.
+AGENT_PAR_AXE = {"risk": "verifier", "geographic_scope": "senegal"}
+
+#: Axes rendus sans rien changer, le temps que leurs valeurs soient vues sur de
+#: vraies demandes. Un axe branché avant d'avoir été lu est une décision que
+#: personne n'a prise.
+AXES_OBSERVES = (
+    "domain", "task_type", "complexity", "freshness", "research_required",
+    "tools_required", "execution_required", "language",
+)
 
 
 class PlannerAgent(BaseAgent):
@@ -109,18 +173,148 @@ class PlannerAgent(BaseAgent):
             tags=["plan", "planner"],
         )
 
+        axes = self._axes(request, detected_intents, prior_knowledge, context)
+        agents, effets = self._agents_avec_axes(detected_intents, axes)
+
         return {
             "objective": request,
             "detected_intents": detected_intents,
             "task_count": len(tasks),
             "tasks": tasks,
-            "agents_required": self._agents_for(detected_intents),
+            "agents_required": agents,
+            # Les dix axes de la demande (VOLET 36, ch. F). Deux agissent, huit
+            # sont observés — et `axes_effect` dit lequel a ajouté quel agent :
+            # un axe qui changerait le routage sans se voir est exactement
+            # ce qui rend un planificateur inexplicable.
+            "axes": axes,
+            "axes_effect": effets,
             "context_used": {
                 "knowledge_items": len(prior_knowledge),
                 "memories": len(prior_memories),
             },
             "model_assisted": self._try_model_refinement(context, request, tasks),
         }
+
+    def _axes(self, request: str, intents: List[str], prior_knowledge: List[Any],
+              context: AgentContext) -> Dict[str, Any]:
+        """
+        Décrit la demande selon les dix axes, chacun avec sa méthode.
+
+        La méthode est rendue avec la valeur : `keywords` n'a pas la même valeur
+        qu'une mesure, et `declared` encore moins qu'une détection. Un axe lu
+        sans sa méthode passerait pour une observation dans les trois cas.
+        """
+        normalise = _sans_accents(request.lower())
+
+        def present(marqueurs) -> bool:
+            """Vraie si l'un des marqueurs commence un mot de la demande."""
+            return any(_motif(marqueur).search(normalise) for marqueur in marqueurs)
+
+        sujets = [
+            sujet for sujet, marqueurs in MARQUEURS_DE_SUJET.items()
+            if present(marqueurs)
+        ]
+        risques = [
+            sujet for sujet, marqueurs in MARQUEURS_DE_RISQUE.items()
+            if present(marqueurs)
+        ]
+        senegalais = present(MARQUEURS_SENEGAL)
+
+        return {
+            "domain": {
+                "value": sujets or [KnowledgeSubject.UNSPECIFIED.value],
+                "method": "keywords",
+            },
+            # Déjà produit par `INTENT_RULES` : l'axe le nomme, il ne le recalcule pas.
+            "task_type": {"value": list(intents), "method": "intent_rules"},
+            "complexity": {
+                "value": self._complexite(intents, request),
+                "method": "crude",
+                "note": (
+                    "Nombre d'intentions et longueur de la demande. C'est grossier "
+                    "et rendu comme tel : ce n'est pas une estimation d'effort."
+                ),
+            },
+            "risk": {
+                "value": "elevated" if risques else "ordinary",
+                "subjects": risques,
+                "method": "keywords",
+                "note": (
+                    "Santé, droit et argent : une réponse fausse y coûte plus "
+                    "qu'ailleurs."
+                ),
+            },
+            "freshness": {
+                "value": "required" if present(MARQUEURS_DE_FRAICHEUR) else "unspecified",
+                "method": "keywords",
+            },
+            "research_required": {
+                # Mesure, pas mot-clé : la base ne porte rien sur cette demande.
+                "value": not prior_knowledge,
+                "method": "measured",
+                "knowledge_items": len(prior_knowledge),
+            },
+            "tools_required": {
+                "value": self._agents_for(intents),
+                "method": "implied_by_agents",
+            },
+            "execution_required": {
+                "value": bool({"implementation", "deployment"} & set(intents)),
+                "method": "intent_rules",
+            },
+            "language": {
+                # **Déclarée, pas détectée** : aucun détecteur n'existe dans le
+                # dépôt (VOLET 36, ch. B — `language_support()` le dit).
+                "value": str(context.options.get("language") or "fr"),
+                "method": "declared",
+                "detected": False,
+            },
+            "geographic_scope": {
+                "value": "country:sn" if senegalais else "global",
+                "method": "keywords",
+            },
+        }
+
+    def _agents_avec_axes(self, intents: List[str],
+                          axes: Dict[str, Any]) -> Tuple[List[str], List[Dict[str, Any]]]:
+        """
+        Ajoute les agents que deux axes recommandent, et dit lequel les a ajoutés.
+
+        Seuls `risk` et `geographic_scope` agissent. Les huit autres sont
+        observés le temps que leurs valeurs soient vues sur de vraies demandes :
+        un axe branché avant d'avoir été lu est une décision que personne n'a
+        prise.
+
+        La recommandation reste une recommandation : `workflows.yaml` garde
+        l'autorité sur ce qui **peut** tourner, et un agent recommandé mais non
+        déclaré n'entre pas dans l'exécution.
+        """
+        agents = self._agents_for(intents)
+        effets = []
+        for axe, declencheur, agent in (
+            ("risk", "elevated", AGENT_PAR_AXE["risk"]),
+            ("geographic_scope", "country:sn", AGENT_PAR_AXE["geographic_scope"]),
+        ):
+            if axes[axe]["value"] != declencheur:
+                continue
+            effets.append({"axis": axe, "value": declencheur, "agent_added": agent})
+            if agent not in agents:
+                agents.append(agent)
+        return agents, effets
+
+    @staticmethod
+    def _complexite(intents: List[str], request: str) -> str:
+        """
+        Estime grossièrement l'ampleur d'une demande.
+
+        Deux signaux seulement — combien d'intentions, quelle longueur. Ni l'un
+        ni l'autre ne mesure une difficulté ; les additionner ne la mesure pas
+        davantage, et c'est pourquoi la valeur reste une étiquette sans chiffre.
+        """
+        signaux = len(intents) + (1 if len(request) > 280 else 0)
+        if signaux >= 3:
+            return "high"
+        return "moderate" if signaux == 2 else "low"
 
     def _detect_intents(self, request: str) -> List[str]:
         """
@@ -233,3 +427,12 @@ _MOTIFS = {
     for regle in PlannerAgent.INTENT_RULES.values()
     for mot in regle["keywords"]
 }
+
+
+def _motif(mot: str) -> "re.Pattern":
+    """Retourne le motif d'un marqueur, construit au premier usage."""
+    motif = _MOTIFS.get(mot)
+    if motif is None:
+        motif = re.compile(r"\b" + re.escape(_sans_accents(mot)))
+        _MOTIFS[mot] = motif
+    return motif

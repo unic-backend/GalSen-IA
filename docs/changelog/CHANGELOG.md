@@ -35,6 +35,22 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Ten axes describing a request, attached to the plan that already existed**
+  (`agents/planner/agent.py`)
+  - Not a module, not an agent, **not a second planner** — there is one, and a test pins
+    it. The axes are attributes of the request hung on the plan the planner already builds
+  - Every axis reports its method alongside its value (`keywords`, `measured`,
+    `intent_rules`, `declared`, `crude`): read without its method, an axis would pass for
+    an observation in all five cases
+  - **Two axes act, eight are observed.** `risk` (health, law, money) recommends
+    `verifier`; `geographic_scope` recommends `senegal`. The other eight are measured
+    before being wired to anything — an axis wired before anyone has seen its values on
+    real requests is a decision nobody made
+  - `axes_effect` names which axis added which agent; without it an agent would appear in
+    the plan with no way to say why. The recommendation stays a recommendation:
+    `workflows.yaml` remains the authority on what *may* run
+  - `language` carries `detected: False` — no detector exists, so a declared language must
+    not read as a recognised one
 - **Entities and relations exist as objects, and neither enters without a source**
   (`src/knowledge_engine/entities.py`, `src/storage/sqlite_entity_store.py`)
   - The existing graph stored `node = knowledge id`: a person, a law, a place had no

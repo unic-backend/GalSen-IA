@@ -677,3 +677,14 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Le magasin SQLite hérite du magasin mémoire** : le filtrage et le parcours sont identiques par construction, pas par relecture — c'est le mode de défaillance « deux implémentations d'une même règle » que ce dépôt a déjà payé.
 - **Aucune route publiée** : rien n'écrit encore d'entités (c'est le chapitre G). Une route qui construirait un magasin neuf à chaque appel rapporterait 0 en permanence — un chiffre faux vaut moins que pas de route.
 - **15 tests ajoutés** (`tests/test_entities.py`). Suite complète : **2774 tests passent**, 8 ignorés ; `ruff` propre.
+
+### 2026-08-13 (VOLET 36, chapitre F — les dix axes de la demande)
+- **Les axes sont un champ de plus sur le plan existant** (`agents/planner/agent.py`, bloc `axes`) — **pas un module, pas un agent, pas un second planificateur**. Il n'y en a qu'un, et ce chapitre ne devait pas en créer un deuxième ; un test l'épingle.
+- **Dix axes** : `domain`, `task_type`, `complexity`, `risk`, `freshness`, `research_required`, `tools_required`, `execution_required`, `language`, `geographic_scope`. **Chacun rend sa méthode avec sa valeur** — `keywords`, `measured`, `intent_rules`, `declared`, `crude` : lu sans sa méthode, un axe passerait pour une observation dans les cinq cas.
+- **Deux axes agissent, huit sont observés.** `risk` (santé, droit, argent) recommande `verifier` ; `geographic_scope` recommande `senegal`. Les huit autres sont mesurés avant d'être branchés : un axe branché avant d'avoir été lu sur de vraies demandes est une décision que personne n'a prise.
+- **`axes_effect` dit quel axe a ajouté quel agent** : sans lui, un agent apparaîtrait dans le plan sans que personne puisse dire pourquoi.
+- **La recommandation reste une recommandation** : `workflows.yaml` garde l'autorité sur ce qui *peut* tourner, et l'invariant « la sélection restreint, elle n'élargit jamais » est intact.
+- **`language` porte `detected: False`** : aucun détecteur n'existe (ch. B). Une langue déclarée ne doit pas passer pour une langue reconnue.
+- **`complexity` s'annonce grossier** et rend une étiquette, jamais un chiffre : deux signaux (nombre d'intentions, longueur) ne mesurent pas une difficulté, et un chiffre serait lu comme une estimation d'effort.
+- **Une ville suffit pour `geographic_scope`** : « les prix à Kaolack » est une question sénégalaise qui ne prononce jamais « Sénégal ».
+- **18 tests ajoutés** (`tests/test_planner_axes.py`). Suite complète : **2792 tests passent**, 8 ignorés ; `ruff` propre.
