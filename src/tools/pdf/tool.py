@@ -114,11 +114,19 @@ class PDFTool(BaseTool):
 
                 extracted_text = "\n\n".join(text_parts)
 
+                from src.security.trust import TrustLevel, envelope_fields
+
                 result = {
                     "text": extracted_text,
                     "num_pages": num_pages,
                     "pages_extracted": pages_to_extract,
                 }
+                # Un PDF est écrit par quelqu'un d'autre : une consigne peut y
+                # être posée en texte blanc sur fond blanc, invisible à l'œil et
+                # parfaitement lisible pour un modèle (VOLET 36, ch. A.3).
+                result.update(envelope_fields(
+                    extracted_text, TrustLevel.DOCUMENT, origin=file_path,
+                ))
                 logger.debug(f"Extraction PDF terminée: {file_path}, pages {pages_to_extract} sur {num_pages}")
                 return result
         except FileNotFoundError:

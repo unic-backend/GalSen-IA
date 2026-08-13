@@ -261,7 +261,11 @@ def report() -> Dict[str, Any]:
         "wrapped_paths": [
             "mcp_tool_descriptions", "retrieved_knowledge",
             "web_search", "browser", "api", "github",
+            "pdf", "ocr", "filesystem",
         ],
-        "unwrapped_paths": ["pdf", "ocr", "filesystem"],
+        # Vide, et le rester demande de brancher chaque nouveau chemin d'entrée
+        # au moment où il est écrit. Le champ demeure : le retirer ferait
+        # disparaître la question.
+        "unwrapped_paths": [],
         "reference": "VOLET 36, ch. A",
     }

@@ -621,3 +621,12 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Un test de A.1 a dû être mis à jour** : il nommait `web_search` comme non couvert. L'assertion suit la mesure au lieu de figer un état dépassé, et elle épingle désormais que **`pdf`, `ocr` et `filesystem` restent visibles** jusqu'à A.3.
 - **Défaut corrigé au passage** : `_process_response` ne connaissait pas l'URL appelée — elle lui est passée, sinon l'origine d'une réponse d'API aurait été inventée.
 - **6 tests ajoutés** (`tests/test_trust.py`, 24 au total). Suite complète : **2713 tests passent**, 7 ignorés ; `ruff` propre.
+
+### 2026-08-12 (VOLET 36, chapitre A.3 — les trois chemins de documents, et le chapitre A est clos)
+- **`pdf`, `ocr`, `filesystem`** passent par l'enveloppe. **Les neuf chemins mesurés par l'audit PHASE 0 sont couverts** ; il y en avait un seul au départ.
+- **Pourquoi ces trois-là comptent** : une consigne peut être posée dans un PDF **en blanc sur blanc** — invisible à l'œil, parfaitement lisible pour un modèle ; une pancarte photographiée passe par l'OCR ; et un fichier lu sur le disque n'est pas forcément écrit par la personne qui pose la question — dépôt cloné, pièce jointe enregistrée, fichier téléchargé.
+- **`content` et `text` restent bruts** partout : l'outil de fichiers sert d'abord à lire du code, l'OCR à extraire. C'est `prompt_text` qui entre dans une invite.
+- **`unwrapped_paths` reste dans le rapport, désormais vide** : le retirer une fois à zéro ferait disparaître la question, et le prochain chemin d'entrée ajouté ne se signalerait nulle part.
+- **Le test du rapport a suivi la mesure trois fois** (A.1, A.2, A.3) au lieu de figer un état dépassé — c'est la même discipline que pour les tests de garde retournés du VOLET 34.
+- **Le test PDF s'ignore ici** : `pypdf` n'est pas installé dans cet environnement, et l'ignorer le dit avec sa raison plutôt que de faire semblant.
+- **3 tests ajoutés** (`tests/test_trust.py`, 27 au total dont 1 ignoré). Suite complète : **2713 tests passent**, 7 ignorés ; `ruff` propre.

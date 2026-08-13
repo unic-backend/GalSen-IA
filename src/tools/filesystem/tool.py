@@ -130,12 +130,22 @@ class FileSystemTool(BaseTool):
         with open(target, "r", encoding=encoding, errors="replace") as handle:
             content = handle.read()
 
-        return {
+        from src.security.trust import TrustLevel, envelope_fields
+
+        resultat = {
             "path": self._relative(target),
             "content": content,
             "size": size,
             "line_count": len(content.splitlines()),
         }
+        # Un fichier lu sur le disque n'est pas forcément écrit par la personne
+        # qui pose la question : un dépôt cloné, une pièce jointe enregistrée,
+        # un fichier téléchargé (VOLET 36, ch. A.3). `content` reste brut — cet
+        # outil sert d'abord à lire du code et des données.
+        resultat.update(envelope_fields(
+            content, TrustLevel.DOCUMENT, origin=self._relative(target),
+        ))
+        return resultat
 
     def _op_tail(self, path: str, **kwargs) -> Dict[str, Any]:
         """

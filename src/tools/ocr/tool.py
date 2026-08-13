@@ -147,12 +147,21 @@ class OCRTool(BaseTool):
                             }
                         )
 
+            from src.security.trust import TrustLevel, envelope_fields
+
             result = {
                 "text": text,
                 "lang": lang,
                 "confidence": avg_confidence,
                 "boxes": boxes,
             }
+            # Le texte lu dans une image vient d'une image que personne n'a
+            # relue : une pancarte photographiée peut porter une consigne
+            # (VOLET 36, ch. A.3).
+            result.update(envelope_fields(
+                text, TrustLevel.DOCUMENT,
+                origin=image_path if isinstance(image_path, str) else "image fournie",
+            ))
             logger.debug(f"OCR terminé sur {image_path if isinstance(image_path, str) else 'bytes'} (lang={lang})")
             return result
         except Exception as e:  # pragma: no cover

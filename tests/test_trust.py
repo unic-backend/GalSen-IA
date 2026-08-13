@@ -157,16 +157,19 @@ def test_le_rapport_dit_ce_qui_n_est_pas_encore_enveloppe():
     Un rapport qui ne montrerait que les chemins couverts laisserait croire que
     la barrière est partout parce que le module existe.
 
-    Ce test nommait `web_search` comme non couvert en A.1 ; A.2 l'a branché, et
-    l'assertion suit la mesure au lieu de figer un état dépassé. Les trois
-    chemins de documents restent, et **doivent** rester visibles jusqu'à A.3.
+    Ce test a suivi la mesure trois fois : `web_search` était non couvert en
+    A.1, les chemins de documents l'étaient encore après A.2. A.3 ferme les
+    neuf. Le champ `unwrapped_paths` **reste** dans le rapport : le retirer une
+    fois vide ferait disparaître la question au lieu d'y répondre, et le
+    prochain chemin d'entrée ajouté ne se signalerait nulle part.
     """
     etat = report()
 
-    assert "retrieved_knowledge" in etat["wrapped_paths"]
-    assert "web_search" in etat["wrapped_paths"]
-    assert etat["unwrapped_paths"], "les chemins restants doivent rester visibles"
-    assert set(etat["unwrapped_paths"]) == {"pdf", "ocr", "filesystem"}
+    for chemin in ("retrieved_knowledge", "web_search", "pdf", "filesystem"):
+        assert chemin in etat["wrapped_paths"], f"« {chemin} » n'est plus couvert"
+    assert len(etat["wrapped_paths"]) == 9
+    assert etat["unwrapped_paths"] == []
+    assert "unwrapped_paths" in etat, "le champ doit rester, même vide"
 
 
 # ----------------------------------------------------------------------
@@ -364,3 +367,66 @@ def test_les_quatre_chemins_reseau_passent_par_la_meme_implementation():
     champs = envelope_fields("contenu", TrustLevel.EXTERNAL, origin="https://x")
 
     assert set(champs) == {"prompt_text", "trust_level", "injection_flags"}
+
+
+# ----------------------------------------------------------------------
+# 7. A.3 — les chemins de documents
+# ----------------------------------------------------------------------
+
+
+def test_un_fichier_lu_sur_le_disque_arrive_comme_donnee(tmp_path):
+    """
+    Un fichier n'est pas forcément écrit par la personne qui pose la question :
+    dépôt cloné, pièce jointe enregistrée, fichier téléchargé.
+    """
+    from src.tools.filesystem.tool import FileSystemTool
+
+    (tmp_path / "note.txt").write_text(TEXTE_HOSTILE, encoding="utf-8")
+    outil = FileSystemTool({"root": str(tmp_path)})
+
+    resultat = outil.execute("read", "note.txt")
+
+    assert resultat["trust_level"] == "document"
+    assert resultat["prompt_text"].startswith("[donnée document")
+    assert resultat["injection_flags"] >= 1
+    # Le contenu reste brut : cet outil sert d'abord à lire du code.
+    assert resultat["content"] == TEXTE_HOSTILE
+
+
+def test_le_texte_d_un_pdf_arrive_comme_donnee(monkeypatch):
+    """
+    Une consigne peut être posée dans un PDF en blanc sur blanc : invisible à
+    l'œil, parfaitement lisible pour un modèle.
+    """
+    pytest.importorskip("pypdf", reason="Le chargeur PDF n'est pas installé ici.")
+    from src.tools.pdf.tool import PDFTool
+
+    outil = PDFTool()
+    monkeypatch.setattr(outil, "_check_availability", lambda: None)
+
+    class _Page:
+        def extract_text(self):
+            return TEXTE_HOSTILE
+
+    class _Reader:
+        pages = [_Page()]
+
+    monkeypatch.setattr("src.tools.pdf.tool.PyPDF2", type("M", (), {"PdfReader": lambda f: _Reader()}))
+    monkeypatch.setattr("builtins.open", lambda *a, **k: __import__("io").BytesIO(b"%PDF"))
+
+    resultat = outil._op_extract_text("rapport.pdf")
+
+    assert resultat["trust_level"] == "document"
+    assert "rapport.pdf" in resultat["prompt_text"]
+    assert resultat["text"] == TEXTE_HOSTILE
+
+
+def test_les_neuf_chemins_sont_couverts():
+    """
+    Le compte qui clôt le chapitre A : l'audit PHASE 0 en avait mesuré neuf,
+    dont un seul couvert.
+    """
+    from src.security.trust import report
+
+    assert len(report()["wrapped_paths"]) == 9
+    assert report()["unwrapped_paths"] == []
