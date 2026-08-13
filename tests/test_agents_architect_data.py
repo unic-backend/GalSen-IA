@@ -98,18 +98,46 @@ def test_un_classement_incertain_propose_unspecified_et_le_dit(tmp_path):
 
 def test_ni_la_categorie_de_source_ni_la_langue_ne_sont_devinees(tmp_path):
     """
-    La première dépend de qui publie, pas du texte ; la seconde n'a aucun
-    détecteur dans le dépôt (ch. B). Les deux restent à remplir.
+    La catégorie dépend de qui publie, pas du texte : elle reste vide.
+
+    **Mis à jour le 2026-08-13 (ADR-021, étape 6)** : la langue avait la même
+    raison d'être vide — « aucun détecteur dans le dépôt ». Ce n'est plus vrai.
+    Ici elle reste `None` pour une **autre** raison, mesurée : une phrase de dix
+    mots est trop courte pour qu'un verdict veuille dire quelque chose.
     """
     document = tmp_path / "texte.md"
     document.write_text("Le foncier à Ziguinchor relève d'une loi propre.", encoding="utf-8")
 
-    proposition = KnowledgeArchitectAgent().perform(
+    resultat = KnowledgeArchitectAgent().perform(
         contexte(agent_id="knowledge_architect", path=str(document))
-    )["proposal"]
+    )
+    proposition = resultat["proposal"]
 
     assert proposition["source_category"] is None
     assert proposition["language"] is None
+    assert any("non détectée" in ligne for ligne in resultat["uncertain"])
+
+
+def test_la_langue_detectee_est_proposee_et_marquee_comme_detectee(tmp_path):
+    """
+    Détectée n'est pas déclarée. La proposer sans le dire ferait passer une
+    mesure pour une déclaration de l'éditeur.
+    """
+    document = tmp_path / "rapport.md"
+    document.write_text(
+        "Le rapport présente les résultats de l'enquête menée dans les régions du "
+        "pays. Les données sont issues des services statistiques et ont été "
+        "collectées par les équipes avec les partenaires qui participent à cette "
+        "opération.",
+        encoding="utf-8",
+    )
+
+    resultat = KnowledgeArchitectAgent().perform(
+        contexte(agent_id="knowledge_architect", path=str(document))
+    )
+
+    assert resultat["proposal"]["language"] == "fr"
+    assert any("détectée" in ligne and "confirmer" in ligne for ligne in resultat["uncertain"])
 
 
 def test_les_entites_sont_des_candidats_non_confirmes(tmp_path):

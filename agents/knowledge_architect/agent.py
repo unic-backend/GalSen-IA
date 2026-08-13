@@ -85,6 +85,25 @@ class KnowledgeArchitectAgent(BaseAgent):
         senegalais = est_senegalais(texte)
         incertain = []
 
+        # La détection existe depuis l'ADR-021 ; l'ignorer laisserait un champ
+        # vide qu'une personne remplirait à la main sans plus d'information.
+        from src.acquisition.language import detect_language
+
+        detection = detect_language(texte)
+        langue = None if detection["language"] == "unknown" else detection["language"]
+        if langue is None:
+            incertain.append(
+                "language : non détectée — texte trop court, ou langue sans liste "
+                "de marqueurs (le sérère n'en a aucune, délibérément)"
+            )
+        elif not detection.get("reviewed", True):
+            incertain.append(
+                f"language : « {langue} » détectée par une liste **non relue par un "
+                "locuteur** — à confirmer"
+            )
+        else:
+            incertain.append(f"language : « {langue} » détectée, jamais déclarée — à confirmer")
+
         if not sujets:
             # Deviner ici rendrait le document trouvable sous une étiquette
             # qu'il ne mérite pas, et introuvable sous la bonne.
@@ -105,10 +124,12 @@ class KnowledgeArchitectAgent(BaseAgent):
             "title": self._titre(chemin, texte),
             "scope": "country:sn" if senegalais else "global",
             "subject": sujets[0] if sujets else KnowledgeSubject.UNSPECIFIED.value,
-            # Ni catégorie de source ni langue devinées : la première dépend de
-            # qui publie, la seconde n'a aucun détecteur dans le dépôt (ch. B).
+            # La catégorie de source n'est pas devinée : elle dépend de qui
+            # publie, pas du texte. La langue, elle, est **détectée** depuis
+            # l'ADR-021 (étape 6) — mais détectée n'est pas déclarée, et
+            # `uncertain` le dit plutôt que de laisser croire à une déclaration.
             "source_category": None,
-            "language": None,
+            "language": langue,
             "status": "DRAFT",
         }
 
@@ -122,7 +143,8 @@ class KnowledgeArchitectAgent(BaseAgent):
             "read": lecture,
             "not_decided": list(NON_DECIDE),
             "note": (
-                "Proposition à relire, à compléter (`source_category`, `language`) "
+                "Proposition à relire, à compléter (`source_category`) et à confirmer "
+                "(`language`, détectée et non déclarée) "
                 "et à coller dans un manifeste — voir `docs/knowledge/README.md`. "
                 "Rien n'a été écrit."
             ),

@@ -534,7 +534,7 @@ Each step is independently verifiable and ends where the repository can be left 
 | 6 | S4 metadata + S5 language detection (`unknown` allowed) | **Done, 2026-08-13** — `src/acquisition/metadata.py`, `src/acquisition/language.py`, `corpus/languages/markers.yaml`; 24 tests. Ambiguous dates yield `unknown` with the reason; **srr has no marker list and returns `unknown` rather than a plausible neighbour**; `languages.py` detection verdict is now measured on the marker file (fr/en `yes`, wo/ff `partial`, srr `no`) |
 | 7 | Trust wrap + inspect on the acquisition path | **Done, 2026-08-13** — `src/acquisition/parsing.py`; 13 tests including **A8**. `cross_boundary()` is the only path from `FETCHED` to `PARSED`, and a test walks `src/` to prove no other module reaches `PARSED` |
 | 8 | S6 near-duplicate + the ten checks of §6.2 | **Done, 2026-08-13** — `src/acquisition/dedup.py`, `src/acquisition/quality.py`; 30 tests. Only three checks may reject; everything uncertain, `unknown` included, goes to quarantine |
-| 9 | Manifest proposal via the existing `ingestion` workflow | `knowledge_architect` yields a `DRAFT`, applies nothing |
+| 9 | Manifest proposal via the existing `ingestion` workflow | **Done, 2026-08-13** — `src/acquisition/manifest.py`; 14 tests. Only a `VERIFIED` document can be proposed; nothing is written; `knowledge_architect` now proposes the **detected** language and says it is detected, not declared |
 | 10 | **Pilot run**, human-approved, against the real registry | The §8.4 report |
 | 11 | Answer, cite, distinguish (A11–A13) | Acceptance tests |
 | 12 | **Replace the provisional thresholds of §13.4 with the pilot's measured ones** | The configuration file carries numbers the pilot produced, not the ones written here |

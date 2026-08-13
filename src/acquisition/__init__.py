@@ -25,6 +25,7 @@ from .gate import (
     submit_batch,
 )
 from .dedup import compare, dedup_report, find_duplicates, similarity
+from .manifest import ManifestRefused, manifest_report, propose, propose_batch
 from .quality import evaluate, quality_report
 from .parsing import boundary_report, cross_boundary, extract_text
 from .record import (
@@ -56,6 +57,10 @@ __all__ = [
     "similarity",
     "evaluate",
     "quality_report",
+    "ManifestRefused",
+    "manifest_report",
+    "propose",
+    "propose_batch",
     "FetchRefused",
     "FetchResult",
     "GateRefused",
