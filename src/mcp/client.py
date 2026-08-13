@@ -34,6 +34,8 @@ refuse. Ce qu'il apporte est la partie qui décide **avant** toute connexion :
 
 import logging
 import re
+
+from src.security.trust import MOTIFS_SUSPECTS as MOTIFS_COMMUNS
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -41,20 +43,13 @@ logger = logging.getLogger(__name__)
 
 VARIABLE = "GALSEN_MCP_SERVERS"
 
-#: Tournures qui, dans une **description d'outil**, s'adressent à un modèle
-#: plutôt qu'à un humain. Leur présence ne prouve pas une attaque ; leur absence
-#: de signalement, elle, garantit qu'on ne la verrait pas.
-MOTIFS_SUSPECTS = (
-    r"\bignore[rz]?\b.{0,30}\b(instructions?|consignes?|précédent)",
-    r"\bignore\b.{0,30}\b(previous|prior|above|system)",
-    r"\byou (must|should|will|are required)\b",
-    r"\btu (dois|devras)\b",
-    r"\bavant de répondre\b",
-    r"\bbefore (answering|responding)\b",
-    r"(~|/home/|/etc/|\.ssh|id_rsa|\.env\b)",
-    r"\b(api[_ -]?key|token|password|mot de passe|secret)\b",
-    r"<\s*(system|instructions?)\s*>",
-)
+#: Motifs suspects, **importés** de `src/security/trust.py` (VOLET 36, ch. A.1).
+#: Ils vivaient ici depuis le chapitre 09 ; ils servent désormais les neuf
+#: chemins d'entrée externe, pas le seul MCP. Deux listes finiraient par
+#: diverger, et c'est la plus indulgente qui survivrait. Le nom reste exporté :
+#: du code et des tests le désignent.
+MOTIFS_SUSPECTS = MOTIFS_COMMUNS
+
 
 
 class ServerNotPinned(PermissionError):

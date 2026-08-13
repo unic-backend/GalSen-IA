@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 #: Sections rapportées, dans l'ordre où elles comptent pour la personne qui lit :
 #: d'abord ce qui touche sa machine, ensuite ce qui touche ses données.
 SECTIONS = (
-    "filesystem", "execution", "perception", "exposure",
+    "filesystem", "execution", "perception", "exposure", "trust",
     "identity", "approval", "audit", "sovereignty", "recovery",
 )
 
@@ -157,6 +157,27 @@ def _perception() -> Dict[str, Any]:
             "une session graphique est joignable : les captures d'écran ne "
             "quittent jamais l'hôte, mais elles existent"
         ],
+    }
+
+
+def _trust() -> Dict[str, Any]:
+    """Ce qui entre dans les invites comme donnée, et ce qui entre encore brut."""
+    from src.security.trust import report
+
+    etat = report()
+    restants = etat["unwrapped_paths"]
+    return {
+        "state": "partial" if restants else "enforced",
+        "wrapped_paths": etat["wrapped_paths"],
+        "patterns": etat["patterns"],
+        "note": (
+            "Tout ce qui est sous « user » est une donnée, et une donnée ne "
+            "devient jamais une instruction (VOLET 36, ch. A)."
+        ),
+        "gaps": [
+            f"{len(restants)} chemin(s) d'entrée externe encore versés bruts dans "
+            f"les invites : {', '.join(restants)}"
+        ] if restants else [],
     }
 
 
@@ -295,6 +316,7 @@ _MESURES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "execution": _execution,
     "perception": _perception,
     "exposure": _exposure,
+    "trust": _trust,
     "identity": _identity,
     "approval": _approval,
     "audit": _audit,

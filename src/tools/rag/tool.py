@@ -439,6 +439,33 @@ class RAGTool(BaseTool):
         logger.debug(f"Search '{query}' returned {len(results)} results via RAG tool")
         return results
 
+    def _envelopper(self, element: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Ajoute à une connaissance sa forme utilisable dans une invite.
+
+        `retrieve_for_prompt` est **le chemin conçu** pour verser du texte
+        étranger dans une invite : c'est donc celui où une consigne cachée dans
+        un passage atteindrait le modèle comme un ordre. L'enveloppe de
+        confiance (VOLET 36, ch. A.1) l'annonce comme une donnée, avec son
+        origine, et transporte les soupçons relevés.
+
+        Le champ `content` **reste le contenu brut** : le tronquer ou le
+        réécrire ferait perdre au reste de la plateforme — citations, mesures,
+        stockage — le texte réel. C'est `prompt_text` qui entre dans une invite,
+        et la docstring de l'opération le dit.
+        """
+        from src.security.trust import TrustLevel, wrap
+
+        enveloppe = wrap(
+            element.get("content", ""),
+            TrustLevel.RETRIEVED,
+            origin=element.get("id") or "connaissance sans identifiant",
+        )
+        element["prompt_text"] = enveloppe.text
+        element["trust_level"] = enveloppe.level.value
+        element["injection_flags"] = len(enveloppe.suspicions)
+        return element
+
     def _op_retrieve_for_prompt(
         self,
         prompt: str,
@@ -476,6 +503,12 @@ class RAGTool(BaseTool):
         Returns:
             Liste de dictionnaires représentant les connaissances pertinentes,
             ou un dictionnaire avec les clés "items", "reliable",
+
+            Chaque élément porte **`prompt_text`** : c'est ce champ, et lui
+            seul, qui entre dans une invite. Il annonce le passage comme une
+            donnée récupérée, avec son origine, et signale les tournures qui
+            s'adressent à un modèle. `content` reste le texte brut, pour les
+            citations et les mesures.
             "best_priority", "best_confidence" et "reason" si
             require_reliable est True.
         """
@@ -487,7 +520,10 @@ class RAGTool(BaseTool):
             raw_results: List[KnowledgeItem] = self._get_knowledge_manager().retrieve_for_prompt(
                 prompt, max_items=max_items, role=role
             )
-            results = [self._serialize_item(k, iso_dates=True) for k in raw_results]
+            results = [
+                self._envelopper(self._serialize_item(k, iso_dates=True))
+                for k in raw_results
+            ]
             logger.debug(f"Retrieve for prompt returned {len(results)} items via RAG tool")
             return results
 
@@ -503,7 +539,10 @@ class RAGTool(BaseTool):
             role=role,
         )
         result = {
-            "items": [self._serialize_item(k, iso_dates=True) for k in reliable["items"]],
+            "items": [
+                self._envelopper(self._serialize_item(k, iso_dates=True))
+                for k in reliable["items"]
+            ],
             "reliable": reliable["reliable"],
             "best_priority": reliable["best_priority"],
             "best_confidence": reliable["best_confidence"],
