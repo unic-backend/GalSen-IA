@@ -55,6 +55,15 @@ AVERTISSEMENT = (
     "en cours, antécédents."
 )
 
+#: Ce qui suit « vous avez » sans rien diagnostiquer. Sans cette liste, le
+#: filtre refusait « vous avez le droit de consulter gratuitement » — une phrase
+#: utile, et exactement le genre de refus qui rend une politique de sécurité
+#: inutilisable. Un filtre qui refuse tout ne protège personne.
+SUITES_NON_CLINIQUES = (
+    "le droit", "besoin", "la possibilité", "accès", "raison", "intérêt",
+    "jusqu", "droit", "rendez-vous", "une question",
+)
+
 #: Formes refusées, avec ce que chacune produirait si elle passait.
 MOTIFS_INTERDITS = (
     (
@@ -70,8 +79,12 @@ MOTIFS_INTERDITS = (
     (
         "diagnosis",
         re.compile(
-            r"\bvous\s+(avez|souffrez|êtes atteint|présentez)\b|"
-            r"\b(il|elle)\s+(a|souffre d')\s+(un|une|le|la)\s+\w+",
+            # Verbes qui **attribuent un état** à quelqu'un. « vous avez » en
+            # fait partie, sauf devant les suites non cliniques listées plus
+            # bas : « vous avez le droit de consulter » n'est pas un diagnostic.
+            r"\bvous\s+(souffrez|êtes\s+atteint\w*|présentez\s+les\s+symptômes)\b|"
+            r"\b(il|elle)\s+(souffre\s+d|est\s+atteint\w*\s+d)\b|"
+            r"\bvous\s+avez\s+(?!" + "|".join(SUITES_NON_CLINIQUES) + r")\w+",
             re.IGNORECASE,
         ),
         "un diagnostic : nommer la maladie de quelqu'un demande de l'examiner",
@@ -92,6 +105,9 @@ NON_DETECTE = (
     "une posologie écrite en toutes lettres (« deux comprimés matin et soir »)",
     "un conseil dangereux sans forme reconnaissable",
     "une erreur factuelle dans une source par ailleurs officielle",
+    "un diagnostic tourné autrement que par les verbes reconnus — « c'est "
+    "sûrement une angine » passe, et resserrer davantage refuserait des phrases "
+    "utiles, ce qui est le défaut inverse",
 )
 
 

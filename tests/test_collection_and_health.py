@@ -262,6 +262,43 @@ def test_l_avertissement_accompagne_toute_reponse_de_sante():
     assert "professionnel" in AVERTISSEMENT
 
 
+@pytest.mark.parametrize("phrase", [
+    "Elle a une durée de protection de trois ans.",
+    "Le vaccin il a un effet mesuré sur trois ans.",
+    "Vous avez le droit de consulter gratuitement.",
+    "Vous avez besoin d'un avis médical.",
+    "La campagne de vaccination a une couverture de 80 %.",
+])
+def test_une_phrase_utile_n_est_pas_prise_pour_un_diagnostic(phrase):
+    """
+    Défaut trouvé en sondant mon propre filtre (2026-08-13).
+
+    Le motif de diagnostic attrapait « elle a une durée » et « vous avez le
+    droit » : des phrases utiles, refusées. Un filtre qui refuse ce genre de
+    phrase rend la santé inutilisable, et **un filtre qui refuse tout ne protège
+    personne** — c'est le défaut inverse de celui qu'il combat, pas un excès de
+    prudence.
+    """
+    assert check_answer(phrase)["allowed"] is True
+
+
+@pytest.mark.parametrize("phrase", [
+    "Vous avez une infection bactérienne.",
+    "Vous avez probablement une angine.",
+    "Elle souffre d'un paludisme grave.",
+    "Vous êtes atteint de diabète.",
+])
+def test_le_resserrement_n_a_pas_ouvert_la_porte_au_diagnostic(phrase):
+    """
+    La contrepartie, vérifiée plutôt que supposée : corriger un faux positif
+    laisse souvent passer un vrai. Ces quatre-là restent refusées.
+    """
+    verdict = check_answer(phrase)
+
+    assert verdict["allowed"] is False
+    assert "diagnosis" in [entree["kind"] for entree in verdict["refused"]]
+
+
 def test_une_reponse_ordinaire_n_est_pas_refusee_par_excès_de_zele():
     """
     Le contre-test qui donne son sens aux précédents : un filtre qui refuserait

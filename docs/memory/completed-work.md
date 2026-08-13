@@ -804,3 +804,12 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Vérifié, pas supposé, sur deux autres soupçons** : le filtre `action="search_knowledge"` de `detect_gaps` fonctionne bien (`AuditStore._matches` retombe sur `getattr`), et la partition par portée de `apply_scope_policy` ne peut pas écarter un élément à tort — l'égalité inclut la portée. Aucun des deux n'était un défaut.
 - **`CHANGELOG.md` et `docs/tasks/TASKS.md` avaient trois commits de retard** : workflows, source documentaire, ADR-020. La règle du dépôt les exige après tout travail significatif ; les oublier fait exactement ce que ce dépôt reproche à la documentation périmée.
 - **2 tests ajoutés**. Suite complète : **2912 tests passent**, 8 ignorés ; `ruff` propre.
+
+### 2026-08-13 (le filtre santé refusait des phrases utiles — défaut trouvé en le sondant)
+- **Faux positifs mesurés, pas supposés** : le motif de diagnostic (`(il|elle) a (un|une) …`, `vous avez …`) refusait « **Elle a une durée de protection de trois ans** », « **Le vaccin il a un effet mesuré** » et « **Vous avez le droit de consulter gratuitement** ». Des phrases utiles, refusées par une politique de sécurité.
+- **C'est le défaut inverse de celui que le filtre combat** : mon propre contre-test l'écrivait — *un filtre qui refuse tout ne protège personne* — mais il n'utilisait qu'une seule tournure et passait à côté.
+- **Resserrement** : les verbes qui **attribuent un état** (`souffrez`, `êtes atteint`, `présentez les symptômes`, `souffre de`), plus « vous avez » **sauf devant une suite non clinique** déclarée (`le droit`, `besoin`, `la possibilité`, `accès`…). Le motif `(il|elle) a un(e) X` est retiré : il attrapait surtout du français ordinaire.
+- **La contrepartie est vérifiée, pas supposée** : corriger un faux positif laisse souvent passer un vrai. Quatre diagnostics réels restent refusés, dont un non couvert (« vous avez une infection bactérienne », sans marqueur d'hésitation).
+- **`NON_DETECTE` nomme ce qui échappe désormais** : un diagnostic tourné autrement (« c'est sûrement une angine ») passe, et resserrer davantage refuserait des phrases utiles.
+- **9 tests ajoutés** (5 faux positifs + 4 vrais refus), en paramétrés : la liste est la mesure.
+- Suite complète : **2921 tests passent**, 8 ignorés ; `ruff` propre.

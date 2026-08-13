@@ -21,6 +21,18 @@ capability answers `503` until an operator configures a model provider. Release 
     and `series`. `researcher` stays in `question` so the recommendation always has a
     non-empty intersection; without it a plain request falls back to "whole pipeline",
     the opposite of the sorting the axes promise
+- **The health filter refused useful sentences** (`src/knowledge_engine/health_policy.py`)
+  - Probing my own filter showed the diagnosis pattern rejecting "Elle a une durée de
+    protection de trois ans" and "Vous avez le droit de consulter gratuitement" — useful
+    sentences, refused by a safety policy. That is the inverse of the defect the filter
+    exists to prevent, and my own counter-test said as much while using a single phrasing
+  - Tightened to verbs that **attribute a condition** (`souffrez`, `êtes atteint`,
+    `présentez les symptômes`, `souffre de`), plus "vous avez" except before a declared
+    non-clinical continuation. The `(il|elle) a un(e) X` pattern is gone: it mostly caught
+    ordinary French
+  - The counterpart is verified rather than assumed — fixing a false positive often lets a
+    real one through. Four genuine diagnoses stay refused, and `NON_DETECTE` names what now
+    escapes
 - **`robots.txt` was only half read** (`src/knowledge_engine/collection.py`) — found while
   re-reading my own code. Only `Disallow` was applied, so a publisher writing `Disallow: /`
   followed by `Allow: /public/` had `/public/` refused: a refusal by incomplete reading,
