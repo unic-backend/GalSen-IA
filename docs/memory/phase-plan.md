@@ -35,10 +35,14 @@ graphe — le déclencheur qui la justifierait est écrit.
 deux agissent (`risk` → `verifier`, `geographic_scope` → `senegal`), huit observés.
 **Chapitre G terminé** : `knowledge_architect` (propose en `DRAFT`, n'applique jamais) et
 `data_engineer` (refuse une série sans unité, période ni source), au registre — 17 agents.
-**Phase courante** : **H — le dernier chapitre du VOLET 36** : l'approfondissement de
-l'acquisition. Le plan le donne en **P3, déclencheurs non atteints** (§2.3 et audit §3.2) —
-la phase consiste donc à **mesurer les déclencheurs et rapporter**, pas à construire.
-En attente de confirmation.
+**Chapitre H terminé** : les capacités différées sont **mesurées** à chaque scan proactif
+(`src/knowledge_engine/deferred_triggers.py`, détecteur `deferred_capabilities`) au lieu de
+dormir dans un document. Rien n'a été construit.
+**VOLET 36 TERMINÉ** — 8 chapitres sur 8, verdict de clôture critère par critère dans
+`docs/architecture/volet-36-plan.md` §14.
+**Phase courante** : aucune. **Prochain VOLET proposé : reprendre le VOLET 35** aux
+chapitres 03 + 04 + 05 (registre de sources, récupération par portée, la réponse dit sa
+portée) — c'est le tour 2 de la cadence déjà décidée. En attente de décision.
 **VOLET 35 en pause après le tour 1** : les chapitres 03 + 04 + 05 restent à faire.
 **Cadence VOLET 35** : 4 tours, décidés avec le propriétaire le 2026-08-12 — 01+02, 03+04+05,
 06+07+09, 08+10. Les chapitres 11 et 12 attendent de vrais documents.

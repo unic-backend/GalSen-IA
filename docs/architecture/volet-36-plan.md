@@ -454,3 +454,31 @@ One caller, one test, one chapter. The other eight paths follow in A.2 and A.3.
   lexical retrieval, and an honest report of what remains UNKNOWN.
 - No fifth agent.
 - No benchmark data written from memory.
+
+---
+
+## 14. Closing measurement — 2026-08-13
+
+The eight chapters are delivered. Each criterion of §12, measured rather than
+declared:
+
+| # | Criterion | Measured verdict |
+|---|---|---|
+| 1 | No second planner, retrieval path or database | **Held.** The axes are a field on the existing plan (`agents/planner/agent.py`); a test asserts one planner in the registry. Entities use SQLite through `src/storage/`, no new engine |
+| 2 | A Wolof document ingested and retrieved as Wolof | **Done** (`tests/test_languages.py`), and `language_support()` states what is `unknown` rather than `no` |
+| 3 | A test per entry path | **Done** — nine paths wrapped, `src/security/trust.py::report()` publishes them and keeps `unwrapped_paths` at zero rather than removing the field |
+| 4 | Citation correctness and unsupported claims measured on a benchmark reporting its verified count | **Done** — `docs/evaluation/senegal-facts.jsonl`: 10 questions, **0 verified**, and `score_entry()` refuses to score `to_source` entries |
+| 5 | The four agents exist, each refusing in its failure mode | **Done** — `verifier` (`cannot_verify` with no passage), `senegal` (no national source, no answer), `knowledge_architect` (proposes, never applies), `data_engineer` (refuses an undeclared series) |
+| 6 | Entities and relations carry provenance | **Done** — construction refuses either without a source; the report publishes `entities_without_source` so a bypass would show |
+| 7 | Suite green, `ruff` clean, CI green | Suite and `ruff` measured green locally at each chapter. **CI is measured on GitHub, not here** — that verdict belongs to the run, not to this document |
+
+**What VOLET 36 did not build, and why it did not**: no vector database, no
+graph database, no queue, no object storage for knowledge, no automated
+acquisition. Those triggers are no longer a paragraph — they are measured at
+every proactive scan (`src/knowledge_engine/deferred_triggers.py`), and the
+detector stays silent until one is crossed.
+
+**What is still open, and depends on nobody in this repository**: C1 — a local
+model — gates generation and semantic retrieval, in Wolof as elsewhere; and the
+Senegalese corpus needs real declared documents. Both are named in
+`docs/memory/session-state.md`, neither is hidden behind a plausible number.

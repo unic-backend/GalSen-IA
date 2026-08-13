@@ -239,6 +239,55 @@ def fichiers_a_ranger() -> List[Observation]:
     )]
 
 
+def capacites_differees() -> List[Observation]:
+    """
+    Signale une capacité différée dont le déclencheur vient d'être franchi
+    (VOLET 36, ch. H).
+
+    Base vectorielle, base graphe, stockage objet, flux d'événements,
+    acquisition automatisée : chacune a été **différée avec son déclencheur
+    écrit**. Un déclencheur écrit dans un document est un déclencheur que
+    personne ne relit — celui-ci est mesuré à chaque scan.
+
+    Le détecteur **se tait tant que rien n'est atteint**. C'est ce silence qui
+    fait sa valeur : le jour où il parle, la mesure a changé, pas l'avis de
+    quelqu'un.
+    """
+    from src.knowledge_engine.deferred_triggers import deferred_report
+
+    rapport = deferred_report()
+    franchis = [
+        entree for entree in rapport["capabilities"] if entree["met"]
+    ]
+    if not franchis:
+        return []
+
+    return [observation(
+        source="deferred_capabilities",
+        finding=(
+            f"{len(franchis)} capacité(s) différée(s) ont atteint leur "
+            "déclencheur : " + ", ".join(entree["capability"] for entree in franchis) + "."
+        ),
+        evidence={
+            "capabilities": [
+                {
+                    "capability": entree["capability"],
+                    "measured": entree["measured"],
+                    "threshold": entree["threshold"],
+                }
+                for entree in franchis
+            ],
+        },
+        suggested_action=(
+            "Le seuil qui justifiait le report est franchi : rouvrir la décision "
+            "avec un ADR, en s'appuyant sur la mesure plutôt que sur une "
+            "impression. Rien n'a été construit."
+        ),
+        decided_by="owner",
+        priority="for_information",
+    )]
+
+
 #: Détecteurs exécutés par un scan, dans cet ordre.
 DETECTEURS: Dict[str, Callable[[], List[Observation]]] = {
     "model_availability": modele_indisponible,
@@ -248,6 +297,7 @@ DETECTEURS: Dict[str, Callable[[], List[Observation]]] = {
     "quality_trend": qualite_en_baisse,
     "unorganised_files": fichiers_a_ranger,
     "security_posture": failles_de_posture,
+    "deferred_capabilities": capacites_differees,
 }
 
 

@@ -22,8 +22,9 @@ référence sénégalais, **0 entrée vérifiée et le disant**. **Chapitre D te
 agents `verifier` et `senegal`, chacun défini par son refus. **Chapitre E terminé** —
 entités et relations avec provenance obligatoire, sans base graphe. **Chapitre F
 terminé** — dix axes attachés au plan existant, deux qui agissent. **Chapitre G terminé**
-— `knowledge_architect` et `data_engineer` : proposer, jamais appliquer. **Il ne reste
-que le chapitre H.**
+— `knowledge_architect` et `data_engineer` : proposer, jamais appliquer. **Chapitre H
+terminé** — les capacités différées sont mesurées à chaque scan. **VOLET 36 TERMINÉ,
+8 chapitres sur 8.**
 
 **Terminé dans cette session**
 - **A.1 → A.3** : l'enveloppe de confiance et ses neuf chemins (RAG, MCP, recherche web,
@@ -48,12 +49,16 @@ que le chapitre H.**
 - **G** : `knowledge_architect` propose l'entrée de manifeste en `DRAFT` et ne l'applique
   jamais ; `data_engineer` **refuse** une série sans unité, période ni source. Les
   marqueurs partagés ont quitté le planificateur (`src/knowledge_engine/markers.py`).
-- Suite complète : **2810 tests passent**, 8 ignorés ; `ruff` propre.
+- **H** : rien construit, et c'est le résultat — base vectorielle, base graphe, stockage
+  objet pour la connaissance, files, acquisition automatisée restent différés, avec leurs
+  déclencheurs **mesurés** au lieu d'être écrits. Le détecteur se tait tant que rien n'est
+  franchi.
+- Suite complète : **2824 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-**Chapitre H — le dernier du VOLET 36** : l'approfondissement de l'acquisition est en
-**P3, déclencheurs non atteints**. La phase mesure les déclencheurs et rapporte ; elle ne
-construit pas d'infrastructure. En attente de confirmation.
+**Rien n'est en cours.** Le VOLET 36 est clos, verdict mesuré dans son plan (§14).
+Proposition : **reprendre le VOLET 35** aux chapitres 03 + 04 + 05 — registre de sources,
+récupération par portée, la réponse dit sa portée. En attente de décision.
 **L3** (normalisation par langue) reste à faire ; **VOLET 35** est en pause après le tour 1
 (chapitres 03, 04, 05).
 
