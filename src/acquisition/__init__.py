@@ -24,6 +24,7 @@ from .gate import (
     plan_batch,
     submit_batch,
 )
+from .parsing import boundary_report, cross_boundary, extract_text
 from .record import (
     STATUTS_TERMINAUX,
     TRANSITIONS,
@@ -44,6 +45,9 @@ __all__ = [
     "reconcile",
     "extract_metadata",
     "metadata_report",
+    "boundary_report",
+    "cross_boundary",
+    "extract_text",
     "FetchRefused",
     "FetchResult",
     "GateRefused",

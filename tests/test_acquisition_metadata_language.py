@@ -103,6 +103,18 @@ def test_le_dublin_core_passe_devant_la_balise_titre():
     assert metadonnees["language_declared"] == "fr"
 
 
+def test_une_locale_est_ramenee_a_sa_langue_et_la_sentinelle_survit():
+    """
+    `fr_FR` et `fr-FR` désignent la même langue. Tronquer à cinq caractères
+    transformait `unknown` en « unkno », qui ressemblait à une déclaration : tout
+    document sans langue déclarée partait alors en quarantaine pour un désaccord
+    avec une langue que personne n'avait déclarée.
+    """
+    page = b'<html><head><meta name="og:locale" content="fr_FR"></head></html>'
+    assert from_html(page)["language_declared"] == "fr"
+    assert from_html(b"<html></html>")["language_declared"] == INCONNU
+
+
 def test_une_page_sans_metadonnees_rend_des_inconnus_pas_des_valeurs_plausibles():
     """Une valeur plausible serait crue ; `unknown` ne l'est pas."""
     metadonnees = from_html(b"<html><body>rien</body></html>")
@@ -242,6 +254,9 @@ def test_un_desaccord_part_en_quarantaine_au_lieu_d_etre_tranche():
 @pytest.mark.parametrize("declaree,texte,attendu", [
     ("fr", FRANCAIS, "agree"),
     ("", FRANCAIS, "undeclared"),
+    # `unknown` est l'absence de déclaration écrite en toutes lettres, pas une
+    # déclaration qui vaudrait « ce n'est pas du français ».
+    ("unknown", FRANCAIS, "undeclared"),
     ("wo", "trop court", "undetected"),
 ])
 def test_les_trois_cas_qui_ne_sont_pas_des_desaccords(declaree, texte, attendu):

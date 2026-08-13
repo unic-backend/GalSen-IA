@@ -532,7 +532,7 @@ Each step is independently verifiable and ends where the repository can be left 
 | 4 | Wire `collection.decide()` before the fetch, and the ADR-006 batch approval | **Done, 2026-08-13** — `src/acquisition/gate.py`; 15 tests. A fetch without approval raises **and the injected fetcher records zero calls**; the approval carries the batch fingerprint, so adding a URL after the fact invalidates it rather than extending it |
 | 5 | S2 discovery: sitemap → RSS → declared index, depth 1, same-domain only | **Done, 2026-08-13** — `src/acquisition/discovery.py`; 17 tests. Off-domain dropped with its reason, per-run ceiling, and `discover()` **refuses a source that is not enabled** |
 | 6 | S4 metadata + S5 language detection (`unknown` allowed) | **Done, 2026-08-13** — `src/acquisition/metadata.py`, `src/acquisition/language.py`, `corpus/languages/markers.yaml`; 24 tests. Ambiguous dates yield `unknown` with the reason; **srr has no marker list and returns `unknown` rather than a plausible neighbour**; `languages.py` detection verdict is now measured on the marker file (fr/en `yes`, wo/ff `partial`, srr `no`) |
-| 7 | Trust wrap + inspect on the acquisition path | Acceptance test A8 (§10) |
+| 7 | Trust wrap + inspect on the acquisition path | **Done, 2026-08-13** — `src/acquisition/parsing.py`; 13 tests including **A8**. `cross_boundary()` is the only path from `FETCHED` to `PARSED`, and a test walks `src/` to prove no other module reaches `PARSED` |
 | 8 | S6 near-duplicate + the ten checks of §6.2 | Per-check test, both directions |
 | 9 | Manifest proposal via the existing `ingestion` workflow | `knowledge_architect` yields a `DRAFT`, applies nothing |
 | 10 | **Pilot run**, human-approved, against the real registry | The §8.4 report |

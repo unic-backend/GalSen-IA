@@ -128,6 +128,22 @@ def normalize_date(valeur: str) -> Dict[str, str]:
     return {"date": INCONNU, "reason": f"« {texte} » n'est pas une date lisible."}
 
 
+def _langue_declaree(valeur: str) -> str:
+    """
+    Ramène une locale déclarée à son code de langue.
+
+    `fr_FR`, `fr-FR` et `FR` désignent la même langue ; ce qui compte ici est la
+    langue, pas la région. Tronquer bêtement à cinq caractères transformait la
+    sentinelle `unknown` en « unkno », qui ressemblait alors à une déclaration —
+    et tout document sans langue déclarée partait en quarantaine pour un
+    désaccord avec une langue que personne n'avait déclarée.
+    """
+    texte = str(valeur or "").strip().lower()
+    if not texte:
+        return INCONNU
+    return re.split(r"[-_]", texte)[0][:3]
+
+
 def from_html(contenu: bytes, url: str = "") -> Dict[str, Any]:
     """
     Extrait les métadonnées d'une page.
@@ -157,7 +173,7 @@ def from_html(contenu: bytes, url: str = "") -> Dict[str, Any]:
         "publication_date": date["date"],
         "date_reason": date["reason"],
         "publisher": _premier(metas, NOMS_D_EDITEUR) or INCONNU,
-        "language_declared": (_premier(metas, NOMS_DE_LANGUE) or INCONNU).lower()[:5],
+        "language_declared": _langue_declaree(_premier(metas, NOMS_DE_LANGUE)),
         "canonical_url": canonique or INCONNU,
         "document_type": "text/html",
         "source": "html-meta",

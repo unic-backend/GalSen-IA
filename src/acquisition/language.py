@@ -207,6 +207,11 @@ def reconcile(detected: Dict[str, Any], declared: str = "") -> Dict[str, Any]:
         deux sources de vérité se contredisent.
     """
     declaree = (declared or "").strip().lower()
+    # `unknown` n'est **pas** une déclaration : c'est l'absence de déclaration
+    # écrite en toutes lettres. Les confondre ferait qu'un document sans langue
+    # déclarée « contredirait » toute détection, et tout partirait en quarantaine.
+    if declaree == INCONNU:
+        declaree = ""
     trouvee = detected.get("language", INCONNU)
 
     if trouvee == INCONNU:
