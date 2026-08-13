@@ -14,8 +14,11 @@ exécuter, et une seule.
 (`docs/roadmap/VOLET_35.md`, plan publié le 2026-08-12). **12 chapitres → 18 phases.**
 **Terminés dans le VOLET 35** : **chapitre 01** — les axes portée et sujet
 (`src/knowledge_engine/scope.py`), **chapitre 02** — **ADR-019 accepté** (une base, deux axes).
-**Phase courante** : **tour 2 — chapitres 03 + 04 + 05** (registre de sources, récupération
-consciente de la portée, réponse qui dit d'où elle vient), en attente de confirmation.
+**Priorité changée par le propriétaire le 2026-08-12** : **VOLET 36 avant la suite du 35.**
+Plan écrit (`docs/architecture/volet-36-plan.md`), 8 chapitres A→H, ordonnés par dépendance.
+**Phase courante** : **chapitre A.1 — l'enveloppe de confiance** (`src/security/trust.py`,
+un seul appelant : `RAGTool._op_retrieve_for_prompt`), en attente de confirmation.
+**VOLET 35 en pause après le tour 1** : les chapitres 03 + 04 + 05 restent à faire.
 **Cadence VOLET 35** : 4 tours, décidés avec le propriétaire le 2026-08-12 — 01+02, 03+04+05,
 06+07+09, 08+10. Les chapitres 11 et 12 attendent de vrais documents.
 (VOLET 34 terminé 14/14, découverte proactive livrée hors chapitre.)

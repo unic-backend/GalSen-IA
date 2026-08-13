@@ -13,7 +13,9 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Date** : 2026-08-12
 
 **En cours** : **VOLET 35 — tour 1 livré** (chapitres 01 et 02 : `src/knowledge_engine/scope.py`,
-**ADR-019**). Tour 2 en attente : chapitres 03 + 04 + 05.
+**ADR-019**). **VOLET 35 mis en pause** par le propriétaire au profit du **VOLET 36**, dont le plan est
+écrit (`docs/architecture/volet-36-plan.md`) : anti-injection en P0, langues, évaluation
+factuelle, 4 agents, entités/relations, axes d'intention.
 Plan complet
 (`docs/roadmap/VOLET_35.md` : une base, deux axes — portée et sujet ; registre de sources ;
 acquisition sous approbation). Avant lui, le **VOLET 34 est terminé** — 14 chapitres sur 14 — et **ADR-018 est
