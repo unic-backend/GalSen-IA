@@ -123,16 +123,26 @@ def test_etiqueter_le_wolof_ne_dit_pas_que_la_plateforme_le_comprend():
     """
     Le contrepoids de L1, et la raison d'être de ce module.
 
-    Trois lignes dans une énumération ne créent ni détection, ni traduction, ni
-    génération. Le rapport le dit capacité par capacité.
+    Trois lignes dans une énumération ne créent ni traduction, ni génération. Le
+    rapport le dit capacité par capacité.
+
+    **Mis à jour le 2026-08-13 (ADR-021, étape 6)** : la détection est passée de
+    `no` à `partial`, parce qu'une liste de marqueurs wolof existe désormais.
+    Elle n'a pas été relue par un locuteur, et c'est exactement ce que `partial`
+    dit — la faire passer à `yes` serait annoncer une capacité que personne n'a
+    vérifiée.
     """
     rapport = language_support(Language.WO)
     capacites = rapport["capabilities"]
 
     assert capacites[Capability.CLASSIFICATION.value]["support"] == Support.YES.value
     assert capacites[Capability.LEXICAL_RETRIEVAL.value]["support"] == Support.YES.value
-    assert capacites[Capability.DETECTION.value]["support"] == Support.NO.value
     assert capacites[Capability.TRANSLATION.value]["support"] == Support.NO.value
+
+    detection = capacites[Capability.DETECTION.value]
+    assert detection["support"] == Support.PARTIAL.value
+    assert "relue par un locuteur" in detection["evidence"]
+    assert "parle la langue" in detection["blocked_on"], "Ce qui débloquerait n'est pas dit"
 
 
 def test_ce_qui_n_a_jamais_ete_mesure_se_dit_unknown_et_non_no():

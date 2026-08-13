@@ -1,0 +1,122 @@
+# Marqueurs de langue — détection lexicale (ADR-021, étape 6).
+#
+# Ce fichier est une **donnée relue**, pas un modèle. La détection compte des
+# mots outils : ce sont les mots les plus fréquents et les moins traduits d'une
+# langue, donc les plus fiables sur un texte court.
+#
+# ## La règle qui compte ici
+#
+# `reviewed: false` veut dire **« écrit sans locuteur »**. Les listes wolof et
+# pulaar ont été assemblées depuis la connaissance générale d'un modèle, jamais
+# vérifiées par quelqu'un qui parle la langue. Elles sont utilisables — elles
+# valent mieux que rien — et le détecteur **le dit dans chacun de ses verdicts**
+# au lieu de rendre un résultat qui aurait l'air aussi sûr que le français.
+#
+# Le sérère n'a **aucune liste**. Ce n'est pas un oubli : je ne connais pas ses
+# mots outils, et en inventer produirait un détecteur qui se trompe avec
+# assurance. Un sérère détecté par erreur comme du wolof serait pire qu'un
+# `unknown` honnête. La langue reste déclarable et stockable (VOLET 36, ch. B) ;
+# c'est sa **détection** qui n'existe pas.
+#
+# Ajouter ou corriger une liste est une modification relue de ce fichier —
+# idéalement par une personne qui parle la langue, et `reviewed` passe alors à
+# `true` avec son nom dans `reviewed_by`.
+
+languages:
+
+  fr:
+    reviewed: true
+    reviewed_by: "connaissance générale, langue de travail du dépôt"
+    markers:
+      - le
+      - la
+      - les
+      - des
+      - une
+      - dans
+      - pour
+      - est
+      - sont
+      - avec
+      - sur
+      - qui
+      - que
+      - par
+      - aux
+      - cette
+      - plus
+      - ont
+      - été
+      - leur
+
+  en:
+    reviewed: true
+    reviewed_by: "connaissance générale"
+    markers:
+      - the
+      - and
+      - for
+      - with
+      - that
+      - this
+      - from
+      - are
+      - was
+      - were
+      - which
+      - been
+      - have
+      - has
+      - their
+      - these
+      - such
+      - shall
+      - between
+      - during
+
+  wo:
+    reviewed: false
+    reviewed_by: ""
+    note: >-
+      Assemblée sans locuteur. À faire relire avant de s'appuyer dessus pour
+      autre chose qu'un signalement.
+    markers:
+      - ak
+      - ci
+      - ngir
+      - dafa
+      - naa
+      - nañu
+      - waaye
+      - ndax
+      - bu
+      - yi
+      - bi
+      - mën
+      - lépp
+      - yépp
+      - moom
+      - lu
+      - am
+
+  ff:
+    reviewed: false
+    reviewed_by: ""
+    note: >-
+      Assemblée sans locuteur. Le pulaar connaît plusieurs variétés ; cette
+      liste ne dit pas laquelle.
+    markers:
+      - ngam
+      - ɗum
+      - wonaa
+      - nder
+      - walla
+      - fof
+      - haa
+      - kala
+      - ndeen
+      - ɓe
+      - ngal
+      - ndee
+
+  # srr — aucune liste, délibérément. Voir l'en-tête.

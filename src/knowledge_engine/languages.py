@@ -166,6 +166,45 @@ def _verdict(support: Support, preuve: str, bloque_par: str = "") -> Dict[str, A
     return entree
 
 
+def _detection(langue: Language) -> Dict[str, Any]:
+    """
+    Dit ce que la détection sait faire pour cette langue (ADR-021, étape 6).
+
+    Le verdict est **mesuré sur le fichier de marqueurs**, pas écrit ici : une
+    liste relue donne `yes`, une liste écrite sans locuteur donne `partial`, et
+    une langue sans liste donne `no`. Recopier le verdict dans ce fichier le
+    ferait vieillir dès la première liste ajoutée.
+    """
+    # Import tardif : `src.acquisition` dépend du moteur de connaissances, et
+    # l'importer en tête d'ici fermerait le cycle.
+    from ..acquisition.language import load_markers
+
+    entree = load_markers()["languages"].get(langue.value)
+    if entree is None:
+        return _verdict(
+            Support.NO,
+            f"Aucune liste de marqueurs pour « {langue.value} » dans "
+            "`corpus/languages/markers.yaml`. En inventer une produirait un "
+            "détecteur qui se trompe avec assurance — un sérère pris pour du wolof "
+            "est pire qu'une absence de réponse. La langue reste déclarable et "
+            "stockable ; c'est sa détection qui n'existe pas.",
+            bloque_par="une liste de mots outils, idéalement écrite par un locuteur",
+        )
+    if entree["reviewed"]:
+        return _verdict(
+            Support.YES,
+            f"Détection lexicale par mots outils ({len(entree['markers'])} marqueurs "
+            f"relus, `corpus/languages/markers.yaml`). Sous {25} mots, ou à égalité "
+            "avec une autre langue, le détecteur rend `unknown` plutôt qu'un verdict.",
+        )
+    return _verdict(
+        Support.PARTIAL,
+        f"Une liste de {len(entree['markers'])} marqueurs existe, mais elle n'a pas "
+        "été relue par un locuteur : chaque verdict qu'elle produit porte cette "
+        "réserve. Utilisable comme signalement, pas comme certitude.",
+        bloque_par="une relecture par une personne qui parle la langue",
+    )
+
 def language_support(
     language: Any = Language.FR, evaluation_set: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -192,11 +231,7 @@ def language_support(
             "de traduction n'existe dans le dépôt. Ajouter une locale est une "
             "question de données, pas de linguistique.",
         ),
-        Capability.DETECTION.value: _verdict(
-            Support.NO,
-            "Aucun détecteur de langue n'existe, pour aucune langue. La langue est "
-            "déclarée à l'ingestion (`ingest_file(language=…)`), jamais inférée.",
-        ),
+        Capability.DETECTION.value: _detection(langue),
         Capability.CLASSIFICATION.value: _verdict(
             Support.YES,
             f"`Language.{langue.name}` est un champ de `KnowledgeItem` : un document "

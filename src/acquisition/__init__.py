@@ -13,6 +13,9 @@ Conception complète : `docs/architecture/senegal-knowledge-acquisition.md`.
 
 from .discovery import DiscoveryRefused, discover, discovery_report
 from .fetcher import FetchRefused, FetchResult, fetch, fetch_robots, fetcher_report
+from .language import detect_language, detection_report, reconcile
+from .metadata import extract as extract_metadata
+from .metadata import metadata_report
 from .gate import (
     CollectionBatch,
     GateRefused,
@@ -36,6 +39,11 @@ __all__ = [
     "DiscoveryRefused",
     "discover",
     "discovery_report",
+    "detect_language",
+    "detection_report",
+    "reconcile",
+    "extract_metadata",
+    "metadata_report",
     "FetchRefused",
     "FetchResult",
     "GateRefused",
