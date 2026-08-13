@@ -40,8 +40,29 @@ documents:
     url: "https://www.isra.sn/..."
     source_category: INSTITUTIONAL
     domain: OPERATIONAL
+    scope: country:sn          # d'où cette connaissance vaut (VOLET 35, ADR-019)
+    subject: agriculture       # de quoi elle parle
     tags: [agriculture, mil, senegal]
 ```
+
+### Les deux axes : `scope` et `subject`
+
+`scope` vaut `global` (le défaut) ou `country:xx`. `subject` prend une valeur
+déclarée : `science`, `technology`, `engineering`, `health`, `economics`,
+`history`, `culture`, `education`, `law`, `administration`, `agriculture`,
+`fisheries`, `environment`, `geography`, `languages`, `business`, `society`,
+`general`.
+
+**Rien n'est deviné.** Une portée ou un sujet mal écrit **refuse le document** —
+il n'entre pas en « mondial » ni en « non classé ». Un document sénégalais rangé
+au mondial par charité deviendrait une réponse donnée au mauvais pays ; les
+autres documents du manifeste s'ingèrent normalement, celui-là dit pourquoi il
+ne s'ingère pas.
+
+Trois sujets **ne retombent jamais sur le mondial** : `law`, `administration`,
+`languages`. Pour eux, l'absence de source nationale se répond « je n'ai pas
+cette information pour ce pays » — répondre le droit d'un autre pays serait
+fluide, plausible, et faux là où ça coûte cher.
 
 ```bash
 python scripts/seed_knowledge.py --manifeste corpus/senegal-agriculture.yaml

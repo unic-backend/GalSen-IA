@@ -12,9 +12,12 @@ exécuter, et une seule.
 **Phases**         : 24, réparties sur 14 chapitres
 **VOLET en attente** : **35 — IA internationale à profondeur sénégalaise**
 (`docs/roadmap/VOLET_35.md`, plan publié le 2026-08-12). **12 chapitres → 18 phases.**
-**Phase courante** : **chapitre 01 — les axes portée et sujet**, en attente de confirmation.
-L'ordre n'est pas négociable sur ce point : tout le reste lit l'axe de portée, et l'ajouter
-après le corpus voudrait dire ré-étiqueter chaque passage à la main.
+**Terminés dans le VOLET 35** : **chapitre 01** — les axes portée et sujet
+(`src/knowledge_engine/scope.py`), **chapitre 02** — **ADR-019 accepté** (une base, deux axes).
+**Phase courante** : **tour 2 — chapitres 03 + 04 + 05** (registre de sources, récupération
+consciente de la portée, réponse qui dit d'où elle vient), en attente de confirmation.
+**Cadence VOLET 35** : 4 tours, décidés avec le propriétaire le 2026-08-12 — 01+02, 03+04+05,
+06+07+09, 08+10. Les chapitres 11 et 12 attendent de vrais documents.
 (VOLET 34 terminé 14/14, découverte proactive livrée hors chapitre.)
 **Cadence** : **un chapitre par tour** — demandé par l'utilisateur le 2026-08-12
 (auparavant : un VOLET, puis une phase).

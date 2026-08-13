@@ -14,6 +14,7 @@ import threading
 import datetime
 from typing import Any, Dict, List, Optional
 
+from src.knowledge_engine.scope import KnowledgeSubject
 from src.knowledge_engine.types import (
     KnowledgeItem, KnowledgeSource, KnowledgeType, ContentType,
     Language, SourceCategory, KnowledgePriority, KnowledgeDomain,
@@ -30,7 +31,8 @@ class SQLiteKnowledgeStore(KnowledgeStore):
     # Colonnes de la table "knowledge_items" (l'ordre définit aussi le SELECT).
     _COLUMNS = (
         "id", "content", "summary", "knowledge_type", "content_type",
-        "language", "domain", "sensitivity", "status", "tags", "categories",
+        "language", "domain", "scope", "subject", "sensitivity", "status",
+        "tags", "categories",
         "source_id", "source_type",
         "source_location", "source_accessed_at", "source_hash",
         "source_category", "source_title", "source_author", "source_url",
@@ -144,6 +146,8 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             "content_type": knowledge.content_type.value,
             "language": knowledge.language.value,
             "domain": knowledge.domain.value,
+            "scope": str(knowledge.scope),
+            "subject": knowledge.subject.value,
             "sensitivity": knowledge.sensitivity.value,
             "status": knowledge.status.value,
             "tags": json.dumps(knowledge.tags),
@@ -183,6 +187,13 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             language=Language(data["language"]),
             # Une base écrite avant l'ajout du domaine renvoie NULL : non classé.
             domain=KnowledgeDomain(data["domain"]) if data.get("domain") else KnowledgeDomain.UNSPECIFIED,
+            # Une base écrite avant le VOLET 35 renvoie NULL sur les deux axes.
+            # Le défaut est « mondial, non classé » : relire une connaissance
+            # d'avant la migration ne doit pas la rendre sénégalaise par accident,
+            # ni lui inventer un sujet.
+            scope=data.get("scope") or "global",
+            subject=(KnowledgeSubject(data["subject"]) if data.get("subject")
+                     else KnowledgeSubject.UNSPECIFIED),
             sensitivity=KnowledgeSensitivity(data["sensitivity"]) if data.get("sensitivity") else KnowledgeSensitivity.PUBLIC,
             status=KnowledgeStatus(data["status"]) if data.get("status") else KnowledgeStatus.DRAFT,
             tags=json.loads(data["tags"] or "[]"),

@@ -34,6 +34,7 @@ from typing import Any, Dict, List, Optional
 from src.document_intelligence_engine.simple_chunker import SimpleChunker
 from src.document_intelligence_engine.types import DocumentItem, DocumentType
 
+from .scope import KnowledgeScope, KnowledgeSubject, parse_subject
 from .types import (
     ContentType,
     KnowledgeDomain,
@@ -123,6 +124,8 @@ class DocumentIngestor:
         title: str,
         source_category: SourceCategory,
         domain: KnowledgeDomain = KnowledgeDomain.UNSPECIFIED,
+        scope: Any = "global",
+        subject: Any = KnowledgeSubject.UNSPECIFIED,
         author: Optional[str] = None,
         url: Optional[str] = None,
         tags: Optional[List[str]] = None,
@@ -138,7 +141,14 @@ class DocumentIngestor:
             source_category: Fiabilité de la source (P1 à P4) — exigée pour la
                 même raison ; une connaissance sans provenance déclarée ne peut
                 pas être pondérée par `retrieve_reliable`.
-            domain: Domaine de connaissance.
+            domain: Domaine de connaissance de la plateforme.
+            scope: D'où cette connaissance vaut — `global` ou `country:sn`
+                (VOLET 35). **Le défaut est mondial** : un document sénégalais
+                non déclaré comme tel n'est pas rangé au Sénégal par charité.
+            subject: De quoi elle parle — `agriculture`, `law`, `health`…
+                Une portée ou un sujet malformé **refuse l'ingestion** plutôt que
+                de retomber sur une valeur par défaut, qui rendrait le document
+                introuvable par l'axe sur lequel on le cherchera.
             author: Auteur ou institution.
             url: Adresse de la source, si elle en a une.
             tags: Étiquettes appliquées à chaque bloc.
@@ -154,7 +164,14 @@ class DocumentIngestor:
         Raises:
             FileNotFoundError: Si le fichier n'existe pas.
             ValueError: Si le titre est vide.
+            ScopeRefused: Si la portée ou le sujet sont malformés.
         """
+        # Les deux axes sont résolus **avant** toute lecture de fichier : une
+        # portée fautive doit refuser l'ingestion, pas la laisser écrire cent
+        # blocs qu'il faudrait ensuite retrouver pour les corriger.
+        portee = str(KnowledgeScope.parse(scope))
+        sujet = parse_subject(subject)
+
         if not title or not title.strip():
             raise ValueError(
                 "Un titre est exigé : il apparaîtra dans les citations, et une "
@@ -181,7 +198,8 @@ class DocumentIngestor:
             item = self._construire(
                 bloc=bloc, position=position, total=len(blocs), chemin=chemin,
                 empreinte=empreinte, title=title, source_category=source_category,
-                domain=domain, author=author, url=url, tags=tags or [],
+                domain=domain, scope=portee, subject=sujet,
+                author=author, url=url, tags=tags or [],
                 language=language, status=status,
             )
             try:
@@ -415,6 +433,7 @@ class DocumentIngestor:
     def _construire(
         self, bloc: str, position: int, total: int, chemin: str, empreinte: str,
         title: str, source_category: SourceCategory, domain: KnowledgeDomain,
+        scope: str, subject: KnowledgeSubject,
         author: Optional[str], url: Optional[str], tags: List[str],
         language: Language, status: KnowledgeStatus,
     ) -> KnowledgeItem:
@@ -435,6 +454,8 @@ class DocumentIngestor:
             content_type=ContentType.TEXT,
             language=language,
             domain=domain,
+            scope=scope,
+            subject=subject,
             status=status,
             tags=list(tags),
             source=source,

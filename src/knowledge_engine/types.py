@@ -9,6 +9,8 @@ import datetime
 import hashlib
 
 
+from .scope import KnowledgeSubject  # noqa: E402  (axes du VOLET 35)
+
 class KnowledgeType(Enum):
     """Types de connaissances."""
     FACT = "fact"
@@ -189,6 +191,13 @@ class KnowledgeItem:
     content_type: ContentType = ContentType.TEXT
     language: Language = Language.FR
     domain: KnowledgeDomain = KnowledgeDomain.UNSPECIFIED
+    # Les deux axes du VOLET 35, indépendants de `domain` : celui-ci classe la
+    # documentation **de la plateforme**, ceux-là classent la connaissance **du
+    # monde**. `scope` dit d'où elle vaut, `subject` de quoi elle parle.
+    # Le défaut est « mondial, non classé » : une connaissance sans portée
+    # déclarée n'est pas sénégalaise par accident.
+    scope: str = "global"
+    subject: KnowledgeSubject = KnowledgeSubject.UNSPECIFIED
     sensitivity: KnowledgeSensitivity = KnowledgeSensitivity.PUBLIC
     status: KnowledgeStatus = KnowledgeStatus.DRAFT
     tags: List[str] = field(default_factory=list)
@@ -228,6 +237,8 @@ class KnowledgeItem:
             content_type=self.content_type,
             language=self.language,
             domain=self.domain,
+            scope=self.scope,
+            subject=self.subject,
             sensitivity=self.sensitivity,
             # Un contenu réécrit n'est plus celui qui avait été revu : il repart en
             # brouillon et devra repasser par le cycle du chapitre 03.
