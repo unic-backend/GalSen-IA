@@ -35,6 +35,30 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Collection is decided under a gate, and health is answered differently**
+  (`src/knowledge_engine/collection.py`, `health_policy.py`)
+  - Downloading acts on someone else's server, so four conditions hold and none is
+    optional: the source is **in the registry**, `robots.txt` is **applied** rather than
+    consulted, the licence is declared, and a human approves (ADR-006). The module builds
+    the request — **it downloads nothing**, and a guard test checks it never reaches the
+    network
+  - An unknown licence **degrades instead of blocking**: the document becomes
+    `reference_only`, citable by URL and not reproducible in full. Blocking would discard
+    the best sources first. An absent `robots.txt` forbids nothing — that is its meaning —
+    and a named agent's rules add to `*`'s rather than replacing them
+  - A refused plan cannot be submitted: asking a human to approve what the rule already
+    rejected would make the refusal negotiable
+  - Health gets a **higher source floor** than the general reliability threshold —
+    `OFFICIAL`, `GOVERNMENT`, `PEER_REVIEWED` only — because trustworthy industry
+    documentation on a technical subject is still industry documentation about a disease
+  - **No dosage, no diagnosis, no prescription, whatever the sources say**, and the
+    refusal is code applied *after* generation. A prompt instruction is a wish: "500 mg
+    every six hours" appears in an official leaflet, and repeated to someone whose weight,
+    age or pregnancy is unknown, it is a sentence that harms. A counter-test pins that an
+    ordinary answer is **not** refused — a filter that refuses everything protects nobody
+  - The safety notice travels with every health answer, refusals included, and the floor
+    applies **before** scope arbitration: ranking under-qualified sources by country would
+    mean choosing which bad one to serve
 - **Gaps are measured from real questions, candidate sources come only from the registry,
   and contradictions are reported rather than resolved** (`src/knowledge_engine/gaps.py`,
   `source_discovery.py`, `contradictions.py`)

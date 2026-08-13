@@ -181,12 +181,31 @@ def retrieve_scoped(
     arbitre. Le résultat conserve les champs du récupérateur — `sources`,
     `citation_coverage`, `reliable` — et y ajoute la portée.
     """
+    from .health_policy import filter_health_sources, is_health_subject
+
     brut = manager.retrieve_reliable(question, max_items=max(limit * 3, limit), role=role)
+    elements = brut.get("items", [])
+
+    # Le plancher de sources de la santé s'applique **avant** l'arbitrage de
+    # portée (VOLET 35, ch. 10) : trier par pays des sources qui n'ont pas le
+    # niveau exigé reviendrait à choisir laquelle des mauvaises servir.
+    sante = None
+    if is_health_subject(subject):
+        sante = filter_health_sources(elements)
+        elements = sante["items"]
+
     politique = apply_scope_policy(
-        brut.get("items", []), question=question, subject=subject, limit=limit
+        elements, question=question, subject=subject, limit=limit
     )
 
     resultat = dict(brut)
+    if sante is not None:
+        resultat["health_policy"] = {
+            "applied": True,
+            "floor": sante["floor"],
+            "dropped": sante["dropped"],
+            "reason": sante["reason"],
+        }
     resultat.update({
         "items": politique["items"],
         "allowed": politique["allowed"],

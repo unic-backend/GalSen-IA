@@ -1360,6 +1360,26 @@ async def knowledge_factual_benchmark():
     return benchmark_report()
 
 
+@app.get("/knowledge/health-policy", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def knowledge_health_policy():
+    """Ce que la plateforme refuse de dire en santé (VOLET 35, ch. 10).
+
+    Trois règles : un **plancher de sources** plus haut que le seuil général,
+    un avertissement sur chaque réponse, et le refus de toute forme d'acte
+    médical — posologie, diagnostic, prescription — **quoi que disent les
+    sources**.
+
+    Ce refus est du code appliqué après la génération, pas une consigne
+    d'invite : un modèle qui a lu la bonne notice peut quand même écrire
+    « 500 mg toutes les six heures ». Ce que le filtre ne détecte pas est nommé.
+    """
+    from src.knowledge_engine.health_policy import health_policy_report
+
+    return health_policy_report()
+
+
 # Endpoints d'approbation humaine (ADR-006)
 # Un agent peut suspendre une action dans l'état `requires_approval` ; un
 # opérateur humain consulte la file d'attente et approuve ou refuse chaque

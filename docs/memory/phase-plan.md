@@ -49,10 +49,15 @@ récupérateur), ch. 05 la réponse dit sa portée (`scope_notice`, jusque dans
 (`gaps.py`, détecteur `knowledge_gaps`), ch. 07 découverte qui propose depuis le registre et
 ne décide rien (`source_discovery.py`), ch. 09 contradictions rapportées jamais résolues
 (`contradictions.py`).
-**Phase courante** : aucune. **Tour 4 proposé** : chapitres **08 + 10** — collecte sous
-portillon (approbation, licence, `robots.txt`, provenance) et politique santé (plancher de
-sources, avertissement, refus en code). Les chapitres **11 et 12 attendent de vrais
-documents** et ne peuvent pas être faits ici. En attente de décision.
+**VOLET 35, tour 4 terminé** (2026-08-13) : ch. 08 collecte décidée sous portillon
+(`collection.py` — registre, `robots.txt` appliqué, licence, approbation ; rien n'est
+téléchargé), ch. 10 politique santé (`health_policy.py` — plancher de sources,
+avertissement partout, refus en code de la posologie, du diagnostic et de la prescription ;
+`GET /knowledge/health-policy`).
+**VOLET 35 : 10 chapitres sur 12.** Les **chapitres 11 et 12 dépendent du propriétaire** —
+ils demandent de vrais documents sénégalais et un corpus mondial déclarés dans un
+manifeste. Ils ne peuvent pas être faits ici sans fabriquer de la connaissance.
+**Phase courante** : aucune. En attente de décision.
 **Cadence VOLET 35** : 4 tours, décidés avec le propriétaire le 2026-08-12 — 01+02, 03+04+05,
 06+07+09, 08+10. Les chapitres 11 et 12 attendent de vrais documents.
 (VOLET 34 terminé 14/14, découverte proactive livrée hors chapitre.)

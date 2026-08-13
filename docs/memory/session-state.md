@@ -26,7 +26,9 @@ terminé** — dix axes attachés au plan existant, deux qui agissent. **Chapitr
 terminé** — les capacités différées sont mesurées à chaque scan. **VOLET 36 TERMINÉ,
 8 chapitres sur 8.** Puis **VOLET 35, tour 2** (ch. 03, 04, 05) : registre des sources,
 récupération par portée, la réponse dit d'où elle vient. Puis **tour 3** (ch. 06, 07, 09) :
-manques mesurés, sources candidates du registre, contradictions rapportées.
+manques mesurés, sources candidates du registre, contradictions rapportées. Puis **tour 4**
+(ch. 08, 10) : collecte décidée sous portillon, politique santé. **VOLET 35 : 10/12** — les
+deux derniers chapitres demandent de vrais documents.
 
 **Terminé dans cette session**
 - **A.1 → A.3** : l'enveloppe de confiance et ses neuf chemins (RAG, MCP, recherche web,
@@ -64,14 +66,20 @@ manques mesurés, sources candidates du registre, contradictions rapportées.
   ont touché sans réponse (journal d'audit existant, aucun second journal). La découverte
   propose depuis le **registre** et ne décide rien. Les contradictions sont **rapportées,
   jamais résolues** — aucun gagnant désigné, et deux pays ne se contredisent pas.
-- Suite complète : **2863 tests passent**, 8 ignorés ; `ruff` propre.
+- **VOLET 35, tour 4** : la collecte est **décidée**, jamais exécutée par le module —
+  registre, `robots.txt` appliqué, licence (inconnue → `reference_only`), approbation
+  humaine. La santé a un **plancher de sources** plus haut, un avertissement partout, et
+  **le refus de la posologie, du diagnostic et de la prescription est du code**, appliqué
+  après la génération.
+- Suite complète : **2889 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
 **Rien n'est en cours.** VOLET 36 clos ; VOLET 35 avancé jusqu'au chapitre 05.
-Proposition : **tour 4 du VOLET 35** — chapitres 08 + 10 : collecte sous portillon
-(approbation, licence, `robots.txt`, provenance) et politique santé (plancher de sources,
-avertissement, refus en code). **Les chapitres 11 et 12 ne peuvent pas être faits ici** :
-ils demandent de vrais documents. En attente de décision.
+**Rien n'est en cours.** VOLET 36 clos (8/8), VOLET 35 à **10 chapitres sur 12**.
+**Les deux derniers dépendent de toi** : ch. 11 le premier vrai corpus sénégalais, ch. 12
+le corpus mondial. Ils demandent de **vrais documents déclarés dans un manifeste**
+(`docs/knowledge/README.md`) — les faire ici reviendrait à fabriquer de la connaissance,
+ce que le dépôt refuse. Reste aussi **L3** (normalisation par langue, VOLET 36 ch. B).
 **L3** (normalisation par langue) reste à faire ; **VOLET 35** est en pause après le tour 1
 (chapitres 03, 04, 05).
 
