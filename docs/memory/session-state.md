@@ -75,7 +75,11 @@ deux derniers chapitres demandent de vrais documents.
   pulaar. Le vrai risque était la **symétrie** — indexer sans amputer pendant qu'une
   requête reste française ferait disparaître des documents présents ; réglé par
   l'expansion de requête, pas par une détection inventée.
-- Suite complète : **2891 tests passent**, 8 ignorés ; `ruff` propre.
+- **Trois workflows ajoutés** (`question`, `ingestion`, `series`) : les quatre agents du
+  VOLET 36 étaient au registre sans qu'aucun pipeline ne les cite — donc **inatteignables**,
+  la sélection ne pouvant que restreindre. Les axes `risk` et `geographic_scope` changent
+  maintenant réellement ce qui tourne.
+- Suite complète : **2899 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
 **Rien n'est en cours.** VOLET 36 clos ; VOLET 35 avancé jusqu'au chapitre 05.

@@ -138,3 +138,85 @@ workflows:
         - researcher
 
         - opportunity
+
+  # Les quatre agents du VOLET 36. Ils étaient au registre sans qu'aucun
+  # workflow ne les cite : joignables en théorie, inatteignables en pratique —
+  # la sélection du planificateur **restreint** un pipeline, elle ne l'élargit
+  # jamais, donc les axes `risk` et `geographic_scope` recommandaient des agents
+  # qu'aucune exécution ne pouvait retenir.
+  question:
+    description: "Répond à une question de connaissance : sources du pays d'abord, puis vérification des affirmations"
+    version: "1.0"
+    owner: "unic-backend"
+
+    pipeline:
+
+      - planner
+
+      - researcher
+
+      - senegal
+
+      - verifier
+
+    # C'est ici que les deux axes qui agissent deviennent visibles (ch. F) :
+    # une question sénégalaise fait entrer `senegal`, un sujet à risque fait
+    # entrer `verifier`, et une question ordinaire n'en retient aucun des deux.
+    # `researcher` reste dans le pipeline pour que la recommandation ait
+    # toujours une intersection non vide — sans lui, une demande banale
+    # retomberait sur « pipeline entier », c'est-à-dire l'inverse du tri voulu.
+    #
+    # L'ordre est une dépendance : `verifier` confronte des affirmations à des
+    # passages, il lui faut donc ce que les agents précédents ont rendu.
+    execution:
+
+      agent_selection: planner
+
+      parallel_agents: []
+
+      sequential_agents:
+
+        - planner
+
+        - researcher
+
+        - senegal
+
+        - verifier
+
+  ingestion:
+    description: "Propose le classement d'un document pour un manifeste ; rien n'est écrit"
+    version: "1.0"
+    owner: "unic-backend"
+
+    pipeline:
+
+      - knowledge_architect
+
+    # Seul dans son pipeline, et pas dans « question » : classer un document
+    # n'a rien à voir avec répondre, et l'y glisser ferait tourner l'architecte
+    # à chaque question posée.
+    execution:
+
+      parallel_agents: []
+
+      sequential_agents:
+
+        - knowledge_architect
+
+  series:
+    description: "Décrit une série statistique déclarée ; refuse celle sans unité, période ni source"
+    version: "1.0"
+    owner: "unic-backend"
+
+    pipeline:
+
+      - data_engineer
+
+    execution:
+
+      parallel_agents: []
+
+      sequential_agents:
+
+        - data_engineer
