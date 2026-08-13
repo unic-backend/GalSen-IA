@@ -391,6 +391,11 @@ class AgentContext:
                     # « inconnu » qu'un domaine ou un statut supposé.
                     "domain": getattr(getattr(item, "domain", None), "value", None),
                     "status": getattr(getattr(item, "status", None), "value", None),
+                    # Les deux axes de l'ADR-019. Sans eux, un agent ne peut pas
+                    # savoir si ce qu'il lit vaut pour le pays de la question :
+                    # il servirait du droit d'ailleurs sans jamais le voir.
+                    "scope": getattr(item, "scope", None),
+                    "subject": getattr(getattr(item, "subject", None), "value", None),
                 }
                 for item in items
             ]

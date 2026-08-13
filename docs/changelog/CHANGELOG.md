@@ -35,6 +35,21 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Two agents defined by what they refuse** (`agents/verifier/`, `agents/senegal/`)
+  - `verifier` carries a verdict and stops there. It never rewrites the answer — measuring
+    and correcting are two roles — and never asks the model whether it was right. With no
+    passage retrieved it reports `cannot_verify`, never `supported`: a verdict with nothing
+    behind it looks like a check that happened. `cannot_verify` and `unsupported` stay
+    apart: "nothing to compare this to" is not "compared, and nothing backs it"
+  - `senegal` applies ADR-019 where no ranking function should decide: on a national
+    subject with no national source, it **refuses**. Law, administration and languages do
+    not travel, and answering a Senegalese land question with foreign law is fluent,
+    plausible and wrong exactly where it costs someone a plot of land. The refusal names
+    what was found but not served, and what would settle the question
+  - It is not the only path to Senegalese knowledge — scope-aware retrieval serves every
+    question; this agent owns the decision to refuse
+  - Fixed on the way: `AgentContext.search_knowledge()` returned neither `scope` nor
+    `subject`, so an agent read the base without ever seeing where its knowledge held
 - **Unsupported claims are counted, and cited sources are checked against what they
   are made to say** (`src/knowledge_engine/factual_evaluation.py`)
   - Citation coverage counted items carrying a source; retrieval evaluation measured the

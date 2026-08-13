@@ -81,3 +81,15 @@ agents:
     role: "Opportunity Analyst"
     description: "Rassemble des signaux sourcés ; refuse de conclure sans source."
     module: "agents.opportunity.agent"
+  - id: verifier
+    enabled: true
+    priority: 80
+    role: "Fact Verification"
+    description: "Confronte les affirmations aux passages ; ne réécrit jamais la réponse."
+    module: "agents.verifier.agent"
+  - id: senegal
+    enabled: true
+    priority: 70
+    role: "Senegal Intelligence"
+    description: "Préfère les sources nationales ; refuse plutôt que de répondre mondial."
+    module: "agents.senegal.agent"

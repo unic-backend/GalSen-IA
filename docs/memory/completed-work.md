@@ -654,3 +654,14 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **`GET /knowledge/factual-benchmark`** publie le 0 au lieu de le taire.
 - **Défaut corrigé au passage** : `str.title` est une méthode — lire « le titre » d'un passage-chaîne rendait `<built-in method title>` comme référence de source.
 - **17 tests ajoutés** (14 dans `tests/test_factual_evaluation.py`, 1 sur la route, 2 engendrés par le test de surface). Suite complète : **2744 tests passent**, 8 ignorés ; `ruff` propre.
+
+### 2026-08-13 (VOLET 36, chapitre D — les agents `verifier` et `senegal`)
+- **`agents/verifier/`** : porte un verdict et s'arrête là. **Il ne réécrit jamais la réponse** — mesurer et corriger sont deux rôles, et les mélanger empêche de savoir, à la lecture suivante, laquelle des deux on lit. Il ne demande jamais au modèle s'il a eu raison : ce serait mesurer sa confiance en lui-même.
+- **Le mode de défaillance est le cœur du test** : **sans passage retrouvé → `cannot_verify`, jamais `supported`**. Un verdict sans rien derrière est pire qu'une absence de verdict — il a l'apparence d'un contrôle qui a eu lieu. `cannot_verify` et `unsupported` restent distincts : « je n'ai rien trouvé à comparer » n'est pas « j'ai comparé et rien ne l'étaye ».
+- **`agents/senegal/`** : applique l'ADR-019 là où aucune fonction de tri ne devrait décider — **sur un sujet national, pas de source nationale, pas de réponse.** Le droit, l'administration et les langues ne voyagent pas ; répondre le droit d'ailleurs à une question de foncier sénégalais serait fluide, plausible et faux là où ça coûte un terrain. Le refus nomme ce qui a été trouvé sans être servi, et ce qui trancherait.
+- **Il n'est pas le seul chemin vers la connaissance sénégalaise** : la recherche par portée sert toutes les questions. Cet agent porte la décision de refuser, rien d'autre.
+- **Un sujet mal écrit ne retombe pas sur « non classé »** : le deviner reviendrait à décider soi-même qu'une question de droit n'en est pas une — donc à supprimer le refus qui protège la réponse.
+- **Chaînon manquant corrigé** : `AgentContext.search_knowledge()` ne rendait **ni `scope` ni `subject`**. Un agent lisait la base sans jamais voir d'où sa connaissance valait — il aurait servi du droit d'ailleurs sans le voir. Vérifié sur un vrai moteur, pas sur le texte du code.
+- **Les deux agents sont au registre** (`agents/registry.yaml`, 13 agents) et répondent par leur point d'entrée historique.
+- **Un test de garde a suivi la mesure** : `test_les_six_specialistes_du_brief_existent` épinglait 13 agents au registre — il y en a 15. Le compte est corrigé et les deux nouveaux noms y sont épinglés, la liste des spécialistes du brief reste inchangée.
+- **15 tests ajoutés** (13 dans `tests/test_agents_verifier_senegal.py`). Suite complète : **2759 tests passent**, 8 ignorés ; `ruff` propre.

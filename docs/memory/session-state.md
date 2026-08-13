@@ -18,7 +18,8 @@ de confiance (`src/security/trust.py`) ; il y en avait un seul. **Chapitre B ter
 `WO`, `FF`, `SRR` déclarables, filtrables et retrouvables, avec le rapport de capacités
 honnête (`src/knowledge_engine/languages.py`, `GET /knowledge/languages`). **Chapitre C
 terminé** — l'évaluation factuelle mécanique (`factual_evaluation.py`) et le jeu de
-référence sénégalais, **0 entrée vérifiée et le disant**.
+référence sénégalais, **0 entrée vérifiée et le disant**. **Chapitre D terminé** — les
+agents `verifier` et `senegal`, chacun défini par son refus.
 
 **Terminé dans cette session**
 - **A.1 → A.3** : l'enveloppe de confiance et ses neuf chemins (RAG, MCP, recherche web,
@@ -31,11 +32,14 @@ référence sénégalais, **0 entrée vérifiée et le disant**.
   fait dire, contradiction distinguée de l'absence. Ce qui demande un modèle est **nommé**,
   pas fait. Le jeu de référence ne porte que des questions `to_source` — aucune réponse
   écrite de mémoire, et `score_entry()` refuse de les noter.
-- Suite complète : **2744 tests passent**, 8 ignorés ; `ruff` propre.
+- **D** : `verifier` porte un verdict et ne réécrit jamais la réponse — sans passage il
+  dit `cannot_verify`, jamais `supported`. `senegal` refuse un sujet national sans source
+  nationale. Chaînon corrigé : `search_knowledge()` ne rendait ni `scope` ni `subject`.
+- Suite complète : **2759 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-**Chapitre D — les agents `verifier` et `senegal`** : chacun refuse plutôt que deviner
-dans son mode de défaillance. En attente de confirmation.
+**Chapitre E — le magasin d'entités et de relations** : ontologie minimale, provenance
+obligatoire, sans base graphe. En attente de confirmation.
 **L3** (normalisation par langue) reste à faire ; **VOLET 35** est en pause après le tour 1
 (chapitres 03, 04, 05).
 
