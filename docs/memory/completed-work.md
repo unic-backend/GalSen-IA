@@ -758,7 +758,8 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **3 tests ajoutés** (`tests/test_languages.py`, 11 au total). Suite complète : **2891 tests passent**, 8 ignorés ; `ruff` propre.
 
 ### 2026-08-13 (vérification finale — la CI mesurée sur GitHub, pas en local)
-- **Critère 7 du VOLET 36 refermé par une mesure** : run GitHub `31703243054` (commit `748cc33`) → **2891 passent, 5 ignorés, 1 échec**. Le seul échec est `test_release_check.py::test_l_etiquette_de_la_version_courante_existe_bien`.
+- **Critère 7 du VOLET 36 refermé par une mesure** : run GitHub `31704148980` (tête de branche `ea54664`) → **2893 passent, 5 ignorés, 1 échec** — même verdict que sur `748cc33`. Le seul échec est `test_release_check.py::test_l_etiquette_de_la_version_courante_existe_bien`.
 - **Trois des quatre échecs de CI documentés au 2026-08-12 sont refermés** (PDF, deux tests du bac à sable). Le quatrième reste rouge **et doit le rester** : l'étiquette `v0.1.0` n'a jamais été poussée.
 - **Réessayé aujourd'hui, refusé à nouveau** : `git push origin v0.1.0` → HTTP 403 (le mandataire refuse les étiquettes), et **aucun outil d'API disponible ne crée d'étiquette** — vérifié, pas supposé. Le point reste à l'opérateur.
 - **Le test n'est ni ignoré ni affaibli.** Il dit la vérité ; l'affaiblir ferait disparaître la seule trace du travail restant, et c'est exactement ce que `.claude/rules/verification.md` interdit.
+- **Le scan proactif de la plateforme confirme le reste** : deux observations seulement — `model_availability` (C1, bloquant, `ollama serve`) et les **7 points de posture** déjà documentés, tous liés à une configuration (`GALSEN_STORAGE_BACKEND=sqlite`), à des privilèges que la plateforme n'a pas (cgroups, espaces de noms) ou à l'étape 2 de l'ADR-010. Aucun n'est un défaut à corriger en silence.

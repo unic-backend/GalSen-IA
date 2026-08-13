@@ -34,7 +34,10 @@ comme d'habitude ». C'est le premier chantier, et il est court.
 
 #### Mesure du 2026-08-13 — trois des quatre sont refermés
 
-Run GitHub `31703243054` (commit `748cc33`) : **2891 passent, 5 ignorés, 1 échec.**
+Run GitHub `31704148980` (tête de branche `ea54664`) : **2893 passent, 5 ignorés,
+1 échec.** Le run précédent (`748cc33`) disait la même chose ; celui de `430a2f4` a été
+**annulé** par la poussée suivante, ce qui est le comportement normal de la concurrence —
+un run annulé n'est pas un run rouge.
 
 | Test | État mesuré |
 |---|---|
