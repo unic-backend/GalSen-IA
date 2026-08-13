@@ -32,9 +32,12 @@ from src.knowledge_engine.scoped_retrieval import (  # noqa: E402
 )
 from src.knowledge_engine.source_registry import (  # noqa: E402
     SourceRefused,
+    SourceTier,
+    acquirable_sources,
     check_source,
     denied_reason,
     known_sources,
+    load_registry,
     registry_report,
 )
 from src.knowledge_engine.types import SourceCategory  # noqa: E402
@@ -141,6 +144,138 @@ def test_un_nom_de_fichier_ne_devient_pas_un_domaine():
     assert verdict["allowed"] is True
     assert "manifeste" in verdict["reason"]
     assert check_source("/data/notes.pdf", SourceCategory.OFFICIAL)["allowed"] is True
+
+
+# ----------------------------------------------------------------------
+# ADR-021 — les champs d'acquisition
+# ----------------------------------------------------------------------
+
+def _registre(tmp_path, entree: str) -> str:
+    """Écrit un registre d'une source et rend son chemin."""
+    chemin = tmp_path / "registre.yaml"
+    chemin.write_text("sources:\n" + entree + "\ndeny: []\n", encoding="utf-8")
+    return str(chemin)
+
+
+def test_aucune_source_inscrite_n_est_collectable_par_defaut():
+    """
+    Le cœur de l'ADR-021 : inscrire n'est pas activer. Les onze sources réelles
+    sont inscrites et **aucune** n'est atteignable par un chemin d'acquisition.
+    """
+    rapport = registry_report()
+
+    assert rapport["sources"] == 11
+    assert rapport["enabled"] == 0
+    assert rapport["acquirable"] == 0
+    assert acquirable_sources() == []
+
+
+def test_un_rang_replie_est_nomme_et_non_supposé_validé():
+    """
+    Un rang replié depuis la catégorie est un rang que personne n'a relu.
+    Le taire donnerait à une source un régime que personne n'a choisi.
+    """
+    rapport = registry_report()
+
+    assert len(rapport["tiers_defaulted"]) == 11, "Un repli est passé sous silence"
+    assert rapport["by_tier"]["TIER_A_PRIMARY_OFFICIAL"] == 6
+    assert rapport["by_tier"]["TIER_A_ACADEMIC"] == 2
+    assert rapport["never_verified"] == rapport["tiers_defaulted"]
+
+
+def test_un_rang_declare_n_est_pas_signale_comme_replie(tmp_path):
+    """Déclarer le rang est la relecture ; il ne doit plus apparaître comme replié."""
+    chemin = _registre(tmp_path, """
+  - name: "Source relue"
+    base_url: https://exemple.sn
+    category: government
+    tier: TIER_A_PRIMARY_OFFICIAL
+    last_verified: "2026-08-13"
+""")
+    entree = load_registry(chemin)["sources"][0]
+
+    assert entree["tier"] is SourceTier.A_PRIMARY_OFFICIAL
+    assert entree["tier_defaulted"] is False
+    assert registry_report(chemin)["never_verified"] == []
+
+
+def test_un_rang_inexistant_refuse_l_entree_au_lieu_de_retomber(tmp_path):
+    """
+    Une faute de frappe dans `tier` donnerait une source dont personne ne connaît
+    le régime — et c'est le genre d'entrée qui finit par être crue.
+    """
+    chemin = _registre(tmp_path, """
+  - name: "Source mal déclarée"
+    base_url: https://exemple.sn
+    category: government
+    tier: TIER_A_OFFICIEL
+""")
+    with pytest.raises(SourceRefused) as echec:
+        load_registry(chemin)
+
+    assert "TIER_A_OFFICIEL" in str(echec.value)
+
+
+def test_une_source_de_decouverte_activee_reste_non_collectable(tmp_path):
+    """
+    `TIER_D` est une piste, jamais une preuve : il peut faire chercher un
+    document ailleurs, il n'est pas collecté lui-même — même activé.
+    """
+    chemin = _registre(tmp_path, """
+  - name: "Blog spécialisé"
+    base_url: https://blog.exemple.sn
+    category: opinion
+    tier: TIER_D_DISCOVERY_ONLY
+    enabled: true
+""")
+    assert load_registry(chemin)["sources"][0]["enabled"] is True
+    assert acquirable_sources(chemin) == []
+
+
+def test_une_source_activee_et_de_rang_acquerable_devient_collectable(tmp_path):
+    """La contrepartie : la règle doit pouvoir dire oui, sinon elle ne mesure rien."""
+    chemin = _registre(tmp_path, """
+  - name: "Agence activée"
+    base_url: https://agence.gouv.sn
+    category: government
+    tier: TIER_A_PRIMARY_OFFICIAL
+    enabled: true
+""")
+    collectables = acquirable_sources(chemin)
+
+    assert [entree["name"] for entree in collectables] == ["Agence activée"]
+
+
+def test_rien_n_est_devine_dans_la_politique_d_acces(tmp_path):
+    """
+    Un `robots.txt` non mesuré vaut `unknown`, pas « absent ». Seul le débit
+    reçoit un défaut, et il est bas : se tromper vers la lenteur est réparable.
+    """
+    chemin = _registre(tmp_path, """
+  - name: "Agence sans politique déclarée"
+    base_url: https://agence.gouv.sn
+    scope: country:sn
+    category: government
+""")
+    entree = load_registry(chemin)["sources"][0]
+
+    assert entree["access_policy"]["robots_txt"] == "unknown"
+    assert entree["access_policy"]["sitemap"] == "unknown"
+    assert entree["access_policy"]["terms_reviewed"] == "unknown"
+    assert entree["access_policy"]["rate_limit_rps"] == 0.2
+    assert entree["last_verified"] == "unknown"
+    assert entree["allowed_content_types"] == [], "Un type non déclaré serait permis"
+    # Le pays n'est pas une supposition : c'est la portée écrite dans l'autre sens.
+    assert entree["country"] == "SN"
+
+
+def test_les_champs_d_acquisition_n_ont_pas_change_le_portillon_d_autorite():
+    """
+    Le rang s'ajoute à la catégorie, il ne la remplace pas : la règle « une
+    autorité ne se déclare pas soi-même » doit se comporter exactement comme avant.
+    """
+    assert check_source("https://www.ansd.sn/x", SourceCategory.GOVERNMENT)["allowed"] is True
+    assert check_source("https://blog-inconnu.sn/x", SourceCategory.GOVERNMENT)["allowed"] is False
 
 
 def test_un_document_sans_url_n_est_pas_bloque_par_le_registre(base, document):

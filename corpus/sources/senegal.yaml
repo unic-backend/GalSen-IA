@@ -7,9 +7,35 @@
 #
 # La fiabilité vient d'ici, jamais du document qui la revendique.
 #
-# Ajouter une source est une modification relue de ce fichier. Les URL sont
-# celles des institutions ; elles ne sont **pas** visitées par la plateforme —
-# aucune collecte automatique n'existe (VOLET 36, ch. H).
+# Ajouter une source est une modification relue de ce fichier.
+#
+# ## Champs d'acquisition (ADR-021)
+#
+# Aucune source de ce fichier n'est collectable aujourd'hui : `enabled` vaut
+# **faux** par défaut, et l'activation est une modification relue, séparée de
+# l'inscription. Aucun champ ci-dessous n'est deviné — ce qui n'a pas été établi
+# vaut `unknown`, et `unknown` n'est pas `no`.
+#
+#   tier:                  TIER_A_PRIMARY_OFFICIAL | TIER_A_ACADEMIC
+#                          | TIER_B_INTERNATIONAL | TIER_C_SECONDARY
+#                          | TIER_D_DISCOVERY_ONLY
+#                          Absent → replié depuis `category`, et **signalé**
+#                          comme non relu dans `registry_report()`.
+#   country:               code pays ; absent → déduit de `scope`
+#   institution_type:      texte libre
+#   languages:             langues déclarées du site (jamais détectées ici)
+#   allowed_content_types: [pdf, html] ; vide = non déclaré, donc rien n'est permis
+#   access_policy:
+#     robots_txt:          unknown | present | absent   (à mesurer, pas à supposer)
+#     sitemap:             unknown | present | absent
+#     terms_reviewed:      unknown | <date>             (une personne les a lues)
+#     rate_limit_rps:      défaut 0.2 — se tromper vers la lenteur est réparable
+#   authority_scope:       sur quoi cette source fait autorité
+#   last_verified:         date, ou unknown
+#   enabled:               défaut false
+#
+# Les URL sont celles des institutions ; elles ne sont **pas** visitées par la
+# plateforme tant qu'aucune source n'est activée et approuvée (ADR-021, §3).
 
 sources:
   - name: "ANSD — Agence nationale de la statistique et de la démographie"

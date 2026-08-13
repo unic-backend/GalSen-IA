@@ -35,6 +35,7 @@ l'ingestion de ce que le projet détient déjà.
 """
 
 import os
+from enum import Enum
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
@@ -43,6 +44,10 @@ from .types import SourceCategory
 
 #: Registre par défaut, relatif à la racine du dépôt.
 REGISTRE_PAR_DEFAUT = os.path.join("corpus", "sources", "senegal.yaml")
+
+#: Valeur d'un champ que personne n'a encore établi. `unknown` n'est pas `no` :
+#: une politique d'accès inconnue n'est pas une politique permissive.
+INCONNU = "unknown"
 
 #: Catégories qui affirment une autorité. Elles exigent un domaine inscrit :
 #: c'est exactement la déclaration qu'un blog pouvait s'attribuer.
@@ -53,6 +58,58 @@ CATEGORIES_D_AUTORITE = frozenset({
     SourceCategory.OFFICIAL_DOCUMENTATION,
     SourceCategory.STANDARD,
 })
+
+
+class SourceTier(Enum):
+    """
+    Ce que la plateforme a le droit de **faire** d'une source (ADR-021).
+
+    `category` dit quel genre d'éditeur c'est ; le rang dit ce qu'on peut en
+    faire. Les confondre reviendrait à laisser un média établi soutenir une
+    affirmation parce qu'il est établi.
+    """
+
+    A_PRIMARY_OFFICIAL = "TIER_A_PRIMARY_OFFICIAL"
+    A_ACADEMIC = "TIER_A_ACADEMIC"
+    B_INTERNATIONAL = "TIER_B_INTERNATIONAL"
+    C_SECONDARY = "TIER_C_SECONDARY"
+    D_DISCOVERY_ONLY = "TIER_D_DISCOVERY_ONLY"
+
+
+#: Rangs qui peuvent être acquis. `TIER_D` est une **piste**, jamais une preuve :
+#: un fil de forum peut faire chercher un décret, il n'entre pas lui-même.
+RANGS_ACQUERABLES = frozenset({
+    SourceTier.A_PRIMARY_OFFICIAL,
+    SourceTier.A_ACADEMIC,
+    SourceTier.B_INTERNATIONAL,
+    SourceTier.C_SECONDARY,
+})
+
+#: Repli d'un rang absent, depuis la catégorie déjà déclarée. Il existe pour que
+#: le registre reste lisible pendant la transition — **pas** pour dispenser de la
+#: relecture : un rang replié est un rang que personne n'a revu, et le rapport le
+#: dit (`tiers_defaulted`).
+RANG_PAR_DEFAUT = {
+    SourceCategory.OFFICIAL: SourceTier.A_PRIMARY_OFFICIAL,
+    SourceCategory.GOVERNMENT: SourceTier.A_PRIMARY_OFFICIAL,
+    SourceCategory.OFFICIAL_DOCUMENTATION: SourceTier.A_PRIMARY_OFFICIAL,
+    SourceCategory.PEER_REVIEWED: SourceTier.A_ACADEMIC,
+    SourceCategory.INSTITUTIONAL: SourceTier.B_INTERNATIONAL,
+    SourceCategory.STANDARD: SourceTier.B_INTERNATIONAL,
+    SourceCategory.TRUSTED_DOCUMENTATION: SourceTier.C_SECONDARY,
+    SourceCategory.INDUSTRY: SourceTier.C_SECONDARY,
+    SourceCategory.EXPERT_CONSENSUS: SourceTier.C_SECONDARY,
+    # Ce qui ne peut soutenir aucune affirmation retombe sur le rang qui ne le
+    # permet pas. Une estimation ou une opinion peut faire **chercher** ; elle
+    # n'entre pas.
+    SourceCategory.ESTIMATE: SourceTier.D_DISCOVERY_ONLY,
+    SourceCategory.OPINION: SourceTier.D_DISCOVERY_ONLY,
+    SourceCategory.UNKNOWN: SourceTier.D_DISCOVERY_ONLY,
+}
+
+#: Débit par défaut, volontairement bas. Un défaut de politesse se corrige en
+#: relisant les conditions du site ; un site surchargé, non.
+DEBIT_PAR_DEFAUT = 0.2
 
 
 class SourceRefused(ValueError):
@@ -118,6 +175,61 @@ def _correspond(domaine: str, declare: str) -> bool:
     return domaine == declare or domaine.endswith("." + declare)
 
 
+def _rang(declare: Any, categorie: SourceCategory, nom: str) -> tuple:
+    """
+    Retourne le rang d'une source, et s'il a été replié depuis la catégorie.
+
+    Un rang inconnu **refuse le chargement de l'entrée** au lieu de retomber en
+    silence : une faute de frappe dans `tier` donnerait sinon une source dont
+    personne ne connaît le régime, et c'est exactement le genre d'entrée qui
+    finit par être crue.
+
+    Raises:
+        SourceRefused: Si `tier` est déclaré mais n'existe pas.
+    """
+    if declare in (None, ""):
+        return RANG_PAR_DEFAUT.get(categorie, SourceTier.D_DISCOVERY_ONLY), True
+    try:
+        return SourceTier(str(declare).strip().upper()), False
+    except ValueError:
+        raise SourceRefused(
+            f"« {nom} » déclare le rang « {declare} », qui n'existe pas. "
+            f"Rangs valides : {', '.join(rang.value for rang in SourceTier)}."
+        ) from None
+
+
+def _pays(declare: Any, portee: str) -> str:
+    """
+    Retourne le pays d'une source.
+
+    Déduire `SN` de la portée `country:sn` n'est pas une supposition : c'est le
+    même fait, déjà déclaré par une personne, écrit dans l'autre sens.
+    """
+    if declare:
+        return str(declare).strip().upper()
+    if portee.startswith("country:"):
+        return portee.split(":", 1)[1].upper()
+    return INCONNU
+
+
+def _politique_d_acces(declaree: Any) -> Dict[str, Any]:
+    """
+    Retourne la politique d'accès déclarée, complétée par des inconnues.
+
+    Rien n'est supposé présent : un `robots.txt` non mesuré vaut `unknown`, pas
+    « absent ». Seul le débit reçoit un défaut, et il est volontairement bas —
+    se tromper vers la lenteur est réparable, se tromper vers la charge ne l'est
+    pas.
+    """
+    declaree = declaree if isinstance(declaree, dict) else {}
+    return {
+        "robots_txt": str(declaree.get("robots_txt") or INCONNU),
+        "sitemap": str(declaree.get("sitemap") or INCONNU),
+        "terms_reviewed": str(declaree.get("terms_reviewed") or INCONNU),
+        "rate_limit_rps": float(declaree.get("rate_limit_rps") or DEBIT_PAR_DEFAUT),
+    }
+
+
 def load_registry(chemin: Optional[str] = None) -> Dict[str, Any]:
     """
     Charge le registre déclaré.
@@ -137,16 +249,34 @@ def load_registry(chemin: Optional[str] = None) -> Dict[str, Any]:
 
     sources = []
     for entree in donnees.get("sources", []) or []:
-        domaine = _domaine_declare(entree.get("base_url", ""))
+        domaine = _domaine_declare(entree.get("base_url", "")) or _domaine_declare(
+            entree.get("domain", "")
+        )
         if not domaine or not entree.get("name"):
             continue
+        categorie = SourceCategory(entree.get("category", "unknown"))
+        rang, replie = _rang(entree.get("tier"), categorie, entree["name"])
+        portee = str(KnowledgeScope.parse(entree.get("scope", "global")))
         sources.append({
             "name": entree["name"],
             "domain": domaine,
-            "scope": str(KnowledgeScope.parse(entree.get("scope", "global"))),
+            "scope": portee,
             "subjects": list(entree.get("subjects", []) or []),
-            "category": SourceCategory(entree.get("category", "unknown")),
+            "category": categorie,
             "base_url": entree.get("base_url", ""),
+            # Ajouts de l'ADR-021. Aucun n'est deviné : ce qui n'est pas déclaré
+            # vaut `unknown`, et `enabled` vaut faux.
+            "tier": rang,
+            "tier_defaulted": replie,
+            "country": _pays(entree.get("country"), portee),
+            "institution_type": str(entree.get("institution_type") or INCONNU),
+            "languages": list(entree.get("languages", []) or []),
+            "allowed_content_types": list(entree.get("allowed_content_types", []) or []),
+            "access_policy": _politique_d_acces(entree.get("access_policy")),
+            "authority_scope": str(entree.get("authority_scope") or INCONNU),
+            "reliability_notes": str(entree.get("reliability_notes") or ""),
+            "last_verified": str(entree.get("last_verified") or INCONNU),
+            "enabled": bool(entree.get("enabled", False)),
         })
 
     refus = [
@@ -261,6 +391,30 @@ def check_source(
     }
 
 
+def acquirable_sources(
+    chemin: Optional[str] = None, registre: Optional[Dict[str, Any]] = None
+) -> List[Dict[str, Any]]:
+    """
+    Retourne les sources qu'une acquisition a le droit d'atteindre (ADR-021).
+
+    Deux conditions, et elles sont cumulatives :
+
+    1. **`enabled: true`.** Inscrire une source ne la rend pas collectable ;
+       l'activer est une modification relue, séparée. Le défaut est faux, donc
+       une source ajoutée aujourd'hui n'est atteignable par aucun chemin.
+    2. **Un rang acquérable.** `TIER_D` reste une piste : il peut faire chercher
+       un document ailleurs, il n'est jamais collecté lui-même.
+
+    Une liste vide est le résultat normal tant que personne n'a activé de
+    source, et c'est ce qui rend la règle 1 réelle plutôt que commentée.
+    """
+    registre = registre or load_registry(chemin)
+    return [
+        entree for entree in registre["sources"]
+        if entree["enabled"] and entree["tier"] in RANGS_ACQUERABLES
+    ]
+
+
 def registry_report(chemin: Optional[str] = None) -> Dict[str, Any]:
     """
     Décrit le registre tel qu'il est réellement.
@@ -268,14 +422,26 @@ def registry_report(chemin: Optional[str] = None) -> Dict[str, Any]:
     `loaded: false` **n'est pas** un registre vide : c'est un fichier absent, et
     la distinction compte — un registre absent refuse toute catégorie
     d'autorité, ce qui se voit ici plutôt qu'à la première ingestion.
+
+    Le rapport nomme aussi ce que personne n'a relu : les rangs repliés depuis la
+    catégorie et les sources jamais vérifiées. Un repli silencieux donnerait à
+    une source un régime que personne n'a choisi.
     """
     registre = load_registry(chemin)
     par_portee: Dict[str, int] = {}
     par_categorie: Dict[str, int] = {}
+    par_rang: Dict[str, int] = {}
     for entree in registre["sources"]:
         par_portee[entree["scope"]] = par_portee.get(entree["scope"], 0) + 1
         nom = entree["category"].value
         par_categorie[nom] = par_categorie.get(nom, 0) + 1
+        rang = entree["tier"].value
+        par_rang[rang] = par_rang.get(rang, 0) + 1
+
+    replies = [e["name"] for e in registre["sources"] if e["tier_defaulted"]]
+    jamais_verifiees = [
+        e["name"] for e in registre["sources"] if e["last_verified"] == INCONNU
+    ]
 
     return {
         "file": REGISTRE_PAR_DEFAUT,
@@ -284,10 +450,20 @@ def registry_report(chemin: Optional[str] = None) -> Dict[str, Any]:
         "denied_domains": len(registre["deny"]),
         "by_scope": dict(sorted(par_portee.items())),
         "by_category": dict(sorted(par_categorie.items())),
+        "by_tier": dict(sorted(par_rang.items())),
         "authority_categories": sorted(c.value for c in CATEGORIES_D_AUTORITE),
+        "enabled": sum(1 for e in registre["sources"] if e["enabled"]),
+        "acquirable": len(acquirable_sources(registre=registre)),
+        "tiers_defaulted": replies,
+        "never_verified": jamais_verifiees,
         "note": (
             "La fiabilité vient du registre, pas du document qui la revendique. "
             "Une URL refusée l'est **avec sa raison** — jamais rétrogradée en silence."
+        ),
+        "acquisition_note": (
+            "Une source inscrite n'est pas collectable : il faut `enabled: true` "
+            "et un rang acquérable. Un rang replié depuis la catégorie est un rang "
+            "que personne n'a relu — il est nommé ici, pas supposé validé."
         ),
     }
 
@@ -301,6 +477,11 @@ def known_sources(chemin: Optional[str] = None) -> List[Dict[str, Any]]:
             "scope": entree["scope"],
             "subjects": entree["subjects"],
             "category": entree["category"].value,
+            "tier": entree["tier"].value,
+            "tier_defaulted": entree["tier_defaulted"],
+            "country": entree["country"],
+            "enabled": entree["enabled"],
+            "last_verified": entree["last_verified"],
         }
         for entree in load_registry(chemin)["sources"]
     ]

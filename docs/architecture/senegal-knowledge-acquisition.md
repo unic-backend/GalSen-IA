@@ -510,7 +510,7 @@ Each step is independently verifiable and ends where the repository can be left 
 | # | Step | Verifiable by |
 |---|---|---|
 | 0 | **ADR-021** — reopen `automated_acquisition`, fix its trigger, record the scope limit | **Done, 2026-08-13** — `docs/architecture/decisions/021-autonomous-knowledge-acquisition.md`, accepted |
-| 1 | Registry schema extension + tier defaulting + `enabled: false` | Registry loads; existing tests pass; tier defaulting is reported |
+| 1 | Registry schema extension + tier defaulting + `enabled: false` | **Done, 2026-08-13** — `SourceTier`, `acquirable_sources()`, report carries `by_tier` / `tiers_defaulted` / `never_verified`; measured: 11 sources, 11 tiers defaulted, **0 enabled, 0 acquirable** |
 | 2 | S3 `AcquiredDocument` + status machine, in memory | Unit tests on every transition and every reason |
 | 3 | S1 fetcher: real UA, rate limit, size ceiling, content-type allowlist, conditional GET, robots fetched first | Tests against a local fixture server — **no third-party host in tests** |
 | 4 | Wire `collection.decide()` before the fetch, and the ADR-006 batch approval | A fetch attempted without approval raises, and the test proves it |
