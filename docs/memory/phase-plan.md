@@ -18,9 +18,9 @@ exécuter, et une seule.
 Plan écrit (`docs/architecture/volet-36-plan.md`), 8 chapitres A→H, ordonnés par dépendance.
 **Terminé dans le VOLET 36** : **A.1 — l'enveloppe de confiance** (`src/security/trust.py`,
 branchée sur `retrieve_for_prompt` ; MCP importe désormais les motifs communs).
-**Phase courante** : **A.2 — les chemins d'outils** (`web_search`, `browser`, `api`, `github`),
-puis A.3 (`pdf`, `ocr`, `filesystem`). 7 chemins restent versés bruts, et `/security/posture`
-les compte.
+**A.2 terminé** : `web_search`, `browser`, `api`, `github` enveloppés.
+**Phase courante** : **A.3 — les chemins de documents** (`pdf`, `ocr`, `filesystem`).
+3 chemins restent versés bruts, et `/security/posture` les compte.
 **VOLET 35 en pause après le tour 1** : les chapitres 03 + 04 + 05 restent à faire.
 **Cadence VOLET 35** : 4 tours, décidés avec le propriétaire le 2026-08-12 — 01+02, 03+04+05,
 06+07+09, 08+10. Les chapitres 11 et 12 attendent de vrais documents.

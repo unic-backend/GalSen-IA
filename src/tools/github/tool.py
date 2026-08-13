@@ -182,7 +182,8 @@ class GitHubTool(BaseTool):
 
         summary = self._summarize_issue(payload)
         summary["body"] = payload.get("body")
-        return summary
+        # Le corps d'un ticket est écrit par n'importe qui (VOLET 36, ch. A.2).
+        return self._enveloppe(summary, f"{target}#{int(number)}")
 
     def _op_pull_requests(self, repository: Optional[str] = None, **kwargs) -> List[Dict[str, Any]]:
         """Liste les demandes de fusion d'un dépôt."""
@@ -258,6 +259,20 @@ class GitHubTool(BaseTool):
     # ------------------------------------------------------------------
     # Utilitaires internes
     # ------------------------------------------------------------------
+    def _enveloppe(self, resume: Dict[str, Any], origine: str) -> Dict[str, Any]:
+        """
+        Ajoute au résumé sa forme utilisable dans une invite.
+
+        Un titre et un corps de ticket sont écrits par n'importe qui — c'est le
+        chemin d'entrée le plus ouvert du dépôt (VOLET 36, ch. A.2). Les champs
+        d'origine ne sont pas réécrits : l'outil sert aussi à afficher un ticket.
+        """
+        from src.security.trust import TrustLevel, envelope_fields
+
+        texte = f"{resume.get('title', '')}\n{resume.get('body') or ''}".strip()
+        resume.update(envelope_fields(texte, TrustLevel.EXTERNAL, origin=origine))
+        return resume
+
     def _summarize_issue(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Réduit un ticket à ses champs utiles."""
         return {

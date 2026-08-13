@@ -612,3 +612,12 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Défaut de test trouvé en mesurant** : le gestionnaire de connaissances est **partagé dans le processus** (par conception, via le registre commun), donc un test qui prenait « le premier résultat » lisait le passage ajouté par le test précédent. Les tests retrouvent leur élément par son contenu ; supposer une isolation qui n'existe pas rendait le verdict dépendant de l'ordre.
 - **`/security/posture` gagne une section `trust`** qui rapporte **les 7 chemins encore versés bruts** — un rapport qui ne montrerait que les chemins couverts laisserait croire que la barrière est partout parce que le module existe.
 - **18 tests** (`tests/test_trust.py`). Suite complète : **2707 tests passent**, 7 ignorés ; `ruff` propre.
+
+### 2026-08-12 (VOLET 36, chapitre A.2 — les quatre chemins réseau)
+- **`web_search`, `browser`, `api`, `github`** passent par l'enveloppe de confiance. Un résultat de recherche, une page visitée, une réponse d'API tierce et le corps d'un ticket arrivent désormais **annoncés comme données externes, avec leur origine** — URL, point d'accès ou `dépôt#numéro`.
+- **Une implémentation, pas quatre** : `envelope_fields()` dans `trust.py`. Les quatre outils rendent des formes différentes (liste de résultats, page avec liens, réponse JSON, fiche de ticket) ; écrire l'enveloppe quatre fois donnerait quatre variantes qui divergeraient, et un test épingle qu'elles fusionnent les mêmes trois champs.
+- **Les champs bruts restent bruts** dans les quatre cas : un outil de recherche sert aussi à afficher des liens, un navigateur à extraire du texte, une API à être consommée. C'est `prompt_text` qui entre dans une invite.
+- **Le corps d'un ticket est le chemin d'entrée le plus ouvert du dépôt** — il est écrit par n'importe qui, et il arrivait jusqu'ici sans aucune marque.
+- **Un test de A.1 a dû être mis à jour** : il nommait `web_search` comme non couvert. L'assertion suit la mesure au lieu de figer un état dépassé, et elle épingle désormais que **`pdf`, `ocr` et `filesystem` restent visibles** jusqu'à A.3.
+- **Défaut corrigé au passage** : `_process_response` ne connaissait pas l'URL appelée — elle lui est passée, sinon l'origine d'une réponse d'API aurait été inventée.
+- **6 tests ajoutés** (`tests/test_trust.py`, 24 au total). Suite complète : **2713 tests passent**, 7 ignorés ; `ruff` propre.

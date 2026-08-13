@@ -203,6 +203,36 @@ def wrap(content: Optional[str], level: TrustLevel, origin: str) -> Wrapped:
     return Wrapped(level=level, origin=str(origin), raw=content or "", suspicions=releves)
 
 
+def envelope_fields(
+    text: Optional[str], level: TrustLevel, origin: str
+) -> Dict[str, Any]:
+    """
+    Rend les champs à fusionner dans le résultat d'un outil.
+
+    Les outils rendent des formes différentes — une liste de résultats de
+    recherche, une page avec ses liens, une réponse JSON, une fiche de dépôt.
+    Écrire l'enveloppe quatre fois donnerait quatre variantes qui divergeraient ;
+    cette fonction est **la seule implémentation**, et chaque outil y fusionne
+    trois champs.
+
+    Args:
+        text: La partie textuelle du résultat — celle qu'un modèle lira.
+        level: Niveau de confiance de l'origine.
+        origin: URL, point d'accès ou dépôt d'où vient ce texte.
+
+    Returns:
+        `prompt_text` (ce qui entre dans une invite), `trust_level` et
+        `injection_flags`. Le résultat d'origine n'est **pas** réécrit : un outil
+        sert aussi à autre chose qu'à nourrir une invite.
+    """
+    enveloppe = wrap(text, level, origin=origin)
+    return {
+        "prompt_text": enveloppe.text,
+        "trust_level": enveloppe.level.value,
+        "injection_flags": len(enveloppe.suspicions),
+    }
+
+
 def donnees() -> List[TrustLevel]:
     """Retourne les niveaux qui sont des données, jamais des instructions."""
     return [niveau for niveau in TrustLevel if niveau not in NIVEAUX_D_INSTRUCTION]
@@ -228,9 +258,10 @@ def report() -> Dict[str, Any]:
         "patterns": len(MOTIFS_SUSPECTS),
         # Mis à jour chapitre par chapitre. Écrit ici plutôt que déduit : un
         # compte automatique dirait « 9 sur 9 » dès qu'un import existe.
-        "wrapped_paths": ["mcp_tool_descriptions", "retrieved_knowledge"],
-        "unwrapped_paths": [
-            "web_search", "browser", "api", "github", "pdf", "ocr", "filesystem",
+        "wrapped_paths": [
+            "mcp_tool_descriptions", "retrieved_knowledge",
+            "web_search", "browser", "api", "github",
         ],
+        "unwrapped_paths": ["pdf", "ocr", "filesystem"],
         "reference": "VOLET 36, ch. A",
     }

@@ -208,7 +208,7 @@ class APITool(BaseTool):
         """
         request = self._prepare_request(url, "GET", headers, None)
         status, headers, body = self._fetch_url(request)
-        return self._process_response(status, headers, body)
+        return self._process_response(status, headers, body, url)
 
     def post(
         self,
@@ -242,7 +242,7 @@ class APITool(BaseTool):
 
         request = self._prepare_request(url, "POST", headers, data)
         status, headers, body = self._fetch_url(request)
-        return self._process_response(status, headers, body)
+        return self._process_response(status, headers, body, url)
 
     def put(
         self,
@@ -276,7 +276,7 @@ class APITool(BaseTool):
 
         request = self._prepare_request(url, "PUT", headers, data)
         status, headers, body = self._fetch_url(request)
-        return self._process_response(status, headers, body)
+        return self._process_response(status, headers, body, url)
 
     def delete(
         self,
@@ -297,7 +297,7 @@ class APITool(BaseTool):
         """
         request = self._prepare_request(url, "DELETE", headers, None)
         status, headers, body = self._fetch_url(request)
-        return self._process_response(status, headers, body)
+        return self._process_response(status, headers, body, url)
 
     def patch(
         self,
@@ -331,7 +331,7 @@ class APITool(BaseTool):
 
         request = self._prepare_request(url, "PATCH", headers, data)
         status, headers, body = self._fetch_url(request)
-        return self._process_response(status, headers, body)
+        return self._process_response(status, headers, body, url)
 
     def request(
         self,
@@ -369,10 +369,11 @@ class APITool(BaseTool):
             method.upper(), url, headers, data
         )  # Note : method.upper() pour la cohérence
         status, headers, body = self._fetch_url(request)
-        return self._process_response(status, headers, body)
+        return self._process_response(status, headers, body, url)
 
     def _process_response(
-        self, status: int, headers: Dict[str, str], body: bytes
+        self, status: int, headers: Dict[str, str], body: bytes,
+        url: str = "service tiers",
     ) -> Dict[str, Any]:
         """
         Traiter la réponse HTTP dans un format standardisé.
@@ -404,10 +405,19 @@ class APITool(BaseTool):
                 # Si l'analyse JSON échoue, laisser json_data à None
                 pass
 
-        return {
+        from src.security.trust import TrustLevel, envelope_fields
+
+        reponse = {
             "status": status,
             "headers": headers,
             "body": body,
             "text": text_body,
             "json": json_data,
         }
+        # La réponse d'un service tiers est du texte que personne n'a relu
+        # (VOLET 36, ch. A.2). `text` et `json` restent bruts : un appelant qui
+        # consomme une API ne nourrit pas forcément une invite.
+        reponse.update(envelope_fields(
+            text_body, TrustLevel.EXTERNAL, origin=url,
+        ))
+        return reponse
