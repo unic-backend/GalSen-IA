@@ -253,6 +253,31 @@ def test_deux_passages_sans_rapport_ne_sont_pas_un_conflit():
     assert rapport["contradictions"] == []
 
 
+def test_deux_annees_differentes_ne_se_contredisent_pas():
+    """
+    Une série qui évolue n'est pas une base qui se contredit. Sans cette règle,
+    chaque page d'une base statistique produisait un faux conflit — l'année
+    étant une dimension, pas une valeur mesurée.
+    """
+    annee_suivante = {"id": "k7", "scope": "country:sn", "subject": "economics",
+                      "content": "La production de mil a atteint 131500 tonnes en 2023."}
+
+    rapport = detect_contradictions([CHIFFRE_A, annee_suivante])
+
+    assert rapport["contradictions"] == []
+
+
+def test_meme_annee_et_chiffres_differents_reste_un_conflit():
+    """
+    L'exclusion des années ne doit pas éteindre la détection : deux mesures de
+    la même période qui diffèrent sont exactement ce que ce module cherche.
+    """
+    rapport = detect_contradictions([CHIFFRE_A, CHIFFRE_B])
+
+    assert rapport["by_type"]["numeric"] == 1
+    assert "2022" in CHIFFRE_A["content"] and "2022" in CHIFFRE_B["content"]
+
+
 # ----------------------------------------------------------------------
 # Le détecteur proactif
 # ----------------------------------------------------------------------

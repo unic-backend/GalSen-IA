@@ -33,7 +33,7 @@ porte `method` et `not_detected`.
 """
 
 import re
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Set
 
 from .factual_evaluation import carries_negation, lexical_terms
 from .scope import GLOBAL
@@ -45,6 +45,8 @@ SEUIL_DE_RECOUVREMENT = 0.5
 
 #: Ce que la détection ne voit pas, nommé plutôt que sous-entendu.
 NON_DETECTE = (
+    "un désaccord de chiffres entre deux périodes différentes : il est ignoré, "
+    "parce qu'une série qui évolue n'est pas une base qui se contredit",
     "une contradiction reformulée sans mots communs : elle demande une mesure sémantique",
     "une contradiction implicite (une date qui exclut l'autre sans la nier)",
     "une source qui se contredit elle-même d'un passage à l'autre",
@@ -72,12 +74,51 @@ def _champ(element: Any, nom: str, defaut: str = "") -> str:
     return str(getattr(valeur, "value", valeur) or defaut)
 
 
+#: Bornes au-delà desquelles un nombre à quatre chiffres n'est plus une année
+#: plausible dans un document sénégalais.
+ANNEE_MINIMALE = 1900
+ANNEE_MAXIMALE = 2100
+
+
+def _est_une_annee(nombre: str) -> bool:
+    """Indique si ce nombre a la forme d'une année."""
+    return (
+        len(nombre) == 4
+        and nombre.isdigit()
+        and ANNEE_MINIMALE <= int(nombre) <= ANNEE_MAXIMALE
+    )
+
+
+def _normalise(nombre: str) -> str:
+    """Retire les séparateurs de milliers et uniformise la virgule décimale."""
+    return nombre.replace(" ", "").replace(" ", "").replace(",", ".").rstrip(".")
+
+
 def _nombres(texte: str) -> List[str]:
-    """Retourne les nombres d'un texte, normalisés."""
+    """
+    Retourne les nombres d'un texte, normalisés, **années exclues**.
+
+    Une année est une dimension, pas une valeur mesurée : « 125 tonnes en 2022 »
+    et « 130 tonnes en 2023 » ne se contredisent pas. Laisser les années parmi les
+    nombres comparés produirait un conflit sur presque chaque page d'une base
+    statistique.
+    """
     return [
-        nombre.replace(" ", "").replace(" ", "").replace(",", ".").rstrip(".")
+        normalise
         for nombre in _NOMBRE.findall(texte)
+        for normalise in [_normalise(nombre)]
+        if not _est_une_annee(normalise)
     ]
+
+
+def _annees(texte: str) -> Set[str]:
+    """Retourne les années citées par un texte."""
+    return {
+        normalise
+        for nombre in _NOMBRE.findall(texte)
+        for normalise in [_normalise(nombre)]
+        if _est_une_annee(normalise)
+    }
 
 
 def _recouvrement(gauche: Iterable[str], droite: Iterable[str]) -> float:
@@ -109,6 +150,7 @@ def detect_contradictions(items: Iterable[Any]) -> Dict[str, Any]:
             "subject": _champ(element, "subject", "unspecified"),
             "terms": lexical_terms(_texte(element)),
             "numbers": _nombres(_texte(element)),
+            "years": _annees(_texte(element)),
         }
         for element in elements
     ]
@@ -125,9 +167,16 @@ def detect_contradictions(items: Iterable[Any]) -> Dict[str, Any]:
             if recouvrement < SEUIL_DE_RECOUVREMENT:
                 continue
 
+            # Deux périodes différentes ne se contredisent pas : elles se
+            # suivent. Comparer les chiffres de 2022 à ceux de 2023 produirait
+            # un conflit sur chaque série statistique du monde.
+            periodes_differentes = (
+                gauche["years"] and droite["years"] and gauche["years"] != droite["years"]
+            )
             polarites = carries_negation(gauche["terms"]) != carries_negation(droite["terms"])
             chiffres = (
-                bool(gauche["numbers"]) and bool(droite["numbers"])
+                not periodes_differentes
+                and bool(gauche["numbers"]) and bool(droite["numbers"])
                 and set(gauche["numbers"]) != set(droite["numbers"])
             )
             if not polarites and not chiffres:

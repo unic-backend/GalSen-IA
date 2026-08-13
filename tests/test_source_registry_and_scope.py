@@ -117,6 +117,32 @@ def test_un_domaine_qui_imite_un_domaine_inscrit_n_en_herite_pas():
     assert check_source("https://ifan.ucad.sn/x", SourceCategory.PEER_REVIEWED)["allowed"] is True
 
 
+def test_une_url_relative_au_protocole_est_lue_comme_une_url():
+    """
+    `//ansd.sn/x` est une adresse parfaitement lisible. Le registre la traitait
+    comme « aucune URL », ce qui laissait passer une autorité usurpée par la
+    porte des fichiers locaux.
+    """
+    verdict = check_source("//ansd.sn/rapport", SourceCategory.GOVERNMENT)
+
+    assert verdict["allowed"] is True
+    assert verdict["registry_category"] is not None
+    assert check_source("//faux-ansd.sn/x", SourceCategory.GOVERNMENT)["allowed"] is False
+
+
+def test_un_nom_de_fichier_ne_devient_pas_un_domaine():
+    """
+    Le revers de la règle précédente : `rapport.pdf` ressemble à un domaine et
+    n'en est pas un. Lui en inventer un ferait refuser l'ingestion d'un document
+    que le projet détient déjà.
+    """
+    verdict = check_source("rapport.pdf", SourceCategory.OFFICIAL)
+
+    assert verdict["allowed"] is True
+    assert "manifeste" in verdict["reason"]
+    assert check_source("/data/notes.pdf", SourceCategory.OFFICIAL)["allowed"] is True
+
+
 def test_un_document_sans_url_n_est_pas_bloque_par_le_registre(base, document):
     """
     Sa provenance est le manifeste. Refuser tout fichier local reviendrait à

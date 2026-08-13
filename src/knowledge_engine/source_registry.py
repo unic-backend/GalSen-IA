@@ -75,9 +75,33 @@ def _domaine(url: str) -> str:
     if not texte:
         return ""
     if "://" not in texte:
-        texte = "//" + texte
+        # `//ansd.sn/x` est une URL relative au protocole : sans ce traitement,
+        # `urlparse` n'y voit qu'un chemin et le registre rendait « aucune URL »
+        # pour une adresse parfaitement lisible. Le reste — `rapport.pdf`,
+        # `/data/x.pdf` — n'est pas une URL et ne doit pas en devenir une :
+        # inventer un domaine à partir d'un nom de fichier ferait refuser
+        # l'ingestion d'un document local que le projet détient déjà.
+        if not texte.startswith("//"):
+            return ""
     hote = (urlparse(texte).hostname or "").lower()
     return hote[4:] if hote.startswith("www.") else hote
+
+
+def _domaine_declare(valeur: str) -> str:
+    """
+    Normalise un domaine **inscrit au registre**.
+
+    Le registre écrit `tiktok.com`, sans protocole : c'est une déclaration
+    relue, pas une adresse rencontrée dans un document. La tolérance s'arrête
+    là — ce qui vient d'un document passe par `_domaine()`, qui n'invente aucun
+    domaine à partir d'un nom de fichier.
+    """
+    texte = str(valeur or "").strip()
+    if not texte:
+        return ""
+    if "://" not in texte and not texte.startswith("//"):
+        texte = "//" + texte
+    return _domaine(texte)
 
 
 def _correspond(domaine: str, declare: str) -> bool:
@@ -113,7 +137,7 @@ def load_registry(chemin: Optional[str] = None) -> Dict[str, Any]:
 
     sources = []
     for entree in donnees.get("sources", []) or []:
-        domaine = _domaine(entree.get("base_url", ""))
+        domaine = _domaine_declare(entree.get("base_url", ""))
         if not domaine or not entree.get("name"):
             continue
         sources.append({
@@ -126,7 +150,7 @@ def load_registry(chemin: Optional[str] = None) -> Dict[str, Any]:
         })
 
     refus = [
-        {"domain": _domaine(entree.get("domain", "")), "reason": entree.get("reason", "")}
+        {"domain": _domaine_declare(entree.get("domain", "")), "reason": entree.get("reason", "")}
         for entree in (donnees.get("deny", []) or [])
         if entree.get("domain")
     ]
