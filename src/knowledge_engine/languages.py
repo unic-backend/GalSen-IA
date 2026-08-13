@@ -32,6 +32,8 @@ import os
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from src.text_normalization import normalization_rules
+
 from .types import Language
 
 #: Langues du Sénégal reconnues par la plateforme. Le français est la langue
@@ -202,11 +204,15 @@ def language_support(
         ),
         Capability.NORMALIZATION.value: _verdict(
             Support.YES if est_francais else Support.PARTIAL,
-            "`src/text_normalization.py` retire les accents et une marque de pluriel "
-            "`-s`. Ces règles sont françaises : le wolof n'a pas de pluriel en `-s`, "
-            "le pulaar marque la classe par suffixe. Appliquées ailleurs, elles sont "
-            "au mieux neutres.",
-            bloque_par="" if est_francais else "L3 — normalisation par langue",
+            "Règles appliquées à cette langue : "
+            + ", ".join(normalization_rules(langue.value))
+            + ". Depuis L3, la règle du pluriel `-s` ne vaut que pour les langues qui "
+            "la connaissent : un texte wolof n'est plus amputé."
+            + ("" if est_francais else
+               " Reste le pliage des accents, qui fond « ñ » et « n » alors qu'ils sont "
+               "deux lettres en wolof. Il est symétrique — il ne peut pas faire perdre "
+               "une correspondance, seulement en créer une de trop — et un vrai "
+               "analyseur morphologique manque toujours."),
         ),
         Capability.TRANSLATION.value: _verdict(
             Support.NO,

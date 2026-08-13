@@ -152,17 +152,27 @@ def test_ce_qui_n_a_jamais_ete_mesure_se_dit_unknown_et_non_no():
     assert capacites[Capability.SEMANTIC_RETRIEVAL.value]["support"] == Support.UNKNOWN.value
 
 
-def test_la_normalisation_francaise_n_est_pas_annoncee_comme_universelle():
+def test_la_regle_du_pluriel_francais_ne_s_applique_plus_au_wolof():
     """
-    `text_normalization.py` retire un pluriel en `-s` : c'est une règle
-    française. Le wolof n'a pas ce pluriel — la capacité est partielle, et le
-    rapport nomme la phase qui la complètera.
+    L3 livré : la règle `-s` est française, et elle reste française.
+
+    Le test a suivi la mesure. Il exigeait auparavant que le rapport nomme la
+    phase à venir (`blocked_on: L3`) ; cette phase est faite, et ce qui est
+    épinglé maintenant est le comportement réel — un mot wolof n'est plus amputé.
     """
+    from src.text_normalization import tokenize
+
+    assert tokenize("ndaws", language="wo") == ["ndaws"]
+    assert tokenize("arachides", language="fr") == ["arachide"]
+
     wolof = language_support(Language.WO)["capabilities"][Capability.NORMALIZATION.value]
     francais = language_support(Language.FR)["capabilities"][Capability.NORMALIZATION.value]
 
+    assert "plural_s" not in wolof["evidence"]
+    assert "plural_s" in francais["evidence"]
+    # Le pliage des accents reste, et il fond « ñ » et « n » : la capacité est
+    # partielle, et le rapport dit pourquoi au lieu de s'annoncer complète.
     assert wolof["support"] == Support.PARTIAL.value
-    assert "L3" in wolof["blocked_on"]
     assert francais["support"] == Support.YES.value
 
 
@@ -199,3 +209,46 @@ def test_le_rapport_couvre_les_quatre_langues_du_senegal_et_porte_son_avertissem
     assert "comprend le wolof" in rapport["caveat"]
     # Les capacités non acquises se lisent sans parcourir le détail.
     assert rapport["support"]["wo"]["unknown"], "Aucune capacité n'est marquée non mesurée"
+
+
+# ----------------------------------------------------------------------
+# L3 — la normalisation par langue, sans perdre la symétrie
+# ----------------------------------------------------------------------
+
+def test_un_document_wolof_reste_trouvable_par_une_requete_sans_langue(base):
+    """
+    Le risque réel de L3, vérifié plutôt que supposé.
+
+    Un texte wolof n'est plus amputé à l'indexation, mais **une requête n'a pas
+    de langue déclarée** — aucun détecteur n'existe. Sans expansion de requête,
+    « arachides » ne retrouverait plus un document indexé sous « arachides » ;
+    avec elle, les deux formes sont interrogées et rien ne se perd.
+    """
+    from src.knowledge_engine.types import KnowledgeItem
+
+    wolof = base.add_knowledge(KnowledgeItem(
+        content="Gerte gi ak arachides yi ci Kaolack.", language=Language.WO,
+    ))
+    francais = base.add_knowledge(KnowledgeItem(
+        content="La récolte des arachides à Kaolack.", language=Language.FR,
+    ))
+
+    trouves = {item.id for item, _ in base.search_knowledge_with_scores("arachides", limit=10)}
+
+    assert wolof in trouves, "Le document wolof est devenu introuvable"
+    assert francais in trouves
+    # Et la forme stockée reste celle qui a été écrite.
+    assert base.get_knowledge(wolof).content.endswith("Kaolack.")
+
+
+def test_l_index_conserve_le_terme_wolof_tel_qu_il_est_ecrit(base):
+    """`ndaws` reste `ndaws` : l'amputer produirait une forme que personne n'a écrite."""
+    from src.knowledge_engine.knowledge_indexer import InMemoryKnowledgeIndexer
+    from src.knowledge_engine.types import KnowledgeItem
+
+    indexeur = InMemoryKnowledgeIndexer(base.get_store())
+    wolof = KnowledgeItem(content="Ndaws yi ak gerte gi.", language=Language.WO, id="k-wo")
+    francais = KnowledgeItem(content="Les arachides du Sénégal.", language=Language.FR, id="k-fr")
+
+    assert "ndaws" in indexeur._tokenize(wolof.content, "wo")
+    assert "arachide" in indexeur._tokenize(francais.content, "fr")

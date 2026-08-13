@@ -71,7 +71,11 @@ deux derniers chapitres demandent de vrais documents.
   humaine. La santé a un **plancher de sources** plus haut, un avertissement partout, et
   **le refus de la posologie, du diagnostic et de la prescription est du code**, appliqué
   après la génération.
-- Suite complète : **2889 tests passent**, 8 ignorés ; `ruff` propre.
+- **L3 (VOLET 36, ch. B)** : la règle du pluriel `-s` ne s'applique plus au wolof ni au
+  pulaar. Le vrai risque était la **symétrie** — indexer sans amputer pendant qu'une
+  requête reste française ferait disparaître des documents présents ; réglé par
+  l'expansion de requête, pas par une détection inventée.
+- Suite complète : **2891 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
 **Rien n'est en cours.** VOLET 36 clos ; VOLET 35 avancé jusqu'au chapitre 05.
@@ -79,7 +83,8 @@ deux derniers chapitres demandent de vrais documents.
 **Les deux derniers dépendent de toi** : ch. 11 le premier vrai corpus sénégalais, ch. 12
 le corpus mondial. Ils demandent de **vrais documents déclarés dans un manifeste**
 (`docs/knowledge/README.md`) — les faire ici reviendrait à fabriquer de la connaissance,
-ce que le dépôt refuse. Reste aussi **L3** (normalisation par langue, VOLET 36 ch. B).
+ce que le dépôt refuse. **L3 est fait** ; **L4** (mesurer la récupération sémantique en wolof) attend C1 et un
+corpus.
 **L3** (normalisation par langue) reste à faire ; **VOLET 35** est en pause après le tour 1
 (chapitres 03, 04, 05).
 

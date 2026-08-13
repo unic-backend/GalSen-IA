@@ -35,6 +35,22 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Normalisation stopped applying French rules to non-French text**
+  (`src/text_normalization.py`, `src/knowledge_engine/knowledge_indexer.py`)
+  - Stripping a final `-s` is right in French and English. Applied to Wolof it mangled the
+    word: `ndaws` became `ndaw`, a form nobody ever wrote. The rule is now restricted to
+    languages that have it, with a French default — changing the default would silently
+    rewrite every existing caller's behaviour
+  - The real risk was not the rule, it was **symmetry**: normalisation is safe only
+    because it applies to both sides. Indexing Wolof unmangled while queries stay French
+    would make present documents disappear. Solved by query expansion
+    (`token_variants()`), not by an invented detector — both forms are looked up, so
+    matches can only be gained
+  - Documents are indexed in their declared language, rebuild and consistency check
+    included; otherwise the check would have called every non-French document stale
+  - The capability report followed the measurement: `normalization` is no longer "blocked
+    on L3" but `partial` for Wolof **with the reason that remains** — accent folding
+    merges `ñ` and `n`, two distinct letters in Wolof
 - **Collection is decided under a gate, and health is answered differently**
   (`src/knowledge_engine/collection.py`, `health_policy.py`)
   - Downloading acts on someone else's server, so four conditions hold and none is

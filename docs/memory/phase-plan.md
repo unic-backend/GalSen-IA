@@ -21,8 +21,10 @@ branchée sur `retrieve_for_prompt` ; MCP importe désormais les motifs communs)
 **Chapitre A terminé** (A.1, A.2, A.3) : **les 9 chemins d'entrée externe sont enveloppés**,
 et `/security/posture` le mesure. C'était le P0 du VOLET 36.
 **Chapitre B terminé** (L1 + L2) : `WO`, `FF`, `SRR` déclarables et filtrables
-(`src/knowledge_engine/languages.py`, `GET /knowledge/languages`). **L3 — normalisation
-par langue — reste à faire**, nommé dans `blocked_on` du rapport.
+(`src/knowledge_engine/languages.py`, `GET /knowledge/languages`). **L3 livré le
+2026-08-13** : la règle du pluriel `-s` est réservée aux langues qui la connaissent, et la
+symétrie est tenue par l'expansion de requête (`token_variants`). **L4 attend C1** et un
+corpus wolof.
 **Chapitre C terminé** : évaluation factuelle mécanique (`factual_evaluation.py`,
 `docs/evaluation/senegal-facts.jsonl` — 10 questions, 0 entrée vérifiée,
 `GET /knowledge/factual-benchmark`). La moitié qui demande un modèle est nommée, pas faite.
