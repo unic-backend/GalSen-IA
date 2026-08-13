@@ -70,7 +70,7 @@ last session stopped. Keep it up to date; it is the project's continuity.
 
 ## Current Status
 *Measured 2026-08-13.* Foundation and core engines are done (ADR-001, ADR-002). Fourteen
-engines, **17 agents**, **21 enabled tools**, 76 API routes, 21 ADRs (ADR-020 is `proposed`, not decided) — see
+engines, **17 agents**, **21 enabled tools**, 76 API routes, 22 ADRs (ADR-020 is `proposed`; ADR-021 accepted 2026-08-13) — see
 `docs/architecture/overview.md`, which is kept synchronized with the measured state.
 
 Persistence is decided and implemented (ADR-005, SQLite): every engine holding state —

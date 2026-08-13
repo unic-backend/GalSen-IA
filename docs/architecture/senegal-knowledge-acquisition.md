@@ -509,7 +509,7 @@ Each step is independently verifiable and ends where the repository can be left 
 
 | # | Step | Verifiable by |
 |---|---|---|
-| 0 | **ADR-021** — reopen `automated_acquisition`, fix its trigger, record the scope limit | The ADR exists and is `accepted` by the owner |
+| 0 | **ADR-021** — reopen `automated_acquisition`, fix its trigger, record the scope limit | **Done, 2026-08-13** — `docs/architecture/decisions/021-autonomous-knowledge-acquisition.md`, accepted |
 | 1 | Registry schema extension + tier defaulting + `enabled: false` | Registry loads; existing tests pass; tier defaulting is reported |
 | 2 | S3 `AcquiredDocument` + status machine, in memory | Unit tests on every transition and every reason |
 | 3 | S1 fetcher: real UA, rate limit, size ceiling, content-type allowlist, conditional GET, robots fetched first | Tests against a local fixture server — **no third-party host in tests** |
