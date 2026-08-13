@@ -42,8 +42,21 @@ documents:
     domain: OPERATIONAL
     scope: country:sn          # d'où cette connaissance vaut (VOLET 35, ADR-019)
     subject: agriculture       # de quoi elle parle
+    language: wo               # langue du document (le défaut est fr)
     tags: [agriculture, mil, senegal]
 ```
+
+### `language`
+
+`fr`, `en`, `wo` (wolof), `ff` (pulaar), `srr` (sérère) et les autres codes de
+`Language`. Comme `scope` et `subject`, une langue inconnue **refuse le
+document** au lieu de retomber sur le français.
+
+**Déclarer un document en wolof ne veut pas dire que la plateforme comprend le
+wolof** : cela veut dire qu'il est étiqueté, stocké, filtré et retrouvable
+lexicalement comme wolof. Ce que la plateforme sait réellement faire par langue
+est mesuré capacité par capacité par `GET /knowledge/languages` — les capacités
+qui n'ont jamais été mesurées y sont marquées `unknown`, pas `no`.
 
 ### Les deux axes : `scope` et `subject`
 

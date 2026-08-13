@@ -52,6 +52,7 @@ sys.path.insert(0, str(RACINE))
 
 from src.knowledge_engine.ingestion import DocumentIngestor  # noqa: E402
 from src.knowledge_engine.knowledge_manager import KnowledgeManagerImpl  # noqa: E402
+from src.knowledge_engine.languages import LanguageRefused, parse_language
 from src.knowledge_engine.scope import KnowledgeScope, ScopeRefused, parse_subject
 from src.knowledge_engine.types import (  # noqa: E402
     KnowledgeDomain,
@@ -150,7 +151,8 @@ def semer_manifeste(manager, ingestor, chemin_manifeste: str) -> List[Dict[str, 
         try:
             portee = str(KnowledgeScope.parse(entree.get("scope", "global")))
             sujet = parse_subject(entree.get("subject"))
-        except ScopeRefused as refus:
+            langue = parse_language(entree.get("language"))
+        except (ScopeRefused, LanguageRefused) as refus:
             # Un manifeste fautif est refusé document par document : les autres
             # entrées s'ingèrent, et celle-ci dit pourquoi elle ne s'ingère pas.
             print(f"  [refusé] {chemin} — {refus}")
@@ -163,6 +165,7 @@ def semer_manifeste(manager, ingestor, chemin_manifeste: str) -> List[Dict[str, 
             domain=KnowledgeDomain[entree.get("domain", "UNSPECIFIED").upper()],
             scope=portee,
             subject=sujet,
+            language=langue,
             author=entree.get("author"),
             url=entree.get("url"),
             tags=entree.get("tags", []),

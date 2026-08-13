@@ -10,48 +10,33 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 ## Dernière session
 
-**Date** : 2026-08-12
+**Date** : 2026-08-13
 
-**En cours** : **VOLET 35 — tour 1 livré** (chapitres 01 et 02 : `src/knowledge_engine/scope.py`,
-**ADR-019**). **VOLET 35 mis en pause** par le propriétaire au profit du **VOLET 36**, dont le plan est
-écrit (`docs/architecture/volet-36-plan.md`) : anti-injection en P0, langues, évaluation
-factuelle, 4 agents, entités/relations, axes d'intention.
-Plan complet
-(`docs/roadmap/VOLET_35.md` : une base, deux axes — portée et sujet ; registre de sources ;
-acquisition sous approbation). Avant lui, le **VOLET 34 est terminé** — 14 chapitres sur 14 — et **ADR-018 est
-accepté en option B et implémenté**.
+**En cours** : **VOLET 36** (`docs/architecture/volet-36-plan.md`), 8 chapitres A→H.
+**Chapitre A terminé** — les **9 chemins d'entrée externe** sont enveloppés par la barrière
+de confiance (`src/security/trust.py`) ; il y en avait un seul. **Chapitre B terminé** —
+`WO`, `FF`, `SRR` déclarables, filtrables et retrouvables, avec le rapport de capacités
+honnête (`src/knowledge_engine/languages.py`, `GET /knowledge/languages`).
 
 **Terminé dans cette session**
-- Le backlog (persistance audit/approbation, validation des sorties d'agents, ADR-016 en
-  trois étapes, le linter `ruff`) — détail dans `completed-work.md`.
-- **VOLET 34** : état des lieux mesuré (`personal-agent-assessment.md`), deux études
-  comparatives sourcées, **ADR-017** (les capacités manquantes arrivent comme outils),
-  **ADR-018 proposé**, puis la vue (`src/tools/screen/`), la main sous portillon
-  (`src/tools/gui/`), les racines et l'annulation (`src/storage/`), le bac à sable et ses
-  tests d'évasion (`src/sandbox/`), **MCP** (`src/mcp/`) — serveur en liste blanche de huit
-  outils, client épinglé — et la **compréhension du dépôt entier** (`repo_graph.py`,
-  `symbol_index.py`), qui fait passer la boucle de code de 22 % à 87 % de modifications
-  réellement vérifiées, les **trois agents manquants** du brief
-  (`agents/organizer/`, `project_manager/`, `opportunity/`) — six spécialistes sur six —
-  et le **style de travail** dérivé du signal consenti, appliqué aux invites, avec une
-  mesure d'amélioration qui refuse de conclure sous 30 retours par fenêtre, la **posture de
-  sécurité mesurée** avec ses points de reprise (`src/security/`, deux routes sous
-  `ADMIN_AUDIT`), le document **matériel / pile / mises à niveau**, et **ADR-018 accepté en
-  option B** avec sa dérogation cadrée (`GALSEN_SOVEREIGN_DEROGATIONS`).
-- **Découverte proactive** (`src/proactive/`) : sept détecteurs mesurés, rien d'exécuté,
-  aucune répétition. **Le brief n'a plus de capacité absente.**
-- Suite complète : **2666 tests passent**, 7 ignorés ; `ruff check .` propre.
+- **A.1 → A.3** : l'enveloppe de confiance et ses neuf chemins (RAG, MCP, recherche web,
+  navigateur, API tierce, ticket GitHub, PDF, OCR, fichier disque). Une donnée externe
+  arrive **annoncée comme donnée, avec son origine** ; `/security/posture` le mesure.
+- **B (L1 + L2)** : les trois langues nationales entrent dans `Language`, l'ingestion et le
+  manifeste les acceptent et **refusent une langue inconnue**. Le rapport dit capacité par
+  capacité ce qui est réel — et marque `unknown`, pas `no`, ce qui n'a jamais été mesuré ici.
+- Suite complète : **2713 tests passent** (A.3) ; `ruff` propre.
 
 **Prochaine étape**
-Rien n'est en cours. Le brief est couvert : quatre capacités restent **partielles** (voir
-`personal-agent-assessment.md` — écran et interface demandent une machine de bureau, le
-navigateur reste `urllib`, MCP côté client ne joint aucun serveur). La suite dépend surtout
-de l'opérateur : `ollama serve` fermerait C1 et débloquerait toute la génération.
+**Chapitre C — l'évaluation factuelle, moitié mécanique** : justesse des citations et
+affirmations non étayées, mesurables sans modèle. En attente de confirmation.
+**L3** (normalisation par langue) reste à faire ; **VOLET 35** est en pause après le tour 1
+(chapitres 03, 04, 05).
 
 **Bloqué / à surveiller**
-- **ADR-018 : accepté et implémenté** (option B). Plus rien en attente de décision.
+- **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192. Il bloque la
+  mesure de la génération et du récupérateur sémantique, en wolof comme ailleurs.
 - **`git push origin v0.1.0`** : le proxy refuse les étiquettes (403). L'étiquette existe
   localement sur `383fcf7` ; à pousser depuis un clone normal.
-- **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192.
 - **Le corpus sénégalais** demande de vrais documents déclarés — il ne s'invente pas.
 - **TEST 2 et TEST 6 non exécutés** : ils demandent un hôte Docker.

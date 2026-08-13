@@ -72,6 +72,26 @@ def test_qualite_publie_les_metriques_et_les_absences(cles, connaissance):
         assert cle in corps
 
 
+def test_les_langues_publient_ce_qui_n_est_pas_acquis(cles):
+    """
+    La route des langues dit ce que la plateforme **ne** sait **pas** faire
+    (VOLET 36, ch. B).
+
+    Elle est ouverte à la lecture seule, à l'inverse des deux autres : une
+    limite connue doit pouvoir être lue par qui utilise la plateforme, pas
+    seulement par qui l'administre.
+    """
+    with TestClient(app) as client:
+        reponse = client.get("/knowledge/languages", headers={"X-API-Key": cles["readonly"]})
+
+    assert reponse.status_code == 200
+    corps = reponse.json()
+    wolof = corps["support"]["wo"]["capabilities"]
+    assert wolof["generation"]["support"] == "unknown"
+    assert "C1" in wolof["generation"]["blocked_on"]
+    assert "comprend le wolof" in corps["caveat"]
+
+
 @pytest.mark.parametrize("route", ["/knowledge/governance", "/knowledge/quality"])
 def test_routes_reservees_a_la_supervision(cles, route):
     """Un rôle en lecture seule n'accède pas aux métriques de gouvernance."""

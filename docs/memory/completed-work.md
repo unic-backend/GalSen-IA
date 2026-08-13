@@ -630,3 +630,15 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Le test du rapport a suivi la mesure trois fois** (A.1, A.2, A.3) au lieu de figer un état dépassé — c'est la même discipline que pour les tests de garde retournés du VOLET 34.
 - **Le test PDF s'ignore ici** : `pypdf` n'est pas installé dans cet environnement, et l'ignorer le dit avec sa raison plutôt que de faire semblant.
 - **3 tests ajoutés** (`tests/test_trust.py`, 27 au total dont 1 ignoré). Suite complète : **2713 tests passent**, 7 ignorés ; `ruff` propre.
+
+### 2026-08-13 (VOLET 36, chapitre B — la fondation des langues, L1 et L2)
+- **`Language` gagne `WO` (wolof), `FF` (pulaar), `SRR` (sérère)** (`src/knowledge_engine/types.py`). Avant : un document wolof ne pouvait entrer qu'étiqueté dans une langue qui n'est pas la sienne — l'énumération listait huit langues africaines, aucune du Sénégal.
+- **`SRR` n'est pas une faute de frappe** : le sérère n'a pas de code ISO 639-1 ; `srr` est son code 639-3. C'est le registre qui est incomplet, pas la liste.
+- **Le chemin complet est branché** : `ingest_file(language=…)` refuse une langue inconnue au lieu de la deviner, le manifeste porte `language:`, et les deux magasins (mémoire et SQLite) filtrent déjà dessus — vérifié de bout en bout par un vrai document wolof ingéré puis relu par sa langue.
+- **`language_support()` est le contrepoids honnête** (`src/knowledge_engine/languages.py`) : trois lignes dans une énumération et une plateforme peut annoncer « quatre langues supportées ». Le rapport dit, **capacité par capacité**, ce qui est réel — étiquetage et recherche lexicale : oui ; détection et traduction : non ; normalisation : partielle (les règles sont françaises) ; sémantique et génération : **`unknown`**, jamais mesurées ici.
+- **`unknown` n'est pas `no`** : quatre verdicts au lieu de deux. Un « non » refermerait la question ; `unknown` nomme ce qui bloque la mesure (`C1 — modèle local disponible`).
+- **Neuf capacités pour huit** : la récupération est coupée en deux — la lexicale marche, la sémantique n'a jamais été mesurée. Les fondre rendrait la première fausse ou la seconde invisible.
+- **Une seule capacité est mesurée sur un fichier réel** : `evaluation` compte les cas de `docs/evaluation/retrieval.jsonl` par langue (10 en français, 0 ailleurs) — un verdict figé resterait vrai le jour où le fichier change.
+- **`GET /knowledge/languages`** publie le rapport, **ouvert à la lecture seule** contrairement aux deux autres routes de connaissance : une limite connue doit être lisible par qui utilise la plateforme, pas seulement par qui l'administre.
+- **L3 (normalisation par langue) n'est pas fait** et le rapport le nomme dans `blocked_on`. **L4** attend C1 et un corpus.
+- **12 tests ajoutés** (9 dans `tests/test_languages.py`, 1 sur la route, 2 engendrés par le test de surface de la passerelle). Suite complète : **2727 tests passent**, 8 ignorés ; `ruff` propre. Le 8ᵉ ignoré est `test_search_types.py` — réseau injoignable, sans rapport avec ce chapitre.

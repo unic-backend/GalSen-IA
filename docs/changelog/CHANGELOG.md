@@ -35,6 +35,19 @@ capability answers `503` until an operator configures a model provider. Release 
   restored with the reason written next to it
 
 ### Added
+- **Wolof, Pulaar and Serer can be declared, stored and retrieved** (`Language.WO`,
+  `Language.FF`, `Language.SRR`; `src/knowledge_engine/languages.py`)
+  - A Wolof document could previously only enter the base labelled as a language that is
+    not its own. `ingest_file(language=…)` and the corpus manifest now accept them, and
+    an unknown language **refuses the document** instead of falling back to French
+  - `SRR` is not a typo: Serer has no ISO 639-1 code, `srr` is its 639-3 code
+  - **Labelling is not understanding**, and `GET /knowledge/languages` says so capability
+    by capability: labelling and lexical retrieval yes; detection and translation no;
+    normalisation partial (the rules are French); semantic retrieval and generation
+    **`unknown`** — never measured here. `unknown` is a fourth verdict, not a polite `no`:
+    a `no` closes the question, `unknown` names what blocks the measurement
+  - The `evaluation` verdict is read from the real test set
+    (`docs/evaluation/retrieval.jsonl`), so it changes when the file does
 - **Proactive discovery — the last capability the brief asked for** (`src/proactive/`)
   - Seven detectors read state the platform already measures: model availability (C1),
     approvals waiting over 24 h, blocking import cycles, code no test reaches, a

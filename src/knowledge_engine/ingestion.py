@@ -34,6 +34,7 @@ from typing import Any, Dict, List, Optional
 from src.document_intelligence_engine.simple_chunker import SimpleChunker
 from src.document_intelligence_engine.types import DocumentItem, DocumentType
 
+from .languages import parse_language
 from .scope import KnowledgeScope, KnowledgeSubject, parse_subject
 from .types import (
     ContentType,
@@ -129,7 +130,7 @@ class DocumentIngestor:
         author: Optional[str] = None,
         url: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        language: Language = Language.FR,
+        language: Any = Language.FR,
         status: KnowledgeStatus = KnowledgeStatus.DRAFT,
     ) -> IngestionReport:
         """
@@ -152,7 +153,11 @@ class DocumentIngestor:
             author: Auteur ou institution.
             url: Adresse de la source, si elle en a une.
             tags: Étiquettes appliquées à chaque bloc.
-            language: Langue du document.
+            language: Langue du document — `wo`, `ff`, `srr`, `fr`… Une langue
+                inconnue **refuse l'ingestion** : devinée, elle rendrait le
+                document introuvable par la langue sur laquelle on le cherchera.
+                Le défaut est le français, et c'est une déclaration, pas une
+                détection — rien ici ne sait inférer une langue.
             status: Statut initial. **`DRAFT` par défaut, à dessein** : un
                 document ingéré n'est pas une connaissance approuvée, et le faire
                 entrer directement en `APPROVED` viderait de son sens le cycle
@@ -165,12 +170,14 @@ class DocumentIngestor:
             FileNotFoundError: Si le fichier n'existe pas.
             ValueError: Si le titre est vide.
             ScopeRefused: Si la portée ou le sujet sont malformés.
+            LanguageRefused: Si la langue est inconnue.
         """
         # Les deux axes sont résolus **avant** toute lecture de fichier : une
         # portée fautive doit refuser l'ingestion, pas la laisser écrire cent
         # blocs qu'il faudrait ensuite retrouver pour les corriger.
         portee = str(KnowledgeScope.parse(scope))
         sujet = parse_subject(subject)
+        langue = parse_language(language)
 
         if not title or not title.strip():
             raise ValueError(
@@ -200,7 +207,7 @@ class DocumentIngestor:
                 empreinte=empreinte, title=title, source_category=source_category,
                 domain=domain, scope=portee, subject=sujet,
                 author=author, url=url, tags=tags or [],
-                language=language, status=status,
+                language=langue, status=status,
             )
             try:
                 rapport.knowledge_ids.append(self._knowledge.add_knowledge(item))

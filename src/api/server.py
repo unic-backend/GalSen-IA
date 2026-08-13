@@ -1322,6 +1322,24 @@ async def knowledge_quality():
     return knowledge_manager.quality_report()
 
 
+@app.get("/knowledge/languages", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def knowledge_languages():
+    """Ce que la plateforme sait réellement faire par langue (VOLET 36, ch. B).
+
+    Le wolof, le pulaar et le sérère sont désormais étiquetables — un document
+    peut être stocké, filtré et retrouvé lexicalement dans sa langue. **Cela ne
+    veut pas dire que la plateforme les comprend**, et cette route existe pour
+    que la distinction soit lisible : neuf capacités, un verdict chacune, et
+    `unknown` là où rien n'a jamais été mesuré ici plutôt qu'un « non » qui
+    refermerait la question.
+    """
+    from src.knowledge_engine.languages import languages_report
+
+    return languages_report()
+
+
 # Endpoints d'approbation humaine (ADR-006)
 # Un agent peut suspendre une action dans l'état `requires_approval` ; un
 # opérateur humain consulte la file d'attente et approuve ou refuse chaque

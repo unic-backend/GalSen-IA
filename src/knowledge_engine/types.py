@@ -33,7 +33,16 @@ class ContentType(Enum):
 
 
 class Language(Enum):
-    """Langues supportées."""
+    """Langues qu'un document peut déclarer.
+
+    « Supportée » veut dire **étiquetable, stockable, filtrable et retrouvable
+    lexicalement** dans cette langue — pas comprise. Ce que la plateforme sait
+    réellement faire par langue est mesuré par `language_support()`
+    (`src/knowledge_engine/languages.py`), capacité par capacité.
+
+    `WO` (wolof) et `FF` (pulaar) sont des codes ISO 639-1 ; le sérère n'en a
+    pas, `SRR` est son code ISO 639-3.
+    """
     FR = "fr"
     EN = "en"
     ES = "es"
@@ -45,6 +54,11 @@ class Language(Enum):
     ZU = "zu"
     AF = "af"
     AM = "am"
+    # Langues nationales du Sénégal (VOLET 36, ch. B). Sans elles, un document
+    # wolof ne pouvait entrer qu'étiqueté dans une langue qui n'est pas la sienne.
+    WO = "wo"
+    FF = "ff"
+    SRR = "srr"
 
 
 class KnowledgeDomain(Enum):
