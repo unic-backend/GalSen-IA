@@ -118,12 +118,17 @@ sources:
 
   - name: "ISO — Organisation internationale de normalisation"
     scope: global
-    subjects: [technology, engineering, science]
+    subjects: [technology, engineering, science, construction]
     category: standard
     tier: TIER_A_ACADEMIC
     base_url: https://www.iso.org
     institution_type: "organisme de normalisation"
-    authority_scope: "Les normes ISO. Leur texte intégral est payant : seul le catalogue est public."
+    authority_scope: >-
+      Les normes ISO. Leur texte intégral est payant : seul le catalogue est
+      public. Sur la construction (VOLET 55), elle porte la part **universelle**
+      — matériaux, méthodes, essais — et **jamais** ce qu'un pays prescrit :
+      règles parasismiques, permis et coefficients réglementaires sont
+      territoriaux.
     last_verified: unknown
     enabled: false
 

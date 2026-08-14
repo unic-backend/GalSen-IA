@@ -177,6 +177,11 @@ class KnowledgeSubject(Enum):
     AGRICULTURE = "agriculture"
     FISHERIES = "fisheries"
     ENVIRONMENT = "environment"
+    #: Architecture et construction (VOLET 55). Ajouté après relecture, comme
+    #: l'exige cette énumération. Ce n'est pas un doublon d'`engineering` : la
+    #: physique d'une poutre est universelle, ce qu'il est **permis** de bâtir
+    #: ne l'est pas — voir `NORMATIVE_SUBJECTS` ci-dessous.
+    CONSTRUCTION = "construction"
     GEOGRAPHY = "geography"
     LANGUAGES = "languages"
     BUSINESS = "business"
@@ -198,6 +203,47 @@ NATIONAL_SUBJECTS = frozenset({
     KnowledgeSubject.ADMINISTRATION,
     KnowledgeSubject.LANGUAGES,
 })
+
+#: Sujets dont **une partie seulement** est territoriale (VOLET 55). Ils ne sont
+#: pas dans `NATIONAL_SUBJECTS` : les couper du savoir mondial priverait d'une
+#: physique qui, elle, est universelle. Mais leur part **normative** — ce qui est
+#: prescrit, autorisé, exigé — est fixée par un territoire, et une norme
+#: étrangère appliquée ici n'est pas une approximation, c'est une autre règle.
+#:
+#: La valeur dit ce qu'une source mondiale peut légitimement porter, et ce
+#: qu'elle ne peut pas.
+NORMATIVE_SUBJECTS: Dict[KnowledgeSubject, Dict[str, str]] = {
+    KnowledgeSubject.CONSTRUCTION: {
+        "universal": (
+            "Matériaux, méthodes, comportement des structures : cela ne change "
+            "pas de pays."
+        ),
+        "territorial": (
+            "Règles de construction, normes parasismiques, permis, coefficients "
+            "réglementaires : fixés par un territoire, souvent par décret. Une "
+            "norme étrangère appliquée ici n'est pas une approximation, c'est "
+            "une autre règle."
+        ),
+    },
+}
+
+
+def normative_split(subject: Any) -> Optional[Dict[str, str]]:
+    """
+    Ce qu'une source mondiale peut porter sur un sujet, et ce qu'elle ne peut pas.
+
+    Args:
+        subject: Le sujet.
+
+    Returns:
+        La part universelle et la part territoriale, ou `None` si le sujet n'est
+        pas de ceux qui se coupent en deux.
+    """
+    try:
+        sujet = parse_subject(subject)
+    except ScopeRefused:
+        return None
+    return NORMATIVE_SUBJECTS.get(sujet)
 
 #: En dessous de ce total, aucune portée n'est dite suspecte : sur une base
 #: jeune, « une seule connaissance pour ce pays » est l'état normal, pas une

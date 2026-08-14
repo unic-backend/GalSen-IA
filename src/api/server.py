@@ -130,6 +130,7 @@ from src.connectors.safety import safety_report
 from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
+from src.knowledge_engine.domains import domain_coverage
 from src.knowledge_engine.freshness import (
     freshness_of_year,
     freshness_report,
@@ -1940,6 +1941,27 @@ async def world_country_series(query: str, indicator: str, year: Optional[str] =
         reponse["scope"] = pays["country"]["scope"]
         reponse["freshness"] = freshness_of_year(reponse["year"], indicator)
     return reponse
+
+
+@app.get("/knowledge/domains", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.KNOWLEDGE_SEARCH))])
+async def knowledge_domains(scope: str = "global"):
+    """Ce que la plateforme couvre pour une portée — et ce qu'elle ne couvre pas.
+
+    Trois absences se ressemblent et appellent trois gestes différents :
+    **aucune source inscrite** (personne n'a dit qui ferait autorité),
+    **inscrite mais non activée** (le domaine n'a jamais eu le droit d'essayer),
+    **active et vide** (une acquisition a tourné et n'a rien rapporté). Les
+    confondre ferait chercher au mauvais endroit.
+
+    Sans compteur branché, le nombre d'éléments vaut `null` — jamais zéro : un
+    comptage absent ne devient pas une base vide.
+    """
+    try:
+        return domain_coverage(scope)
+    except ValueError as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
 
 
 @app.get("/knowledge/freshness", tags=["knowledge"],
