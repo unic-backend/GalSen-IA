@@ -103,6 +103,16 @@ from src.connectors import (
 )
 from src.connectors.contract import conformance
 from src.connectors.lifecycle import lifecycle_report
+from src.connectors.oauth import (
+    FlowRefused,
+    OAuthNotConfigured,
+    ProviderUnknown,
+    ScopeRefused,
+)
+from src.connectors.oauth import configuration_report as oauth_configuration_report
+from src.connectors.oauth import get_provider as get_oauth_provider
+from src.connectors.oauth.flow import DUREE_DE_VIE_SECONDES
+from src.connectors.oauth.session import OAuthSession
 from src.connectors.safety import safety_report
 
 # Import des services
@@ -412,6 +422,26 @@ knowledge_manager = _moteur_partage("knowledge", KnowledgeManagerImpl)
 # son propre chargeur et son propre exécuteur à partir de ce chemin (lifespan).
 tool_loader = ToolLoader()
 tool_engine = None  # sera initialisé au démarrage, par lifespan()
+
+# Sessions OAuth, une par fournisseur, pour la durée du processus. Les jetons
+# d'une personne ne doivent pas disparaître entre deux requêtes ; ils ne
+# survivent pas non plus à un redémarrage, ce qui est assumé tant que le
+# magasin est en mémoire (VOLET 43.2).
+_oauth_sessions: Dict[str, OAuthSession] = {}
+
+
+def _oauth_session(provider_id: str) -> OAuthSession:
+    """Retourne la session d'un fournisseur, ou 404 s'il n'est pas déclaré."""
+    session = _oauth_sessions.get(provider_id)
+    if session is not None:
+        return session
+    try:
+        fournisseur = get_oauth_provider(provider_id)
+    except ProviderUnknown as inconnu:
+        raise HTTPException(status_code=404, detail=str(inconnu))
+    session = OAuthSession(fournisseur, list(fournisseur.allowed_scopes))
+    _oauth_sessions[provider_id] = session
+    return session
 # File d'attente d'approbation humaine : les agents qui demandent une décision
 # soumettent ici leur action, et un opérateur la valide ou la refuse (ADR-006).
 approval_manager = _moteur_partage("approval", ApprovalManagerImpl)
@@ -1830,6 +1860,77 @@ async def get_connector_contract(
         # ouvrira jamais. C'est ce qu'une personne doit lire avant de consentir.
         "safety": safety_report(connecteur),
     }
+
+
+# OAuth 2.0 (VOLET 43).
+#
+# **Aucun fournisseur n'est configuré dans cet environnement**, et ces routes le
+# disent : elles répondent 503 en nommant les variables manquantes plutôt que de
+# renvoyer une adresse de consentement qui ne mènerait nulle part.
+#
+# Aucun jeton ne sort par ces routes, et aucune n'accepte un sujet dans son
+# corps : l'identité vient de la clé API (ADR-010).
+@app.get("/oauth/providers", tags=["oauth"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.CONNECTOR_VIEW))])
+async def list_oauth_providers():
+    """Les fournisseurs déclarés, et ce qui manque pour s'en servir.
+
+    Les points d'accès publiés ici sont une **copie** de ce que le fournisseur
+    publie à son `discovery_url` ; les confronter appartient à qui détient les
+    identifiants. Aucun appel réseau n'est fait.
+    """
+    return oauth_configuration_report()
+
+
+@app.post("/oauth/{provider_id}/authorize", tags=["oauth"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def begin_oauth_authorization(
+    provider_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.CONNECTOR_VIEW)),
+):
+    """Prépare l'envoi de l'appelant vers l'écran de consentement.
+
+    Le consentement est demandé **pour l'appelant**, jamais pour un sujet nommé
+    dans le corps : demander l'accès au courrier de quelqu'un d'autre ne doit
+    pas être une requête que l'on peut formuler.
+    """
+    session = _oauth_session(provider_id)
+    try:
+        depart = session.begin(ctx.subject)
+    except OAuthNotConfigured as absent:
+        raise HTTPException(status_code=503, detail=str(absent))
+    except (ScopeRefused, FlowRefused) as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
+
+    return {
+        "authorization_url": depart.url,
+        "state": depart.pending.state,
+        "expires_in": DUREE_DE_VIE_SECONDES,
+        "scopes": list(depart.pending.scopes),
+        "subject": depart.pending.subject,
+    }
+
+
+@app.delete("/oauth/{provider_id}/authorization", tags=["oauth"],
+            dependencies=[Depends(rate_limit_dependency)])
+async def revoke_oauth_authorization(
+    provider_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.CONNECTOR_VIEW)),
+):
+    """Retire l'accès de l'appelant.
+
+    **Réussit toujours de ce côté**, y compris sans identifiants configurés,
+    sans clé de chiffrement, ou si l'accès était déjà périmé : reprendre son
+    accès n'est pas une faveur qu'on demande à la plateforme.
+
+    `provider_notified` reste `false` tant que personne n'a envoyé la requête de
+    révocation au fournisseur — cet environnement ne peut pas l'envoyer. Le
+    champ existe pour que « nous avons oublié » ne se lise jamais comme « le
+    fournisseur a oublié ».
+    """
+    session = _oauth_session(provider_id)
+    return session.revoke_detailed(ctx.subject).as_dict()
 
 
 @app.get("/connectors/{connector_id}/check", tags=["connectors"],

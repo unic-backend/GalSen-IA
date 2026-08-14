@@ -14,9 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **43.2 terminée** — magasin de jetons chiffré, ou refusé.
-**43.3 en attente de confirmation** — révocation, routes, branchement connecteur.
-**Terminées**      : vague I complète (12 phases), puis **43.1, 43.2**.
+**Phase courante** : **43.3 terminée — VOLET 43 clos.**
+**44.1 en attente de confirmation** — Gmail, lecture d'abord.
+**Terminées**      : vague I complète (12 phases), puis **VOLET 43 complet** (43.1→43.3).
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -154,7 +154,7 @@ VAGUE II — Les connecteurs Google                                 → 8 phases
   V43  OAuth 2.0 : flux, jetons chiffrés, révocation              → 3 phases
        43.1 flux code+PKCE, configuration, refus                    ✅
        43.2 magasin de jetons chiffré, sans repli en clair            ✅
-       43.3 révocation, routes, branchement connecteur
+       43.3 session, révocation, routes HTTP                        ✅
   V44  Gmail (lecture d'abord, envoi sous portillon)              → 2 phases
   V45  Drive et Agenda                                            → 2 phases
   V46  Étanchéité : un courriel privé n'entre jamais dans le RAG  → 1 phase
