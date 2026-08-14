@@ -103,6 +103,7 @@ from src.connectors import (
 )
 from src.connectors.contract import conformance
 from src.connectors.lifecycle import lifecycle_report
+from src.connectors.safety import safety_report
 
 # Import des services
 from src.services.notification.manager import NotificationManagerImpl
@@ -1825,6 +1826,9 @@ async def get_connector_contract(
     return {
         **conformance(connecteur),
         "lifecycle": lifecycle_report(connecteur, ctx.subject),
+        # Ce que le connecteur demande, et ce qu'aucune déclaration ne lui
+        # ouvrira jamais. C'est ce qu'une personne doit lire avant de consentir.
+        "safety": safety_report(connecteur),
     }
 
 

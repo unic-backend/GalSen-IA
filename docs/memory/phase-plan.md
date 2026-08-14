@@ -14,8 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **42.1 terminée**. **42.2 en attente de confirmation** — dernière phase de la vague I.
-**Terminées**      : 37.1, 38.1, 38.2, 39.1, 39.2, 39.3, 40.1, 40.2, 41.1, 41.2, 42.1.
+**Phase courante** : **42.2 terminée — VAGUE I CLOSE** (12 phases sur 12).
+**43.1 en attente de confirmation** — OAuth 2.0, ouverture de la vague II.
+**Terminées**      : 37.1, 38.1, 38.2, 39.1, 39.2, 39.3, 40.1, 40.2, 41.1, 41.2, 42.1, 42.2.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -107,7 +108,7 @@ L'ordre vient de la directive elle-même, corrigé par l'audit ci-dessus.
 Une vague ne commence pas avant que la précédente passe ses tests.
 
 ```
-VAGUE I — Le socle d'extension                                    → 11 phases
+VAGUE I — Le socle d'extension                          → 12 phases  ✅ CLOSE
   V37  Intégration d'architecture (audit + plan)                  → 1 phase  ✅ 37.1
   V38  Registre d'outils : métadonnées, capacités, portée         → 2 phases
        38.1 vocabulaire, garde et déclaration des 22 outils         ✅

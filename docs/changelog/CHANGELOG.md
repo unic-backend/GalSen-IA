@@ -12,6 +12,54 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-14 — Vague I du programme d'expansion (VOLETs 37 à 42)
+
+Le socle sur lequel les connecteurs Google seront branchés. Rien n'y authentifie,
+aucun identifiant n'y est fabriqué : ce sont **six frontières**, toutes tenues par
+du code et vérifiées par des tests.
+
+- **Capacités d'outils** (`src/tool/capabilities.py`) — chaque outil déclare ce
+  qu'il touche (`public` / `user_private` / `system`), ce qu'il change
+  (`read` / `write` / `external`), et s'il peut tourner sans témoin. **22 outils
+  sur 22 déclarés.** Deux règles que le registre ne peut pas violer : approbation
+  et exécution sans humain s'excluent ; donnée privée plus sortie de la machine
+  ne tourne jamais seule. Un outil non déclaré est refusé — « non déclaré » n'est
+  pas « inoffensif ».
+- **Pré-approbation étroite** — une **borne** de l'outil approuvée en
+  configuration, avec nom, date et motif obligatoires. `terminal` reste sous
+  portillon ; `python -m pytest` est approuvé, `python -c` ne l'est pas. La
+  comparaison porte sur des mots entiers.
+- **Plafonds de rôle** (`src/tool/authorization.py`) — `tool:execute` n'est plus
+  un droit unique. Le verdict a **trois états**, et « il faut un humain » n'est ni
+  un oui ni un non. **Personne ne saute une approbation**, administration
+  comprise : elle qualifie l'acte, pas l'acteur. Appliqué sur `POST /tool/execute`
+  et sur le chemin des agents.
+- **Isolation des données utilisateur** (`src/security/isolation.py`) — il
+  n'existe plus d'audience « non précisée » : `Audience.platform()` ne lit la
+  donnée de personne. Le propriétaire est **déduit** de la portée déclarée de la
+  source. Une portée absente n'est pas supposée publique. Écrire du privé dans un
+  magasin partagé **lève**.
+- **La base de connaissance est étanche** — les trois chemins d'écriture
+  (`add_knowledge`, `ingest_file`, `AgentContext.add_knowledge`) refusent une
+  source privée. `ingest_file` vérifie **avant d'ouvrir le fichier**.
+- **Contrat de connecteur** (`src/connectors/contract.py`) — exigé à
+  l'enregistrement. Portée privée et lien à une personne vont ensemble dans les
+  deux sens ; un connecteur privé dit ce qu'il conserve.
+- **Cycle de vie par sujet** (`src/connectors/lifecycle.py`) — cinq états, et le
+  **retrait fonctionne quand rien d'autre ne fonctionne**. Un connecteur par
+  sujet ne s'appelle pas sans sujet.
+- **Sûreté** (`src/connectors/safety.py`) — `receive()` est le seul chemin de
+  sortie : un courriel arrive en `EXTERNAL`, jamais en instruction. Les
+  privilèges destructeurs exigent un motif écrit, et la demande excessive est
+  refusée **avant** tout écran de consentement.
+- **Masquage des secrets** (`src/security/redaction.py`) — une seule liste,
+  partagée. Une garde AST vérifie qu'aucun module de connecteur ne journalise un
+  secret, et elle est elle-même confrontée à une vraie faute.
+
+`GET /tools/capabilities`, `/tools/{id}/capability`, `/tools/authorization`,
+`/tools/{id}/authorization`, `/tools/authorization/matrix`,
+`/connectors/{id}/contract`.
+
 ### Added — 2026-08-14
 
 - **Acquisition de connaissance sous portillon (ADR-021)** — `src/acquisition/` : registre

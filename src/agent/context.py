@@ -20,6 +20,7 @@ from ..approval_engine.types import ApprovalRequest
 from ..audit_engine.types import AuditEvent, AuditEventType, AuditStatus, generate_request_id
 from ..integration.engine_registry import EngineRegistry, get_shared_registry
 from ..security.isolation import IsolationError
+from ..security.redaction import NOMS_SENSIBLES
 from ..tool.capabilities import DataScope, may_run_unattended
 from .blackboard import Blackboard
 
@@ -1134,8 +1135,11 @@ class AgentContext:
                 parts.append(f"{key}={AgentContext._clip(str(value), 200)}")
         return AgentContext._clip(", ".join(parts), 1000)
 
-    # Noms d'arguments jugés sensibles : leur valeur n'est jamais consignée
-    _SENSITIVE_ARG_NAMES = ("password", "token", "secret", "api_key", "apikey", "key", "authorization", "auth")
+    # Noms d'arguments jugés sensibles : leur valeur n'est jamais consignée.
+    # La liste vit dans `src/security/redaction.py` — elle existait ici, privée
+    # à cette classe, et la deuxième copie est l'endroit où deux listes
+    # commencent à diverger.
+    _SENSITIVE_ARG_NAMES = tuple(sorted(NOMS_SENSIBLES))
 
     # ------------------------------------------------------------------
     # Utilitaires internes

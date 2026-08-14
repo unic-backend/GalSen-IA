@@ -336,3 +336,18 @@ def test_un_connecteur_inconnu_repond_quatre_cent_quatre(cles, registre_avec_boi
         )
 
     assert reponse.status_code == 404
+
+
+def test_la_route_publie_ce_qui_ne_s_obtient_jamais(cles, registre_avec_boite):
+    """
+    Phase 42.2 : ce qu'une personne doit lire **avant** de consentir voyage
+    avec la description du connecteur, pas dans un document à côté.
+    """
+    with TestClient(app) as client:
+        reponse = client.get(
+            "/connectors/boite/contract", headers={"X-API-Key": cles}
+        )
+
+    securite = reponse.json()["safety"]
+    assert securite["destructive"] == []
+    assert any("jamais une instruction" in ligne for ligne in securite["never"])
