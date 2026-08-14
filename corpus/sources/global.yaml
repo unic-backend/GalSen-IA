@@ -114,6 +114,38 @@ sources:
     last_verified: unknown
     enabled: false
 
+  # --- Fédérations sportives internationales ---------------------------
+  #
+  # Une fédération fait autorité sur **ses propres** compétitions : ses
+  # calendriers, ses résultats, ses classements. Elle ne fait pas autorité sur
+  # un championnat national, qui a sa propre fédération et n'est pas inscrit
+  # ici. Ce que ces entrées portent est donc étroit, et le dire évite qu'on
+  # leur attribue un pays entier.
+
+  - name: "FIFA"
+    scope: global
+    subjects: [sports]
+    category: institutional
+    tier: TIER_B_INTERNATIONAL
+    base_url: https://www.fifa.com
+    institution_type: "fédération internationale de football"
+    authority_scope: >-
+      Ses propres compétitions et son classement. Pas les championnats
+      nationaux, qui relèvent de leurs fédérations et ne sont pas inscrits ici.
+    last_verified: unknown
+    enabled: false
+
+  - name: "Comité international olympique"
+    scope: global
+    subjects: [sports]
+    category: institutional
+    tier: TIER_B_INTERNATIONAL
+    base_url: https://olympics.com
+    institution_type: "comité international"
+    authority_scope: "Les Jeux olympiques : résultats, records, participants."
+    last_verified: unknown
+    enabled: false
+
   # --- Organismes de normalisation --------------------------------------
 
   - name: "ISO — Organisation internationale de normalisation"

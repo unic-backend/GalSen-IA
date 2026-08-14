@@ -182,6 +182,11 @@ class KnowledgeSubject(Enum):
     #: physique d'une poutre est universelle, ce qu'il est **permis** de bâtir
     #: ne l'est pas — voir `NORMATIVE_SUBJECTS` ci-dessous.
     CONSTRUCTION = "construction"
+    #: Sport (VOLET 56). Ajouté après relecture, comme l'exige cette
+    #: énumération. Sa particularité n'est pas le territoire mais le **temps** :
+    #: un résultat est daté et définitif, un classement est daté et périme —
+    #: voir `src/knowledge_engine/perishable.py`.
+    SPORTS = "sports"
     GEOGRAPHY = "geography"
     LANGUAGES = "languages"
     BUSINESS = "business"

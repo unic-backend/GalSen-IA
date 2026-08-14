@@ -14,10 +14,11 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **55.2 terminée — VOLET 55 clos.**
-**56.1 en attente de confirmation** — domaine football / sports.
-**Terminées**      : **vagues I, II et III complètes**, **VOLETs 51 à 55**
-(42 phases sur 73).
+**Phase courante** : **56.2 terminée — VOLET 56 clos.**
+**57.1 en attente de confirmation** — le Sénégal comme domaine spécialisé d'un
+moteur mondial.
+**Terminées**      : **vagues I, II et III complètes**, **VOLETs 51 à 56**
+(44 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -38,7 +39,7 @@ pas estimé.
 | 2 | Intelligence des sources | `corpus/sources/senegal.yaml`, `source_registry.py`, `SourceTier` | **à généraliser** (registre mondial) |
 | 3 | Moteur de recherche documentaire | `document_intelligence_engine/` (chargeurs, BM25, versions) + `services/search/` | **existe** — *l'audit disait « absent » : c'était faux, mesuré le 2026-08-14* |
 | 4 | Architecture / construction | sujet `construction` + `NORMATIVE_SUBJECTS` (VOLET 55) | **déclaré, vide** — aucune source joignable, rien n'a été inventé |
-| 5 | Football / sports | — | **absent** (domaine de connaissance) |
+| 5 | Football / sports | sujet `sports` + `perishable.py` (VOLET 56) | **déclaré, vide** — 2 fédérations inscrites, aucune activée |
 | 6 | Multimodal | `src/multimodal/`, `vision_intelligence_engine/` | **existe** |
 | 7 | Connecteurs Google | `src/connectors/` (email, storage) | **à étendre** — OAuth absent |
 | 8 | SDK de connecteurs | `connectors/interfaces.py`, `registry.py` (188 l.) | **à formaliser** |

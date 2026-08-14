@@ -159,15 +159,16 @@ def _registre(tmp_path, entree: str) -> str:
 
 def test_aucune_source_inscrite_n_est_collectable_par_defaut():
     """
-    Le cœur de l'ADR-021 : inscrire n'est pas activer. Les **21** sources
-    réelles — 9 sénégalaises, 12 mondiales depuis la phase 51.2 — sont
-    inscrites et **aucune** n'est atteignable par un chemin d'acquisition.
-    Le registre a grandi ; la règle n'a pas bougé.
+    Le cœur de l'ADR-021 : inscrire n'est pas activer. Les **23** sources
+    réelles — 9 sénégalaises, 14 mondiales (12 à la phase 51.2, plus FIFA et le
+    CIO à la 56.2) — sont inscrites et **aucune** n'est atteignable par un
+    chemin d'acquisition. Le registre a grandi trois fois ; la règle n'a pas
+    bougé une seule.
     """
     rapport = registry_report()
 
-    assert rapport["sources"] == 21
-    assert rapport["by_registry"] == {"global.yaml": 12, "senegal.yaml": 9}
+    assert rapport["sources"] == 23
+    assert rapport["by_registry"] == {"global.yaml": 14, "senegal.yaml": 9}
     assert rapport["enabled"] == 0
     assert rapport["acquirable"] == 0
     assert acquirable_sources() == []
