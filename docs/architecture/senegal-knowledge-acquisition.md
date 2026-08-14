@@ -535,7 +535,7 @@ Each step is independently verifiable and ends where the repository can be left 
 | 7 | Trust wrap + inspect on the acquisition path | **Done, 2026-08-13** — `src/acquisition/parsing.py`; 13 tests including **A8**. `cross_boundary()` is the only path from `FETCHED` to `PARSED`, and a test walks `src/` to prove no other module reaches `PARSED` |
 | 8 | S6 near-duplicate + the ten checks of §6.2 | **Done, 2026-08-13** — `src/acquisition/dedup.py`, `src/acquisition/quality.py`; 30 tests. Only three checks may reject; everything uncertain, `unknown` included, goes to quarantine |
 | 9 | Manifest proposal via the existing `ingestion` workflow | **Done, 2026-08-13** — `src/acquisition/manifest.py`; 14 tests. Only a `VERIFIED` document can be proposed; nothing is written; `knowledge_architect` now proposes the **detected** language and says it is detected, not declared |
-| 10 | **Pilot run**, human-approved, against the real registry | The §8.4 report |
+| 10 | **Pilot run**, human-approved, against the real registry | **Script done, 2026-08-14** — `scripts/acquisition_pilot.py`, 8 tests running the whole chain against a loopback institution. **The run itself waits on the owner**: no source is enabled, and the script says so and stops |
 | 11 | Answer, cite, distinguish (A11–A13) | Acceptance tests |
 | 12 | **Replace the provisional thresholds of §13.4 with the pilot's measured ones** | The configuration file carries numbers the pilot produced, not the ones written here |
 

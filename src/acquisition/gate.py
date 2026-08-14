@@ -25,6 +25,7 @@ source, sous cette licence* — est un portillon qu'une personne exerce vraiment
 
 import hashlib
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 
 from ..knowledge_engine.collection import plan_collection
@@ -42,6 +43,11 @@ ACTION = "collect_document_batch"
 
 class GateRefused(ValueError):
     """La récupération est refusée : la décision, l'approbation ou l'ordre manque."""
+
+
+def _maintenant() -> str:
+    """Retourne l'instant courant en ISO 8601 UTC."""
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _empreinte(source: str, licence: str, urls: List[str]) -> str:
@@ -255,8 +261,9 @@ def acquire(
         fetch_fn: Le récupérateur, injectable pour les tests.
 
     Returns:
-        Le compte de ce qui a été récupéré et de ce qui a échoué, chaque échec
-        avec sa raison.
+        Le compte de ce qui a été récupéré, **les octets sous `contents`** pour
+        que l'appelant les fasse franchir la barrière, et ce qui a échoué —
+        chaque échec avec sa raison.
 
     Raises:
         GateRefused: Approbation absente, non accordée, ou portant sur un autre
@@ -264,7 +271,7 @@ def acquire(
     """
     _verifier_l_approbation(lot, manager.get(lot.approval_id))
 
-    recuperes, echecs = 0, []
+    recuperes, echecs, contenus = 0, [], {}
     for document in lot.documents:
         if document.status is not AcquisitionStatus.DISCOVERED:
             continue
@@ -280,6 +287,17 @@ def acquire(
             echecs.append({"url": document.source_url, "reason": str(refus)})
             continue
 
+        # Les octets sont rendus à l'appelant, jamais rangés dans
+        # l'enregistrement : un contenu de plusieurs mégaoctets dans un objet
+        # qu'on sérialise et journalise finirait par être recopié partout.
+        contenus[document.source_url] = {
+            "body": resultat.body, "content_type": resultat.content_type,
+        }
+        # La date de récupération est **ici** qu'elle se pose : c'est le moment
+        # où le document a été reçu. Elle manquait, et comme elle fait partie de
+        # la provenance minimale, aucun document n'atteignait jamais `VERIFIED`
+        # — un défaut que seul un passage de bout en bout pouvait montrer.
+        document.retrieval_date = _maintenant()
         document.provenance["approval_id"] = lot.approval_id
         document.provenance["http_status"] = resultat.status
         document.content_hash = hashlib.sha256(resultat.body).hexdigest()
@@ -294,6 +312,7 @@ def acquire(
         "source": lot.source_name,
         "approval_id": lot.approval_id,
         "fetched": recuperes,
+        "contents": contenus,
         "failed": echecs,
         "refused_before_fetch": list(lot.refused),
         "note": (

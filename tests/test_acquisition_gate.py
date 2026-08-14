@@ -221,6 +221,10 @@ def test_un_lot_approuve_est_recupere_et_chaque_document_avance(contexte, manage
         assert document.status is AcquisitionStatus.FETCHED
         assert document.content_hash != "unknown"
         assert document.provenance["approval_id"] == lot.approval_id
+        # La date de récupération se pose ici, au moment où le document arrive.
+        # Elle fait partie de la provenance minimale : sans elle, aucun document
+        # n'atteignait `VERIFIED`, et seul un passage de bout en bout l'a montré.
+        assert document.retrieval_date != "unknown"
 
 
 def test_le_lot_porte_ce_que_le_registre_sait_deja(contexte):
