@@ -14,10 +14,11 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **52.2 terminée.**
-**52.3 en attente de confirmation** — séries mesurées (population, PIB) par pays.
-**Terminées**      : **vagues I, II et III complètes**, **VOLET 51**, **52.1** et
-**52.2** (34 phases sur 73).
+**Phase courante** : **53.1 terminée — VOLET 52 clos.**
+**53.2 en attente de confirmation** — fraîcheur de la connaissance sénégalaise et
+du corpus wolof.
+**Terminées**      : **vagues I, II et III complètes**, **VOLETs 51 et 52**, plus
+**53.1** (36 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -240,14 +241,32 @@ ne serait qu'un registre pauvre.
   V52  Connaissance mondiale : portée `global` peuplée            → 3 phases
        52.1 dérivation depuis les jeux acquis, désaccords rapportés ✅
        52.2 réponse, UNKNOWN assumé, deux routes                    ✅
-       52.3 séries mesurées (population, PIB) par pays
+       52.3 séries mesurées (population, PIB), agrégats séparés     ✅
+  V53  Fraîcheur : âge mesuré, péremption dite                    → 2 phases
+       53.1 âge contre cadence, périmé servi avec son âge          ✅
+       53.2 fraîcheur de la connaissance sénégalaise et du corpus
+
+**Ce que 52.3 a séparé** : les séries de la Banque mondiale portent `WLD`, `ARB`,
+`EUU` — des agrégats réels et utiles. Mêlés aux pays, ils rendraient faux tout
+décompte de couverture. Ils sont séparés en confrontant chaque code aux codes ISO
+dérivés en 52.1, **pas** par une liste écrite à la main qui vieillirait sans que
+rien ne le dise. **215 pays + 50 agrégats (population), 212 + 50 (PIB), 0 ligne
+perdue.**
+
+**Ce que 53.1 mesure vraiment** : l'âge se compare à la **cadence de la chose**,
+pas à un seuil unique. Une statistique annuelle sort avec environ un an de
+décalage ; traiter ce délai comme un retard ferait sonner l'alarme sur toutes les
+séries, et une alarme toujours allumée n'est plus lue. Mesuré : population
+`FRESH` (2024), PIB `AGING` (2023), **12 pays en retard sur leurs pairs, nommés**
+(Érythrée 2011, Venezuela 2014).
 
 **La décision de portée, prise en 52.1** : peupler `global` avec des faits par
 pays aurait été l'erreur exacte que `scope.py` existe pour empêcher. **`global`
 porte la taxonomie** — continents, régions M49, espace des monnaies — et chaque
 pays porte sa propre portée `country:xx`. 249 pays dérivés, 0 ligne perdue,
 **34 désaccords entre sources rapportés et non résolus**.
-  V53  Fraîcheur : âge mesuré, péremption dite                    → 2 phases
+
+```
   V54  Moteur de recherche documentaire                           → 3 phases
   V55  Domaine architecture / construction                        → 2 phases
   V56  Domaine football / sports                                  → 2 phases

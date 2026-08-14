@@ -130,6 +130,8 @@ from src.connectors.safety import safety_report
 from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
+from src.knowledge_engine.freshness import freshness_of_year, freshness_report
+from src.knowledge_engine.series import answer_series, load_series, series_report
 from src.knowledge_engine.world import answer_country, answer_field, world_report
 from src.services.notification.channels import ChannelRegistry
 from src.services.notification.events import PlatformNotifier
@@ -1898,11 +1900,45 @@ async def world_country(query: str, field: Optional[str] = None):
     reponse = (
         answer_field(query, field) if field else answer_country(query)
     )
-    if reponse["status"] == "UNKNOWN":
-        # 200 et non 404 : « je ne sais pas » est une réponse, et elle porte ce
-        # qui trancherait. Un 404 laisserait croire à une panne de route.
-        return reponse
+    # 200 même pour un `UNKNOWN` : « je ne sais pas » est une réponse, et elle
+    # porte ce qui trancherait. Un 404 laisserait croire à une panne de route.
     return reponse
+
+
+@app.get("/knowledge/world/country/{query}/series/{indicator}", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.KNOWLEDGE_SEARCH))])
+async def world_country_series(query: str, indicator: str, year: Optional[str] = None):
+    """Une mesure — population, PIB — avec **l'année où elle a été mesurée**.
+
+    Sans `year`, la dernière année mesurée est rendue. Ce n'est pas l'année en
+    cours : rien n'est extrapolé, et une année absente le reste. Un chiffre sans
+    son année est une phrase sur aucun moment en particulier.
+
+    Un pays absent de la série rend `UNKNOWN` — jamais zéro, qui serait une
+    mesure.
+    """
+    pays = answer_country(query)
+    if pays["status"] != "FOUND":
+        return pays
+
+    reponse = answer_series(
+        pays["country"]["iso3"], indicator, load_series(), year=year,
+    )
+    if reponse["status"] == "FOUND":
+        # La portée appartient au pays, pas à la série : elle est jointe ici.
+        reponse["scope"] = pays["country"]["scope"]
+        reponse["freshness"] = freshness_of_year(reponse["year"], indicator)
+    return reponse
+
+
+@app.get("/knowledge/world/series", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.KNOWLEDGE_SEARCH))])
+async def world_series_state():
+    """Ce que les séries couvrent, leur fraîcheur, et ce qu'elles ne font pas."""
+    series = load_series()
+    return {**series_report(series), "freshness": freshness_report(series)}
 
 
 # Endpoints connaissances

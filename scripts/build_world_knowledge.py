@@ -35,6 +35,11 @@ from typing import Any, Dict, List, Optional
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
+from src.knowledge_engine.series import (  # noqa: E402
+    SERIES_MONDIALES,
+    build_series,
+    known_country_codes,
+)
 from src.knowledge_engine.world import (  # noqa: E402
     JEUX_MONDIAUX,
     build_world_knowledge,
@@ -49,6 +54,10 @@ DOSSIER_TRAITE = os.path.join("data", "processed_global")
 
 SORTIE = "world_countries.json"
 
+#: Les séries mesurées (phase 52.3), écrites à côté des pays. Séparées : une
+#: question sur une capitale n'a pas à charger soixante-cinq ans de population.
+SORTIE_SERIES = "world_series.json"
+
 
 def _racine() -> str:
     """Retourne la racine du dépôt."""
@@ -62,10 +71,9 @@ def _chemin_brut(nom: str) -> str:
 
 def sources_manquantes() -> List[str]:
     """Les fichiers bruts nécessaires qui ne sont pas là."""
-    return [
-        jeu["file"] for jeu in JEUX_MONDIAUX.values()
-        if not os.path.isfile(_chemin_brut(jeu["file"]))
-    ]
+    attendus = [jeu["file"] for jeu in JEUX_MONDIAUX.values()]
+    attendus += [serie["file"] for serie in SERIES_MONDIALES.values()]
+    return [nom for nom in attendus if not os.path.isfile(_chemin_brut(nom))]
 
 
 def build() -> Dict[str, Any]:
@@ -99,21 +107,44 @@ def build() -> Dict[str, Any]:
     return monde
 
 
-def write(monde: Dict[str, Any]) -> str:
+def build_measured_series(monde: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Écrit la connaissance dérivée.
+    Construit les séries mesurées depuis les CSV acquis.
 
     Args:
-        monde: L'objet construit.
+        monde: La connaissance mondiale, qui fournit les codes ISO — c'est elle
+            qui permet de distinguer un pays d'un agrégat sans liste écrite à la
+            main, laquelle vieillirait sans que rien ne le dise.
+
+    Returns:
+        Les séries, horodatées.
+    """
+    contenus = {}
+    for cle, serie in SERIES_MONDIALES.items():
+        with open(_chemin_brut(serie["file"]), "r", encoding="utf-8") as flux:
+            contenus[cle] = flux.read()
+
+    series = build_series(contenus, known_country_codes(monde))
+    series["built_at"] = datetime.now(timezone.utc).isoformat()
+    return series
+
+
+def write(objet: Dict[str, Any], nom: str = SORTIE) -> str:
+    """
+    Écrit une connaissance dérivée.
+
+    Args:
+        objet: L'objet construit.
+        nom: Le nom du fichier.
 
     Returns:
         Le chemin écrit.
     """
     dossier = os.path.join(_racine(), DOSSIER_TRAITE)
     os.makedirs(dossier, exist_ok=True)
-    chemin = os.path.join(dossier, SORTIE)
+    chemin = os.path.join(dossier, nom)
     with open(chemin, "w", encoding="utf-8") as flux:
-        json.dump(monde, flux, ensure_ascii=False, indent=1, sort_keys=True)
+        json.dump(objet, flux, ensure_ascii=False, indent=1, sort_keys=True)
     return chemin
 
 
@@ -131,8 +162,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 1
 
     chemin = write(monde)
+    series = build_measured_series(monde)
+    chemin_series = write(series, SORTIE_SERIES)
     if arguments.json:
-        print(json.dumps(monde["counts"], ensure_ascii=False))
+        print(json.dumps({
+            "countries": monde["counts"],
+            "series": {cle: valeur["counts"] for cle, valeur in series["series"].items()},
+        }, ensure_ascii=False))
         return 0
 
     comptes = monde["counts"]
@@ -142,6 +178,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"  lignes refusées       : {comptes['refused_rows']}")
     print(f"  désaccords rapportés  : {comptes['disagreements']} (non résolus)")
     print(f"  régions M49           : {len(monde['reference']['regions'])}")
+    print(f"Séries mesurées écrites : {chemin_series}")
+    for cle, valeur in series["series"].items():
+        comptes_serie = valeur["counts"]
+        print(f"  {cle:<12} : {comptes_serie['countries']} pays, "
+              f"{comptes_serie['aggregates']} agrégats séparés, "
+              f"{comptes_serie['refused_rows']} lignes refusées")
     print("Aucune valeur n'a été écrite de mémoire ; aucune sortie réseau n'a eu lieu.")
     return 0
 
