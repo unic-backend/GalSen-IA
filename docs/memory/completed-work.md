@@ -846,3 +846,15 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Défaut trouvé par un test** : `chunk_text` ouvrait le fragment suivant au milieu d'un mot (« ari » au lieu de « ñaari ») — le recouvrement recule maintenant jusqu'à une frontière de mot.
 - **Capacité du modèle non mesurée, et dite comme telle** : `generation` reste `unknown`, bloquée par C1. L'invite système (`src/services/wolof/system_prompt.txt`) interdit explicitement d'annoncer un wolof excellent.
 - 41 tests ajoutés ; suite complète **3130 passent**, 8 ignorés ; `ruff` propre.
+
+### 2026-08-14 (moteur de connaissance sénégalais — exécution)
+- **Acquisition réelle** : `scripts/ingest_all_senegal.py` télécharge les limites administratives geoBoundaries (SEN ADM1 et ADM2) par le récupérateur ADR-021, les valide en GeoJSON, les hache, les conserve **immuables**, et fait passer le contenu par la barrière de confiance. 3,0 Mo bruts, 172 Ko dérivés.
+- **Deux corrections d'URL, tracées** : le nom de fichier de la directive (`…_gbOpen.geojson`) n'existe plus — le bon est `geoBoundaries-SEN-ADM1.geojson` ; et le contenu est servi par **Git LFS**, donc `raw.githubusercontent.com` ne rend qu'un pointeur de 132 octets. La vraie URL est `media.githubusercontent.com/media/…`. Le récupérateur a gagné un type déclarable `binary` (LFS sert en `application/octet-stream`) — déclarable **source par source**, pas ouvert globalement.
+- **Rien n'est écrit de mémoire** : **14 régions** et **45 départements** dérivés de la source. La directive annonçait 46 départements ; la source en porte **45**, et le chiffre suit la source. Un test lit le script et vérifie qu'aucun nom de région réelle n'y est codé en dur.
+- **Le rattachement département → région est calculé**, pas déclaré : centroïde surfacique de la plus grande composante, puis lancer de rayon dans les polygones de région. **45/45 rattachés, 0 approximation**. Le repli « région la plus proche » existe, est borné, et serait **compté et nommé** s'il servait.
+- **`UNKNOWN` tenu** : chef-lieu, population, superficie et date de publication restent inconnus — un chef-lieu est une décision administrative, pas une propriété géométrique. Les fragments récupérés **nomment leurs lacunes** dans leur propre texte.
+- **La source est déclarée internationale** (`TIER_B_INTERNATIONAL`), pas officielle sénégalaise : les confondre serait la première erreur possible ici.
+- **Seize domaines déclarés, trois peuplés** (géographie, administration, langues) ; les treize autres sont vides **avec leur raison**. « Rien n'a été acquis » et « le Sénégal n'a pas d'agriculture » sont deux phrases différentes.
+- **Wolof réutilisé, jamais reconstruit** : `get_wolof_corpus()` renvoie vers `src/services/wolof/`, et un test vérifie qu'aucun second corpus n'existe sur disque.
+- **RAG** : `src/services/senegal/master_rag.py` — récupération lexicale déterministe sur la normalisation existante, 59 fragments, **59 avec provenance**, latence mesurée ~4 ms. Aucune base vectorielle : sur 59 fragments ce serait un service à opérer pour rien.
+- 41 tests ajoutés ; suite complète **3171 passent**, 8 ignorés ; `ruff` propre.

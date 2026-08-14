@@ -369,6 +369,12 @@ TYPES_MIME = {
     "text": ("text/plain",),
     "json": ("application/json",),
     "csv": ("text/csv",),
+    "geojson": ("application/geo+json", "application/vnd.geo+json"),
+    # Git LFS sert son contenu en `application/octet-stream`, quel que soit le
+    # format réel du fichier. Le type doit donc être **déclarable** — mais il
+    # reste déclaré source par source : accepter l'octet brut partout ferait
+    # entrer n'importe quoi sous couvert de « le serveur n'a pas dit ».
+    "binary": ("application/octet-stream",),
 }
 
 

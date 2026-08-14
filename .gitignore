@@ -55,3 +55,8 @@ data/
 # Le corpus **traité** (data/processed_wolof/) est versionné, lui : c'est ce que
 # les tests et le RAG lisent.
 data/raw_wolof/*.conllu
+
+# Limites administratives brutes (Git LFS, ~3 Mo) : reproductibles par
+# `python scripts/ingest_all_senegal.py`. La connaissance dérivée
+# (data/processed_senegal/) est versionnée, elle.
+data/raw_senegal/*.geojson
