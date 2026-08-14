@@ -14,9 +14,10 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **48.2 terminée — VOLET 48 clos.**
-**49.1 en attente de confirmation** — workflows longs : reprise et points de contrôle.
-**Terminées**      : **vagues I et II complètes** (20 phases), **VOLETs 47 et 48** complets.
+**Phase courante** : **49.1 terminée** — point de reprise des workflows longs.
+**49.2 en attente de confirmation** — branchement au routeur.
+**Terminées**      : **vagues I et II complètes** (20 phases), **VOLETs 47 et 48**
+complets, **49.1**.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -195,6 +196,11 @@ défaut contre lequel `safety.py` a été écrit, réintroduit par son propre
 branchement. La sûreté vit désormais au niveau du module ; un test conduit la
 reconstruction pour le vérifier.
   V49  Workflows longs : reprise, point de contrôle, annulation   → 3 phases
+       49.1 point de reprise : étape faite jamais refaite, annulation
+            terminale, propriétaire                                  ✅
+       49.2 branchement au routeur : une exécution longue passe par
+            ses points de reprise
+       49.3 routes : lister, reprendre, annuler une exécution
   V50  Notifications : moteur au-dessus du magasin existant       → 2 phases
 
 VAGUE IV — La connaissance                                        → 16 phases
