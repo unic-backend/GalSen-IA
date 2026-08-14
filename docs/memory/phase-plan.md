@@ -14,8 +14,8 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **39.3 terminée** — VOLET 39 clos. **40.1 en attente de confirmation.**
-**Terminées**      : 37.1, 38.1, 38.2, 39.1, 39.2, 39.3.
+**Phase courante** : **40.1 terminée** — frontière d'isolation. **40.2 en attente de confirmation.**
+**Terminées**      : 37.1, 38.1, 38.2, 39.1, 39.2, 39.3, 40.1.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -136,6 +136,8 @@ préfixe de caractères. `AgentContext.use_tool` consulte désormais
 Les deux tests qui constataient le trou ont été **remplacés par leur inverse**,
 pas supprimés.
   V40  Isolation des données utilisateur                          → 2 phases
+       40.1 frontière : propriétaire déduit, audience obligatoire    ✅
+       40.2 application à la mémoire et à la connaissance
   V41  SDK de connecteurs (contrat, cycle de vie, tests)          → 2 phases
   V42  Sûreté : ce qu'un connecteur ne peut jamais faire          → 2 phases
 
