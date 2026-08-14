@@ -130,6 +130,10 @@ class WorkflowRun:
         workflow_id: Le workflow exécuté.
         steps: Les agents prévus, dans l'ordre.
         subject: Qui l'a lancée. `None` pour la plateforme.
+        request: La demande d'origine. Conservée parce qu'une reprise doit
+            poser aux étapes restantes **la même** question qu'au départ : la
+            redemander à l'appelant permettrait d'en changer sans que rien ne
+            le dise, et la moitié déjà faite répondrait alors à une autre.
         completed: Les étapes terminées.
         status: Où elle en est.
         resumes: Combien de fois elle a été reprise.
@@ -142,6 +146,7 @@ class WorkflowRun:
     workflow_id: str
     steps: List[str]
     subject: Optional[str] = None
+    request: str = ""
     completed: List[StepRecord] = field(default_factory=list)
     status: RunStatus = RunStatus.RUNNING
     resumes: int = 0
@@ -178,6 +183,7 @@ class WorkflowRun:
             "run_id": self.run_id,
             "workflow_id": self.workflow_id,
             "subject": self.subject,
+            "request": self.request,
             "status": self.status.value,
             "steps": list(self.steps),
             "completed": [etape.as_dict() for etape in self.completed],
@@ -215,7 +221,8 @@ class WorkflowCheckpoints:
     # ------------------------------------------------------------------
 
     def start(
-        self, workflow_id: str, steps: List[str], subject: Optional[str] = None
+        self, workflow_id: str, steps: List[str], subject: Optional[str] = None,
+        request: str = "",
     ) -> WorkflowRun:
         """
         Ouvre une exécution.
@@ -224,6 +231,8 @@ class WorkflowCheckpoints:
             workflow_id: Le workflow lancé.
             steps: Les agents prévus, dans l'ordre.
             subject: Qui la lance.
+            request: La demande d'origine, pour que la reprise pose la même
+                question aux étapes restantes.
 
         Returns:
             L'exécution ouverte.
@@ -244,6 +253,7 @@ class WorkflowCheckpoints:
             workflow_id=workflow_id,
             steps=list(steps),
             subject=(subject or "").strip() or None,
+            request=str(request or "")[:TAILLE_MAXIMALE_ETAPE],
         )
         with self._verrou:
             self._runs[execution.run_id] = execution

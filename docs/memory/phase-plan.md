@@ -14,10 +14,14 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **49.2 terminée** — le routeur passe par ses points de reprise.
-**49.3 en attente de confirmation** — routes : lister, reprendre, annuler.
-**Terminées**      : **vagues I et II complètes** (20 phases), **VOLETs 47 et 48**
-complets, **49.1**, **49.2**.
+**Phase courante** : **49.3 terminée — VOLET 49 clos.**
+**50.1 en attente de confirmation** — notifications : moteur au-dessus du magasin
+existant.
+**Terminées**      : **vagues I et II complètes** (20 phases), **VOLETs 47, 48 et
+49** complets.
+**Dû à la clôture de la vague III** (après 50.2) : entrée `CHANGELOG.md` et
+`completed-work.md` pour les VOLETs 43 à 50, comme cela a été fait pour la
+vague I.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -200,7 +204,13 @@ reconstruction pour le vérifier.
             terminale, propriétaire                                  ✅
        49.2 branchement au routeur : une exécution longue passe par
             ses points de reprise                                    ✅
-       49.3 routes : lister, reprendre, annuler une exécution
+       49.3 routes : lister, reprendre, annuler une exécution        ✅
+
+**Trou refermé en 49.3** : la demande d'origine n'était pas conservée dans le
+point de reprise, si bien qu'une reprise devait la redemander à l'appelant —
+qui pouvait en poser une autre sans que rien ne le dise, la moitié déjà faite
+répondant alors à une question différente. Elle est désormais consignée au
+lancement, et la route de reprise **ne prend aucun corps**.
   V50  Notifications : moteur au-dessus du magasin existant       → 2 phases
 
 VAGUE IV — La connaissance                                        → 16 phases

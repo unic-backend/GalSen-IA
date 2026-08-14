@@ -127,6 +127,7 @@ from src.routines import (
     RoutineScheduler,
 )
 from src.connectors.safety import safety_report
+from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
 from src.services.notification.manager import NotificationManagerImpl
@@ -604,6 +605,18 @@ class WorkflowRunRequest(BaseModel):
     request: str = Field(..., min_length=1, description="La demande à traiter")
     workflow_id: Optional[str] = Field(None, description="Workflow à utiliser ; le défaut sinon")
     session_id: Optional[str] = Field(None, description="Session, pour relier plusieurs demandes")
+
+
+class WorkflowCancelRequest(BaseModel):
+    """L'annulation d'une exécution. Qui annule vient de la clé, jamais du corps."""
+
+    reason: str = Field(
+        ...,
+        description=(
+            "Pourquoi. L'annulation est définitive : la raison est tout ce "
+            "qui restera pour l'expliquer."
+        ),
+    )
 
 
 class RoutineHaltRequest(BaseModel):
@@ -1713,6 +1726,107 @@ async def workflow_history(workflow_id: Optional[str] = None, limit: int = 20):
     return {
         "stats": moteur.history.stats(workflow_id),
         "recent": moteur.history.recent(limit=limit, workflow_id=workflow_id),
+    }
+
+
+# Points de reprise des exécutions (VOLET 49)
+#
+# L'historique dit ce qu'une exécution a fait une fois finie ; ces routes
+# donnent prise sur celles qui ne le sont pas. Sans elles, une exécution morte
+# au huitième agent était visible dans les logs et irrattrapable depuis
+# l'extérieur.
+@app.get("/workflow/runs", tags=["workflow"],
+         dependencies=[Depends(rate_limit_dependency)])
+async def list_workflow_runs(
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Les exécutions visibles par l'appelant, de la plus récente à la plus ancienne.
+
+    Un point de reprise porte le travail déjà produit : il appartient à qui a
+    lancé l'exécution. Celles des autres ne sont pas listées.
+    """
+    moteur = get_router_engine()
+    return {
+        "runs": moteur.checkpoints.list_runs(subject=ctx.subject),
+        "checkpoints": moteur.checkpoints.checkpoint_report(subject=ctx.subject),
+    }
+
+
+@app.get("/workflow/runs/{run_id}", tags=["workflow"],
+         dependencies=[Depends(rate_limit_dependency)])
+async def get_workflow_run(
+    run_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """L'état d'une exécution : ce qui est fait, ce qui reste, ce qui a été sauté."""
+    moteur = get_router_engine()
+    execution = moteur.checkpoints.get(run_id, subject=ctx.subject)
+    if execution is None:
+        # Le même 404 qu'une exécution inexistante : dire « elle existe mais
+        # elle n'est pas à vous » renseignerait sur ce que quelqu'un d'autre
+        # fait tourner.
+        raise HTTPException(status_code=404, detail=f"Exécution '{run_id}' inconnue.")
+    return execution.as_dict()
+
+
+@app.post("/workflow/runs/{run_id}/resume", tags=["workflow"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def resume_workflow_run(
+    run_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Reprend une exécution interrompue, sans refaire ce qui a abouti.
+
+    **Rien n'est demandé dans le corps.** Le workflow et la demande d'origine
+    viennent du point de reprise : les redemander à l'appelant permettrait d'en
+    changer sans que rien ne le dise, et les étapes déjà faites répondraient
+    alors à une autre question que celles qui restent.
+
+    L'exécution est synchrone comme `POST /workflow/run`, et peut être longue.
+    """
+    moteur = get_router_engine()
+    try:
+        return moteur.process_request("", user_id=ctx.subject, resume_run_id=run_id)
+    except CheckpointRefused as refus:
+        if "inconnue" in str(refus):
+            raise HTTPException(status_code=404, detail=str(refus))
+        # 409 : l'état de l'exécution s'oppose à la reprise — annulée, déjà
+        # terminée, ou hors quota. Rien n'a été lancé.
+        raise HTTPException(status_code=409, detail=str(refus))
+    except Exception as e:
+        raise erreur_interne("Erreur lors de la reprise du workflow", e)
+
+
+@app.post("/workflow/runs/{run_id}/cancel", tags=["workflow"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def cancel_workflow_run(
+    run_id: str,
+    request: WorkflowCancelRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Annule une exécution. **Définitif** : elle ne reprendra pas.
+
+    Ce que cela ne fait pas, et qu'il vaut mieux dire : cela n'interrompt pas
+    un agent en train de tourner. L'exécution en cours va au bout de son étape ;
+    ce que l'annulation garantit, c'est qu'aucune reprise ne suivra.
+    """
+    moteur = get_router_engine()
+    try:
+        execution = moteur.checkpoints.cancel(
+            run_id, reason=request.reason, subject=ctx.subject,
+        )
+    except CheckpointRefused as refus:
+        if "inconnue" in str(refus):
+            raise HTTPException(status_code=404, detail=str(refus))
+        raise HTTPException(status_code=400, detail=str(refus))
+    return {
+        "run_id": execution.run_id,
+        "status": execution.status.value,
+        "cancelled_reason": execution.cancelled_reason,
+        "does_not": [
+            "Interrompre une étape déjà commencée : elle finit, et aucune "
+            "autre ne démarre.",
+        ],
     }
 
 

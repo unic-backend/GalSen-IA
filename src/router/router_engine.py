@@ -131,6 +131,12 @@ class RouterEngine:
             if resume_run_id:
                 reprise = self.checkpoints.resume(resume_run_id, subject=user_id)
                 workflow_id = reprise.workflow_id
+                # La demande aussi vient du point de reprise. La redemander à
+                # l'appelant permettrait d'en changer sans que rien ne le dise,
+                # et les étapes déjà faites répondraient alors à une autre
+                # question que celles qui restent.
+                if reprise.request:
+                    user_request = reprise.request
 
             # Étape 1: Planifier l'exécution
             execution_plan = self.execution_planner.plan_execution(workflow_id)
@@ -200,6 +206,7 @@ class RouterEngine:
             elif ordered_agents:
                 point = self.checkpoints.start(
                     workflow_id_to_use, ordered_agents, subject=user_id,
+                    request=user_request,
                 )
             else:
                 point = None
@@ -443,6 +450,12 @@ class RouterEngine:
             response["request_id"] = request_id
             return response
 
+        except CheckpointRefused:
+            # Une reprise refusée n'a **rien démarré** : c'est une erreur
+            # d'appel, pas une exécution en échec. La compter dans l'historique
+            # ferait baisser le taux de succès des workflows pour une exécution
+            # qui n'a jamais eu lieu.
+            raise
         except Exception as e:
             self.logger.error(f"Erreur inattendue lors du traitement de la requête: {e}", exc_info=True)
             duree = time.time() - start_time

@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.router.router_engine import RouterEngine  # noqa: E402
 from src.router.workflow_checkpoint import (  # noqa: E402
+    CheckpointRefused,
     RunStatus,
     WorkflowCheckpoints,
 )
@@ -184,21 +185,27 @@ def test_le_workflow_d_une_reprise_vient_du_point_de_reprise(moteur):
 
 
 def test_l_execution_d_une_autre_personne_ne_se_reprend_pas(moteur):
-    """Reprendre le workflow d'autrui, ce serait lancer des agents sur ses données."""
+    """
+    Reprendre le workflow d'autrui, ce serait lancer des agents sur ses
+    données. Le refus **remonte** au lieu de devenir un compte rendu d'échec :
+    rien n'a démarré, et une exécution qui n'a pas eu lieu ne doit pas peser
+    sur le taux de succès des workflows.
+    """
     moteur._dispatch_agent = _repartiteur([], echec_sur="security")
     reponse = moteur.process_request(
         "Relire le code", workflow_id=WORKFLOW, user_id="awa"
     )
+    moteur.history.clear()
 
     lances = []
     moteur._dispatch_agent = _repartiteur(lances)
-    refus = moteur.process_request(
-        "Relire le code", user_id="fatou", resume_run_id=reponse["run_id"]
-    )
+    with pytest.raises(CheckpointRefused, match="inconnue"):
+        moteur.process_request(
+            "Relire le code", user_id="fatou", resume_run_id=reponse["run_id"]
+        )
 
-    assert refus["status"] == "error"
-    assert "inconnue" in refus["error"]
     assert lances == [], "Aucun agent ne doit tourner sur un refus"
+    assert moteur.history.stats()["executions"] == 0
 
 
 # ----------------------------------------------------------------------
