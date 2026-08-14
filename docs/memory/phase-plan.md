@@ -14,9 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **44.2 terminée — VOLET 44 clos.**
-**45.1 en attente de confirmation** — Drive et Agenda.
-**Terminées**      : vague I complète (12 phases), **VOLETs 43 et 44** complets.
+**Phase courante** : **45.1 terminée** — Drive et Agenda sur socle commun.
+**45.2 en attente de confirmation** — les trois branchés au démarrage.
+**Terminées**      : vague I complète (12 phases), **VOLETs 43 et 44** complets, **45.1**.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -167,6 +167,8 @@ manque n'est donc **pas le réseau, mais un identifiant** — et aucun ne sera
 fabriqué. Les adresses d'API Gmail/Drive/Agenda, elles, n'ont **pas** été
 confrontées, et la configuration le dit.
   V45  Drive et Agenda                                            → 2 phases
+       45.1 socle commun extrait, Drive et Agenda écrits dessus     ✅
+       45.2 les trois connecteurs branchés au registre au démarrage
   V46  Étanchéité : un courriel privé n'entre jamais dans le RAG  → 1 phase
 
 VAGUE III — Le temps et l'exécution longue                        → 10 phases

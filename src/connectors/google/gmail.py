@@ -36,15 +36,10 @@ import base64
 import binascii
 from typing import Any, Dict, List, Optional
 
-from ...tool.capabilities import DataScope, Effect
-from ..contract import DataContract
 from ..lifecycle import SubjectBinding
-from ..oauth.config import Provider
-from ..oauth.session import OAuthSession
-from ..oauth.tokens import TokenStore
-from ..safety import Privilege, PrivilegeRequest, receive
-from ..types import ConnectorCheck, ConnectorDescription, ConnectorKind, ConnectorStatus
-from .apis import GoogleApi, get_api
+from ..safety import receive
+from ..types import ConnectorKind
+from .base import GoogleReadConnector
 
 #: Nombre de messages ramenés par défaut. Volontairement bas : une boîte
 #: contient des années de courrier, et en tirer mille d'un coup est presque
@@ -56,151 +51,27 @@ TAILLE_DE_PAGE_PAR_DEFAUT = 25
 TAILLE_DE_PAGE_MAXIMALE = 100
 
 
-class GmailConnector(OAuthSession):
+class GmailConnector(GoogleReadConnector):
     """
     Lecture de la boîte Gmail d'une personne, pour elle seule.
 
-    Hérite `OAuthSession` : l'autorisation, le magasin de jetons et le retrait
-    sont ceux du VOLET 43, une seule fois.
+    Le contrat, les privilèges, la vérification et la construction des requêtes
+    viennent de `GoogleReadConnector` : ce qui reste ici est ce que Gmail a de
+    particulier — sa recherche, ses en-têtes, et son corps en plusieurs parties.
     """
 
     CONNECTOR_ID = "google_gmail"
-
-    def __init__(
-        self,
-        provider: Provider,
-        tokens: Optional[TokenStore] = None,
-        api: Optional[GoogleApi] = None,
-    ) -> None:
-        """
-        Args:
-            provider: Le fournisseur Google déclaré.
-            tokens: Le magasin de jetons, partagé avec les autres connecteurs
-                Google quand il y en a un.
-            api: La surface d'API, lue en configuration par défaut.
-        """
-        self.api = api or get_api("gmail")
-        super().__init__(provider, [self.api.scope_read], tokens=tokens)
-
-    # ------------------------------------------------------------------
-    # Le contrat `Connector`
-    # ------------------------------------------------------------------
-
-    @property
-    def connector_id(self) -> str:
-        """Identifiant stable du connecteur."""
-        return self.CONNECTOR_ID
-
-    @property
-    def kind(self) -> ConnectorKind:
-        """Catégorie : messagerie."""
-        return ConnectorKind.EMAIL
-
-    @property
-    def data_contract(self) -> DataContract:
-        """
-        Ce qu'il touche, et pour qui.
-
-        L'inverse exact du relais SMTP de la plateforme : celui-ci ouvre la
-        boîte d'une personne, donc il est lié à elle et ne peut rien verser
-        dans un magasin partagé (VOLET 40).
-        """
-        return DataContract(
-            data_scope=DataScope.USER_PRIVATE,
-            per_subject=True,
-            effects=frozenset({Effect.READ, Effect.EXTERNAL}),
-            retention=(
-                "Rien du contenu. Seuls les jetons sont conservés, chiffrés, "
-                "et effacés au retrait."
-            ),
-            rationale="Lecture de la boîte de son titulaire, pour lui seul.",
-        )
-
-    @property
-    def requested_privileges(self) -> List[PrivilegeRequest]:
-        """
-        La lecture, et rien d'autre.
-
-        Aucun privilège destructeur n'est demandé, et aucun d'écriture : un
-        connecteur qui peut envoyer n'est pas le même objet que celui-ci.
-        """
-        return [PrivilegeRequest(
-            Privilege.READ,
-            rationale="Lire les messages du titulaire, à sa demande.",
-        )]
-
-    def describe(self) -> ConnectorDescription:
-        """Décrit le connecteur, sans aucun appel réseau ni aucun secret."""
-        return ConnectorDescription(
-            connector_id=self.CONNECTOR_ID,
-            kind=ConnectorKind.EMAIL,
-            summary=(
-                "Lecture de la boîte Gmail d'une personne. N'envoie rien, "
-                "n'étiquette rien, ne supprime rien."
-            ),
-            environment_variables=[
-                self.provider.client_id_variable,
-                self.provider.client_secret_variable,
-                self.provider.redirect_uri_variable,
-            ],
-            operations=["list_messages", "get_message", "extract_text"],
-            owner="équipe plateforme",
-        )
-
-    def is_configured(self) -> bool:
-        """Indique si les identifiants OAuth sont présents. Aucun appel réseau."""
-        return self.provider.is_configured()
-
-    def check(self) -> ConnectorCheck:
-        """
-        Vérifie l'état du connecteur.
-
-        Ne contacte rien : sans identifiants il n'y a rien à contacter, et avec
-        eux, une vérification demanderait le jeton d'une personne — ce qui n'est
-        pas une vérification de service mais une lecture de son courrier.
-        """
-        if not self.is_configured():
-            return ConnectorCheck(
-                connector_id=self.CONNECTOR_ID,
-                kind=ConnectorKind.EMAIL,
-                status=ConnectorStatus.NOT_CONFIGURED,
-                detail=(
-                    "Variables absentes : "
-                    + ", ".join(self.provider.missing_variables())
-                ),
-            )
-        return ConnectorCheck(
-            connector_id=self.CONNECTOR_ID,
-            kind=ConnectorKind.EMAIL,
-            status=ConnectorStatus.READY,
-            detail=(
-                "Identifiants présents. L'accès reste par personne : voir "
-                "l'état d'autorisation de chacune."
-            ),
-        )
+    API_NAME = "gmail"
+    KIND = ConnectorKind.EMAIL
+    SUMMARY = (
+        "Lecture de la boîte Gmail d'une personne. N'envoie rien, "
+        "n'étiquette rien, ne supprime rien."
+    )
+    OPERATIONS = ["list_messages", "get_message", "extract_text"]
 
     # ------------------------------------------------------------------
     # Les requêtes, construites et non envoyées
     # ------------------------------------------------------------------
-
-    def _requete(self, binding: SubjectBinding, chemin: str,
-                 parametres: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """
-        Construit une requête authentifiée pour le porteur du lien.
-
-        Passe par `binding.call`, donc un accès non utilisable — jamais accordé,
-        périmé, retiré — refuse **avant** que la requête n'existe.
-        """
-        def _construire() -> Dict[str, Any]:
-            jeton = self.tokens.get(self.provider.id, binding.subject)
-            return {
-                "method": "GET",
-                "url": self.api.url(chemin),
-                "headers": {"Authorization": f"Bearer {jeton.access_token}"},
-                "params": dict(parametres or {}),
-            }
-
-        return binding.call(_construire)
 
     def list_messages_request(
         self, binding: SubjectBinding, query: str = "", max_results: int = TAILLE_DE_PAGE_PAR_DEFAUT
@@ -220,7 +91,9 @@ class GmailConnector(OAuthSession):
         Raises:
             AuthorizationRefused: Si l'accès n'est pas utilisable.
         """
-        combien = max(1, min(int(max_results), TAILLE_DE_PAGE_MAXIMALE))
+        combien = self._plafonner(
+            max_results, TAILLE_DE_PAGE_PAR_DEFAUT, TAILLE_DE_PAGE_MAXIMALE
+        )
         parametres: Dict[str, Any] = {"maxResults": combien}
         if query:
             parametres["q"] = query
@@ -370,22 +243,13 @@ class GmailConnector(OAuthSession):
     # Rapport
     # ------------------------------------------------------------------
 
-    def gmail_report(self, subject: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Ce que ce connecteur est, et ce qu'il refuse d'être.
-
-        Args:
-            subject: La personne, quand on veut son état.
-
-        Returns:
-            L'API visée, la session, et les refus.
-        """
-        rapport = self.session_report(subject)
-        rapport["api"] = self.api.as_dict()
-        rapport["refuses"] = [
+    def extra_refusals(self) -> List[str]:
+        """Les refus propres à Gmail, en plus de ceux du socle."""
+        return [
             "Envoyer, étiqueter, supprimer — ce connecteur lit.",
             "Prendre un identifiant de boîte : chaque requête vise `me`.",
-            "Rendre un corps de message autrement qu'enveloppé en donnée.",
-            "Faire un appel réseau : les requêtes sont construites, pas envoyées.",
         ]
-        return rapport
+
+    def gmail_report(self, subject: Optional[str] = None) -> Dict[str, Any]:
+        """Ce que ce connecteur est, et ce qu'il refuse d'être."""
+        return self.connector_report(subject)
