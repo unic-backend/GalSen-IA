@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional
 
 from .contract import verify_contract
 from .interfaces import Connector, ConnectorRegistryContract
+from .safety import privileges_of, verify_privileges
 from .types import ConnectorCheck, ConnectorKind, ConnectorStatus
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,11 @@ class ConnectorRegistry(ConnectorRegistryContract):
         # contrat » à quelqu'un qui en a écrit un. Un diagnostic faux coûte
         # plus cher qu'un diagnostic absent.
         verify_contract(connector_id, getattr(connector, "data_contract", None))
+
+        # Les privilèges demandés sont vérifiés au même endroit et pour la même
+        # raison : une demande excessive doit être refusée **avant** qu'un écran
+        # de consentement ne soit montré à qui que ce soit (VOLET 42).
+        verify_privileges(connector_id, privileges_of(connector))
 
         with self._lock:
             existing = self._connectors.get(connector_id)
