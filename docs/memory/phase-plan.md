@@ -14,8 +14,8 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **41.1 terminée** — contrat de données. **41.2 en attente de confirmation.**
-**Terminées**      : 37.1, 38.1, 38.2, 39.1, 39.2, 39.3, 40.1, 40.2, 41.1.
+**Phase courante** : **41.2 terminée** — VOLET 41 clos. **42.1 en attente de confirmation.**
+**Terminées**      : 37.1, 38.1, 38.2, 39.1, 39.2, 39.3, 40.1, 40.2, 41.1, 41.2.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -146,7 +146,7 @@ connaissance**, un magasin partagé sans notion de propriétaire. Les trois
 chemins qui y mènent sont fermés.
   V41  SDK de connecteurs (contrat, cycle de vie, tests)          → 2 phases
        41.1 contrat de données, exigé à l'enregistrement             ✅
-       41.2 cycle de vie et kit de conformité exposé
+       41.2 cycle de vie par sujet, conformité exposée par l'API   ✅
   V42  Sûreté : ce qu'un connecteur ne peut jamais faire          → 2 phases
 
 VAGUE II — Les connecteurs Google                                 → 8 phases

@@ -101,6 +101,8 @@ from src.connectors import (
     SMTPEmailConnector,
     get_shared_connector_registry,
 )
+from src.connectors.contract import conformance
+from src.connectors.lifecycle import lifecycle_report
 
 # Import des services
 from src.services.notification.manager import NotificationManagerImpl
@@ -1798,6 +1800,32 @@ async def describe_connector(connector_id: str):
     description = connecteur.describe().to_dict()
     description["configured"] = connecteur.is_configured()
     return description
+
+
+@app.get("/connectors/{connector_id}/contract", tags=["connectors"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.CONNECTOR_VIEW))])
+async def get_connector_contract(
+    connector_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.CONNECTOR_VIEW)),
+):
+    """Ce qu'un connecteur touche, pour le compte de qui, et ce qu'il conserve.
+
+    Le rapport de conformité **nomme les manques** : un connecteur incomplet y
+    apparaît au lieu de passer pour conforme.
+
+    Pour un connecteur par sujet, l'état d'autorisation est celui de
+    **l'appelant** — l'identité vient de la clé API (ADR-010). Aucun jeton n'est
+    publié, ici ni ailleurs.
+    """
+    connecteur = get_shared_connector_registry().get(connector_id)
+    if connecteur is None:
+        raise HTTPException(status_code=404, detail=f"Connecteur '{connector_id}' inconnu.")
+
+    return {
+        **conformance(connecteur),
+        "lifecycle": lifecycle_report(connecteur, ctx.subject),
+    }
 
 
 @app.get("/connectors/{connector_id}/check", tags=["connectors"],
