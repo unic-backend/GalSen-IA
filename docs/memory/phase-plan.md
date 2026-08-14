@@ -14,9 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **45.2 terminée — VOLET 45 clos.**
-**46.1 en attente de confirmation** — étanchéité, dernière phase de la vague II.
-**Terminées**      : vague I complète (12 phases), **VOLETs 43, 44 et 45** complets.
+**Phase courante** : **46.1 terminée — VAGUE II CLOSE** (8 phases sur 8).
+**47.1 en attente de confirmation** — moteur de routines, ouverture de la vague III.
+**Terminées**      : **vagues I et II complètes** (20 phases).
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -150,7 +150,7 @@ chemins qui y mènent sont fermés.
        41.2 cycle de vie par sujet, conformité exposée par l'API   ✅
   V42  Sûreté : ce qu'un connecteur ne peut jamais faire          → 2 phases
 
-VAGUE II — Les connecteurs Google                                 → 8 phases
+VAGUE II — Les connecteurs Google                       → 8 phases  ✅ CLOSE
   V43  OAuth 2.0 : flux, jetons chiffrés, révocation              → 3 phases
        43.1 flux code+PKCE, configuration, refus                    ✅
        43.2 magasin de jetons chiffré, sans repli en clair            ✅
@@ -169,7 +169,15 @@ confrontées, et la configuration le dit.
   V45  Drive et Agenda                                            → 2 phases
        45.1 socle commun extrait, Drive et Agenda écrits dessus     ✅
        45.2 les trois branchés au démarrage, magasin partagé        ✅
-  V46  Étanchéité : un courriel privé n'entre jamais dans le RAG  → 1 phase
+  V46  Étanchéité : un courriel privé n'entre jamais dans le RAG  → 1 phase  ✅
+
+**Trou trouvé et refermé en 46.1** : `AgentContext.remember()` a pour défaut
+`agent_shared` — un magasin lu par tous les agents — et posait
+`user_id=self.user_id`, qui vaut `None` quand personne ne l'a renseigné. Un agent
+ayant lu une boîte y déposait un contenu privé **sans propriétaire**, rendu par
+une recherche sans filtre. Les trois autres chemins étaient fermés depuis le
+VOLET 40 ; celui-là ne l'était pas, parce que la mémoire **avait l'air** isolée
+grâce à son `user_id` — qui est un filtre facultatif, pas une frontière.
 
 VAGUE III — Le temps et l'exécution longue                        → 10 phases
   V47  Moteur de routines (déclaration, planification, journal)   → 3 phases

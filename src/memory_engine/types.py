@@ -20,6 +20,22 @@ class MemoryType(Enum):
     SESSION = "session"            # Temporary session data
     WORKSPACE = "workspace"        # Project/workspace specific
 
+    @property
+    def shared(self) -> bool:
+        """
+        Indique si ce type est lu par d'autres que son auteur.
+
+        Deux le sont par définition : `agent_shared` est partagé entre agents,
+        `knowledge` est la base commune. Une donnée appartenant à une personne
+        n'y entre pas (VOLET 40) — c'est la même règle que pour la base de
+        connaissance, appliquée là où elle manquait.
+
+        Les autres types sont bornés par leur propriétaire ou leur session ;
+        ils restent conditionnés à un sujet nommé, ce que le contexte d'agent
+        exige.
+        """
+        return self in (MemoryType.AGENT_SHARED, MemoryType.KNOWLEDGE)
+
 
 class MemoryPriority(Enum):
     """Priority levels for memory items."""

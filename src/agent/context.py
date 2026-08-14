@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional
 from ..approval_engine.types import ApprovalRequest
 from ..audit_engine.types import AuditEvent, AuditEventType, AuditStatus, generate_request_id
 from ..integration.engine_registry import EngineRegistry, get_shared_registry
-from ..security.isolation import IsolationError
+from ..security.isolation import IsolationError, Visibility, check_store, owner_for
 from ..security.redaction import NOMS_SENSIBLES
 from ..tool.capabilities import DataScope, may_run_unattended
 from .blackboard import Blackboard
@@ -276,30 +276,61 @@ class AgentContext:
         content: Any,
         memory_type: str = "agent_shared",
         tags: Optional[List[str]] = None,
+        data_scope: Optional["DataScope"] = None,
+        subject: Optional[str] = None,
     ) -> Optional[str]:
         """
         Enregistre une information en mémoire.
+
+        **Le défaut de cette méthode est `agent_shared`**, c'est-à-dire un
+        magasin lu par tous les agents. C'était le dernier chemin par lequel le
+        courriel de quelqu'un pouvait devenir commun : un agent qui a lu une
+        boîte et appelle `remember(corps)` y déposait un contenu privé, avec un
+        `user_id` valant `None` — donc rendu par une recherche sans filtre.
+
+        Depuis le VOLET 46, une donnée privée doit dire à qui elle est, et elle
+        ne va pas dans un type partagé.
 
         Args:
             content: Contenu à mémoriser
             memory_type: Type de mémoire (`short_term`, `long_term`, `agent_shared`, ...)
             tags: Étiquettes de catégorisation
+            data_scope: Portée déclarée de l'origine. `public` par défaut, ce
+                qui est la vérité des mémorisations existantes.
+            subject: Le propriétaire, obligatoire quand la portée est privée.
 
         Returns:
             L'identifiant de la mémoire créée, ou None si le moteur est absent
+
+        Raises:
+            IsolationError: Si un contenu privé vise un type partagé, ou n'a
+                pas de propriétaire nommé. Comme pour la connaissance, cette
+                erreur **traverse** le `except` général.
         """
         memory = self.registry.try_get("memory")
         if memory is None:
             self._logger.debug("Moteur de mémoire indisponible, mémorisation ignorée")
             return None
 
-        try:
-            from ..memory_engine.types import MemoryItem, MemoryType
+        from ..memory_engine.types import MemoryItem, MemoryType
 
+        type_choisi = self._to_memory_type(MemoryType, memory_type)
+        proprietaire = owner_for(data_scope or DataScope.PUBLIC, subject)
+
+        if proprietaire.is_private:
+            # Le type est vérifié **avant** l'écriture, et le propriétaire
+            # vient de la source, pas de `self.user_id` : celui-ci peut être
+            # `None`, ou être quelqu'un d'autre que le titulaire de la boîte.
+            check_store(
+                proprietaire,
+                Visibility.SHARED if type_choisi.shared else Visibility.PRIVATE,
+            )
+
+        try:
             item = MemoryItem(
                 content=content,
-                memory_type=self._to_memory_type(MemoryType, memory_type),
-                user_id=self.user_id,
+                memory_type=type_choisi,
+                user_id=proprietaire.subject or self.user_id,
                 session_id=self.session_id,
                 agent_id=self.agent_id,
                 tags=tags or [],
