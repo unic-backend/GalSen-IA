@@ -549,6 +549,22 @@ class AgentContext:
 
     # ------------------------------------------------------------------
     # Moteur d'outils
+    #
+    # LIMITE CONNUE, MESURÉE LE 2026-08-14 (phase 39.2, à lever en 39.3) :
+    # ce chemin **n'applique pas** le plafond de rôle que `/tool/execute`
+    # applique désormais. Un appelant de rôle `user` reçoit un 403 sur
+    # `POST /tool/execute {"tool_id": "terminal"}`, et obtient pourtant une
+    # exécution de `terminal` en passant par `POST /workflow/run`, parce que
+    # l'agent testeur l'appelle ici.
+    #
+    # Ce n'est pas un oubli : le fermer demande une notion manquante. L'agent
+    # testeur exécute `python -m pytest` sans humain — c'est sa raison d'être —
+    # alors que `terminal` est déclaré `requires_approval`. Affaiblir la
+    # déclaration pour faire passer l'agent serait exactement ce que
+    # `.claude/rules/verification.md` interdit. Ce qu'il faut est une
+    # **pré-approbation étroite** : la liste d'exécutables du registre borne
+    # déjà l'outil, et c'est cette borne qui doit devenir approuvable, pas
+    # l'outil entier.
     # ------------------------------------------------------------------
     def use_tool(self, tool_id: str, *args, **kwargs) -> Dict[str, Any]:
         """

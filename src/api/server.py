@@ -1101,11 +1101,33 @@ async def agri_advice(request: AgriAdviceRequest):
 
 # Endpoints outils
 @app.post("/tool/execute", response_model=ToolExecuteResponse, tags=["tool"],
-            dependencies=[Depends(rate_limit_dependency), Depends(require_permission(Permission.TOOL_EXECUTE))])
-async def execute_tool(request: ToolExecuteRequest):
-    """Exécuter un outil spécifié."""
+            dependencies=[Depends(rate_limit_dependency)])
+async def execute_tool(
+    request: ToolExecuteRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Exécuter un outil spécifié.
+
+    `TOOL_EXECUTE` ouvre la porte ; **elle ne dit pas quel outil**. Le plafond du
+    rôle est appliqué ici (phase 39.1) : un rôle `user` n'atteint pas l'état de
+    la plateforme, un rôle `operator` n'atteint pas les données privées d'une
+    personne, et **personne ne saute une approbation** — pas même
+    l'administration, parce qu'une approbation qualifie l'acte et non l'acteur.
+
+    Un refus porte son motif dans `detail.reason`, et `detail.decision` distingue
+    « jamais » de « il faut un humain » : les deux sont des 403, mais seul le
+    second se lève en ouvrant une demande d'approbation.
+    """
     if tool_engine is None:
         raise HTTPException(status_code=503, detail="Moteur d'outils non initialisé")
+
+    verdict = authorize(request.tool_id, Actor.from_rbac(ctx), tool_engine.capabilities)
+    if not verdict.allowed:
+        raise HTTPException(status_code=403, detail={
+            "decision": verdict.decision.value,
+            "tool_id": verdict.tool_id,
+            "reason": verdict.reason,
+        })
 
     try:
         # Exécuter l'outil via le moteur d'outils

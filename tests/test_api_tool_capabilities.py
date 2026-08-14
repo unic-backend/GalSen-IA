@@ -258,3 +258,119 @@ def test_la_matrice_est_reservee_a_l_administration(client, cles, moteur_branche
     assert client.get(
         "/tools/authorization/matrix", headers={"X-API-Key": cles["readonly"]}
     ).status_code == 403
+
+
+# ----------------------------------------------------------------------
+# 4. L'application du plafond à l'exécution (phase 39.2)
+# ----------------------------------------------------------------------
+
+@pytest.fixture
+def cles_quatre_roles(monkeypatch):
+    """Une clé par rôle, avec restauration de l'état RBAC partagé."""
+    from src.api.rate_limiter import set_valid_api_key_digests
+
+    ancien = dict(server_module.rbac_manager._key_role_map)
+    monkeypatch.setenv(
+        "GALSEN_API_KEYS",
+        "k-admin:admin:awa,k-operator:operator:moussa,"
+        "k-user:user:fatou,k-readonly:readonly:scrutin",
+    )
+    server_module.rbac_manager.reload()
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
+    yield {
+        "admin": "k-admin", "operator": "k-operator",
+        "user": "k-user", "readonly": "k-readonly",
+    }
+    server_module.rbac_manager._key_role_map = ancien
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
+
+
+def _executer(client, cle, tool_id, entree="exists", config=None):
+    """Appelle `/tool/execute` avec la clé donnée."""
+    return client.post(
+        "/tool/execute",
+        json={"tool_id": tool_id, "input": entree, "config": config or {}},
+        headers={"X-API-Key": cle},
+    )
+
+
+def test_un_utilisateur_n_atteint_plus_l_etat_de_la_plateforme(
+    client, cles_quatre_roles, moteur_branche
+):
+    """
+    Le défaut corrigé par le VOLET 39 : `tool:execute` ouvrait `filesystem`
+    à tout le monde. Le rôle `user` la détient toujours, et se voit refuser.
+    """
+    reponse = _executer(
+        client, cles_quatre_roles["user"], "filesystem", config={"path": "README.md"}
+    )
+
+    assert reponse.status_code == 403
+    detail = reponse.json()["detail"]
+    assert detail["decision"] == "refused"
+    assert "system" in detail["reason"]
+
+
+def test_un_administrateur_atteint_le_meme_outil(
+    client, cles_quatre_roles, moteur_branche
+):
+    """La symétrie : le refus vient du plafond, pas d'une panne."""
+    reponse = _executer(
+        client, cles_quatre_roles["admin"], "filesystem", config={"path": "README.md"}
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.json()["output"] is True
+
+
+def test_personne_ne_saute_une_approbation_par_l_api(
+    client, cles_quatre_roles, moteur_branche
+):
+    """
+    Le test le plus important de la phase : l'administration elle-même est
+    arrêtée devant `terminal`. Une approbation qualifie l'acte, pas l'acteur.
+    """
+    reponse = _executer(client, cles_quatre_roles["admin"], "terminal", entree=["echo"])
+
+    assert reponse.status_code == 403
+    assert reponse.json()["detail"]["decision"] == "requires_approval"
+
+
+def test_le_refus_distingue_jamais_de_il_faut_un_humain(
+    client, cles_quatre_roles, moteur_branche
+):
+    """
+    Les deux sont des 403, et ce ne sont pas les mêmes : l'un se lève en
+    ouvrant une demande d'approbation, l'autre jamais.
+    """
+    jamais = _executer(client, cles_quatre_roles["operator"], "email")
+    humain = _executer(client, cles_quatre_roles["admin"], "gui")
+
+    assert jamais.json()["detail"]["decision"] == "refused"
+    assert humain.json()["detail"]["decision"] == "requires_approval"
+
+
+def test_un_outil_inconnu_est_refuse_avant_toute_execution(
+    client, cles_quatre_roles, moteur_branche
+):
+    """Un outil que nul n'a décrit ne s'exécute pour personne."""
+    reponse = _executer(client, cles_quatre_roles["admin"], "outil_fantome")
+
+    assert reponse.status_code == 403
+    assert reponse.json()["detail"]["decision"] == "refused"
+
+
+def test_le_verdict_annonce_par_la_lecture_est_celui_qui_est_applique(
+    client, cles_quatre_roles, moteur_branche
+):
+    """
+    Une politique consultable qui diffère de la politique appliquée est pire
+    qu'aucune politique. Les deux routes sont confrontées, outil par outil.
+    """
+    cle = cles_quatre_roles["user"]
+    annonce = client.get(
+        "/tools/authorization", headers={"X-API-Key": cle}
+    ).json()["tools"]
+
+    for tool_id in annonce["refused"] + annonce["requires_approval"]:
+        assert _executer(client, cle, tool_id).status_code == 403, tool_id

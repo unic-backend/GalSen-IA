@@ -275,3 +275,43 @@ def test_le_modele_reste_atteignable_par_un_utilisateur(registre):
     verdict = authorize("model", _acteur("user"), registre)
 
     assert verdict.decision is Decision.ALLOWED
+
+
+# ----------------------------------------------------------------------
+# 7. La limite connue du chemin des agents (phase 39.2)
+# ----------------------------------------------------------------------
+
+def test_le_chemin_des_agents_n_applique_pas_encore_le_plafond():
+    """
+    Ce test **constate un trou**, il ne le cautionne pas.
+
+    `/tool/execute` refuse `terminal` à un rôle `user` ; `POST /workflow/run`
+    l'obtient quand même, parce que l'agent testeur appelle l'outil par
+    `AgentContext.use_tool`, qui ne consulte aucun plafond.
+
+    Il échouera le jour où la phase 39.3 fermera le chemin — et ce jour-là il
+    faudra le remplacer par son inverse, pas le supprimer. Écrire ce trou noir
+    sur blanc vaut mieux que de laisser croire que la porte est fermée.
+    """
+    import inspect
+
+    from src.agent.context import AgentContext
+
+    source = inspect.getsource(AgentContext.use_tool)
+
+    assert "authorize(" not in source, (
+        "Le plafond est désormais appliqué au chemin des agents : remplacer ce "
+        "test par la vérification du refus, phase 39.3."
+    )
+
+
+def test_le_trou_du_chemin_des_agents_est_documente():
+    """Une limite non écrite est une limite que le prochain ignore."""
+    import inspect
+
+    from src.agent import context as module_contexte
+
+    source = inspect.getsource(module_contexte)
+
+    assert "39.3" in source
+    assert "pré-approbation étroite" in source

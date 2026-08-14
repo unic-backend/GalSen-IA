@@ -12,9 +12,10 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 
 **Programme en cours** : **Expansion plateforme d'intelligence globale — VOLETs 37 à 76**
 (40 volets, directive du propriétaire du 2026-08-14).
-**Phases**         : **72**, réparties en 6 vagues ordonnées par dépendance.
-**Phase courante** : **39.1 terminée** — plafonds de rôle. **39.2 en attente de confirmation.**
-**Terminées**      : 37.1, 38.1, 38.2, 39.1.
+**Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
+(72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
+**Phase courante** : **39.2 terminée** — application HTTP. **39.3 en attente de confirmation.**
+**Terminées**      : 37.1, 38.1, 38.2, 39.1, 39.2.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -113,7 +114,20 @@ VAGUE I — Le socle d'extension                                    → 11 phase
        38.2 exposition par `ToolEngine` et par l'API                    ✅
   V39  Modèle de permissions (acteur, portée, moindre privilège)  → 2 phases
        39.1 plafonds de rôle, trois verdicts, routes de lecture       ✅
-       39.2 application dans `/tool/execute` et le chemin des agents
+       39.2 application dans `/tool/execute`                          ✅
+       39.3 pré-approbation étroite, puis fermeture du chemin des agents
+
+**Pourquoi 39.3 existe** (découvert en exécutant 39.2, pas planifié) :
+`/tool/execute` refuse désormais `terminal` à un rôle `user`, mais
+`POST /workflow/run` l'obtient encore — l'agent testeur appelle l'outil par
+`AgentContext.use_tool`, qui ne consulte aucun plafond. Le fermer demande une
+notion manquante : l'agent testeur exécute `python -m pytest` **sans humain**,
+c'est sa raison d'être, alors que `terminal` est déclaré `requires_approval`.
+Affaiblir la déclaration pour faire passer l'agent est interdit
+(`.claude/rules/verification.md`). Ce qu'il faut est une **pré-approbation
+étroite** : la liste d'exécutables du registre borne déjà l'outil, et c'est
+cette borne qui doit devenir approuvable, pas l'outil entier.
+Le trou est écrit dans `src/agent/context.py` et gardé par deux tests.
   V40  Isolation des données utilisateur                          → 2 phases
   V41  SDK de connecteurs (contrat, cycle de vie, tests)          → 2 phases
   V42  Sûreté : ce qu'un connecteur ne peut jamais faire          → 2 phases
