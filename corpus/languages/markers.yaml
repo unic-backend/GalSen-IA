@@ -77,27 +77,44 @@ languages:
   wo:
     reviewed: false
     reviewed_by: ""
+    source: "UD_Wolof-WTB — fréquence mesurée sur 2105 phrases (2026-08-14)"
     note: >-
-      Assemblée sans locuteur. À faire relire avant de s'appuyer dessus pour
-      autre chose qu'un signalement.
+      Cette liste n'est plus écrite de mémoire : chaque marqueur est un mot outil
+      **mesuré** sur le corpus UD_Wolof-WTB, avec la part de phrases où il
+      apparaît. Mesurée n'est pas relue : aucun locuteur ne l'a validée, et
+      « ne », « te » et « ni » ont été retirés à la main parce qu'ils sont aussi
+      des mots outils français et feraient basculer des phrases françaises.
+      Reproductible par `python scripts/ingest_wolof.py` puis un comptage.
     markers:
-      - ak
-      - ci
+      - ci      # 54 % des phrases
+      - ak      # 28 %
+      - di      # 24 %
+      - ko      # 23 %
+      - na      # 23 %
+      - mu      # 20 %
+      - yi      # 20 %
+      - ñu      # 19 %
+      - bu      # 17 %
+      - bi      # 17 %
+      - ba      # 16 %
+      - lu      # 14 %
+      - am      # 13 %
+      - ay      # 12 %
+      - yu      # 11 %
+      - moo     # 10 %
+      - gi      # 9 %
+      - xam     # 9 %
+      - leen    # 9 %
+      - gu      # 9 %
+      - moom    # 8 %
+      - woon    # 8 %
+      - nag     # 8 %
       - ngir
-      - dafa
-      - naa
-      - nañu
       - waaye
       - ndax
-      - bu
-      - yi
-      - bi
-      - mën
       - lépp
       - yépp
-      - moom
-      - lu
-      - am
+      - mën
 
   ff:
     reviewed: false

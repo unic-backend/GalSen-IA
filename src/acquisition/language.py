@@ -94,6 +94,7 @@ def load_markers(chemin: Optional[str] = None) -> Dict[str, Any]:
             "markers": marqueurs,
             "reviewed": bool(entree.get("reviewed", False)),
             "reviewed_by": str(entree.get("reviewed_by") or ""),
+            "source": str(entree.get("source") or ""),
             "note": str(entree.get("note") or ""),
         }
 
@@ -164,6 +165,7 @@ def detect_language(texte: str, chemin: Optional[str] = None) -> Dict[str, Any]:
         f"{score:.1%} des mots sont des mots outils du « {meilleur} ».",
         reviewed=entree["reviewed"],
         note=entree["note"],
+        source=entree["source"],
     )
 
 
@@ -174,6 +176,7 @@ def _verdict(
     pourquoi: str,
     reviewed: bool = True,
     note: str = "",
+    source: str = "",
 ) -> Dict[str, Any]:
     """Assemble un verdict de détection, avec ce qui le nuance."""
     resultat = {
@@ -185,9 +188,17 @@ def _verdict(
         "why": pourquoi,
     }
     if not reviewed and langue != INCONNU:
+        # Mesurée sur un corpus ou écrite de mémoire : deux listes non relues,
+        # deux niveaux de confiance très différents. Les confondre effacerait
+        # tout l'intérêt d'avoir mesuré.
+        origine = (
+            f" Liste dérivée d'un corpus : {source}." if source
+            else " Liste écrite sans corpus ni locuteur."
+        )
+        resultat["marker_source"] = source or "mémoire"
         resultat["caveat"] = (
             f"La liste « {langue} » n'a pas été relue par un locuteur : ce verdict "
-            "vaut un signalement, pas une certitude. " + note
+            "vaut un signalement, pas une certitude." + origine
         ).strip()
     return resultat
 
@@ -257,6 +268,11 @@ def detection_report(chemin: Optional[str] = None) -> Dict[str, Any]:
             code for code, entree in registre["languages"].items()
             if not entree["reviewed"]
         ),
+        "derived_from_corpus": {
+            code: entree["source"]
+            for code, entree in sorted(registre["languages"].items())
+            if entree.get("source")
+        },
         "not_detectable": ["srr"],
         "method": "function-word markers",
         "minimum_words": MOTS_MINIMUM,

@@ -50,3 +50,8 @@ htmlcov/
 
 # Bases de donnees locales : la donnee ne se versionne pas
 data/
+
+# Corpus wolof brut : reproductible par `python scripts/ingest_wolof.py`.
+# Le corpus **traité** (data/processed_wolof/) est versionné, lui : c'est ce que
+# les tests et le RAG lisent.
+data/raw_wolof/*.conllu

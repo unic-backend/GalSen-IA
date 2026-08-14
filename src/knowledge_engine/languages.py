@@ -197,11 +197,16 @@ def _detection(langue: Language) -> Dict[str, Any]:
             f"relus, `corpus/languages/markers.yaml`). Sous {25} mots, ou à égalité "
             "avec une autre langue, le détecteur rend `unknown` plutôt qu'un verdict.",
         )
+    origine = (
+        f" Elle est **dérivée d'un corpus** : {entree['source']}."
+        if entree.get("source") else
+        " Elle a été écrite sans corpus ni locuteur."
+    )
     return _verdict(
         Support.PARTIAL,
         f"Une liste de {len(entree['markers'])} marqueurs existe, mais elle n'a pas "
         "été relue par un locuteur : chaque verdict qu'elle produit porte cette "
-        "réserve. Utilisable comme signalement, pas comme certitude.",
+        "réserve. Utilisable comme signalement, pas comme certitude." + origine,
         bloque_par="une relecture par une personne qui parle la langue",
     )
 
