@@ -6,6 +6,12 @@ chaque nuit à trois heures est une routine dont personne ne voit l'échec.
 """
 
 from .registry import RoutineRegistry
+from .scheduler import (
+    ECHECS_AVANT_ARRET,
+    ActionOutcome,
+    RoutineRun,
+    RoutineScheduler,
+)
 from .types import (
     ACTIONS_MAXIMUM,
     INTERVALLE_MINIMAL_SECONDES,
@@ -16,9 +22,13 @@ from .types import (
 
 __all__ = [
     "ACTIONS_MAXIMUM",
+    "ActionOutcome",
+    "ECHECS_AVANT_ARRET",
     "INTERVALLE_MINIMAL_SECONDES",
     "Routine",
     "RoutineAction",
     "RoutineRefused",
     "RoutineRegistry",
+    "RoutineRun",
+    "RoutineScheduler",
 ]

@@ -14,9 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **47.1 terminée** — déclaration des routines.
-**47.2 en attente de confirmation** — planification et déclenchement.
-**Terminées**      : **vagues I et II complètes** (20 phases), puis **47.1**.
+**Phase courante** : **47.2 terminée** — planification et déclenchement.
+**47.3 en attente de confirmation** — journal des exécutions et routes.
+**Terminées**      : **vagues I et II complètes** (20 phases), puis **47.1, 47.2**.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -182,7 +182,7 @@ grâce à son `user_id` — qui est un filtre facultatif, pas une frontière.
 VAGUE III — Le temps et l'exécution longue                        → 10 phases
   V47  Moteur de routines (déclaration, planification, journal)   → 3 phases
        47.1 déclaration, registre, refus à l'écriture                ✅
-       47.2 planification et déclenchement
+       47.2 décision pure, exécution gardée, arrêt sur échec       ✅
        47.3 journal des exécutions et routes
   V48  Sûreté des routines (plafonds, arrêt, portillon)           → 2 phases
   V49  Workflows longs : reprise, point de contrôle, annulation   → 3 phases
