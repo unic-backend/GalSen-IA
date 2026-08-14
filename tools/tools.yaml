@@ -175,8 +175,12 @@ tools:
     module: "tools.model.tool"
     class: "ModelTool"
     capability:
+      # `system` a d'abord été écrit ici, et le plafond des rôles l'a montré
+      # faux : il refusait la génération à tout utilisateur. L'outil ne lit ni
+      # la configuration ni les identifiants — il passe une invite à un modèle
+      # local et rend son texte. Sa portée est celle de ce qu'on lui donne.
       effects: [read]
-      data_scope: system
+      data_scope: public
       requires_approval: false
       unattended: true
     config:

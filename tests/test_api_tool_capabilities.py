@@ -207,3 +207,54 @@ def test_sans_moteur_d_outils_les_routes_disent_cinq_cent_trois(
     )
 
     assert reponse.status_code == 503
+
+
+# ----------------------------------------------------------------------
+# 3. L'autorisation par acteur (phase 39.1)
+# ----------------------------------------------------------------------
+
+def test_l_appelant_voit_les_trois_verdicts(client, cles, moteur_branche):
+    """Afficher seulement `allowed` cacherait ce qu'il a le droit de demander."""
+    reponse = client.get(
+        "/tools/authorization", headers={"X-API-Key": cles["admin"]}
+    )
+
+    assert reponse.status_code == 200
+    corps = reponse.json()
+    assert corps["role"] == "admin"
+    assert "user_private" in corps["ceiling"]["scopes"]
+    assert "terminal" in corps["tools"]["requires_approval"]
+    assert "metrics" in corps["tools"]["allowed"]
+
+
+def test_le_verdict_par_outil_porte_sa_raison(client, cles, moteur_branche):
+    """Un « non » sans cause est indébogable pour qui le reçoit."""
+    reponse = client.get(
+        "/tools/terminal/authorization", headers={"X-API-Key": cles["admin"]}
+    )
+
+    assert reponse.status_code == 200
+    corps = reponse.json()
+    assert corps["decision"] == "requires_approval"
+    assert corps["reason"].strip() != ""
+
+
+def test_le_role_evalue_vient_de_la_cle_pas_du_corps(client, cles, moteur_branche):
+    """Un appelant ne choisit pas le rôle sous lequel il est évalué."""
+    reponse = client.get(
+        "/tools/authorization",
+        headers={"X-API-Key": cles["admin"]},
+        params={"role": "readonly"},
+    )
+
+    assert reponse.json()["role"] == "admin"
+
+
+def test_la_matrice_est_reservee_a_l_administration(client, cles, moteur_branche):
+    """La carte complète des privilèges n'est pas une donnée d'exploitation."""
+    assert client.get(
+        "/tools/authorization/matrix", headers={"X-API-Key": cles["admin"]}
+    ).status_code == 200
+    assert client.get(
+        "/tools/authorization/matrix", headers={"X-API-Key": cles["readonly"]}
+    ).status_code == 403

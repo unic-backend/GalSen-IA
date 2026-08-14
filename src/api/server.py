@@ -23,6 +23,13 @@ from src.memory_engine.types import MemoryItem
 from src.model_engine.model_manager import ModelManagerImpl
 from src.knowledge_engine.knowledge_manager import KnowledgeManagerImpl
 from src.approval_engine.approval_manager import ApprovalManagerImpl
+from src.tool.authorization import (
+    Actor,
+    authorization_report,
+    authorize,
+    authorized_tools,
+    ceiling_for,
+)
 from src.tool.tool_engine import ToolEngine
 from src.tool.tool_loader import ToolLoader
 from src.tools.agri_advice.tool import AgriAdviceTool
@@ -1155,6 +1162,69 @@ async def get_tool_capability(tool_id: str):
         "may_run_unattended": autorise,
         "unattended_reason": raison,
     }
+
+
+@app.get("/tools/authorization", tags=["tool"],
+         dependencies=[Depends(rate_limit_dependency)])
+async def get_tool_authorization(
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Ce que l'appelant peut lancer, doit faire approuver, ou ne peut pas.
+
+    **Les trois verdicts sont rendus séparément.** Une interface qui n'afficherait
+    que `allowed` cacherait à l'utilisateur les outils qu'il a le droit de
+    *demander* — et « il faut un humain » n'est ni un oui ni un non.
+
+    L'identité vient de la clé API (ADR-010), jamais du corps de la requête :
+    un appelant ne choisit pas le rôle sous lequel il est évalué.
+    """
+    if tool_engine is None:
+        raise HTTPException(status_code=503, detail="Moteur d'outils non initialisé")
+
+    acteur = Actor.from_rbac(ctx)
+    plafond = ceiling_for(acteur.role)
+    return {
+        "subject": acteur.subject,
+        "role": acteur.role,
+        "ceiling": {
+            "scopes": sorted(portee.value for portee in plafond.scopes),
+            "effects": sorted(effet.value for effet in plafond.effects),
+            "rationale": plafond.rationale,
+        },
+        "tools": authorized_tools(acteur, tool_engine.capabilities),
+    }
+
+
+@app.get("/tools/{tool_id}/authorization", tags=["tool"],
+         dependencies=[Depends(rate_limit_dependency)])
+async def get_tool_authorization_for(
+    tool_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Le verdict pour l'appelant et un outil précis, avec sa raison.
+
+    Un refus **porte toujours son motif** : un « non » sans cause est
+    indébogable pour celui qui le reçoit comme pour celui qui l'exploite.
+    """
+    if tool_engine is None:
+        raise HTTPException(status_code=503, detail="Moteur d'outils non initialisé")
+
+    verdict = authorize(tool_id, Actor.from_rbac(ctx), tool_engine.capabilities)
+    return verdict.as_dict()
+
+
+@app.get("/tools/authorization/matrix", tags=["tool"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.ADMIN_MANAGE))])
+async def get_tool_authorization_matrix():
+    """La matrice rôle × verdict, **calculée** et non recopiée.
+
+    Une politique décrite dans un document et une politique appliquée par le
+    code divergent au premier changement. Celle-ci vient du code.
+    """
+    if tool_engine is None:
+        raise HTTPException(status_code=503, detail="Moteur d'outils non initialisé")
+    return authorization_report(tool_engine.capabilities)
 
 
 # Endpoints workflows

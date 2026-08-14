@@ -13,8 +13,8 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 **Programme en cours** : **Expansion plateforme d'intelligence globale — VOLETs 37 à 76**
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **72**, réparties en 6 vagues ordonnées par dépendance.
-**Phase courante** : **38.2 terminée** — VOLET 38 clos. **39.1 en attente de confirmation.**
-**Terminées**      : 37.1, 38.1, 38.2.
+**Phase courante** : **39.1 terminée** — plafonds de rôle. **39.2 en attente de confirmation.**
+**Terminées**      : 37.1, 38.1, 38.2, 39.1.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -112,6 +112,8 @@ VAGUE I — Le socle d'extension                                    → 11 phase
        38.1 vocabulaire, garde et déclaration des 22 outils         ✅
        38.2 exposition par `ToolEngine` et par l'API                    ✅
   V39  Modèle de permissions (acteur, portée, moindre privilège)  → 2 phases
+       39.1 plafonds de rôle, trois verdicts, routes de lecture       ✅
+       39.2 application dans `/tool/execute` et le chemin des agents
   V40  Isolation des données utilisateur                          → 2 phases
   V41  SDK de connecteurs (contrat, cycle de vie, tests)          → 2 phases
   V42  Sûreté : ce qu'un connecteur ne peut jamais faire          → 2 phases
