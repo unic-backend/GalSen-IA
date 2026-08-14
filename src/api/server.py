@@ -123,6 +123,7 @@ from src.routines import (
     RoutineJournal,
     RoutineRefused,
     RoutineRegistry,
+    RoutineSafety,
     RoutineScheduler,
 )
 from src.connectors.safety import safety_report
@@ -471,6 +472,14 @@ _oauth_sessions: Dict[str, OAuthSession] = {}
 # le dit en toutes lettres.
 routine_registry = RoutineRegistry()
 routine_journal = RoutineJournal()
+
+# La sûreté vit **hors** du planificateur, et survit à sa reconstruction.
+#
+# Le premier branchement de cette phase la laissait naître avec chaque
+# planificateur : un arrêt d'urgence engagé disparaissait dès que le moteur
+# d'outils changeait — exactement le défaut contre lequel `safety.py` a été
+# écrit, réintroduit par son propre câblage. Un test le garde désormais.
+routine_safety = RoutineSafety()
 _routine_scheduler: Optional[RoutineScheduler] = None
 
 
@@ -479,7 +488,7 @@ def _scheduler() -> RoutineScheduler:
     global _routine_scheduler
     if _routine_scheduler is None or _routine_scheduler._outils is not tool_engine:
         _routine_scheduler = RoutineScheduler(
-            routine_registry, tool_engine=tool_engine
+            routine_registry, tool_engine=tool_engine, safety=routine_safety
         )
     return _routine_scheduler
 
@@ -595,6 +604,26 @@ class WorkflowRunRequest(BaseModel):
     request: str = Field(..., min_length=1, description="La demande à traiter")
     workflow_id: Optional[str] = Field(None, description="Workflow à utiliser ; le défaut sinon")
     session_id: Optional[str] = Field(None, description="Session, pour relier plusieurs demandes")
+
+
+class RoutineHaltRequest(BaseModel):
+    """L'arrêt d'urgence. Qui l'engage vient de la clé, jamais du corps."""
+
+    reason: str = Field(
+        ...,
+        description=(
+            "Pourquoi. Elle sera lue par celui qui envisagera de lever "
+            "l'arrêt, peut-être des jours plus tard."
+        ),
+    )
+
+
+class RoutineBudgetRequest(BaseModel):
+    """Le budget quotidien d'une routine."""
+
+    runs_per_day: int = Field(
+        ..., description="Tours autorisés par jour. Zéro est refusé."
+    )
 
 
 class RoutineActionRequest(BaseModel):
@@ -1521,6 +1550,72 @@ def _routine_de(routine_id: str, ctx: RBACContext, activer: bool):
         )
     except RoutineRefused as refus:
         raise HTTPException(status_code=404, detail=str(refus))
+
+
+# Sûreté des routines (VOLET 48).
+@app.get("/routines/safety", tags=["routines"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.TOOL_EXECUTE))])
+async def routines_safety():
+    """L'état de l'arrêt d'urgence et des budgets."""
+    return routine_safety.safety_report()
+
+
+@app.post("/routines/halt", tags=["routines"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def halt_routines(
+    request: RoutineHaltRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.ADMIN_MANAGE)),
+):
+    """Engage l'arrêt d'urgence : plus aucune routine ne démarre.
+
+    Global à dessein : **au moment où l'on en a besoin, on n'a pas la liste des
+    routines.** Il ne se lève jamais tout seul, et il nomme qui l'a engagé —
+    sinon personne ne sait s'il a le droit de le lever.
+
+    Il n'interrompt pas un tour déjà commencé : celui-là finit, et aucun autre
+    ne démarre.
+    """
+    try:
+        return routine_safety.halt(ctx.subject, request.reason)
+    except ValueError as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
+
+
+@app.delete("/routines/halt", tags=["routines"],
+            dependencies=[Depends(rate_limit_dependency),
+                          Depends(require_permission(Permission.ADMIN_MANAGE))])
+async def release_routines_halt():
+    """Lève l'arrêt d'urgence."""
+    return {"released": routine_safety.release(), "halted": routine_safety.halted}
+
+
+@app.put("/routines/{routine_id}/budget", tags=["routines"],
+         dependencies=[Depends(rate_limit_dependency)])
+async def set_routine_budget(
+    routine_id: str,
+    request: RoutineBudgetRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Fixe le nombre de tours autorisés par jour pour une routine.
+
+    Une limite nulle est refusée : ce serait une désactivation déguisée, qui
+    laisserait la routine paraître active sans jamais tourner. Arrêter une
+    routine se fait explicitement.
+    """
+    visibles = {
+        routine.routine_id
+        for routine in routine_registry.list_routines(subject=ctx.subject)
+    }
+    if routine_id not in visibles:
+        raise HTTPException(
+            status_code=404, detail=f"Routine '{routine_id}' inconnue."
+        )
+    try:
+        limite = routine_safety.set_limit(routine_id, request.runs_per_day)
+    except ValueError as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
+    return {"routine_id": routine_id, "runs_per_day": limite}
 
 
 # Endpoints workflows

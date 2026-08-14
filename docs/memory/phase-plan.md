@@ -14,9 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **48.1 terminée** — budget et arrêt d'urgence.
-**48.2 en attente de confirmation** — routes de sûreté, clôture du VOLET 48.
-**Terminées**      : **vagues I et II complètes** (20 phases), **VOLET 47** complet, **48.1**.
+**Phase courante** : **48.2 terminée — VOLET 48 clos.**
+**49.1 en attente de confirmation** — workflows longs : reprise et points de contrôle.
+**Terminées**      : **vagues I et II complètes** (20 phases), **VOLETs 47 et 48** complets.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -186,7 +186,14 @@ VAGUE III — Le temps et l'exécution longue                        → 10 phas
        47.3 journal borné, compteurs qui survivent, routes         ✅
   V48  Sûreté des routines (plafonds, arrêt, portillon)           → 2 phases
        48.1 budget quotidien, arrêt d'urgence global                 ✅
-       48.2 routes de sûreté et clôture
+       48.2 routes de sûreté, câblage corrigé                       ✅
+
+**Défaut trouvé en câblant 48.2** : la couche de sûreté naissait **avec chaque
+planificateur**, et le serveur reconstruit le sien dès que le moteur d'outils
+change — un arrêt d'urgence engagé disparaissait alors. C'est exactement le
+défaut contre lequel `safety.py` a été écrit, réintroduit par son propre
+branchement. La sûreté vit désormais au niveau du module ; un test conduit la
+reconstruction pour le vérifier.
   V49  Workflows longs : reprise, point de contrôle, annulation   → 3 phases
   V50  Notifications : moteur au-dessus du magasin existant       → 2 phases
 
