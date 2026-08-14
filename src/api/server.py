@@ -112,6 +112,11 @@ from src.connectors.oauth import (
 from src.connectors.oauth import configuration_report as oauth_configuration_report
 from src.connectors.oauth import get_provider as get_oauth_provider
 from src.connectors.oauth.flow import DUREE_DE_VIE_SECONDES
+from src.connectors.google import (
+    CalendarConnector,
+    DriveConnector,
+    GmailConnector,
+)
 from src.connectors.oauth.session import OAuthSession
 from src.connectors.safety import safety_report
 
@@ -313,6 +318,26 @@ def _register_builtin_connectors() -> None:
             registre.register(connecteur)
         except ValueError:
             logger.debug("Connecteur %s déjà enregistré.", connecteur.connector_id)
+
+    # Les connecteurs Google, inscrits même sans identifiants : un connecteur
+    # non configuré doit rester **visible**, sinon personne ne peut savoir ce
+    # que l'installation saurait joindre une fois branchée.
+    #
+    # Ils partagent la session OAuth du fournisseur, donc son magasin de jetons.
+    # Sans ce partage, un consentement donné par `/oauth/google/authorize`
+    # resterait invisible des connecteurs — une panne silencieuse où chaque
+    # moitié fonctionne et l'ensemble non.
+    try:
+        session = _oauth_session("google")
+    except HTTPException:
+        logger.info("Fournisseur OAuth 'google' non déclaré : aucun connecteur Google.")
+    else:
+        for classe in (GmailConnector, DriveConnector, CalendarConnector):
+            try:
+                registre.register(classe(session.provider, tokens=session.tokens))
+            except ValueError:
+                logger.debug("Connecteur %s déjà enregistré.", classe.CONNECTOR_ID)
+
     logger.info("Connecteurs enregistrés : %d", registre.count())
 
 
