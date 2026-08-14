@@ -4,11 +4,16 @@
 # endpoint must be fixable without a release. Each entry names its
 # `discovery_url`, the authoritative document published by the provider itself.
 #
-# The values below are written here so the flow can be built and tested. They
-# are NOT fetched: this environment cannot reach these hosts, and no network
-# call is made when this file is read. **Confirm them against `discovery_url`
-# when you configure the client** — that check belongs to whoever holds the
-# credentials, and it is one `curl` away.
+# The values below were **confirmed against the discovery document on
+# 2026-08-14**, by fetching `discovery_url` and comparing the three endpoints
+# field by field. They matched exactly. An earlier version of this comment said
+# this environment could not reach these hosts; that was an assumption, and
+# measuring it showed it was wrong — `accounts.google.com` answers.
+#
+# Nothing is fetched *when this file is read*: the confirmation was a one-off
+# check, and re-running it is one `curl` away:
+#
+#   curl -sS https://accounts.google.com/.well-known/openid-configuration
 #
 # No client_id and no client_secret appear here, ever. They are read from the
 # environment (ADR-004), and this file is committed.

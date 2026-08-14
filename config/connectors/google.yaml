@@ -4,9 +4,14 @@
 # must be fixable without a release. Each entry names the documentation that
 # describes it, so the value can be confronted with its authority.
 #
-# Nothing here is fetched. This environment cannot reach googleapis.com, and
-# these connectors make no network call at all: they build requests, and the
-# caller that holds the credentials sends them.
+# Nothing here is fetched when this file is read, and these base URLs have NOT
+# been confronted with the documentation named beside them — unlike the OAuth
+# endpoints, which were, on 2026-08-14. They remain a copy until someone checks.
+#
+# The connectors themselves make no network call: they build requests, and an
+# executor sends them. That separation is not a workaround — the Google hosts
+# are reachable from this environment (measured 2026-08-14) — it is what makes
+# every branch testable without a credential.
 
 version: "1.0"
 

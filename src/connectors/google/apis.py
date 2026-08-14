@@ -5,7 +5,9 @@ Same rule as the OAuth endpoints: a base URL is configuration, not code. Each
 entry names the documentation that describes it, so the value can be confronted
 with its authority instead of being trusted because it is written down.
 
-Nothing here is fetched. This environment cannot reach googleapis.com.
+Nothing here is fetched when the file is read. The API base URLs have **not**
+been confronted with their documentation — unlike the OAuth endpoints, which
+were, on 2026-08-14 — so they remain a copy until someone checks them.
 """
 
 from __future__ import annotations

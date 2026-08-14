@@ -19,8 +19,10 @@ re-implemented:
 
 Two things this module does not do, and will not:
 
-**It makes no network call.** It builds requests; whoever holds the credentials
-sends them. This environment holds none and reaches nothing.
+**It makes no network call.** It builds requests; an executor sends them. That
+separation is not a workaround for this environment — the Google hosts are in
+fact reachable from here (measured 2026-08-14) — it is what makes every branch
+of this module testable without a credential and without a network.
 
 **It never accepts a mailbox identifier.** Every request targets `me`, the owner
 of the token. Taking a user id in a parameter would make « read someone else's
