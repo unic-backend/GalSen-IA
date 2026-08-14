@@ -23,6 +23,8 @@ import time
 from typing import Any, Dict, List, Optional
 
 from .interfaces import Connector
+from ..tool.capabilities import DataScope, Effect
+from .contract import DataContract
 from .types import ConnectorCheck, ConnectorDescription, ConnectorKind, ConnectorStatus
 
 logger = logging.getLogger(__name__)
@@ -68,6 +70,21 @@ class LocalDiskStorageConnector(Connector):
     def kind(self) -> ConnectorKind:
         """Catégorie : stockage."""
         return ConnectorKind.STORAGE
+
+    @property
+    def data_contract(self) -> DataContract:
+        """
+        Stockage d'objets de la plateforme, sous sa racine déclarée. Il ne range
+        pas les fichiers d'une personne : un espace par utilisateur serait un
+        connecteur distinct, lié à un sujet.
+        """
+        return DataContract(
+            data_scope=DataScope.SYSTEM,
+            per_subject=False,
+            effects=frozenset({Effect.READ, Effect.WRITE}),
+            retention="Les objets écrits, jusqu'à suppression explicite.",
+            rationale="Magasin de la plateforme, sous une racine déclarée.",
+        )
 
     def describe(self) -> ConnectorDescription:
         """Décrit le connecteur et la variable qu'il consulte."""

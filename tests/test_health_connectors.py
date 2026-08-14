@@ -12,6 +12,8 @@ import pytest
 
 from src.api.health import ComponentHealthChecker
 from src.connectors import get_shared_connector_registry, reset_shared_connector_registry
+from src.connectors.contract import DataContract
+from src.tool.capabilities import DataScope, Effect
 from src.connectors.types import ConnectorCheck, ConnectorKind, ConnectorStatus
 
 
@@ -29,6 +31,22 @@ class _ConnecteurFactice:
     @property
     def kind(self) -> ConnectorKind:
         return ConnectorKind.EMAIL
+
+    @property
+    def data_contract(self) -> DataContract:
+        """
+        Un double déclare son contrat, comme un vrai connecteur.
+
+        Sans cette déclaration le registre le refuserait — et il aurait raison :
+        « non déclaré » n'est pas « inoffensif », y compris pour un double.
+        """
+        return DataContract(
+            data_scope=DataScope.SYSTEM,
+            per_subject=False,
+            effects=frozenset({Effect.READ}),
+            retention="Rien.",
+            rationale="Connecteur de test, sans effet réel.",
+        )
 
     def describe(self):
         from src.connectors.types import ConnectorDescription
