@@ -228,3 +228,58 @@ def test_aucune_de_ces_capacites_n_a_ete_construite(capacite):
         f"« {capacite} » a une dépendance ({', '.join(presentes)}) alors que son "
         "déclencheur n'est pas atteint : écrire l'ADR qui l'assume."
     )
+
+
+def test_un_parcours_refuse_est_compte_et_franchit_le_declencheur_graphe():
+    """
+    La deuxième clause du déclencheur était **écrite et non mesurée** : le
+    magasin refusait au-delà de la profondeur 3, et personne ne comptait. Un
+    refus est pourtant le signal le plus direct qu'une base graphe manque —
+    quelqu'un a posé la question que le magasin ne sait pas traiter.
+
+    Corrigé le 2026-08-14, suite au relevé de l'ADR-021.
+    """
+    from src.knowledge_engine.entities import (
+        EntityRefused,
+        InMemoryEntityStore,
+        depth_refusals,
+        reset_depth_refusals,
+    )
+
+    reset_depth_refusals()
+    try:
+        avant = next(e for e in deferred_report()["capabilities"]
+                     if e["capability"] == "graph_database")
+        assert avant["met"] is False
+        assert avant["depth_refusals"] == 0
+
+        magasin = InMemoryEntityStore()
+        for _ in range(deferred_triggers.SEUIL_REFUS_DE_PROFONDEUR):
+            with pytest.raises(EntityRefused):
+                magasin.neighbours("x", depth=5)
+
+        apres = next(e for e in deferred_report()["capabilities"]
+                     if e["capability"] == "graph_database")
+        assert apres["depth_refusals"] == deferred_triggers.SEUIL_REFUS_DE_PROFONDEUR
+        assert apres["met"] is True, "Une demande observée ne franchit pas le seuil"
+        assert depth_refusals()["max_requested"] == 5
+    finally:
+        # Le compteur est partagé par le processus : le laisser plein ferait
+        # passer les tests suivants pour une demande de base graphe.
+        reset_depth_refusals()
+
+
+def test_un_parcours_dans_les_bornes_ne_compte_pas_comme_une_demande():
+    """La contrepartie : un compteur qui monte tout seul ne mesure rien."""
+    from src.knowledge_engine.entities import (
+        InMemoryEntityStore,
+        depth_refusals,
+        reset_depth_refusals,
+    )
+
+    reset_depth_refusals()
+    try:
+        InMemoryEntityStore().neighbours("x", depth=3)
+        assert depth_refusals()["count"] == 0
+    finally:
+        reset_depth_refusals()

@@ -12,6 +12,58 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-14
+
+- **Acquisition de connaissance sous portillon (ADR-021)** — `src/acquisition/` : registre
+  étendu (rangs `TIER_A`→`TIER_D`, `enabled: false` par défaut), enregistrement candidat et
+  machine à états, récupérateur poli (agent véridique, `robots.txt` appliqué, débit par
+  hôte, redirection hors domaine refusée, GET conditionnel), portillon d'approbation **par
+  lot** avec empreinte, découverte profondeur 1 même domaine, extraction de métadonnées,
+  détection de langue, barrière de confiance obligatoire, dix contrôles de qualité,
+  proposition de manifeste en `DRAFT`. `scripts/acquisition_pilot.py` enchaîne le tout.
+  **Rien n'ingère seul, et aucune source n'est activée.**
+- **Wolof** — `src/wolof/clad.py` (alphabet officiel de 27 lettres, décret n° 2005-992,
+  normalisation déterministe et idempotente), corpus **2105 phrases** acquis depuis
+  UD_Wolof-WTB, `src/services/wolof/` (chargeur RAG et invite système).
+- **Connaissance sénégalaise** — `scripts/ingest_all_senegal.py` : 14 régions et 45
+  départements **dérivés** de geoBoundaries, rattachement calculé par géométrie.
+  `scripts/ingest_senegal_domains.py` : 8 jeux acquis, 212 objets sectoriels.
+  `src/services/senegal/` : RAG, comparaison de divergences, invite système.
+- **RAG multilingue** — `corpus/languages/aliases.yaml` et
+  `src/services/senegal/multilingual_aliases.py` : 16 concepts, 115 termes fr/wo/en.
+  L'expansion **ajoute et ne retire jamais**, donc elle ne peut pas faire perdre une
+  correspondance. Latence mesurée 0,1–0,5 ms.
+- **Mesure du blocage réseau** — `scripts/activate_senegal_sources.py` : les 9 domaines
+  `.sn` inscrits répondent `CONNECT → 403`. Le code distingue `blocked_by_environment` de
+  `refused_by_site`, parce que les deux demandent des actions opposées.
+
+### Fixed — 2026-08-14
+
+- **Le déclencheur de `automated_acquisition` était circulaire.** Il mesurait le corpus
+  sénégalais, c'est-à-dire le résultat de la capacité différée : `met` ne pouvait devenir
+  vrai par aucun chemin. Il mesure désormais **une source activée au registre**, et un test
+  empêche le retour de la circularité (5000 documents ne le franchissent plus).
+- **La deuxième clause du déclencheur `graph_database` n'était pas mesurée.** « Un parcours
+  au-delà de la profondeur 3 » était écrit, le magasin refusait, et personne ne comptait.
+  Les refus sont comptés (`entities.depth_refusals()`) et franchissent le seuil à 10.
+- **La règle du pluriel française amputait les alias wolof** : « xaalis » devenait
+  « xaali » avant l'expansion, parce que les termes de requête étaient construits sur des
+  mots déjà normalisés. Ils le sont sur les mots bruts.
+- **La récupération répondait à côté avec l'air de répondre** : « Quelle est l'histoire du
+  royaume du Cayor ? » rendait un département. Pondération IDF **plus** mots vides ; ces
+  questions rendent `UNKNOWN`, ce qui est correct puisque le domaine est vide.
+- **`languages.py` annonçait « aucun détecteur de langue n'existe »** — vrai jusqu'à
+  l'étape 6, faux depuis. Le verdict est mesuré sur le fichier de marqueurs.
+- **`knowledge_architect` laissait la langue vide** en affirmant qu'aucun détecteur
+  n'existait ; il propose désormais la langue détectée, **marquée comme détectée**.
+- **`chunk_text` ouvrait le fragment suivant au milieu d'un mot** (« ari » au lieu de
+  « ñaari ») : le recouvrement recule jusqu'à une frontière de mot.
+- **`retrieval_date` n'était posée nulle part** alors qu'elle fait partie de la provenance
+  minimale : aucun document ne pouvait atteindre `VERIFIED`. Posée dans `acquire()`.
+- **`reconcile()` traitait la sentinelle `unknown` comme une déclaration de langue**, et
+  `from_html` la tronquait en « unkno » : tout document sans langue déclarée partait en
+  quarantaine.
+
 ### Fixed — 2026-08-13
 - **`detect_contradictions()` ne compte plus les années comme des chiffres en désaccord.**
   « 125 tonnes en 2022 » et « 130 tonnes en 2023 » étaient rapportés comme un conflit

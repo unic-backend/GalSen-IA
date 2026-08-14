@@ -306,6 +306,51 @@ class Relation:
         )
 
 
+#: Parcours refusés pour cause de profondeur, comptés depuis le démarrage du
+#: processus. Ce n'est pas une statistique d'usage : c'est la mesure de la
+#: **demande** pour une base graphe. Un refus non compté laisse le déclencheur
+#: de `deferred_triggers` sans rien à lire, et la décision différée devient une
+#: décision oubliée.
+_REFUS_DE_PROFONDEUR: Dict[str, Any] = {"count": 0, "max_requested": 0}
+_COMPTEUR = threading.Lock()
+
+
+def _compter_refus_de_profondeur(profondeur: int) -> None:
+    """Enregistre un parcours refusé, et la profondeur demandée."""
+    with _COMPTEUR:
+        _REFUS_DE_PROFONDEUR["count"] += 1
+        _REFUS_DE_PROFONDEUR["max_requested"] = max(
+            _REFUS_DE_PROFONDEUR["max_requested"], int(profondeur)
+        )
+
+
+def depth_refusals() -> Dict[str, Any]:
+    """
+    Retourne les parcours refusés faute de profondeur, depuis le démarrage.
+
+    Returns:
+        `count`, `max_requested`, et le maximum autorisé. Le compte est
+        **par processus** : il mesure la demande observée ici, pas un historique.
+    """
+    with _COMPTEUR:
+        return {
+            "count": _REFUS_DE_PROFONDEUR["count"],
+            "max_requested": _REFUS_DE_PROFONDEUR["max_requested"],
+            "max_allowed": PROFONDEUR_MAXIMALE,
+            "note": (
+                "Mesure de la demande pour une base graphe, pas une statistique "
+                "d'usage. Compté par processus, jamais persisté."
+            ),
+        }
+
+
+def reset_depth_refusals() -> None:
+    """Remet le compteur à zéro — réservé aux tests."""
+    with _COMPTEUR:
+        _REFUS_DE_PROFONDEUR["count"] = 0
+        _REFUS_DE_PROFONDEUR["max_requested"] = 0
+
+
 class InMemoryEntityStore:
     """
     Magasin d'entités et de relations, en mémoire.
@@ -468,6 +513,11 @@ class InMemoryEntityStore:
                 limite arbitraire.
         """
         if depth > PROFONDEUR_MAXIMALE:
+            # Le refus **est** le signal de demande. Sans ce comptage, la
+            # deuxième clause du déclencheur de base graphe — « un parcours
+            # au-delà de la profondeur 3 » — ne pouvait jamais être mesurée :
+            # le magasin refusait, et personne ne savait combien de fois.
+            _compter_refus_de_profondeur(depth)
             raise EntityRefused(
                 f"Profondeur {depth} demandée, maximum {PROFONDEUR_MAXIMALE}. "
                 "Au-delà, la question appelle une base graphe : "
@@ -528,6 +578,7 @@ class InMemoryEntityStore:
                     1 for lien in self._relations.values() if not lien.sources
                 ),
                 "max_depth": PROFONDEUR_MAXIMALE,
+                "depth_refusals": depth_refusals(),
                 "graph_database_trigger": list(DECLENCHEUR_BASE_GRAPHE),
                 "backend": "in-memory",
             }

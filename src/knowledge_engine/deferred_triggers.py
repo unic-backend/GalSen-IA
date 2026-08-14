@@ -47,6 +47,11 @@ from typing import Any, Dict, List, Optional
 #: adoptée sur une mesure, jamais sur une impression.
 SEUIL_VECTEURS = 100_000
 SEUIL_ENTITES = 100_000
+
+#: Parcours refusés faute de profondeur à partir desquels la demande d'une base
+#: graphe est **observée** et non plus supposée. Un seul refus peut être une
+#: exploration curieuse ; une dizaine est un besoin.
+SEUIL_REFUS_DE_PROFONDEUR = 10
 SEUIL_PROFONDEUR = 3
 SEUIL_MILLISECONDES = 200
 
@@ -67,14 +72,21 @@ def _compter_connaissances() -> Optional[int]:
 
 
 def _compter_entites() -> Dict[str, Any]:
-    """Retourne le nombre d'entités et le magasin qui l'a rendu."""
+    """Retourne le nombre d'entités, les refus de profondeur, et le magasin."""
     try:
         from src.knowledge_engine.entities import entity_store
 
         rapport = entity_store().report()
-        return {"count": rapport["entities"], "backend": rapport["backend"]}
+        return {
+            "count": rapport["entities"],
+            "backend": rapport["backend"],
+            # La deuxième clause du déclencheur — « un parcours au-delà de la
+            # profondeur 3 » — était écrite mais non mesurée : le magasin
+            # refusait sans que personne compte. Elle l'est depuis le 2026-08-14.
+            "depth_refusals": rapport.get("depth_refusals", {}).get("count", 0),
+        }
     except Exception:
-        return {"count": None, "backend": "unknown"}
+        return {"count": None, "backend": "unknown", "depth_refusals": 0}
 
 
 def _compter_sources_activees() -> int:
@@ -146,7 +158,14 @@ def deferred_report() -> Dict[str, Any]:
             "measured": entites["count"],
             "threshold": SEUIL_ENTITES,
             "measurable": entites["count"] is not None,
-            "met": bool(entites["count"] is not None and entites["count"] >= SEUIL_ENTITES),
+            # Deux clauses, deux mesures. Un parcours refusé faute de profondeur
+            # est une demande observée : la compter suffit à franchir le
+            # déclencheur, sans attendre 100 000 entités.
+            "depth_refusals": entites.get("depth_refusals", 0),
+            "met": bool(
+                (entites["count"] is not None and entites["count"] >= SEUIL_ENTITES)
+                or entites.get("depth_refusals", 0) >= SEUIL_REFUS_DE_PROFONDEUR
+            ),
             "note": (
                 f"Magasin lu : « {entites['backend']} ». En `in-memory`, le compte "
                 "vaut 0 par construction — rien ne persiste d'une exécution à "
