@@ -62,3 +62,10 @@ data/raw_wolof/*.conllu
 data/raw_senegal/*.geojson
 data/raw_senegal/*.csv
 data/raw_senegal/*.json
+
+# `data/` ci-dessus exclut le répertoire entier, et git ne redescend pas dans un
+# répertoire exclu : une négation ne suffirait pas. Les connaissances **dérivées**
+# sont donc suivies explicitement (`git add -f`), comme le sont déjà
+# `data/processed_senegal/` et `data/processed_wolof/` :
+#   data/processed_global/world_countries.json  (VOLET 52)
+# Reproductible par `python scripts/build_world_knowledge.py`.

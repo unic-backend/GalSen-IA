@@ -14,11 +14,10 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **51.2 terminée — VOLET 51 clos.**
-**52.1 en attente de confirmation** — connaissance mondiale : peupler la portée
-`global`.
-**Terminées**      : **vagues I, II et III complètes**, plus **VOLET 51** (32
-phases sur 73).
+**Phase courante** : **52.2 terminée.**
+**52.3 en attente de confirmation** — séries mesurées (population, PIB) par pays.
+**Terminées**      : **vagues I, II et III complètes**, **VOLET 51**, **52.1** et
+**52.2** (34 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -239,6 +238,15 @@ organisation internationale ne vient le combler — alors que l'histoire malienn
 sujet non national, en trouve. Le contraste est la preuve ; sans lui, l'absence
 ne serait qu'un registre pauvre.
   V52  Connaissance mondiale : portée `global` peuplée            → 3 phases
+       52.1 dérivation depuis les jeux acquis, désaccords rapportés ✅
+       52.2 réponse, UNKNOWN assumé, deux routes                    ✅
+       52.3 séries mesurées (population, PIB) par pays
+
+**La décision de portée, prise en 52.1** : peupler `global` avec des faits par
+pays aurait été l'erreur exacte que `scope.py` existe pour empêcher. **`global`
+porte la taxonomie** — continents, régions M49, espace des monnaies — et chaque
+pays porte sa propre portée `country:xx`. 249 pays dérivés, 0 ligne perdue,
+**34 désaccords entre sources rapportés et non résolus**.
   V53  Fraîcheur : âge mesuré, péremption dite                    → 2 phases
   V54  Moteur de recherche documentaire                           → 3 phases
   V55  Domaine architecture / construction                        → 2 phases

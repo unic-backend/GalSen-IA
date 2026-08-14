@@ -130,6 +130,7 @@ from src.connectors.safety import safety_report
 from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
+from src.knowledge_engine.world import answer_country, answer_field, world_report
 from src.services.notification.channels import ChannelRegistry
 from src.services.notification.events import PlatformNotifier
 from src.services.notification.manager import NotificationManagerImpl
@@ -1860,6 +1861,48 @@ async def cancel_workflow_run(
             "autre ne démarre.",
         ],
     }
+
+
+# Connaissance mondiale (VOLET 52)
+#
+# Dérivée de jeux acquis, jamais écrite de mémoire. Ces routes servent ce que le
+# dépôt contient réellement : une donnée que rien ne lit n'est pas une
+# connaissance.
+@app.get("/knowledge/world", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.KNOWLEDGE_SEARCH))])
+async def world_knowledge_state():
+    """Ce que la connaissance mondiale contient, et ce qu'elle ne fait pas.
+
+    `built: false` **n'est pas** un monde vide : c'est un fichier jamais
+    construit, et la distinction doit se voir avant la première question.
+    """
+    return world_report()
+
+
+@app.get("/knowledge/world/country/{query}", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.KNOWLEDGE_SEARCH))])
+async def world_country(query: str, field: Optional[str] = None):
+    """Un pays, par code ISO ou par nom officiel — ou `UNKNOWN`.
+
+    **Aucune approximation.** Un nom qui ne correspond exactement à aucun pays
+    ne rend pas le plus proche : « Niger » et « Nigeria » sont deux pays, et
+    rendre l'un pour l'autre serait la pire réponse possible — plausible et
+    fausse.
+
+    Avec `field`, la réponse porte la valeur, sa provenance, et les désaccords
+    entre sources qui la concernent : les taire donnerait une réponse plus nette
+    et moins vraie.
+    """
+    reponse = (
+        answer_field(query, field) if field else answer_country(query)
+    )
+    if reponse["status"] == "UNKNOWN":
+        # 200 et non 404 : « je ne sais pas » est une réponse, et elle porte ce
+        # qui trancherait. Un 404 laisserait croire à une panne de route.
+        return reponse
+    return reponse
 
 
 # Endpoints connaissances
