@@ -69,6 +69,87 @@ class CapabilityError(ValueError):
 
 
 @dataclass(frozen=True)
+class PreApproval:
+    """
+    Une **partie** d'un outil, approuvée une fois, en configuration.
+
+    Le besoin est réel et étroit : l'agent testeur exécute `python -m pytest`
+    sans personne devant — c'est sa raison d'être — alors que `terminal` est
+    déclaré `requires_approval` parce qu'une commande peut tout faire. Les deux
+    affirmations sont vraies ; ce qui manquait, c'est de pouvoir approuver la
+    **borne** plutôt que l'outil entier.
+
+    Une pré-approbation porte toujours un nom, une date et un motif. Sans eux,
+    elle est anonyme : personne ne peut la révoquer ni dire pourquoi elle
+    existe, et une approbation que nul n'assume n'est pas une approbation.
+
+    Attributes:
+        operation: Le préfixe d'appel approuvé, par exemple `"read"` ou
+            `"python -m pytest"`. La comparaison se fait sur des mots entiers.
+        approved_by: Qui l'a accordée.
+        approved_on: Quand, en `AAAA-MM-JJ`.
+        rationale: Pourquoi cette borne est sûre alors que l'outil ne l'est pas.
+    """
+
+    operation: str
+    approved_by: str
+    approved_on: str
+    rationale: str
+
+    def matches(self, arguments: Any) -> bool:
+        """
+        Indique si un appel tombe dans cette borne.
+
+        La comparaison porte sur des **mots entiers** : `"read"` ne couvre pas
+        `"read_and_write"`, et `"python -m pytest"` ne couvre pas
+        `"python -m pytester"`. Un préfixe de caractères aurait ouvert
+        exactement ce que la borne prétend fermer.
+
+        Args:
+            arguments: Le premier argument de l'appel, chaîne ou liste.
+
+        Returns:
+            True si l'appel commence par l'opération approuvée.
+        """
+        appel = normalize_call(arguments).split()
+        borne = self.operation.split()
+        return bool(borne) and appel[: len(borne)] == borne
+
+    def as_dict(self) -> Dict[str, Any]:
+        """Représentation sérialisable, pour l'API et l'audit."""
+        return {
+            "operation": self.operation,
+            "approved_by": self.approved_by,
+            "approved_on": self.approved_on,
+            "rationale": self.rationale,
+        }
+
+
+def normalize_call(arguments: Any) -> str:
+    """
+    Réduit le premier argument d'un appel d'outil à une chaîne comparable.
+
+    Les outils ne s'appellent pas tous pareil : `use_tool("filesystem", "read",
+    chemin)` passe une opération nommée, `use_tool("terminal", ["python", "-m",
+    "pytest"])` passe une commande découpée. Les deux se ramènent à des mots.
+
+    Args:
+        arguments: Le premier argument positionnel de l'appel.
+
+    Returns:
+        Les mots de l'appel, séparés par une espace. Chaîne vide si l'appel
+        n'est pas comparable — auquel cas aucune borne ne peut le couvrir.
+    """
+    if isinstance(arguments, str):
+        return " ".join(arguments.split())
+    if isinstance(arguments, (list, tuple)):
+        return " ".join(
+            str(element) for element in arguments if isinstance(element, (str, int, float))
+        )
+    return ""
+
+
+@dataclass(frozen=True)
 class ToolCapability:
     """
     Ce qu'un outil est autorisé à faire, tel que le registre le déclare.
@@ -91,6 +172,23 @@ class ToolCapability:
     requires_approval: bool = True
     unattended: bool = False
     reason: str = ""
+    #: Les bornes de l'outil approuvées une fois, en configuration.
+    pre_approved: Tuple[PreApproval, ...] = ()
+
+    def pre_approval_for(self, arguments: Any) -> Optional[PreApproval]:
+        """
+        Retourne la pré-approbation couvrant cet appel, s'il en existe une.
+
+        Args:
+            arguments: Le premier argument de l'appel.
+
+        Returns:
+            La borne qui couvre l'appel, ou `None`.
+        """
+        for borne in self.pre_approved:
+            if borne.matches(arguments):
+                return borne
+        return None
 
     def touches(self, scope: DataScope) -> bool:
         """Indique si l'outil atteint cette classe de données."""
@@ -110,6 +208,7 @@ class ToolCapability:
             "requires_approval": self.requires_approval,
             "unattended": self.unattended,
             "reason": self.reason,
+            "pre_approved": [borne.as_dict() for borne in self.pre_approved],
         }
 
 
@@ -179,6 +278,89 @@ def _verifier_coherence(capacite: ToolCapability) -> None:
         )
 
 
+#: Les champs qu'une pré-approbation doit porter. Sans eux elle est anonyme,
+#: donc ni révocable ni auditable — et une approbation que nul n'assume n'est
+#: pas une approbation.
+CHAMPS_DE_PRE_APPROBATION = ("operation", "approved_by", "approved_on", "rationale")
+
+
+def _lire_pre_approbations(
+    tool_id: str, brut: Any, capacite_partielle: Dict[str, Any]
+) -> Tuple[PreApproval, ...]:
+    """
+    Lit et valide les bornes pré-approuvées d'un outil.
+
+    Quatre règles, toutes refusées au chargement :
+
+    1. **Une borne n'a de sens que sur un outil qui en a besoin.** Sur un outil
+       déjà exécutable seul et sans approbation, elle n'a rien à lever et
+       laisserait croire à une restriction qui n'existe pas.
+    2. **Une borne vide approuverait tout.** C'est l'inverse de son objet.
+    3. **Chaque champ est obligatoire.** Une approbation anonyme n'en est pas une.
+    4. **Aucune borne n'ouvre l'exfiltration.** Donnée privée plus sortie de la
+       machine reste interdite, quelle que soit l'étroitesse revendiquée.
+
+    Args:
+        tool_id: L'identifiant de l'outil.
+        brut: La valeur lue au registre.
+        capacite_partielle: Les champs déjà lus, pour vérifier la cohérence.
+
+    Returns:
+        Les bornes, dans l'ordre du registre.
+
+    Raises:
+        CapabilityError: Si une borne est mal formée ou incohérente.
+    """
+    if brut is None:
+        return ()
+    if not isinstance(brut, list):
+        raise CapabilityError(
+            f"Outil '{tool_id}' : `pre_approved` doit être une liste."
+        )
+
+    if capacite_partielle.get("unattended") and not capacite_partielle.get(
+        "requires_approval"
+    ):
+        raise CapabilityError(
+            f"Outil '{tool_id}' : une pré-approbation n'a rien à lever sur un "
+            "outil déjà exécutable seul et sans approbation. Elle laisserait "
+            "croire à une restriction qui n'existe pas."
+        )
+
+    if (
+        capacite_partielle.get("data_scope") == DataScope.USER_PRIVATE
+        and Effect.EXTERNAL in capacite_partielle.get("effects", frozenset())
+    ):
+        raise CapabilityError(
+            f"Outil '{tool_id}' : aucune borne ne pré-approuve un chemin "
+            "d'exfiltration — donnée privée et sortie de la machine."
+        )
+
+    bornes = []
+    for entree in brut:
+        if not isinstance(entree, dict):
+            raise CapabilityError(
+                f"Outil '{tool_id}' : chaque pré-approbation doit être un bloc."
+            )
+        manquants = [
+            champ for champ in CHAMPS_DE_PRE_APPROBATION
+            if not str(entree.get(champ, "")).strip()
+        ]
+        if manquants:
+            raise CapabilityError(
+                f"Outil '{tool_id}' : pré-approbation incomplète, champs "
+                f"manquants : {', '.join(manquants)}. Une approbation que nul "
+                "n'assume n'est pas une approbation."
+            )
+        bornes.append(PreApproval(
+            operation=" ".join(str(entree["operation"]).split()),
+            approved_by=str(entree["approved_by"]).strip(),
+            approved_on=str(entree["approved_on"]).strip(),
+            rationale=str(entree["rationale"]).strip(),
+        ))
+    return tuple(bornes)
+
+
 def _lire_effets(tool_id: str, brut: Any) -> FrozenSet[Effect]:
     """Convertit la liste d'effets déclarée, en refusant tout nom inconnu."""
     if not isinstance(brut, list) or not brut:
@@ -231,14 +413,18 @@ def parse_capability(tool_id: str, config: Dict[str, Any]) -> ToolCapability:
             f"Outil '{tool_id}' : `capability` doit être un bloc, pas {type(brut).__name__}."
         )
 
+    champs = {
+        "effects": _lire_effets(tool_id, brut.get("effects")),
+        "data_scope": _lire_portee(tool_id, brut.get("data_scope")),
+        "requires_approval": bool(brut.get("requires_approval", True)),
+        "unattended": bool(brut.get("unattended", False)),
+        "reason": str(brut.get("reason", "")),
+    }
     capacite = ToolCapability(
         tool_id=tool_id,
         declared=True,
-        effects=_lire_effets(tool_id, brut.get("effects")),
-        data_scope=_lire_portee(tool_id, brut.get("data_scope")),
-        requires_approval=bool(brut.get("requires_approval", True)),
-        unattended=bool(brut.get("unattended", False)),
-        reason=str(brut.get("reason", "")),
+        pre_approved=_lire_pre_approbations(tool_id, brut.get("pre_approved"), champs),
+        **champs,
     )
     _verifier_coherence(capacite)
     return capacite
@@ -337,17 +523,25 @@ def load_capabilities(registry_path: Optional[str] = None) -> CapabilityRegistry
 # ----------------------------------------------------------------------
 
 def may_run_unattended(
-    tool_id: str, registry: Optional[CapabilityRegistry] = None
+    tool_id: str,
+    registry: Optional[CapabilityRegistry] = None,
+    arguments: Any = None,
 ) -> Tuple[bool, str]:
     """
-    Une routine peut-elle exécuter cet outil sans personne devant ?
+    Une routine ou un agent peuvent-ils exécuter cet outil sans personne devant ?
 
-    C'est la question du moteur de routines. La réponse par défaut est non, et
-    elle vient toujours avec sa raison : un refus sans motif est indébogable.
+    C'est la question du moteur de routines et du chemin des agents. La réponse
+    par défaut est non, et elle vient toujours avec sa raison : un refus sans
+    motif est indébogable.
+
+    `arguments` permet à un appel de tomber dans une **borne pré-approuvée** :
+    `terminal` reste sous portillon, `python -m pytest` ne l'est pas. Sans
+    `arguments`, la question porte sur l'outil entier, ce qui est le pire cas.
 
     Args:
         tool_id: L'identifiant de l'outil.
         registry: Le registre déjà chargé, sinon il est relu.
+        arguments: Le premier argument de l'appel, quand il est connu.
 
     Returns:
         Le verdict et sa raison.
@@ -357,6 +551,15 @@ def may_run_unattended(
 
     if not capacite.declared:
         return False, capacite.reason
+
+    if arguments is not None:
+        borne = capacite.pre_approval_for(arguments)
+        if borne is not None:
+            return True, (
+                f"Borne pré-approuvée « {borne.operation} » "
+                f"({borne.approved_by}, {borne.approved_on}) : {borne.rationale}"
+            )
+
     if capacite.requires_approval:
         return False, "L'outil exige une approbation humaine à chaque exécution."
     if not capacite.unattended:

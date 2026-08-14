@@ -19,6 +19,8 @@ import os
 import sys
 import tempfile
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.agent.base_agent import AgentResult, BaseAgent
@@ -210,25 +212,64 @@ def test_filesystem_tool():
 
 
 def test_terminal_tool():
-    """The terminal tool must run allowed commands and reject the others."""
+    """The terminal tool must run allowed commands and reject the others.
+
+    L'outil est appelé **directement**, plus par `AgentContext.use_tool` : ce
+    chemin est désormais celui de l'exécution sans témoin (phase 39.3) et il
+    refuse `terminal` hors de sa borne pré-approuvée. Le sujet de ce test reste
+    la liste blanche et l'absence de shell — ces deux garanties sont intactes.
+    Le refus par le chemin des agents est vérifié par le test suivant.
+    """
     print("Testing terminal tool...")
-    context = AgentContext(request="test", agent_id="test")
+    from src.tools.terminal.tool import TerminalTool
 
-    allowed = context.use_tool("terminal", ["python", "--version"])
-    assert allowed["status"] == "success"
-    assert allowed["result"]["success"] is True
+    tool = TerminalTool({
+        "allowed_commands": ["python", "python3", "py", "pytest", "git", "echo"],
+        "timeout": 120,
+    })
 
-    blocked = context.use_tool("terminal", ["rm", "-rf", "/"])
-    assert blocked["status"] == "error"
-    assert "non autoris" in blocked["error"]
+    allowed = tool.execute(["python", "--version"])
+    assert allowed["success"] is True
+
+    # Appelé directement, l'outil lève ; `use_tool` traduisait cette exception
+    # en `{"status": "error"}`. Le refus est le même, sa forme change.
+    with pytest.raises(ValueError, match="non autoris"):
+        tool.execute(["rm", "-rf", "/"])
 
     # Shell metacharacters are arguments, never a second command
     # On utilise python au lieu de 'echo' car 'echo' est un builtin du shell sur Windows
-    literal = context.use_tool("terminal", ["python", "-c", "print('a && whoami')"])
-    assert literal["status"] == "success"
-    assert "whoami" in literal["result"]["stdout"]
+    literal = tool.execute(["python", "-c", "print('a && whoami')"])
+    assert literal["success"] is True
+    assert "whoami" in literal["stdout"]
 
     print("[OK] Terminal tool enforces its allowlist and runs without a shell")
+
+
+def test_terminal_is_gated_on_the_agent_path_except_within_its_bound():
+    """
+    Le chemin des agents n'ouvre `terminal` que dans sa borne pré-approuvée.
+
+    `python -m pytest` passe — c'est la raison d'être de l'agent testeur.
+    `python --version` et `python -c` ne passent pas, et c'est le point : la
+    borne approuvée est une commande, pas l'exécutable qui la porte.
+    """
+    context = AgentContext(request="test", agent_id="test")
+
+    for commande in (["python", "--version"], ["python", "-c", "print(1)"]):
+        refus = context.use_tool("terminal", commande)
+        assert refus["status"] == "error", commande
+        assert "sans témoin refusée" in refus["error"], commande
+
+    from src.tool.capabilities import load_capabilities, may_run_unattended
+
+    autorise, motif = may_run_unattended(
+        "terminal", load_capabilities(),
+        arguments=["python", "-m", "pytest", "tests/test_integration.py", "-q"],
+    )
+    assert autorise is True
+    assert "python -m pytest" in motif
+
+    print("[OK] Terminal is gated on the agent path outside its approved bound")
 
 
 def test_git_tool():

@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional
 from ..approval_engine.types import ApprovalRequest
 from ..audit_engine.types import AuditEvent, AuditEventType, AuditStatus, generate_request_id
 from ..integration.engine_registry import EngineRegistry, get_shared_registry
+from ..tool.capabilities import may_run_unattended
 from .blackboard import Blackboard
 
 # Profondeur maximale de délégation d'agent à agent. Trois niveaux suffisent à un
@@ -550,21 +551,14 @@ class AgentContext:
     # ------------------------------------------------------------------
     # Moteur d'outils
     #
-    # LIMITE CONNUE, MESURÉE LE 2026-08-14 (phase 39.2, à lever en 39.3) :
-    # ce chemin **n'applique pas** le plafond de rôle que `/tool/execute`
-    # applique désormais. Un appelant de rôle `user` reçoit un 403 sur
-    # `POST /tool/execute {"tool_id": "terminal"}`, et obtient pourtant une
-    # exécution de `terminal` en passant par `POST /workflow/run`, parce que
-    # l'agent testeur l'appelle ici.
+    # Un agent tourne **sans personne devant**. La question posée ici n'est donc
+    # pas celle de `/tool/execute` — « ce rôle a-t-il le droit ? » — mais celle
+    # du moteur de routines : « cet appel peut-il avoir lieu sans témoin ? »
     #
-    # Ce n'est pas un oubli : le fermer demande une notion manquante. L'agent
-    # testeur exécute `python -m pytest` sans humain — c'est sa raison d'être —
-    # alors que `terminal` est déclaré `requires_approval`. Affaiblir la
-    # déclaration pour faire passer l'agent serait exactement ce que
-    # `.claude/rules/verification.md` interdit. Ce qu'il faut est une
-    # **pré-approbation étroite** : la liste d'exécutables du registre borne
-    # déjà l'outil, et c'est cette borne qui doit devenir approuvable, pas
-    # l'outil entier.
+    # Le trou ouvert par la phase 39.2 est fermé ici (phase 39.3) : un rôle
+    # `user` refusé sur `POST /tool/execute {"tool_id": "terminal"}` ne
+    # l'obtient plus par `POST /workflow/run`. Ce qui passe est **borné** :
+    # `python -m pytest` est pré-approuvé au registre, `python -c` ne l'est pas.
     # ------------------------------------------------------------------
     def use_tool(self, tool_id: str, *args, **kwargs) -> Dict[str, Any]:
         """
@@ -600,6 +594,28 @@ class AgentContext:
                 metadata={"arguments": self._serialize_args(args, kwargs)},
             )
             return {"status": "error", "tool": tool_id, "error": f"Outil '{tool_id}' désactivé ou inconnu"}
+
+        # Le portillon du chemin sans témoin. `args[0]` porte l'opération —
+        # `"read"`, ou la commande découpée — et c'est elle qui décide si
+        # l'appel tombe dans une borne pré-approuvée.
+        autorise, motif = may_run_unattended(
+            tool_id,
+            getattr(tool_engine, "capabilities", None),
+            arguments=args[0] if args else None,
+        )
+        if not autorise:
+            self.record_audit(
+                AuditEventType.TOOL,
+                f"tool:{tool_id}",
+                status=AuditStatus.SKIPPED,
+                detail=f"Exécution sans témoin refusée : {motif}",
+                metadata={"arguments": self._serialize_args(args, kwargs)},
+            )
+            return {
+                "status": "error",
+                "tool": tool_id,
+                "error": f"Exécution sans témoin refusée : {motif}",
+            }
 
         started = time.time()
         try:

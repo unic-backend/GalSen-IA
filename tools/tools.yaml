@@ -49,6 +49,34 @@ tools:
       requires_approval: false
       unattended: false
       reason: "Une écriture sur le disque n'est pas annulable ici ; elle demande un témoin."
+      # L'outil peut écrire ; ces six opérations, non. Ce sont les seules que
+      # les agents appellent (mesuré le 2026-08-14 sur les 16 agents), et
+      # `allow_write: false` les borne une deuxième fois.
+      pre_approved:
+        - operation: read
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Lire un fichier du dépôt ne modifie rien et reste sous la racine du projet."
+        - operation: search
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Chercher des fichiers ne modifie rien."
+        - operation: list
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Lister un répertoire ne modifie rien."
+        - operation: stat
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Lire les métadonnées d'un fichier ne modifie rien."
+        - operation: exists
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Tester la présence d'un fichier ne modifie rien."
+        - operation: tail
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Lire la fin d'un journal ne modifie rien."
     config:
       allow_write: false
       max_read_bytes: 5242880
@@ -67,6 +95,16 @@ tools:
       requires_approval: true
       unattended: false
       reason: "Une commande peut faire tout ce que l'utilisateur peut faire."
+      # `python` exécute n'importe quoi — d'où l'approbation sur l'outil. Mais
+      # `python -m pytest` exécute la suite de tests, et rien d'autre : c'est
+      # la raison d'être de l'agent testeur, qui tourne sans humain. C'est la
+      # **borne** qui est approuvée, jamais l'outil entier. Affaiblir la
+      # déclaration ci-dessus aurait ouvert `python -c` du même coup.
+      pre_approved:
+        - operation: "python -m pytest"
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Exécuter la suite de tests est la raison d'être de l'agent testeur ; la commande ne prend pas de code en argument."
     config:
       allowed_commands:
         - python

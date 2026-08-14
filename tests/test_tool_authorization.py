@@ -36,7 +36,12 @@ from src.tool.authorization import (  # noqa: E402
     authorized_tools,
     ceiling_for,
 )
-from src.tool.capabilities import DataScope, Effect, load_capabilities  # noqa: E402
+from src.tool.capabilities import (  # noqa: E402
+    DataScope,
+    Effect,
+    load_capabilities,
+    may_run_unattended,
+)
 
 
 @pytest.fixture(scope="module")
@@ -278,40 +283,56 @@ def test_le_modele_reste_atteignable_par_un_utilisateur(registre):
 
 
 # ----------------------------------------------------------------------
-# 7. La limite connue du chemin des agents (phase 39.2)
+# 7. Le chemin des agents, fermé par la borne (phase 39.3)
+#
+# Ces deux tests remplacent les deux gardes de la phase 39.2, qui constataient
+# le trou. Ils ont été remplacés par leur inverse, pas supprimés : le trou avait
+# été écrit noir sur blanc pour être refermé, et voici la fermeture.
 # ----------------------------------------------------------------------
 
-def test_le_chemin_des_agents_n_applique_pas_encore_le_plafond():
-    """
-    Ce test **constate un trou**, il ne le cautionne pas.
-
-    `/tool/execute` refuse `terminal` à un rôle `user` ; `POST /workflow/run`
-    l'obtient quand même, parce que l'agent testeur appelle l'outil par
-    `AgentContext.use_tool`, qui ne consulte aucun plafond.
-
-    Il échouera le jour où la phase 39.3 fermera le chemin — et ce jour-là il
-    faudra le remplacer par son inverse, pas le supprimer. Écrire ce trou noir
-    sur blanc vaut mieux que de laisser croire que la porte est fermée.
-    """
+def test_le_chemin_des_agents_consulte_desormais_le_portillon():
+    """Un agent tourne sans témoin : c'est cette question-là qui lui est posée."""
     import inspect
 
     from src.agent.context import AgentContext
 
     source = inspect.getsource(AgentContext.use_tool)
 
-    assert "authorize(" not in source, (
-        "Le plafond est désormais appliqué au chemin des agents : remplacer ce "
-        "test par la vérification du refus, phase 39.3."
+    assert "may_run_unattended(" in source
+    assert "sans témoin refusée" in source
+
+
+def test_un_agent_n_obtient_terminal_que_dans_sa_borne(registre):
+    """
+    Le contournement mesuré en 39.2 : `/tool/execute` refusait `terminal` à un
+    rôle `user`, et `POST /workflow/run` l'obtenait quand même. Fermé.
+    """
+    hors_borne, motif = may_run_unattended(
+        "terminal", registre, arguments=["python", "-c", "import os"]
+    )
+    dans_borne, _ = may_run_unattended(
+        "terminal", registre, arguments=["python", "-m", "pytest", "-q"]
     )
 
+    assert hors_borne is False
+    assert "approbation humaine" in motif
+    assert dans_borne is True
 
-def test_le_trou_du_chemin_des_agents_est_documente():
-    """Une limite non écrite est une limite que le prochain ignore."""
-    import inspect
 
-    from src.agent import context as module_contexte
+def test_une_borne_ne_couvre_que_des_mots_entiers(registre):
+    """
+    `python -m pytest` ne doit pas couvrir `python -m pytester`. Un préfixe de
+    caractères aurait ouvert exactement ce que la borne prétend fermer.
+    """
+    autorise, _ = may_run_unattended(
+        "terminal", registre, arguments=["python", "-m", "pytester"]
+    )
 
-    source = inspect.getsource(module_contexte)
+    assert autorise is False
 
-    assert "39.3" in source
-    assert "pré-approbation étroite" in source
+
+def test_sans_arguments_la_question_porte_sur_l_outil_entier(registre):
+    """Ne pas savoir ce qui est appelé est le pire cas, pas un cas favorable."""
+    autorise, _ = may_run_unattended("terminal", registre)
+
+    assert autorise is False

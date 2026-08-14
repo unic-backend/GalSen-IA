@@ -87,7 +87,25 @@ class _FakeModelEngine:
 
 
 class _FakeToolEngine:
-    """Moteur d'outils factice : un outil actif, un outil désactivé."""
+    """
+    Moteur d'outils factice : un outil actif, un outil désactivé.
+
+    Il **déclare la capacité de ses faux outils**, comme le fait le vrai moteur.
+    Sans cette déclaration, le portillon du chemin sans témoin les refuserait —
+    et il aurait raison : « non déclaré » n'est pas « inoffensif », y compris
+    pour un double de test.
+    """
+
+    def __init__(self):
+        from src.tool.capabilities import CapabilityRegistry, parse_capability
+
+        declaration = {"capability": {
+            "effects": ["read"], "data_scope": "public",
+            "requires_approval": False, "unattended": True,
+        }}
+        self.capabilities = CapabilityRegistry(capabilities={
+            nom: parse_capability(nom, declaration) for nom in ("echo", "disabled_tool")
+        })
 
     def is_tool_enabled(self, tool_id):
         return tool_id != "disabled_tool"

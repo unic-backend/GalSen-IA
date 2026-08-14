@@ -14,8 +14,8 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **39.2 terminée** — application HTTP. **39.3 en attente de confirmation.**
-**Terminées**      : 37.1, 38.1, 38.2, 39.1, 39.2.
+**Phase courante** : **39.3 terminée** — VOLET 39 clos. **40.1 en attente de confirmation.**
+**Terminées**      : 37.1, 38.1, 38.2, 39.1, 39.2, 39.3.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -115,9 +115,9 @@ VAGUE I — Le socle d'extension                                    → 11 phase
   V39  Modèle de permissions (acteur, portée, moindre privilège)  → 2 phases
        39.1 plafonds de rôle, trois verdicts, routes de lecture       ✅
        39.2 application dans `/tool/execute`                          ✅
-       39.3 pré-approbation étroite, puis fermeture du chemin des agents
+       39.3 pré-approbation étroite, chemin des agents fermé         ✅
 
-**Pourquoi 39.3 existe** (découvert en exécutant 39.2, pas planifié) :
+**Pourquoi 39.3 a existé** (découvert en exécutant 39.2, pas planifié — **refermé le 2026-08-14**) :
 `/tool/execute` refuse désormais `terminal` à un rôle `user`, mais
 `POST /workflow/run` l'obtient encore — l'agent testeur appelle l'outil par
 `AgentContext.use_tool`, qui ne consulte aucun plafond. Le fermer demande une
@@ -127,7 +127,14 @@ Affaiblir la déclaration pour faire passer l'agent est interdit
 (`.claude/rules/verification.md`). Ce qu'il faut est une **pré-approbation
 étroite** : la liste d'exécutables du registre borne déjà l'outil, et c'est
 cette borne qui doit devenir approuvable, pas l'outil entier.
-Le trou est écrit dans `src/agent/context.py` et gardé par deux tests.
+**Fermeture** : `PreApproval` dans `capabilities.py` — une **borne** de l'outil
+approuvée en configuration, avec un nom, une date et un motif obligatoires.
+`terminal` reste sous portillon ; `python -m pytest` est approuvé, `python -c`
+ne l'est pas. La comparaison porte sur des **mots entiers**, jamais sur un
+préfixe de caractères. `AgentContext.use_tool` consulte désormais
+`may_run_unattended` — la bonne question pour un agent, qui tourne sans témoin.
+Les deux tests qui constataient le trou ont été **remplacés par leur inverse**,
+pas supprimés.
   V40  Isolation des données utilisateur                          → 2 phases
   V41  SDK de connecteurs (contrat, cycle de vie, tests)          → 2 phases
   V42  Sûreté : ce qu'un connecteur ne peut jamais faire          → 2 phases
