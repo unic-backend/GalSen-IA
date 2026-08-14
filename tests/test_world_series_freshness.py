@@ -418,3 +418,123 @@ def test_les_routes_de_series_exigent_une_cle(client_series):
     client, _ = client_series
 
     assert client.get("/knowledge/world/series").status_code in (401, 403)
+
+
+# ----------------------------------------------------------------------
+# 7. La fraîcheur de ce que le dépôt a dérivé (phase 53.2)
+# ----------------------------------------------------------------------
+
+def test_la_date_de_derivation_n_est_pas_l_age_des_faits():
+    """
+    **Le point de la phase.** Relancer le script hier rend `built_at` d'hier
+    alors que les mesures peuvent dater de 2011. Les confondre est la façon la
+    plus efficace de faire passer une base périmée pour fraîche.
+    """
+    from src.knowledge_engine.freshness import asset_freshness
+
+    verdict = asset_freshness(
+        "exemple", built_at="2026-01-01T00:00:00Z", content_year="2011",
+        kind="statistics", now=_en(2026),
+    )
+
+    assert verdict["derivation"]["status"] == Freshness.FRESH.value
+    assert verdict["content"]["status"] == Freshness.STALE.value
+    assert verdict["status"] == Freshness.STALE.value
+    assert verdict["verdict_from"] == "content"
+
+
+def test_le_pire_des_deux_ages_l_emporte_dans_les_deux_sens():
+    """Une dérivation vieille sur des faits récents doit ressortir aussi."""
+    from src.knowledge_engine.freshness import asset_freshness
+
+    verdict = asset_freshness(
+        "exemple", built_at="2015-01-01T00:00:00Z", content_year="2025",
+        kind="statistics", now=_en(2026),
+    )
+
+    assert verdict["status"] == Freshness.STALE.value
+    assert verdict["verdict_from"] == "derivation"
+
+
+def test_une_limite_administrative_ne_vieillit_pas_comme_une_statistique():
+    """
+    Les découpages changent par décret : c'est rare, ce n'est pas jamais. Une
+    cadence unique se tromperait de cinq ans.
+    """
+    from src.knowledge_engine.freshness import cadence_of
+
+    frontieres = cadence_of("administrative_boundaries")
+    corpus = cadence_of("language_corpus")
+
+    assert frontieres["period_years"] == 5
+    assert corpus["period_years"] == 10
+    assert cadence_of("population")["period_years"] == 1
+
+
+def test_une_connaissance_non_datable_est_unknown_et_non_fraiche():
+    """
+    geoBoundaries ne publie pas de date par fichier : l'âge des faits derrière
+    les limites administratives est **réellement** inconnu. Le dire est un
+    résultat, pas un échec.
+    """
+    from src.knowledge_engine.freshness import asset_freshness
+
+    verdict = asset_freshness(
+        "senegal_master", built_at="2026-08-14T00:31:04Z", content_year=None,
+        kind="administrative_boundaries", now=_en(2026),
+    )
+
+    assert verdict["status"] == Freshness.UNKNOWN.value
+    assert verdict["content"]["age_years"] == "UNKNOWN"
+
+
+def test_le_scan_du_depot_couvre_les_cinq_connaissances_derivees():
+    """Lu sur les fichiers réellement présents, pas sur une liste d'intentions."""
+    from src.knowledge_engine.freshness import (
+        CONNAISSANCES_DERIVEES,
+        repository_freshness,
+    )
+
+    rapport = repository_freshness()
+
+    trouves = {asset["asset"] for asset in rapport["assets"]}
+    assert trouves == set(CONNAISSANCES_DERIVEES)
+    assert rapport["missing"] == []
+
+
+def test_un_fichier_absent_est_dit_absent_et_non_suppose_frais(monkeypatch):
+    """Supposer qu'un fichier manquant est à jour serait le pire des deux
+    silences."""
+    from src.knowledge_engine import freshness as module
+
+    monkeypatch.setitem(
+        module.CONNAISSANCES_DERIVEES, "fantome",
+        {"path": "data/processed_global/nexistepas.json", "kind": "statistics",
+         "what": "rien"},
+    )
+
+    rapport = module.repository_freshness()
+
+    assert [m["asset"] for m in rapport["missing"]] == ["fantome"]
+    assert "jamais dérivé" in rapport["missing"][0]["reason"]
+
+
+def test_le_rapport_du_depot_nomme_sa_regle_centrale():
+    """Celle qu'un lecteur doit connaître avant de lire les verdicts."""
+    from src.knowledge_engine.freshness import repository_freshness
+
+    regles = " ".join(repository_freshness()["rules"])
+
+    assert "date la dérivation, pas les faits" in regles
+    assert "pire" in regles
+
+
+def test_la_route_publie_l_age_de_tout_ce_qui_est_derive(client_series):
+    """« Qu'est-ce qui, ici, est vieux ? » — une question, une route."""
+    client, cle = client_series
+
+    rapport = client.get("/knowledge/freshness", headers=cle).json()
+
+    assert len(rapport["assets"]) >= 5
+    assert set(rapport["by_status"]) <= {"FRESH", "AGING", "STALE", "UNKNOWN"}
+    assert any("dérivation, pas les faits" in ligne for ligne in rapport["rules"])

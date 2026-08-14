@@ -14,11 +14,11 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **53.1 terminée — VOLET 52 clos.**
-**53.2 en attente de confirmation** — fraîcheur de la connaissance sénégalaise et
-du corpus wolof.
-**Terminées**      : **vagues I, II et III complètes**, **VOLETs 51 et 52**, plus
-**53.1** (36 phases sur 73).
+**Phase courante** : **54.1 terminée — VOLET 53 clos.**
+**54.2 en attente de confirmation** — la connaissance mondiale comme source de
+`/search`.
+**Terminées**      : **vagues I, II et III complètes**, **VOLETs 51, 52 et 53**,
+plus **54.1** (38 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -244,7 +244,33 @@ ne serait qu'un registre pauvre.
        52.3 séries mesurées (population, PIB), agrégats séparés     ✅
   V53  Fraîcheur : âge mesuré, péremption dite                    → 2 phases
        53.1 âge contre cadence, périmé servi avec son âge          ✅
-       53.2 fraîcheur de la connaissance sénégalaise et du corpus
+       53.2 deux âges distingués, scan du dépôt, route            ✅
+  V54  Moteur de recherche documentaire                           → 3 phases
+       54.1 titre indexé, accents ajoutés sans effacer, explication ✅
+       54.2 la connaissance mondiale comme source de `/search`
+       54.3 extraits, pagination, et ce qui a été retenu
+
+**Ce que 53.2 distingue** : `built_at` date la **dérivation**, pas les faits.
+Relancer un script rajeunit l'un sans toucher l'autre, et les confondre ferait
+passer une base périmée pour fraîche. Le verdict retenu est le **pire des deux**
+et dit lequel le porte. Mesuré sur les 5 connaissances dérivées : 2 `FRESH`,
+**3 `UNKNOWN`** — geoBoundaries ne publie pas de date par fichier, donc l'âge des
+faits derrière les limites administratives est réellement inconnu. Le dire est un
+résultat, pas un échec.
+
+**Deuxième correction d'audit, en 54.1** : le « moteur de recherche documentaire »
+était rangé **absent**. Faux. Il existe : chargeurs PDF/DOCX/XLSX/PPTX/OCR,
+découpage, index inversé **BM25**, versionnement, doublons, comparaison, et un
+fournisseur branché sur `/search` avec filtrage par propriétaire. Trois défauts
+précis manquaient, tous refermés : le **titre n'était pas indexé** (un document
+introuvable par le nom qu'on lit à l'écran), les **accents empêchaient de
+trouver**, et **ce qui avait fait correspondre n'était pas dit**.
+
+**Défaut trouvé en écrivant les tests de 54.1** : `delete()` **recalculait** les
+termes d'un document depuis son contenu au lieu de relire ceux qui avaient été
+indexés. Il ratait donc tout ce qui ne venait pas du corps — un document réindexé
+restait trouvable par son ancien titre. L'indexeur se souvient désormais des
+termes qu'il écrit.
 
 **Ce que 52.3 a séparé** : les séries de la Banque mondiale portent `WLD`, `ARB`,
 `EUU` — des agrégats réels et utiles. Mêlés aux pays, ils rendraient faux tout

@@ -130,7 +130,11 @@ from src.connectors.safety import safety_report
 from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
-from src.knowledge_engine.freshness import freshness_of_year, freshness_report
+from src.knowledge_engine.freshness import (
+    freshness_of_year,
+    freshness_report,
+    repository_freshness,
+)
 from src.knowledge_engine.series import answer_series, load_series, series_report
 from src.knowledge_engine.world import answer_country, answer_field, world_report
 from src.services.notification.channels import ChannelRegistry
@@ -1930,6 +1934,23 @@ async def world_country_series(query: str, indicator: str, year: Optional[str] =
         reponse["scope"] = pays["country"]["scope"]
         reponse["freshness"] = freshness_of_year(reponse["year"], indicator)
     return reponse
+
+
+@app.get("/knowledge/freshness", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def knowledge_freshness():
+    """L'âge de **tout** ce que ce dépôt a dérivé.
+
+    La question qu'un opérateur pose une fois par an et à laquelle personne ne
+    pouvait répondre : « qu'est-ce qui, ici, est vieux ? »
+
+    Deux âges sont distingués. `built_at` date la **dérivation**, pas les faits :
+    relancer un script rajeunit l'un sans toucher l'autre, et les confondre
+    ferait passer une base périmée pour fraîche. Le verdict retenu est le pire
+    des deux, et il dit lequel le porte.
+    """
+    return repository_freshness()
 
 
 @app.get("/knowledge/world/series", tags=["knowledge"],

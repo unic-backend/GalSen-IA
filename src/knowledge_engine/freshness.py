@@ -78,15 +78,23 @@ def _annee_courante(now: Optional[datetime] = None) -> int:
 
 def cadence_of(indicator: str) -> Dict[str, int]:
     """
-    La cadence déclarée d'un indicateur, ou le défaut.
+    La cadence déclarée d'un indicateur ou d'un genre, ou le défaut.
+
+    Les deux tables sont consultées : une série (`population`) et un genre de
+    connaissance (`administrative_boundaries`) sont deux façons de nommer la
+    même chose — la vitesse à laquelle ce qu'on mesure change. Les séparer en
+    deux fonctions ferait vieillir une limite administrative au rythme d'une
+    statistique annuelle, qui est faux de cinq ans.
 
     Args:
-        indicator: L'indicateur.
+        indicator: L'indicateur ou le genre.
 
     Returns:
         Période et retard de publication attendus, en années.
     """
-    return CADENCES.get(indicator, CADENCE_PAR_DEFAUT)
+    if indicator in CADENCES:
+        return CADENCES[indicator]
+    return CADENCES_PAR_GENRE.get(indicator, CADENCE_PAR_DEFAUT)
 
 
 def freshness_of_year(
@@ -239,3 +247,262 @@ def freshness_report(
             "Estimer la valeur d'aujourd'hui à partir des précédentes.",
         ],
     }
+
+
+#: Cadence attendue par **genre** de connaissance dérivée. Une limite
+#: administrative ne vieillit pas comme une statistique annuelle : les découpages
+#: changent, mais rarement — et un corpus de langue ne se périme pas du tout de
+#: cette façon. Un seuil unique traiterait les trois pareil, et se tromperait
+#: deux fois sur trois.
+CADENCES_PAR_GENRE: Dict[str, Dict[str, int]] = {
+    # Les régions et départements changent par décret. C'est rare, ce n'est pas
+    # jamais : ce dépôt porte précisément une revendication de 46ᵉ département
+    # non vérifiée, qui est **exactement** l'allure d'un découpage périmé.
+    "administrative_boundaries": {"period_years": 5, "publication_lag_years": 1},
+    # Codes ISO et régions M49 : stables, révisés de loin en loin.
+    "country_reference": {"period_years": 5, "publication_lag_years": 1},
+    # Statistiques annuelles.
+    "statistics": {"period_years": 1, "publication_lag_years": 1},
+    # Un corpus de langue ne se périme pas comme un chiffre. Son risque n'est
+    # pas l'âge, c'est la **relecture** : le dire ici évite de faire sonner une
+    # alarme qui n'a pas de sens, et d'oublier celle qui en a une.
+    "language_corpus": {"period_years": 10, "publication_lag_years": 1},
+}
+
+
+def _annee_de(horodatage: Any) -> Optional[int]:
+    """L'année d'un horodatage ISO, ou `None` s'il n'en est pas un."""
+    texte = str(horodatage or "").strip()
+    if len(texte) >= 4 and texte[:4].isdigit():
+        return int(texte[:4])
+    return None
+
+
+def asset_freshness(
+    name: str,
+    built_at: Any = None,
+    content_year: Any = None,
+    kind: str = "",
+    now: Optional[datetime] = None,
+) -> Dict[str, Any]:
+    """
+    L'âge d'une connaissance dérivée, en **distinguant deux âges**.
+
+    `built_at` dit quand la dérivation a tourné ; il ne dit **rien** de l'âge des
+    faits. Relancer le script hier rend `built_at` d'hier alors que les mesures
+    peuvent dater de 2011. Les confondre est la façon la plus efficace de faire
+    passer une base périmée pour fraîche — et c'est la confusion que ce module
+    existe pour empêcher.
+
+    Le verdict rendu est **le pire des deux**, et il dit lequel.
+
+    Args:
+        name: Le nom de la connaissance.
+        built_at: Quand la dérivation a été faite.
+        content_year: L'année des faits eux-mêmes, si elle est connue.
+        kind: Le genre, pour sa cadence.
+        now: L'instant de référence.
+
+    Returns:
+        Les deux âges, le verdict retenu, et lequel des deux le porte.
+    """
+    cadence = cadence_of(kind)
+    tolerance = cadence["period_years"] + cadence["publication_lag_years"]
+    courante = _annee_courante(now)
+
+    annee_build = _annee_de(built_at)
+    age_derivation = courante - annee_build if annee_build is not None else None
+
+    verdict_contenu = (
+        freshness_of_year(content_year, kind, now) if content_year
+        else {"status": Freshness.UNKNOWN.value, "age_years": INCONNU,
+              "reason": "Âge des faits inconnu : la source ne les date pas."}
+    )
+
+    ordre = {
+        Freshness.FRESH.value: 0, Freshness.AGING.value: 1,
+        Freshness.STALE.value: 2, Freshness.UNKNOWN.value: 3,
+    }
+    if age_derivation is None:
+        verdict_derivation = {
+            "status": Freshness.UNKNOWN.value, "age_years": INCONNU,
+            "reason": "Dérivation non datée : on ne sait pas quand elle a tourné.",
+        }
+    elif age_derivation <= tolerance:
+        verdict_derivation = {
+            "status": Freshness.FRESH.value, "age_years": age_derivation,
+            "reason": f"Dérivée il y a {age_derivation} an(s), dans la cadence.",
+        }
+    elif age_derivation <= tolerance + MARGE_AVANT_PEREMPTION:
+        verdict_derivation = {
+            "status": Freshness.AGING.value, "age_years": age_derivation,
+            "reason": f"Dérivée il y a {age_derivation} an(s) : à refaire bientôt.",
+        }
+    else:
+        verdict_derivation = {
+            "status": Freshness.STALE.value, "age_years": age_derivation,
+            "reason": f"Dérivée il y a {age_derivation} an(s) : à refaire.",
+        }
+
+    porte = (
+        "content" if ordre[verdict_contenu["status"]] >= ordre[verdict_derivation["status"]]
+        else "derivation"
+    )
+    retenu = verdict_contenu if porte == "content" else verdict_derivation
+
+    return {
+        "asset": name,
+        "kind": kind or INCONNU,
+        "status": retenu["status"],
+        "verdict_from": porte,
+        "derivation": verdict_derivation,
+        "content": verdict_contenu,
+        "expected_within_years": tolerance,
+        "note": (
+            "`built_at` date la dérivation, pas les faits. Relancer le script "
+            "rajeunit l'un sans toucher l'autre."
+        ),
+    }
+
+
+#: Les connaissances dérivées que ce dépôt porte, et leur genre. Déclarées ici
+#: parce qu'un genre ne se devine pas d'un nom de fichier : `senegal_master`
+#: contient des limites administratives, `official_wolof_corpus` un corpus de
+#: langue, et les traiter pareil ferait sonner une alarme sans objet sur l'un et
+#: taire celle qui compte sur l'autre.
+CONNAISSANCES_DERIVEES: Dict[str, Dict[str, str]] = {
+    "senegal_master": {
+        "path": "data/processed_senegal/senegal_master_knowledge.json",
+        "kind": "administrative_boundaries",
+        "what": "14 régions et 45 départements, dérivés de geoBoundaries",
+    },
+    "senegal_domains": {
+        "path": "data/processed_senegal/senegal_domain_knowledge.json",
+        "kind": "statistics",
+        "what": "8 jeux sectoriels sénégalais",
+    },
+    "wolof_corpus": {
+        "path": "data/processed_wolof/official_wolof_corpus.json",
+        "kind": "language_corpus",
+        "what": "2105 phrases wolof, orthographe CLAD",
+    },
+    "world_countries": {
+        "path": "data/processed_global/world_countries.json",
+        "kind": "country_reference",
+        "what": "249 pays, codes ISO et taxonomie M49",
+    },
+    "world_series": {
+        "path": "data/processed_global/world_series.json",
+        "kind": "statistics",
+        "what": "population et PIB par pays",
+    },
+}
+
+
+def _racine_depot() -> str:
+    """La racine du dépôt."""
+    import os
+
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def repository_freshness(now: Optional[datetime] = None) -> Dict[str, Any]:
+    """
+    L'âge de **tout** ce que ce dépôt a dérivé.
+
+    Lit les fichiers réellement présents ; un fichier absent est dit absent, pas
+    supposé frais. C'est la question qu'un opérateur pose une fois par an et à
+    laquelle personne ne pouvait répondre : « qu'est-ce qui, ici, est vieux ? »
+
+    Args:
+        now: L'instant de référence.
+
+    Returns:
+        Un verdict par connaissance, et ce qui manque.
+    """
+    import json
+    import os
+
+    verdicts = []
+    absents = []
+    for nom, declaration in sorted(CONNAISSANCES_DERIVEES.items()):
+        chemin = os.path.join(_racine_depot(), declaration["path"])
+        if not os.path.isfile(chemin):
+            absents.append({"asset": nom, "path": declaration["path"],
+                            "reason": "Fichier absent : jamais dérivé ici."})
+            continue
+
+        with open(chemin, "r", encoding="utf-8") as flux:
+            objet = json.load(flux)
+
+        verdicts.append({
+            **asset_freshness(
+                nom, built_at=objet.get("built_at"),
+                content_year=_annee_du_contenu(objet),
+                kind=declaration["kind"], now=now,
+            ),
+            "what": declaration["what"],
+            "path": declaration["path"],
+        })
+
+    par_statut: Dict[str, int] = {}
+    for verdict in verdicts:
+        par_statut[verdict["status"]] = par_statut.get(verdict["status"], 0) + 1
+
+    return {
+        "assets": verdicts,
+        "missing": absents,
+        "by_status": dict(sorted(par_statut.items())),
+        "rules": [
+            "`built_at` date la dérivation, pas les faits : relancer un script "
+            "rajeunit l'un sans toucher l'autre, et les confondre ferait passer "
+            "une base périmée pour fraîche.",
+            "Le verdict retenu est le **pire** des deux âges, et il dit lequel "
+            "le porte.",
+            "Chaque genre a sa cadence : une limite administrative ne vieillit "
+            "pas comme une statistique annuelle.",
+        ],
+        "does_not": [
+            "Rafraîchir quoi que ce soit : aucune source n'est activée.",
+            "Supposer qu'un fichier absent est à jour.",
+        ],
+    }
+
+
+def _annee_du_contenu(objet: Dict[str, Any]) -> Optional[str]:
+    """
+    L'année des **faits** portés par une connaissance dérivée, si elle est là.
+
+    Cherchée dans les endroits où ce dépôt la met déjà, jamais devinée : une
+    année inventée ici rendrait le verdict pire que l'absence de verdict.
+    """
+    series = objet.get("series")
+    if isinstance(series, dict) and series:
+        annees = [
+            max(mesures, key=int)
+            for serie in series.values()
+            for mesures in (serie.get("values") or {}).values() if mesures
+        ]
+        if annees:
+            return max(annees, key=int)
+
+    domaines = objet.get("domains")
+    if isinstance(domaines, dict):
+        annees = [
+            str(element["year"])
+            for domaine in domaines.values()
+            for element in (domaine.get("items") or [])
+            if str(element.get("year", "")).isdigit()
+        ]
+        if annees:
+            return max(annees, key=int)
+
+    for cle in ("content_year", "data_year", "reference_year"):
+        if objet.get(cle):
+            return str(objet[cle])
+
+    # Rien trouvé : `None`, et le verdict sera `UNKNOWN`. C'est un résultat, pas
+    # un échec — il dit que la plateforme ne sait pas dater ces faits, ce qui
+    # est vrai des limites administratives (geoBoundaries ne publie pas de date
+    # par fichier) et d'un corpus de langue.
+    return None
