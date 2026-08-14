@@ -1,0 +1,32 @@
+# Google API surfaces used by the connectors.
+#
+# Like the OAuth endpoints, these are **configuration**: a base URL that moves
+# must be fixable without a release. Each entry names the documentation that
+# describes it, so the value can be confronted with its authority.
+#
+# Nothing here is fetched. This environment cannot reach googleapis.com, and
+# these connectors make no network call at all: they build requests, and the
+# caller that holds the credentials sends them.
+
+version: "1.0"
+
+apis:
+  gmail:
+    base_url: "https://gmail.googleapis.com/gmail/v1"
+    documentation_url: "https://developers.google.com/gmail/api/reference/rest"
+    # La boîte est toujours celle du porteur du jeton. `me` est la seule valeur
+    # que ces connecteurs emploient : accepter un identifiant d'utilisateur
+    # dans une requête reviendrait à laisser demander la boîte de quelqu'un
+    # d'autre, et le jeton refuserait — mais la requête n'a pas à exister.
+    user_id: "me"
+    scope_read: "https://www.googleapis.com/auth/gmail.readonly"
+
+  drive:
+    base_url: "https://www.googleapis.com/drive/v3"
+    documentation_url: "https://developers.google.com/drive/api/reference/rest/v3"
+    scope_read: "https://www.googleapis.com/auth/drive.readonly"
+
+  calendar:
+    base_url: "https://www.googleapis.com/calendar/v3"
+    documentation_url: "https://developers.google.com/calendar/api/v3/reference"
+    scope_read: "https://www.googleapis.com/auth/calendar.readonly"
