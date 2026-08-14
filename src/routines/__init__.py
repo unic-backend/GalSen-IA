@@ -1,0 +1,24 @@
+"""
+Moteur de routines — le travail que la plateforme fait sans personne devant.
+
+Tout ce qui coûte cher est vérifié à la **déclaration** : une routine qui échoue
+chaque nuit à trois heures est une routine dont personne ne voit l'échec.
+"""
+
+from .registry import RoutineRegistry
+from .types import (
+    ACTIONS_MAXIMUM,
+    INTERVALLE_MINIMAL_SECONDES,
+    Routine,
+    RoutineAction,
+    RoutineRefused,
+)
+
+__all__ = [
+    "ACTIONS_MAXIMUM",
+    "INTERVALLE_MINIMAL_SECONDES",
+    "Routine",
+    "RoutineAction",
+    "RoutineRefused",
+    "RoutineRegistry",
+]
