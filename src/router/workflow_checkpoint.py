@@ -51,6 +51,13 @@ TAILLE_MAXIMALE_ETAPE = 20_000
 #: reprendre indéfiniment consomme sans avancer.
 REPRISES_MAXIMUM = 3
 
+#: Exécutions conservées. Le routeur ouvre un point de reprise à **chaque**
+#: requête (phase 49.2) : sans borne, la mémoire du serveur croîtrait avec son
+#: trafic. Les terminées partent les premières, et ce qui est oublié est
+#: compté — un point de reprise perdu en silence est une reprise impossible
+#: dont personne ne connaît la cause.
+EXECUTIONS_CONSERVEES = 200
+
 
 class RunStatus(str, Enum):
     """Où en est une exécution de workflow."""
@@ -87,6 +94,10 @@ class StepRecord:
         ok: A-t-elle abouti.
         output: Ce qu'elle a rendu, tronqué au besoin.
         truncated: Vrai si la sortie a été coupée — dit, jamais silencieux.
+        skipped: Pourquoi l'étape n'a pas été exécutée, si elle ne l'a pas été.
+            Une étape sautée compte comme faite — elle ne sera pas exécutée à
+            la reprise non plus — mais elle ne prétend pas avoir produit
+            quelque chose.
         finished_at: Quand.
     """
 
@@ -94,6 +105,7 @@ class StepRecord:
     ok: bool
     output: str = ""
     truncated: bool = False
+    skipped: str = ""
     finished_at: float = field(default_factory=time.time)
 
     def as_dict(self) -> Dict[str, Any]:
@@ -103,6 +115,7 @@ class StepRecord:
             "ok": self.ok,
             "output": self.output,
             "truncated": self.truncated,
+            "skipped": self.skipped,
             "finished_at": self.finished_at,
         }
 
@@ -185,9 +198,17 @@ class WorkflowCheckpoints:
     même que celui des routines et de la mémoire.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, max_runs: int = EXECUTIONS_CONSERVEES) -> None:
+        """
+        Args:
+            max_runs: Exécutions conservées. Au-delà, les plus anciennes sont
+                oubliées — les terminées d'abord.
+        """
         self._verrou = threading.RLock()
         self._runs: Dict[str, WorkflowRun] = {}
+        self._maximum = max(1, int(max_runs))
+        self._oubliees = 0
+        self._oubliees_reprenables = 0
 
     # ------------------------------------------------------------------
     # Cycle de vie
@@ -226,11 +247,38 @@ class WorkflowCheckpoints:
         )
         with self._verrou:
             self._runs[execution.run_id] = execution
+            self._elaguer()
         return execution
+
+    def _elaguer(self) -> None:
+        """
+        Ramène le nombre d'exécutions sous la borne.
+
+        Les terminées partent d'abord : oublier une exécution reprenable, c'est
+        perdre la reprise elle-même. Quand il ne reste que des reprenables, les
+        plus anciennes partent quand même — mais elles sont **comptées à part**,
+        parce qu'une reprise devenue impossible doit avoir une cause visible.
+
+        Appelé sous verrou.
+        """
+        if len(self._runs) <= self._maximum:
+            return
+
+        par_age = sorted(self._runs.values(), key=lambda e: e.updated_at)
+        ordre = [e for e in par_age if not e.status.resumable]
+        ordre += [e for e in par_age if e.status.resumable]
+
+        for execution in ordre:
+            if len(self._runs) <= self._maximum:
+                return
+            del self._runs[execution.run_id]
+            self._oubliees += 1
+            if execution.status.resumable:
+                self._oubliees_reprenables += 1
 
     def record_step(
         self, run_id: str, agent_id: str, ok: bool, output: Any = "",
-        subject: Optional[str] = None,
+        subject: Optional[str] = None, skipped: str = "",
     ) -> WorkflowRun:
         """
         Consigne une étape terminée.
@@ -241,6 +289,8 @@ class WorkflowCheckpoints:
             ok: A-t-il abouti.
             output: Ce qu'il a rendu.
             subject: Qui consigne, pour le contrôle d'accès.
+            skipped: Raison, si l'étape a été franchie sans tourner. Passer par
+                `record_skip`, qui l'exige.
 
         Returns:
             L'exécution mise à jour.
@@ -266,6 +316,7 @@ class WorkflowCheckpoints:
         with self._verrou:
             execution.completed.append(StepRecord(
                 agent_id=agent_id, ok=ok, output=texte, truncated=tronque,
+                skipped=skipped,
             ))
             execution.updated_at = time.time()
             if not ok:
@@ -273,6 +324,41 @@ class WorkflowCheckpoints:
             elif execution.next_step() is None:
                 execution.status = RunStatus.COMPLETED
         return execution
+
+    def record_skip(
+        self, run_id: str, agent_id: str, reason: str, subject: Optional[str] = None
+    ) -> WorkflowRun:
+        """
+        Consigne une étape qui n'a pas été exécutée et ne le sera pas.
+
+        Un agent désactivé, ou écarté par le planificateur, ne tournera pas
+        davantage à la reprise : le laisser « à faire » rendrait une exécution
+        indéfiniment inachevée. Il compte donc comme franchi — mais l'étape
+        porte la raison et ne prétend rien avoir produit.
+
+        Args:
+            run_id: L'exécution.
+            agent_id: L'agent écarté.
+            reason: Pourquoi.
+            subject: Qui consigne.
+
+        Returns:
+            L'exécution mise à jour.
+
+        Raises:
+            CheckpointRefused: Si la raison manque, ou aux mêmes conditions que
+                `record_step`.
+        """
+        if not (reason or "").strip():
+            raise CheckpointRefused(
+                f"Étape '{agent_id}' sautée sans raison : une étape franchie "
+                "sans avoir tourné doit dire pourquoi, sinon elle se lit comme "
+                "un succès."
+            )
+        return self.record_step(
+            run_id, agent_id, ok=True, output="", subject=subject,
+            skipped=reason.strip(),
+        )
 
     def resume(self, run_id: str, subject: Optional[str] = None) -> WorkflowRun:
         """
@@ -399,6 +485,7 @@ class WorkflowCheckpoints:
         """
         with self._verrou:
             visibles = [e for e in self._runs.values() if self._visible(e, subject)]
+            oubliees = (self._oubliees, self._oubliees_reprenables)
 
         par_statut: Dict[str, int] = {}
         for execution in visibles:
@@ -415,6 +502,11 @@ class WorkflowCheckpoints:
             ],
             "max_resumes": REPRISES_MAXIMUM,
             "max_step_output": TAILLE_MAXIMALE_ETAPE,
+            "max_runs": self._maximum,
+            # Comptés, pas déduits : une reprise devenue impossible parce que
+            # son point de reprise a été élagué doit avoir une cause visible.
+            "forgotten": oubliees[0],
+            "forgotten_resumable": oubliees[1],
             "rules": [
                 "Une étape terminée n'est jamais refaite : refaire une étape "
                 "qui a eu un effet au-dehors est la façon dont un courriel "

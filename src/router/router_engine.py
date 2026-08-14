@@ -27,6 +27,7 @@ from .result_aggregator import ResultAggregator
 from .retry_manager import RetryManager
 from .agent_dispatcher import AgentDispatcher
 from .workflow_history import WorkflowHistory
+from .workflow_checkpoint import CheckpointRefused, WorkflowCheckpoints
 from .decision_trace import decision_trace, recommended_agents, selection_appliquee
 from .logger import Logger
 from .output_validation import (
@@ -81,6 +82,11 @@ class RouterEngine:
         # Journal borné des exécutions, pour le taux de succès du chapitre 09.
         self.history = WorkflowHistory()
 
+        # Points de reprise (VOLET 49). L'historique dit ce qu'une exécution a
+        # fait une fois finie ; ceci retient où elle en est pendant qu'elle
+        # dure, pour qu'une reprise ne refasse pas les étapes déjà abouties.
+        self.checkpoints = WorkflowCheckpoints()
+
         self.logger.info("RouterEngine initialisé avec succès.")
 
     def process_request(
@@ -89,6 +95,7 @@ class RouterEngine:
         workflow_id: Optional[str] = None,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
+        resume_run_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Traite une requête utilisateur en orchestrant les agents selon le workflow.
@@ -98,6 +105,9 @@ class RouterEngine:
             workflow_id: Identifiant du workflow à utiliser (optionnel, utilise le défaut sinon).
             user_id: Utilisateur à l'origine de la requête, pour isoler ses mémoires.
             session_id: Session à laquelle rattacher la requête.
+            resume_run_id: Exécution interrompue à reprendre (VOLET 49). Les
+                étapes déjà abouties ne sont pas refaites, et le workflow vient
+                du point de reprise, pas de l'appelant.
 
         Returns:
             Un dictionnaire contenant la réponse finale et les métadonnées d'exécution.
@@ -107,9 +117,21 @@ class RouterEngine:
         # Le contexte n'est créé qu'après la planification ; il reste None si une
         # exception survient avant, et l'audit d'échec doit le prendre en compte.
         context: Optional[AgentContext] = None
+        # Le point de reprise suit la même règle : il n'existe qu'après la
+        # planification, et l'échec doit pouvoir dire s'il en existe un.
+        point = None
         self.logger.info(f"Début du traitement de la requête: {user_request[:100]}...")
 
         try:
+            # Reprise d'une exécution interrompue (VOLET 49). Le workflow vient
+            # du point de reprise et non de l'appelant : reprendre sous un autre
+            # workflow serait en commencer un autre sous l'identifiant du
+            # premier, avec les étapes déjà faites de celui-ci.
+            reprise = None
+            if resume_run_id:
+                reprise = self.checkpoints.resume(resume_run_id, subject=user_id)
+                workflow_id = reprise.workflow_id
+
             # Étape 1: Planifier l'exécution
             execution_plan = self.execution_planner.plan_execution(workflow_id)
             workflow_id_to_use = workflow_id or self.workflow_loader.get_default_workflow()
@@ -150,6 +172,12 @@ class RouterEngine:
             else:
                 ordered_agents = pipeline_agents
 
+            # Le plan d'une reprise est celui du point de reprise : le workflow
+            # a pu changer entre-temps, et les étapes déjà faites l'ont été
+            # selon l'ancien.
+            if reprise is not None:
+                ordered_agents = list(reprise.steps)
+
             self.logger.info(f"Ordre d'exécution des agents: {ordered_agents}")
 
             # Un contexte unique est partagé par tous les agents de la requête :
@@ -164,9 +192,46 @@ class RouterEngine:
                 request_id=request_id,
             )
 
+            # Point de reprise de cette exécution. Ouvert avant le premier
+            # agent : un point de reprise créé à la fin ne servirait qu'aux
+            # exécutions qui n'en ont pas besoin.
+            if reprise is not None:
+                point = reprise
+            elif ordered_agents:
+                point = self.checkpoints.start(
+                    workflow_id_to_use, ordered_agents, subject=user_id,
+                )
+            else:
+                point = None
+
             # Exécution séquentielle des agents (pour une première version simple)
             all_agent_results = []  # Pour stocker tous les résultats détaillés
             agent_durations = {}  # Durée observée de chaque agent, reprises comprises
+
+            # Ce qu'une reprise ne refait pas. Les productions des étapes déjà
+            # abouties rejoignent le contexte : l'agent suivant doit voir ce qui
+            # l'a précédé, qu'il vienne de tourner ou d'avoir tourné hier.
+            deja_faits = set()
+            if reprise is not None:
+                for etape in reprise.completed:
+                    if not etape.ok or etape.skipped:
+                        continue
+                    deja_faits.add(etape.agent_id)
+                    repris = {
+                        "agent": etape.agent_id,
+                        "status": STATUS_SUCCESS,
+                        "result": etape.output,
+                        "resumed": True,
+                    }
+                    all_agent_results.append(repris)
+                    context.previous_results.append(repris)
+                deja_faits.update(
+                    etape.agent_id for etape in reprise.completed if etape.skipped
+                )
+                self.logger.info(
+                    "Reprise de l'exécution %s : %s étapes déjà abouties ne sont "
+                    "pas refaites.", reprise.run_id, len(deja_faits),
+                )
 
             # Sélection pilotée par le planificateur, si le workflow la déclare
             # (`execution.agent_selection: planner`). Elle **restreint** le
@@ -180,14 +245,25 @@ class RouterEngine:
             agents_retenus = None
 
             for agent_id in ordered_agents:
-                if agents_retenus is not None and agent_id not in agents_retenus:
+                if agent_id in deja_faits:
+                    # La règle de tout le VOLET : refaire une étape qui a déjà
+                    # eu un effet au-dehors est la façon dont un courriel
+                    # devient deux.
                     self.logger.info(
-                        "Agent '%s' écarté : le planificateur ne l'a pas retenu pour cette demande.",
-                        agent_id,
+                        "Agent '%s' déjà abouti lors d'une exécution précédente : "
+                        "non refait.", agent_id,
                     )
+                    continue
+                if agents_retenus is not None and agent_id not in agents_retenus:
+                    motif = (
+                        "Le planificateur ne l'a pas retenu pour cette demande."
+                    )
+                    self.logger.info("Agent '%s' écarté : %s", agent_id, motif)
+                    self._marquer_saut(point, agent_id, motif, user_id)
                     continue
                 if not self.agent_loader.is_enabled(agent_id):
                     self.logger.warning(f"L'agent '{agent_id}' est désactivé. Ignoré.")
+                    self._marquer_saut(point, agent_id, "Agent désactivé.", user_id)
                     continue
 
                 agent_config = self.agent_loader.get_agent(agent_id)
@@ -217,6 +293,7 @@ class RouterEngine:
                 # Le contexte est enrichi au fur et à mesure : l'agent suivant
                 # peut consulter ce qui vient d'être produit
                 context.previous_results.append(agent_result)
+                self._consigner_etape(point, agent_id, agent_result, user_id)
 
                 # Dès que le planificateur a rendu sa décision, le reste du
                 # pipeline s'y conforme. Une recommandation vide ou absente
@@ -338,6 +415,12 @@ class RouterEngine:
             }
             if approval_request_ids:
                 response["approval_request_ids"] = approval_request_ids
+            # L'identifiant du point de reprise fait partie de la réponse :
+            # sans lui, personne ne peut reprendre ce qui vient d'échouer.
+            if point is not None:
+                response["run_id"] = point.run_id
+                response["metadata"]["run_status"] = point.status.value
+                response["metadata"]["resumed_steps"] = len(deja_faits)
 
             self.logger.info(f"Requête traitée en {execution_time:.2f} secondes. Statut: {response['status']}")
 
@@ -379,6 +462,10 @@ class RouterEngine:
                 "request_id": request_id,
                 "execution_time_seconds": round(duree, 2)
             }
+            if point is not None:
+                # Une exécution morte en route se reprend : encore faut-il
+                # savoir laquelle.
+                error_response["run_id"] = point.run_id
             if context is not None:
                 context.record_audit(
                     AuditEventType.REQUEST,
@@ -389,6 +476,70 @@ class RouterEngine:
                     metadata={"workflow_id": workflow_id},
                 )
             return error_response
+
+    def _consigner_etape(
+        self,
+        point: Optional[Any],
+        agent_id: str,
+        agent_result: Dict[str, Any],
+        user_id: Optional[str],
+    ) -> None:
+        """
+        Consigne une étape terminée dans le point de reprise.
+
+        Une étape qui attend une approbation humaine n'est **pas** consignée :
+        elle n'a pas fini. La laisser ouverte est ce qui permet à la reprise de
+        la relancer une fois la décision prise ; la marquer aboutie ferait
+        passer l'approbation pour acquise.
+
+        Args:
+            point: Le point de reprise, ou `None` si l'exécution n'en a pas.
+            agent_id: L'agent qui vient de finir.
+            agent_result: Ce qu'il a rendu.
+            user_id: Le propriétaire de l'exécution.
+        """
+        if point is None:
+            return
+        statut = agent_result.get("status")
+        if statut == STATUS_REQUIRES_APPROVAL:
+            return
+        try:
+            self.checkpoints.record_step(
+                point.run_id, agent_id,
+                ok=statut == STATUS_SUCCESS,
+                output=agent_result.get("result", ""),
+                subject=user_id,
+            )
+        except CheckpointRefused as refus:
+            # Le point de reprise ne doit jamais faire échouer la requête qu'il
+            # observe : il est un filet, pas un maillon.
+            self.logger.warning("Point de reprise non mis à jour : %s", refus)
+
+    def _marquer_saut(
+        self,
+        point: Optional[Any],
+        agent_id: str,
+        motif: str,
+        user_id: Optional[str],
+    ) -> None:
+        """
+        Marque une étape franchie sans avoir tourné.
+
+        Un agent désactivé ou écarté ne tournera pas davantage à la reprise :
+        le laisser « à faire » rendrait l'exécution indéfiniment inachevée.
+
+        Args:
+            point: Le point de reprise, ou `None`.
+            agent_id: L'agent écarté.
+            motif: Pourquoi.
+            user_id: Le propriétaire de l'exécution.
+        """
+        if point is None:
+            return
+        try:
+            self.checkpoints.record_skip(point.run_id, agent_id, motif, subject=user_id)
+        except CheckpointRefused as refus:
+            self.logger.warning("Point de reprise non mis à jour : %s", refus)
 
     def _dispatch_agent(
         self,
