@@ -14,15 +14,12 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **49.3 terminée — VOLET 49 clos.**
-**50.1 en attente de confirmation** — notifications : moteur au-dessus du magasin
-existant.
-**Terminées**      : **vagues I et II complètes** (20 phases), **VOLETs 47, 48 et
-49** complets.
-**Dû à la clôture de la vague III** (après 50.2) : entrée `CHANGELOG.md` et
-`completed-work.md` pour les VOLETs 43 à 50, comme cela a été fait pour la
-vague I.
-**Cadence**        : une phase par tour (défaut du protocole).
+**Phase courante** : **50.2 terminée — VOLET 50 clos, VAGUE III complète (10 phases).**
+**51.1 en attente de confirmation** — registre de sources mondial, ouverture de la
+vague IV.
+**Terminées**      : **vagues I, II et III complètes** (30 phases sur 73).
+**Cadence**        : **deux phases par tour** — demandée par le propriétaire le
+2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
 ---
 
@@ -59,7 +56,7 @@ pas estimé.
 | 20 | Évaluation | `factual_evaluation.py`, `docs/evaluation/` | **à étendre** |
 | 21 | Sécurité | `src/security/` (trust.py, posture) | **existe** |
 | 22 | Journal d'audit | `src/audit_engine/` | **existe** |
-| 23 | Notifications | `storage/sqlite_notification_store.py` | **partiel** — pas de moteur |
+| 23 | Notifications | `services/notification/` (manager, 2 magasins, gabarits) + 6 routes | **existe** — *l'audit disait « pas de moteur » : c'était faux, mesuré le 2026-08-14* |
 | 24 | Moteur de surveillance | `agents/monitor/`, `src/proactive/` | **existe** |
 | 25 | Intelligence documentaire | `src/document_intelligence_engine/` | **existe** |
 | 26 | Ingénierie logicielle | `src/agent/repo_graph.py`, `guarded_editor.py` | **existe** |
@@ -184,7 +181,7 @@ une recherche sans filtre. Les trois autres chemins étaient fermés depuis le
 VOLET 40 ; celui-là ne l'était pas, parce que la mémoire **avait l'air** isolée
 grâce à son `user_id` — qui est un filtre facultatif, pas une frontière.
 
-VAGUE III — Le temps et l'exécution longue                        → 10 phases
+VAGUE III — Le temps et l'exécution longue                        → 10 phases  ✅ CLOSE
   V47  Moteur de routines (déclaration, planification, journal)   → 3 phases
        47.1 déclaration, registre, refus à l'écriture                ✅
        47.2 décision pure, exécution gardée, arrêt sur échec       ✅
@@ -211,7 +208,16 @@ point de reprise, si bien qu'une reprise devait la redemander à l'appelant —
 qui pouvait en poser une autre sans que rien ne le dise, la moitié déjà faite
 répondant alors à une question différente. Elle est désormais consignée au
 lancement, et la route de reprise **ne prend aucun corps**.
-  V50  Notifications : moteur au-dessus du magasin existant       → 2 phases
+  V50  Notifications : les événements que personne ne verrait     → 2 phases
+       50.1 événements de la vague III branchés sur le service       ✅
+       50.2 canaux de livraison, déclarés et honnêtes                ✅
+
+**Correction d'audit en 50.1** : la ligne 23 du tableau annonçait « partiel — pas
+de moteur ». **C'était faux.** Le service existe entièrement : gestionnaire,
+magasin mémoire et SQLite, gabarits, déduplication, rétention, six routes,
+isolation par destinataire. Ce qui manquait, ce sont les **événements** — une
+routine qui s'arrête seule, une exécution longue qui meurt en route — et un
+**canal** autre que la boîte interne. Le VOLET a donc étendu, jamais reconstruit.
 
 VAGUE IV — La connaissance                                        → 16 phases
   V51  Registre de sources mondial (généralise le sénégalais)     → 2 phases

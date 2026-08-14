@@ -27,6 +27,7 @@ watching" means:
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from dataclasses import dataclass, field
@@ -131,6 +132,7 @@ class RoutineScheduler:
         tool_engine: Any = None,
         capabilities: Optional[CapabilityRegistry] = None,
         safety: Optional[RoutineSafety] = None,
+        notifier: Any = None,
     ) -> None:
         """
         Args:
@@ -142,8 +144,13 @@ class RoutineScheduler:
             safety: Le budget et l'arrêt d'urgence (VOLET 48). Séparé du
                 planificateur : ce qui protège ne doit pas dépendre de ce qui
                 exécute.
+            notifier: Le témoin (VOLET 50). Facultatif, et jamais bloquant :
+                une routine qui s'arrête à trois heures du matin ne le dit à
+                personne, et un journal n'est pas une notification — il est lu
+                par quelqu'un qui soupçonne déjà quelque chose.
         """
         self.registry = registry
+        self._temoin = notifier
         self.safety = safety if safety is not None else RoutineSafety()
         self._outils = tool_engine
         self._capacites = capabilities if capabilities is not None else getattr(
@@ -231,6 +238,7 @@ class RoutineScheduler:
                 # quelqu'un relèvera le budget délibérément.
                 self.registry.disable(routine.routine_id)
                 tour.disabled_after = True
+                self._prevenir(routine, motif)
             return tour
 
         with self._verrou:
@@ -315,14 +323,32 @@ class RoutineScheduler:
         if compte >= ECHECS_AVANT_ARRET:
             self.registry.disable(routine.routine_id)
             tour.disabled_after = True
-            tour.actions.append(ActionOutcome(
-                tool_id="—", status="error",
-                detail=(
-                    f"{compte} échecs consécutifs : la routine s'arrête. Une "
-                    "routine qui échoue chaque tour ne surveille rien, elle "
-                    "occupe un créneau."
-                ),
-            ))
+            arret = (
+                f"{compte} échecs consécutifs : la routine s'arrête. Une "
+                "routine qui échoue chaque tour ne surveille rien, elle "
+                "occupe un créneau."
+            )
+            tour.actions.append(ActionOutcome(tool_id="—", status="error", detail=arret))
+            self._prevenir(routine, arret)
+
+    def _prevenir(self, routine: Routine, motif: str) -> None:
+        """
+        Prévient qu'une routine s'est arrêtée d'elle-même.
+
+        Le témoin est facultatif et ne fait jamais tomber le tour : une routine
+        qui vient de s'arrêter a assez d'ennuis.
+        """
+        if self._temoin is None:
+            return
+        try:
+            self._temoin.routine_stopped(
+                routine.routine_id, motif, subject=routine.subject,
+            )
+        except Exception as erreur:
+            logging.getLogger(__name__).warning(
+                "Arrêt de la routine '%s' non notifié : %s",
+                routine.routine_id, erreur,
+            )
 
     def tick(self, now: float) -> List[RoutineRun]:
         """

@@ -13,31 +13,31 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Date** : 2026-08-14
 
 **En cours** : **programme d'expansion VOLETs 37→76** (directive du 2026-08-14).
-**VAGUE I CLOSE** — 12 phases sur 12. **43.1 attend confirmation** (OAuth 2.0).
-Plan complet → `docs/memory/phase-plan.md`.
+**VAGUES I, II et III CLOSES** — 30 phases sur 73. **51.1 attend confirmation.**
+Plan complet → `docs/memory/phase-plan.md`. **Cadence demandée : deux phases par tour.**
 
 **Terminé dans cette session**
-- **Audit d'intégration des 40 domaines** : 19 existent, 12 à étendre, 9 absents.
-  Le programme n'est pas 40 constructions. **73 phases en 6 vagues.**
-- **Vague I — le socle d'extension, six frontières tenues par du code** :
-  capacités des 22 outils, pré-approbation étroite (`python -m pytest` oui,
-  `python -c` non), plafonds de rôle à trois verdicts, isolation des données
-  utilisateur, base de connaissance étanche, contrat + cycle de vie + sûreté des
-  connecteurs, masquage des secrets avec garde AST.
-- **Défauts trouvés en construisant, tous corrigés** : `model` déclaré `system`
-  refusait la génération à tout utilisateur ; `/workflow/run` contournait le
-  plafond de `/tool/execute` (phase 39.3 ajoutée au plan pour le refermer) ;
-  `contract_of` faisait dire « aucun contrat » à un contrat mal typé ;
-  `is_sensitive("key")` accusait le connecteur de stockage à tort.
-- Suite : **3452 tests passent**, 8 ignorés (3241 au début) ; `ruff` propre.
+- **Vague II — connecteurs Google** : OAuth 2.0 + PKCE S256, jetons chiffrés ou
+  refusés, Gmail/Drive/Agenda en lecture seule. `NOT_CONFIGURED` : aucun
+  identifiant n'existe, aucun n'a été fabriqué. Étanchéité vérifiée en attaquant.
+- **Vague III — le temps et l'exécution longue** : routines (déclaration,
+  planification, journal, budget, arrêt d'urgence), workflows longs avec points de
+  reprise (une étape aboutie n'est jamais refaite), notifications des événements
+  que personne ne verrait, canaux de livraison déclarés et honnêtes.
+- **Défauts trouvés en câblant** : l'arrêt d'urgence disparaissait à la
+  reconstruction du planificateur ; la reprise d'un workflow pouvait changer la
+  question posée. Les deux refermés, avec un test chacun.
+- **Correction d'audit** : la ligne « Notifications — pas de moteur » était fausse.
+  Le service existait ; ce sont ses **événements** et ses **canaux** qui manquaient.
+- Suite : **3866 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-Phase **43.1** — OAuth 2.0 : flux, jetons chiffrés, révocation. Elle finira en
-`IMPLEMENTED` + `NOT_CONFIGURED` : **aucun identifiant Google n'existe ici, et
-aucun ne sera fabriqué.**
+Phase **51.1** — registre de sources mondial, généralisant `corpus/sources/senegal.yaml`.
+Ouvre la vague IV (la connaissance, 16 phases).
 
 **Bloqué / à surveiller**
 - **Aucun identifiant OAuth Google** — arrête l'activation des VOLETs 43 à 45.
+- **Aucun identifiant de canal externe** — courriel et webhook `NOT_CONFIGURED`.
 - **Mandataire réseau** : les 9 domaines `.sn`, la Banque mondiale, l'UNESCO,
   la FAO, l'OMS répondent `CONNECT → 403`. Mesuré, non contourné.
 - **C1** : `ollama serve` — génération et récupération sémantique non mesurées.

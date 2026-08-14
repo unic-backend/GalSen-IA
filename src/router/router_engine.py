@@ -87,6 +87,11 @@ class RouterEngine:
         # dure, pour qu'une reprise ne refasse pas les étapes déjà abouties.
         self.checkpoints = WorkflowCheckpoints()
 
+        # Le témoin (VOLET 50). Une exécution morte au huitième agent laissait
+        # un point de reprise que personne ne savait exister ; posé par
+        # l'intégration, il reste `None` tant que le service n'est pas monté.
+        self.notifier = None
+
         self.logger.info("RouterEngine initialisé avec succès.")
 
     def process_request(
@@ -428,6 +433,7 @@ class RouterEngine:
                 response["run_id"] = point.run_id
                 response["metadata"]["run_status"] = point.status.value
                 response["metadata"]["resumed_steps"] = len(deja_faits)
+                self._prevenir_interruption(point, failing_agents)
 
             self.logger.info(f"Requête traitée en {execution_time:.2f} secondes. Statut: {response['status']}")
 
@@ -489,6 +495,30 @@ class RouterEngine:
                     metadata={"workflow_id": workflow_id},
                 )
             return error_response
+
+    def _prevenir_interruption(self, point: Any, failing_agents: list) -> None:
+        """
+        Prévient qu'une exécution s'est interrompue et peut être reprise.
+
+        Sans cela, le point de reprise existe et personne ne sait qu'il existe :
+        la reprise resterait une possibilité théorique. Le témoin est facultatif
+        et ne fait jamais tomber la requête qu'il observe.
+
+        Args:
+            point: Le point de reprise de l'exécution.
+            failing_agents: Les agents en échec, pour nommer où elle s'est
+                arrêtée.
+        """
+        if self.notifier is None or point.status.value != "failed":
+            return
+        try:
+            self.notifier.workflow_interrupted(
+                point.run_id, point.workflow_id,
+                failing_agent=failing_agents[0] if failing_agents else None,
+                subject=point.subject,
+            )
+        except Exception as erreur:
+            self.logger.warning("Interruption non notifiée : %s", erreur)
 
     def _consigner_etape(
         self,

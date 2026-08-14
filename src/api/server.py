@@ -130,6 +130,8 @@ from src.connectors.safety import safety_report
 from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
+from src.services.notification.channels import ChannelRegistry
+from src.services.notification.events import PlatformNotifier
 from src.services.notification.manager import NotificationManagerImpl
 from src.services.notification.types import NotificationType, NotificationPriority
 from src.services.search.manager import SearchManagerImpl
@@ -489,7 +491,8 @@ def _scheduler() -> RoutineScheduler:
     global _routine_scheduler
     if _routine_scheduler is None or _routine_scheduler._outils is not tool_engine:
         _routine_scheduler = RoutineScheduler(
-            routine_registry, tool_engine=tool_engine, safety=routine_safety
+            routine_registry, tool_engine=tool_engine, safety=routine_safety,
+            notifier=platform_notifier,
         )
     return _routine_scheduler
 
@@ -512,6 +515,19 @@ approval_manager = _moteur_partage("approval", ApprovalManagerImpl)
 
 # Services backend (VOLET 02, Phase 2)
 notification_manager = _moteur_partage("notification", NotificationManagerImpl)
+
+# Le témoin de la plateforme (VOLET 50). Le service de notification existait ;
+# ce qui lui manquait, ce sont les événements de la vague III — une routine qui
+# s'arrête d'elle-même, une exécution longue qui meurt en route. Tous deux
+# n'existaient que dans les journaux, et un journal est lu par quelqu'un qui
+# soupçonne déjà quelque chose.
+platform_notifier = PlatformNotifier(notification_manager)
+
+# Les canaux de livraison (phase 50.2). Déclarés dans
+# `config/notifications/channels.yaml` ; aucun canal externe n'a d'identifiants
+# dans cette installation, et il le dit plutôt que de simuler un envoi.
+notification_channels_registry = ChannelRegistry()
+
 search_manager = _moteur_partage("search", SearchManagerImpl)
 # Sans cet enregistrement, la recherche unifiée n'a aucune source et ne peut rien
 # trouver (VOLET 14, ch. 04).
@@ -549,6 +565,9 @@ def get_router_engine():
             if _router_engine is None:
                 from src.router.router_engine import RouterEngine
                 _router_engine = RouterEngine()
+                # Le témoin est posé par l'intégration, pas construit par le
+                # routeur : l'orchestration n'a pas à savoir monter un service.
+                _router_engine.notifier = platform_notifier
     return _router_engine
 
 
@@ -1590,17 +1609,30 @@ async def halt_routines(
     ne démarre.
     """
     try:
-        return routine_safety.halt(ctx.subject, request.reason)
+        etat = routine_safety.halt(ctx.subject, request.reason)
     except ValueError as refus:
         raise HTTPException(status_code=400, detail=str(refus))
+    # L'exploitation l'apprend sans avoir à lire les journaux : un arrêt
+    # global engagé par quelqu'un d'autre est exactement ce qu'on découvre
+    # trop tard.
+    platform_notifier.routines_halted(ctx.subject, request.reason)
+    return etat
 
 
 @app.delete("/routines/halt", tags=["routines"],
-            dependencies=[Depends(rate_limit_dependency),
-                          Depends(require_permission(Permission.ADMIN_MANAGE))])
-async def release_routines_halt():
-    """Lève l'arrêt d'urgence."""
-    return {"released": routine_safety.release(), "halted": routine_safety.halted}
+            dependencies=[Depends(rate_limit_dependency)])
+async def release_routines_halt(
+    ctx: RBACContext = Depends(require_permission(Permission.ADMIN_MANAGE)),
+):
+    """Lève l'arrêt d'urgence.
+
+    La levée se notifie autant que l'engagement : savoir que les routines ont
+    repris fait partie de savoir ce qui tourne.
+    """
+    leve = routine_safety.release()
+    if leve:
+        platform_notifier.routines_released(ctx.subject)
+    return {"released": leve, "halted": routine_safety.halted}
 
 
 @app.put("/routines/{routine_id}/budget", tags=["routines"],
@@ -2492,6 +2524,37 @@ async def mark_all_read(
     """
     count = notification_manager.mark_all_read(recipient=_proprietaire_effectif(ctx, recipient))
     return {"marked_read": count}
+
+
+@app.get("/notification/channels", tags=["notification"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def notification_channels():
+    """Les canaux de livraison déclarés, et lesquels peuvent réellement partir.
+
+    Un canal sans identifiants rapporte `NOT_CONFIGURED` et nomme les variables
+    qui lui manquent — **jamais leurs valeurs**. Il ne prétend pas avoir
+    envoyé : croire que quelqu'un a été prévenu alors que rien n'est parti
+    serait le pire résultat possible.
+    """
+    return notification_channels_registry.channels_report()
+
+
+@app.get("/notification/channels/plan", tags=["notification"],
+         dependencies=[Depends(rate_limit_dependency)])
+async def notification_delivery_plan(
+    ctx: RBACContext = Depends(require_permission(Permission.HEALTH_VIEW)),
+):
+    """Ce qui partirait pour une notification adressée à l'appelant.
+
+    Une destination partagée — salon d'équipe, supervision — ne porte pas la
+    notification de quelqu'un : elle est lue par plus de monde que son
+    destinataire.
+    """
+    return {
+        "personal": notification_channels_registry.delivery_plan(ctx.subject),
+        "platform": notification_channels_registry.delivery_plan(None),
+    }
 
 
 @app.get("/notification/stats", tags=["notification"],

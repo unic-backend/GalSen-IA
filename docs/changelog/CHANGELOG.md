@@ -12,6 +12,49 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-14 — Vagues II et III du programme d'expansion (VOLETs 43 à 50)
+
+Ce que la plateforme sait faire quand personne ne la regarde. Rien n'y authentifie
+avec un identifiant fabriqué, et aucun canal ne prétend avoir envoyé.
+
+- **Connecteurs Google en lecture** (`src/connectors/oauth/`, `src/connectors/google/`)
+  — OAuth 2.0 code d'autorisation avec **PKCE S256 obligatoire**, `state` à usage
+  unique expirant en 600 s, jetons chiffrés (Fernet) ou refusés. Gmail, Drive et
+  Agenda, **lecture seule**. Aucun identifiant n'existe dans cette installation :
+  l'état est `NOT_CONFIGURED`, et c'est la règle qui fonctionne, pas un échec.
+- **Étanchéité** (VOLET 46) — un contenu de boîte privée ne peut plus entrer dans
+  la connaissance publique. Un trou réel a été trouvé en attaquant : `remember()`
+  déposait du privé **sans propriétaire** dans un magasin partagé.
+- **Routines** (`src/routines/`) — déclaration refusée à l'écriture plutôt qu'à
+  trois heures du matin, décision pure et testable, journal borné, **budget
+  quotidien** qui arrête la routine au lieu de la sauter, **arrêt d'urgence global**
+  qui ne se lève jamais tout seul. Onze routes.
+- **Workflows longs** (`src/router/workflow_checkpoint.py`) — une exécution garde
+  son état pendant qu'elle dure. **Une étape aboutie n'est jamais refaite** :
+  refaire une étape qui a eu un effet au-dehors est la façon dont un courriel
+  devient deux. L'annulation est terminale ; le point de reprise appartient à qui
+  a lancé l'exécution. Quatre routes : lister, lire, reprendre, annuler.
+- **Notifications : les événements que personne ne verrait**
+  (`src/services/notification/events.py`) — une routine qui s'arrête d'elle-même,
+  un arrêt d'urgence engagé, une exécution longue interrompue. Le destinataire est
+  **déduit** du propriétaire ; ce qui appartient à la plateforme part vers
+  l'exploitation par son rôle.
+- **Canaux de livraison** (`channels.py`, `config/notifications/channels.yaml`) —
+  déclaratifs. Un canal sans identifiants rapporte `NOT_CONFIGURED` et nomme les
+  variables manquantes, **jamais leurs valeurs**. Une destination partagée ne porte
+  pas la notification de quelqu'un.
+
+### Fixed — 2026-08-14 — Deux défauts trouvés en câblant
+
+- **L'arrêt d'urgence des routines disparaissait** quand le serveur reconstruisait
+  son planificateur : la couche de sûreté naissait avec lui. C'est exactement le
+  défaut contre lequel elle est écrite, réintroduit par son propre branchement.
+  Elle vit désormais au niveau du module, et un test conduit la reconstruction.
+- **La reprise d'un workflow pouvait changer la question.** La demande d'origine
+  n'était pas conservée, donc la route de reprise devait la redemander — et la
+  moitié déjà faite aurait répondu à autre chose. Elle est consignée au lancement,
+  et la route de reprise ne prend aucun corps.
+
 ### Added — 2026-08-14 — Vague I du programme d'expansion (VOLETs 37 à 42)
 
 Le socle sur lequel les connecteurs Google seront branchés. Rien n'y authentifie,

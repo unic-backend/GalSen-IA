@@ -318,6 +318,30 @@ def test_ce_qui_est_oublie_est_compte():
     assert rapport["forgotten_resumable"] == 1
 
 
+def test_une_execution_interrompue_previent_son_proprietaire(moteur):
+    """
+    Phase 50.1 : sans notification, le point de reprise existe et personne ne
+    sait qu'il existe. Une exécution qui aboutit ne notifie rien.
+    """
+    recus = []
+
+    class _Temoin:
+        def workflow_interrupted(self, run_id, workflow_id, failing_agent=None,
+                                 subject=None):
+            recus.append((run_id, workflow_id, failing_agent, subject))
+
+    moteur.notifier = _Temoin()
+
+    moteur._dispatch_agent = _repartiteur([], echec_sur="security")
+    reponse = moteur.process_request(
+        "Relire le code", workflow_id=WORKFLOW, user_id="awa"
+    )
+    moteur._dispatch_agent = _repartiteur([])
+    moteur.process_request("Relire le code", workflow_id=WORKFLOW, user_id="awa")
+
+    assert recus == [(reponse["run_id"], WORKFLOW, "security", "awa")]
+
+
 def test_le_routeur_borne_ses_points_de_reprise(moteur):
     """Un point de reprise par requête, sans borne, croîtrait avec le trafic."""
     assert moteur.checkpoints.checkpoint_report()["max_runs"] > 0
