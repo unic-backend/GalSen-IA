@@ -10,6 +10,12 @@ tools:
     category: system
     module: "tools.screen.tool"
     class: "ScreenTool"
+    capability:
+      effects: [read]
+      data_scope: system
+      requires_approval: false
+      unattended: false
+      reason: "L'écran peut afficher n'importe quelle donnée privée ; nul ne peut le savoir à l'avance."
     config: {}
 
   # Propose un geste, n'en exécute aucun sans décision humaine. La cible est un
@@ -21,6 +27,12 @@ tools:
     category: system
     module: "tools.gui.tool"
     class: "GUITool"
+    capability:
+      effects: [write]
+      data_scope: system
+      requires_approval: true
+      unattended: false
+      reason: "Un geste sur l'interface est un acte, et ADR-017 le soumet à une décision humaine."
     config: {}
 
   # Access is confined to the project root. Writing is disabled: agents report
@@ -31,6 +43,12 @@ tools:
     category: system
     module: "tools.filesystem.tool"
     class: "FileSystemTool"
+    capability:
+      effects: [read, write]
+      data_scope: system
+      requires_approval: false
+      unattended: false
+      reason: "Une écriture sur le disque n'est pas annulable ici ; elle demande un témoin."
     config:
       allow_write: false
       max_read_bytes: 5242880
@@ -43,6 +61,12 @@ tools:
     category: system
     module: "tools.terminal.tool"
     class: "TerminalTool"
+    capability:
+      effects: [read, write]
+      data_scope: system
+      requires_approval: true
+      unattended: false
+      reason: "Une commande peut faire tout ce que l'utilisateur peut faire."
     config:
       allowed_commands:
         - python
@@ -60,6 +84,11 @@ tools:
     category: development
     module: "tools.git.tool"
     class: "GitTool"
+    capability:
+      effects: [read]
+      data_scope: system
+      requires_approval: false
+      unattended: true
     config:
       allow_write: false
       protected_branches:
@@ -73,6 +102,11 @@ tools:
     category: development
     module: "tools.github.tool"
     class: "GitHubTool"
+    capability:
+      effects: [read, external]
+      data_scope: public
+      requires_approval: false
+      unattended: true
     config:
       timeout: 15
 
@@ -83,6 +117,11 @@ tools:
     category: internet
     module: "tools.web_search.tool"
     class: "WebSearchTool"
+    capability:
+      effects: [read, external]
+      data_scope: public
+      requires_approval: false
+      unattended: true
     config:
       timeout: 5
       max_retries: 1
@@ -93,6 +132,12 @@ tools:
     category: internet
     module: "tools.browser.tool"
     class: "BrowserTool"
+    capability:
+      effects: [read, external]
+      data_scope: public
+      requires_approval: false
+      unattended: false
+      reason: "Un navigateur exécute le code des pages visitées ; son résultat dépend d'un tiers."
     config: {}
 
   - id: api
@@ -100,6 +145,12 @@ tools:
     category: integration
     module: "tools.api.tool"
     class: "APITool"
+    capability:
+      effects: [read, write, external]
+      data_scope: public
+      requires_approval: true
+      unattended: false
+      reason: "L'appel est arbitraire : le registre ne peut pas savoir ce qu'il déclenche."
     config: {}
 
   - id: database
@@ -107,6 +158,12 @@ tools:
     category: storage
     module: "tools.database.tool"
     class: "DatabaseTool"
+    capability:
+      effects: [read, write]
+      data_scope: system
+      requires_approval: false
+      unattended: false
+      reason: "Une écriture en base n'est pas annulable ici."
     config: {}
 
   # Exposes the Model Engine through the Tool Engine. Generation returns a
@@ -117,6 +174,11 @@ tools:
     category: ai
     module: "tools.model.tool"
     class: "ModelTool"
+    capability:
+      effects: [read]
+      data_scope: system
+      requires_approval: false
+      unattended: true
     config:
       max_tokens: 1024
       temperature: 0.7
@@ -126,6 +188,11 @@ tools:
     category: ai
     module: "tools.memory.tool"
     class: "MemoryTool"
+    capability:
+      effects: [read, write]
+      data_scope: user_private
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: rag
@@ -133,6 +200,11 @@ tools:
     category: ai
     module: "tools.rag.tool"
     class: "RAGTool"
+    capability:
+      effects: [read]
+      data_scope: public
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: embeddings
@@ -140,6 +212,11 @@ tools:
     category: ai
     module: "tools.embeddings.tool"
     class: "EmbeddingsTool"
+    capability:
+      effects: [read]
+      data_scope: public
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: ocr
@@ -147,6 +224,11 @@ tools:
     category: documents
     module: "tools.ocr.tool"
     class: "OCRTool"
+    capability:
+      effects: [read]
+      data_scope: user_private
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: pdf
@@ -154,6 +236,11 @@ tools:
     category: documents
     module: "tools.pdf.tool"
     class: "PDFTool"
+    capability:
+      effects: [read]
+      data_scope: user_private
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: email
@@ -161,6 +248,12 @@ tools:
     category: communication
     module: "tools.email.tool"
     class: "EmailTool"
+    capability:
+      effects: [read, write, external]
+      data_scope: user_private
+      requires_approval: true
+      unattended: false
+      reason: "Un courriel parti ne revient pas, et il emporte de la donnée privée hors de la machine."
     config: {}
 
   - id: calendar
@@ -168,6 +261,12 @@ tools:
     category: communication
     module: "tools.calendar.tool"
     class: "CalendarTool"
+    capability:
+      effects: [read, write, external]
+      data_scope: user_private
+      requires_approval: true
+      unattended: false
+      reason: "Un agenda partagé publie une donnée privée auprès de tiers invités."
     config: {}
 
   # Désactivé pour une raison de sécurité, pas par manque de dépendance.
@@ -183,6 +282,12 @@ tools:
     category: deployment
     module: "tools.docker.tool"
     class: "DockerTool"
+    capability:
+      effects: [write]
+      data_scope: system
+      requires_approval: true
+      unattended: false
+      reason: "Un conteneur lancé sans témoin survit à la session qui l'a lancé."
     config: {}
 
   - id: logging
@@ -190,6 +295,11 @@ tools:
     category: monitoring
     module: "tools.logging.tool"
     class: "LoggingTool"
+    capability:
+      effects: [write]
+      data_scope: system
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: metrics
@@ -197,6 +307,11 @@ tools:
     category: monitoring
     module: "tools.metrics.tool"
     class: "MetricsTool"
+    capability:
+      effects: [read]
+      data_scope: system
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: agri_advice
@@ -204,4 +319,9 @@ tools:
     category: ai
     module: "tools.agri_advice.tool"
     class: "AgriAdviceTool"
+    capability:
+      effects: [read]
+      data_scope: public
+      requires_approval: false
+      unattended: true
     config: {}
