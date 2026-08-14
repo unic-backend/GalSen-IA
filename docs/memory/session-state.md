@@ -12,10 +12,17 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-14
 
-**En cours** : rien. Le chantier d'acquisition sénégalaise est construit et mesuré ;
-ce qui reste dépend du réseau et du propriétaire.
+**En cours** : **programme d'expansion VOLETs 37→76** (directive du 2026-08-14).
+Phase **37.1 terminée** (audit d'intégration) ; **38.1 attend confirmation**.
+Plan complet → `docs/memory/phase-plan.md`.
 
 **Terminé dans cette session**
+- **Audit d'intégration des 40 domaines de la directive** contre le dépôt réel :
+  **19 existent déjà**, **12 sont à étendre**, **9 sont absents** (recherche, BTP,
+  sports, greffons, routines, isolation utilisateur, écosystème développeur, sûreté
+  des routines, démonstration). Les 39 chemins affirmés existants ont été vérifiés
+  un par un ; l'absence de `routine`, `plugin` et `oauth` dans `src/` aussi.
+  **72 phases en 6 vagues**, ordonnées par dépendance.
 - **ADR-021 accepté et implémenté** : le report de `automated_acquisition` reposait sur un
   déclencheur **circulaire** (il mesurait le corpus que seule l'acquisition pouvait
   produire). Corrigé dans le code le 2026-08-14 — il mesure désormais **une source activée
