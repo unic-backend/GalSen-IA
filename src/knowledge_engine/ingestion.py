@@ -34,6 +34,8 @@ from typing import Any, Dict, List, Optional
 from src.document_intelligence_engine.simple_chunker import SimpleChunker
 from src.document_intelligence_engine.types import DocumentItem, DocumentType
 
+from ..security.isolation import Visibility, check_store, owner_for
+from ..tool.capabilities import DataScope
 from .languages import parse_language
 from .source_registry import SourceRefused, check_source
 from .scope import KnowledgeScope, KnowledgeSubject, parse_subject
@@ -133,6 +135,8 @@ class DocumentIngestor:
         tags: Optional[List[str]] = None,
         language: Any = Language.FR,
         status: KnowledgeStatus = KnowledgeStatus.DRAFT,
+        data_scope: DataScope = DataScope.PUBLIC,
+        owner: Optional[str] = None,
     ) -> IngestionReport:
         """
         Ingère un fichier, un bloc de connaissance par passage.
@@ -163,6 +167,13 @@ class DocumentIngestor:
                 document ingéré n'est pas une connaissance approuvée, et le faire
                 entrer directement en `APPROVED` viderait de son sens le cycle
                 de vie du VOLET 05.
+            data_scope: D'où vient le fichier, au vocabulaire des capacités
+                d'outils. La base de connaissance est un magasin **partagé** :
+                un fichier `user_private` — un document du Drive de quelqu'un —
+                **n'y entre pas** (VOLET 40). Cette valeur se dérive de la
+                capacité du connecteur qui a fourni le fichier ; elle ne se
+                choisit pas.
+            owner: Le propriétaire du fichier, quand la portée est privée.
 
         Returns:
             Le rapport d'ingestion.
@@ -170,6 +181,7 @@ class DocumentIngestor:
         Raises:
             FileNotFoundError: Si le fichier n'existe pas.
             ValueError: Si le titre est vide.
+            IsolationError: Si le fichier vient d'une source privée.
             ScopeRefused: Si la portée ou le sujet sont malformés.
             LanguageRefused: Si la langue est inconnue.
             SourceRefused: Si l'URL est sur la liste de refus du registre, ou si
@@ -189,6 +201,12 @@ class DocumentIngestor:
         verdict = check_source(url or "", source_category)
         if not verdict["allowed"]:
             raise SourceRefused(verdict["reason"])
+
+        # La frontière d'isolation est vérifiée **avant de lire le fichier**, et
+        # pour le document entier. Bloc par bloc, le refus tomberait dans le
+        # `except` de la boucle et deviendrait une ligne d'erreur parmi d'autres,
+        # alors qu'un document privé n'a pas à être ouvert du tout (VOLET 40).
+        check_store(owner_for(data_scope, owner), Visibility.SHARED)
 
         if not title or not title.strip():
             raise ValueError(
@@ -219,6 +237,7 @@ class DocumentIngestor:
                 domain=domain, scope=portee, subject=sujet,
                 author=author, url=url, tags=tags or [],
                 language=langue, status=status,
+                data_scope=data_scope, owner=owner,
             )
             try:
                 rapport.knowledge_ids.append(self._knowledge.add_knowledge(item))
@@ -454,6 +473,7 @@ class DocumentIngestor:
         scope: str, subject: KnowledgeSubject,
         author: Optional[str], url: Optional[str], tags: List[str],
         language: Language, status: KnowledgeStatus,
+        data_scope: DataScope = DataScope.PUBLIC, owner: Optional[str] = None,
     ) -> KnowledgeItem:
         """Construit un élément de connaissance portant sa provenance."""
         source = KnowledgeSource(
@@ -466,6 +486,8 @@ class DocumentIngestor:
             author=author,
             url=url,
             citation=f"{title}, passage {position + 1}/{total} ({os.path.basename(chemin)})",
+            data_scope=data_scope,
+            subject=owner,
         )
         item = KnowledgeItem(
             content=bloc,

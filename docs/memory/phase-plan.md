@@ -14,8 +14,8 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **40.1 terminée** — frontière d'isolation. **40.2 en attente de confirmation.**
-**Terminées**      : 37.1, 38.1, 38.2, 39.1, 39.2, 39.3, 40.1.
+**Phase courante** : **40.2 terminée** — VOLET 40 clos. **41.1 en attente de confirmation.**
+**Terminées**      : 37.1, 38.1, 38.2, 39.1, 39.2, 39.3, 40.1, 40.2.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -137,7 +137,13 @@ Les deux tests qui constataient le trou ont été **remplacés par leur inverse*
 pas supprimés.
   V40  Isolation des données utilisateur                          → 2 phases
        40.1 frontière : propriétaire déduit, audience obligatoire    ✅
-       40.2 application à la mémoire et à la connaissance
+       40.2 application aux trois chemins d'écriture de la base    ✅
+
+**Note sur 40.2** : la mémoire était **déjà isolée** au niveau HTTP (ADR-010,
+`_proprietaire_effectif` / `_appartient_au_sujet`). Mesuré avant d'écrire ; rien
+n'a été reconstruit. Le trou réel était l'écriture dans la **base de
+connaissance**, un magasin partagé sans notion de propriétaire. Les trois
+chemins qui y mènent sont fermés.
   V41  SDK de connecteurs (contrat, cycle de vie, tests)          → 2 phases
   V42  Sûreté : ce qu'un connecteur ne peut jamais faire          → 2 phases
 

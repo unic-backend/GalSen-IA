@@ -3,6 +3,8 @@ Gestionnaire principal du moteur de connaissances GalSen IA.
 """
 
 from typing import Iterable, List, Dict, Any, Optional, Tuple
+from ..security.isolation import Visibility, check_store, owner_for
+from ..tool.capabilities import DataScope
 from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority, KnowledgeStatus
 from .knowledge_lifecycle import check_transition, is_due_for_revalidation, is_retrievable
 from .knowledge_governance import governance_report
@@ -108,10 +110,30 @@ class KnowledgeManagerImpl(KnowledgeManager):
         """
         Ajoute une connaissance à la base.
 
+        **La base de connaissance est un magasin partagé.** Une donnée
+        appartenant à une personne — un courriel, un fichier privé — n'y entre
+        pas : une fois entrée, aucun filtre postérieur ne l'en retire, et elle
+        deviendrait visible de tous ceux qui interrogent la base. La portée est
+        lue sur la source, pas demandée à l'appelant (VOLET 40).
+
         Returns:
             ID de la connaissance ajoutée
+
+        Raises:
+            IsolationError: Si la source est déclarée `user_private`.
+            ValueError: Si la connaissance ne passe pas la validation.
         """
         with self._lock:
+            source = getattr(knowledge, "source", None)
+            if source is not None:
+                check_store(
+                    owner_for(
+                        getattr(source, "data_scope", DataScope.PUBLIC),
+                        getattr(source, "subject", None),
+                    ),
+                    Visibility.SHARED,
+                )
+
             # Valider la connaissance
             is_valid, errors = self.validate_knowledge(knowledge)
             if not is_valid:

@@ -19,7 +19,8 @@ from typing import Any, Dict, List, Optional
 from ..approval_engine.types import ApprovalRequest
 from ..audit_engine.types import AuditEvent, AuditEventType, AuditStatus, generate_request_id
 from ..integration.engine_registry import EngineRegistry, get_shared_registry
-from ..tool.capabilities import may_run_unattended
+from ..security.isolation import IsolationError
+from ..tool.capabilities import DataScope, may_run_unattended
 from .blackboard import Blackboard
 
 # Profondeur maximale de délégation d'agent à agent. Trois niveaux suffisent à un
@@ -412,17 +413,32 @@ class AgentContext:
             return []
 
     def add_knowledge(self, content: str, tags: Optional[List[str]] = None,
-                      confidence: float = 0.5) -> Optional[str]:
+                      confidence: float = 0.5,
+                      data_scope: Optional["DataScope"] = None,
+                      subject: Optional[str] = None) -> Optional[str]:
         """
         Ajoute une connaissance à la base.
+
+        La base est un magasin **partagé** : une connaissance issue d'une source
+        privée n'y entre pas (VOLET 40). `data_scope` dit d'où vient le contenu ;
+        il se **dérive** de la capacité de l'outil ou du connecteur qui l'a
+        produit, il ne se choisit pas.
 
         Args:
             content: Contenu de la connaissance
             tags: Étiquettes de catégorisation
             confidence: Niveau de confiance entre 0.0 et 1.0
+            data_scope: Portée déclarée de l'origine. `public` par défaut, ce qui
+                est la vérité des sources d'agent existantes.
+            subject: Le propriétaire, quand la portée est `user_private`.
 
         Returns:
             L'identifiant de la connaissance créée, ou None si le moteur est absent
+
+        Raises:
+            IsolationError: Si la source est privée. Cette erreur **traverse**
+                le `except` général : un agent ne doit pas pouvoir lire « j'ai
+                fait fuiter une donnée » comme « le moteur a eu un hoquet ».
         """
         knowledge = self.registry.try_get("knowledge")
         if knowledge is None:
@@ -441,7 +457,11 @@ class AgentContext:
                 content=content,
                 tags=tags or [],
                 confidence=confidence,
-                source=KnowledgeSource(id=self.agent_id, type="agent", location=self.agent_id),
+                source=KnowledgeSource(
+                    id=self.agent_id, type="agent", location=self.agent_id,
+                    data_scope=data_scope or DataScope.PUBLIC,
+                    subject=subject,
+                ),
             )
             item_id = knowledge.add_knowledge(item)
             self.record_audit(
@@ -453,6 +473,19 @@ class AgentContext:
                 metadata={"knowledge_id": item_id, "content_preview": content[:200]},
             )
             return item_id
+        except IsolationError as fuite:
+            # Consignée puis **relancée**. La renvoyer comme un `None` la
+            # rendrait indiscernable d'un moteur indisponible, et un appelant
+            # qui réessaie plus tard croirait à un incident passager.
+            self._logger.error(f"Frontière d'isolation franchie : {fuite}")
+            self.record_audit(
+                AuditEventType.KNOWLEDGE,
+                "add_knowledge",
+                status=AuditStatus.FAILURE,
+                detail=f"Isolation : {fuite}",
+                metadata={"reason": "user_private_vers_magasin_partage"},
+            )
+            raise
         except Exception as error:
             self._logger.warning(f"Ajout de connaissance impossible: {error}")
             self.record_audit(

@@ -9,6 +9,7 @@ import datetime
 import hashlib
 
 
+from ..tool.capabilities import DataScope  # noqa: E402  (portée déclarée, VOLET 40)
 from .scope import KnowledgeSubject  # noqa: E402  (axes du VOLET 35)
 
 class KnowledgeType(Enum):
@@ -194,6 +195,15 @@ class KnowledgeSource:
     url: Optional[str] = None  # URL de la source si applicable
     citation: Optional[str] = None  # citation complète de la source
     retrieved_at: Optional[datetime.datetime] = None  # date de récupération
+    # La portée déclarée de l'origine, au vocabulaire de `src/tool/capabilities.py`.
+    # La base de connaissance est un magasin **partagé** : une source privée n'y
+    # entre pas (VOLET 40). Le défaut est `public` parce que c'est la vérité des
+    # sources existantes — fichiers du dépôt, agents, acquisition — et parce
+    # qu'un connecteur ne choisit pas cette valeur : elle est **dérivée** de sa
+    # capacité déclarée, jamais écrite à la main par un appelant.
+    data_scope: DataScope = DataScope.PUBLIC
+    # À qui appartient la donnée, quand la portée est `user_private`.
+    subject: Optional[str] = None
 
 
 @dataclass
