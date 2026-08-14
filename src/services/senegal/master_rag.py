@@ -26,20 +26,57 @@ mémoire serait pire.
 """
 
 import json
+import math
 import os
 import time
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from ...text_normalization import token_variants, tokenize
 
 #: Emplacement de la connaissance construite, relatif à la racine du dépôt.
 CONNAISSANCE = os.path.join("data", "processed_senegal", "senegal_master_knowledge.json")
 
+#: Connaissance sectorielle, acquise séparément (économie, institutions,
+#: transport). Deux fichiers parce que deux acquisitions : les fondre ferait
+#: perdre quelle source a produit quoi.
+DOMAINES = os.path.join("data", "processed_senegal", "senegal_domain_knowledge.json")
+
 #: Valeur d'un champ que personne n'a pu établir.
 INCONNU = "UNKNOWN"
 
 #: Nombre de fragments rendus par défaut.
 TOP_K = 5
+
+#: Score en dessous duquel aucun fragment n'est rendu. Sans ce plancher, une
+#: question dont seuls les mots banals correspondent — « Sénégal », « est »,
+#: « quelle » — rendait le premier département venu : mesuré sur « Quelle est
+#: l'histoire du royaume du Cayor ? », qui renvoyait Bakel avec l'air de
+#: répondre alors que le domaine HISTORY est vide.
+SCORE_MINIMUM = 0.15
+
+#: Part maximale de fragments qu'un terme peut toucher pour compter. Au-delà, il
+#: ne distingue rien : « Sénégal » est dans 100 % des fragments, « est » dans
+#: presque autant. Un terme non distinctif ne doit ni porter un score, ni
+#: entrer dans le dénominateur — sinon deux mots vides suffisent à faire remonter
+#: n'importe quoi.
+PART_MAXIMALE = 0.5
+
+#: Mots vides écartés du score, en français et en anglais. Ils ne sont pas
+#: écartés par pure convention : les fragments administratifs sont rédigés en
+#: français et les fragments sectoriels en anglais, si bien que « est » ou « du »
+#: n'apparaissent que dans un quart des fragments et **passaient pour
+#: distinctifs**. « Quelle est l'histoire du royaume du Cayor ? » remontait alors
+#: un département, alors que le domaine HISTORY est vide.
+MOTS_VIDES = frozenset({
+    "le", "la", "les", "un", "une", "des", "du", "de", "au", "aux", "et", "ou",
+    "est", "sont", "quel", "quelle", "quels", "quelles", "qui", "que", "quoi",
+    "dans", "pour", "par", "sur", "avec", "sans", "ce", "cette", "ces", "son",
+    "sa", "ses", "leur", "leurs", "il", "elle", "ils", "elles", "on", "nous",
+    "vous", "en", "y", "a", "as", "ont", "etre", "avoir", "plus", "moins",
+    "the", "of", "in", "at", "to", "for", "and", "or", "is", "are", "was",
+    "were", "what", "which", "who", "with", "from", "by", "its", "their",
+    "senegal", "senegaal",
+})
 
 
 class KnowledgeUnavailable(FileNotFoundError):
@@ -70,6 +107,51 @@ def load_all_knowledge(chemin: Optional[str] = None) -> Dict[str, Any]:
         )
     with open(cible, "r", encoding="utf-8") as fichier:
         return json.load(fichier)
+
+
+def load_domain_knowledge(chemin: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Charge la connaissance sectorielle, ou rend une structure vide **qui le dit**.
+
+    Son absence n'est pas une erreur : les domaines sectoriels sont acquis par un
+    second script, et le moteur doit fonctionner sans eux. Mais elle ne doit pas
+    passer pour « ces domaines sont vides » — la distinction est dans `available`.
+    """
+    cible = chemin or os.path.join(_racine(), DOMAINES)
+    if not os.path.isfile(cible):
+        return {
+            "available": False,
+            "domains": {},
+            "reason": (
+                f"Connaissance sectorielle absente : {cible}. La construire avec "
+                "`python scripts/ingest_senegal_domains.py`."
+            ),
+        }
+    with open(cible, "r", encoding="utf-8") as fichier:
+        donnees = json.load(fichier)
+    donnees["available"] = True
+    return donnees
+
+
+def _domaines_fusionnes(
+    connaissance: Dict[str, Any], sectorielle: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Rend les seize domaines, ceux du second fichier venant compléter les vides.
+
+    Un domaine peuplé par les deux fichiers n'existe pas aujourd'hui ; s'il
+    arrivait, la version sectorielle serait ajoutée, jamais substituée — écraser
+    perdrait la source du premier.
+    """
+    fusionnes = {nom: dict(domaine) for nom, domaine in connaissance["domains"].items()}
+    for nom, domaine in (sectorielle or {}).get("domains", {}).items():
+        if not domaine.get("items"):
+            continue
+        existant = fusionnes.setdefault(nom, {"populated": False, "items": [], "reason": ""})
+        existant["items"] = list(existant.get("items", [])) + list(domaine["items"])
+        existant["populated"] = True
+        existant["reason"] = ""
+    return fusionnes
 
 
 def query_by_region(
@@ -130,14 +212,15 @@ def query_by_sector(
     secteur » sont deux phrases très différentes.
     """
     donnees = connaissance or load_all_knowledge(chemin)
+    domaines = _domaines_fusionnes(donnees, load_domain_knowledge())
     cle = str(sector_name or "").strip().upper().replace(" ", "_")
-    domaine = donnees["domains"].get(cle)
+    domaine = domaines.get(cle)
     if domaine is None:
         return {
             "found": False,
             "query": sector_name,
             "reason": "Domaine inconnu de ce modèle de connaissance.",
-            "known_sectors": sorted(donnees["domains"]),
+            "known_sectors": sorted(domaines),
         }
     return {
         "found": True,
@@ -176,6 +259,11 @@ def iterate_chunks(
         yield _fragment(region, donnees)
     for departement in donnees["departments"]:
         yield _fragment(departement, donnees)
+
+    sectorielle = load_domain_knowledge()
+    for nom, domaine in (sectorielle.get("domains") or {}).items():
+        for index, objet in enumerate(domaine.get("items", [])):
+            yield _fragment_sectoriel(nom, index, objet)
 
 
 def _fragment(entite: Dict[str, Any], donnees: Dict[str, Any]) -> Dict[str, Any]:
@@ -219,6 +307,46 @@ def _fragment(entite: Dict[str, Any], donnees: Dict[str, Any]) -> Dict[str, Any]
     }
 
 
+def _fragment_sectoriel(domaine: str, index: int, objet: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Construit un fragment textuel pour un objet sectoriel.
+
+    Le texte porte l'année et l'unité quand elles existent : une valeur
+    économique sans année ni unité n'est pas une donnée, c'est un nombre. Et il
+    nomme la source **dans le fragment**, parce qu'une redistribution n'est pas
+    l'institution qui a produit la mesure.
+    """
+    valeur = objet.get("value") or {}
+    if isinstance(valeur, dict) and "amount" in valeur:
+        mesure = f"{valeur['amount']} {valeur.get('unit', '')}".strip()
+        corps = (
+            f"{objet['entity']} — {objet['type']} en {valeur.get('year', INCONNU)} : "
+            f"{mesure}."
+        )
+    else:
+        details = ", ".join(
+            f"{cle} : {val}" for cle, val in sorted(valeur.items())
+            if val and val != INCONNU
+        ) if isinstance(valeur, dict) else str(valeur)
+        corps = f"{objet['entity']} — {objet['type']}. {details}".strip()
+
+    corps += (
+        f" Source : {objet.get('source', INCONNU)}"
+        f" (redistribution de {objet.get('upstream_source', INCONNU)})."
+    )
+    return {
+        "id": f"{domaine.lower()}:{index}:{objet['entity']}",
+        "text": corps,
+        "entity": objet["entity"],
+        "type": objet["type"],
+        "domain": domaine,
+        "metadata": {
+            cle: valeur for cle, valeur in objet.items()
+            if cle not in ("value", "entity", "type")
+        },
+    }
+
+
 def _normalise(texte: str) -> str:
     """Retourne la forme comparable d'un nom, sans règle propre à une langue."""
     from ...text_normalization import strip_accents
@@ -253,29 +381,48 @@ def retrieve_context(
     depart = time.monotonic()
 
     termes = {
-        forme for mot in tokenize(query_str or "") for forme in token_variants(mot)
-    }
+        forme for mot in tokenize(query_str or "", stop_words=MOTS_VIDES)
+        for forme in token_variants(mot)
+    } - MOTS_VIDES
     if not termes:
         return _vide(query_str, "Requête vide ou sans terme exploitable.", depart)
 
-    resultats = []
-    for fragment in iterate_chunks(connaissance=donnees):
-        mots = set(tokenize(fragment["text"])) | {
-            _normalise(fragment["entity"])
-        }
-        communs = termes & mots
-        if not communs:
-            continue
-        resultats.append({**fragment, "score": round(len(communs) / len(termes), 4)})
+    fragments = [
+        (
+            fragment,
+            set(tokenize(fragment["text"], stop_words=MOTS_VIDES))
+            | {_normalise(fragment["entity"])},
+        )
+        for fragment in iterate_chunks(connaissance=donnees)
+    ]
+    poids = _poids(termes, [mots for _, mots in fragments])
+    total = sum(poids.values())
+    if total <= 0:
+        return _vide(
+            query_str,
+            "Aucun terme distinctif : les mots de la question sont soit absents "
+            "de la base, soit présents dans presque tous les fragments. Rendre le "
+            "premier venu ferait répondre à côté avec l'air de répondre.",
+            depart,
+        )
 
+    resultats = []
+    for fragment, mots in fragments:
+        score = sum(poids[terme] for terme in termes & mots)
+        if score <= 0:
+            continue
+        resultats.append({**fragment, "score": round(score / total, 4)})
+
+    resultats = [f for f in resultats if f["score"] >= SCORE_MINIMUM]
     resultats.sort(key=lambda f: (-f["score"], f["id"]))
     latence = round((time.monotonic() - depart) * 1000, 2)
 
     if not resultats:
         return _vide(
             query_str,
-            "Aucun fragment ne porte un terme de la question. Rendre le fragment "
-            "le moins mauvais ferait répondre à côté avec l'air de répondre.",
+            "Aucun fragment ne porte un terme distinctif de la question. Rendre "
+            "le fragment le moins mauvais ferait répondre à côté avec l'air de "
+            "répondre.",
             depart,
         )
 
@@ -293,6 +440,30 @@ def retrieve_context(
     }
 
 
+def _poids(termes: set, documents: List[set]) -> Dict[str, float]:
+    """
+    Pondère chaque terme par sa rareté dans les fragments.
+
+    « Sénégal » apparaît dans **tous** les fragments : il ne distingue rien, et
+    lui donner le même poids qu'à « monnaie » faisait remonter n'importe quel
+    département pour n'importe quelle question mentionnant le pays. Le poids est
+    `log(N / df)` — nul pour un terme présent partout, maximal pour un terme
+    présent une fois.
+    """
+    total = len(documents) or 1
+    poids = {}
+    for terme in termes:
+        frequence = sum(1 for mots in documents if terme in mots)
+        if not frequence or frequence > total * PART_MAXIMALE:
+            # Absent partout, ou présent presque partout : dans les deux cas il
+            # ne dit rien de la question. Le garder à zéro l'exclut du score
+            # **et** du dénominateur.
+            poids[terme] = 0.0
+            continue
+        poids[terme] = math.log(total / frequence)
+    return poids
+
+
 def _vide(requete: str, raison: str, depart: float) -> Dict[str, Any]:
     """Assemble une réponse vide, avec sa raison."""
     return {
@@ -303,6 +474,66 @@ def _vide(requete: str, raison: str, depart: float) -> Dict[str, Any]:
         "method": "lexical",
         "latency_ms": round((time.monotonic() - depart) * 1000, 2),
         "reason": raison,
+    }
+
+
+def answer_question(
+    question: str,
+    top_k: int = 3,
+    chemin: Optional[str] = None,
+    connaissance: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Répond à une question **uniquement** depuis les fragments récupérés.
+
+    Aucun modèle n'intervient : la réponse est extractive, assemblée à partir du
+    texte des fragments, et chaque phrase est citée. C'est délibéré et c'est ce
+    que `grounding` dit — un modèle qui « sait déjà » la réponse ferait passer
+    sa mémoire pour une connaissance acquise, et le test aurait l'air de réussir
+    pendant que la base resterait vide.
+
+    Returns:
+        `answer`, `citations`, `grounding` — `grounded`, `ungrounded` ou
+        `unknown` — et la latence. Sans fragment, la réponse est `UNKNOWN`.
+    """
+    recuperation = retrieve_context(question, top_k=top_k, chemin=chemin, connaissance=connaissance)
+    fragments = recuperation["results"]
+
+    if not fragments:
+        return {
+            "question": question,
+            "answer": INCONNU,
+            "citations": [],
+            "grounding": "unknown",
+            "reason": recuperation.get("reason", ""),
+            "latency_ms": recuperation["latency_ms"],
+            "generated_by_model": False,
+        }
+
+    return {
+        "question": question,
+        "answer": " ".join(fragment["text"] for fragment in fragments),
+        "citations": [
+            {
+                "id": fragment["id"],
+                "source": fragment["metadata"].get("source", INCONNU),
+                "source_url": fragment["metadata"].get("source_url", INCONNU),
+                "source_tier": fragment["metadata"].get("source_tier", INCONNU),
+                "upstream_source": fragment["metadata"].get("upstream_source", INCONNU),
+                "content_hash": fragment["metadata"].get("content_hash", INCONNU),
+            }
+            for fragment in fragments
+        ],
+        "grounding": "grounded",
+        "retrieved": len(fragments),
+        "latency_ms": recuperation["latency_ms"],
+        # Le point qui empêche ce test de se tromper lui-même.
+        "generated_by_model": False,
+        "note": (
+            "Réponse extractive : chaque mot vient d'un fragment récupéré, et "
+            "aucun modèle n'a été appelé. La qualité de rédaction n'est pas "
+            "mesurée ici — l'ancrage l'est."
+        ),
     }
 
 
@@ -318,7 +549,9 @@ def knowledge_report(chemin: Optional[str] = None) -> Dict[str, Any]:
     except KnowledgeUnavailable as absence:
         return {"available": False, "reason": str(absence), "regions": 0, "departments": 0}
 
-    peuples = sorted(n for n, d in donnees["domains"].items() if d["populated"])
+    sectorielle = load_domain_knowledge()
+    domaines = _domaines_fusionnes(donnees, sectorielle)
+    peuples = sorted(n for n, d in domaines.items() if d["populated"])
     fragments = list(iterate_chunks(connaissance=donnees))
     return {
         "available": True,
@@ -327,15 +560,17 @@ def knowledge_report(chemin: Optional[str] = None) -> Dict[str, Any]:
         "departments": donnees["counts"]["departments"],
         "departments_attached": donnees["counts"]["departments_attached"],
         "attachments_approximated": donnees["counts"]["attachments_approximated"],
-        "domains_total": len(donnees["domains"]),
+        "domains_total": len(domaines),
+        "domain_knowledge_available": sectorielle.get("available", False),
         "domains_populated": peuples,
-        "domains_empty": sorted(
-            n for n, d in donnees["domains"].items() if not d["populated"]
-        ),
+        "domains_empty": sorted(n for n, d in domaines.items() if not d["populated"]),
         "chunks": len(fragments),
         "chunks_with_provenance": sum(
             1 for f in fragments if f["metadata"].get("source_url")
         ),
+        "items_by_domain": {
+            n: len(d["items"]) for n, d in sorted(domaines.items()) if d["items"]
+        },
         "unknown_fields": donnees.get("unknown_fields", []),
         "wolof": get_wolof_corpus().get("documents", 0),
         "note": (

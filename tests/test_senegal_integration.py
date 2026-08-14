@@ -512,8 +512,12 @@ def test_le_rapport_dit_ce_qui_est_tenu_et_ce_qui_ne_l_est_pas():
     assert rapport["regions"] == 14
     assert rapport["departments"] == 45
     assert rapport["chunks"] == rapport["chunks_with_provenance"]
-    assert len(rapport["domains_empty"]) == 13
     assert rapport["wolof"] == 2105
+    # **Mis à jour le 2026-08-14** : trois domaines de plus sont peuplés depuis
+    # l'acquisition sectorielle (économie, institutions, transport). Le compte
+    # des vides suit la mesure, il ne la précède pas.
+    assert len(rapport["domains_empty"]) == 10
+    assert len(rapport["domains_populated"]) == 6
 
 
 def test_l_invite_systeme_pose_les_regles_et_ne_se_declare_pas_autorite():

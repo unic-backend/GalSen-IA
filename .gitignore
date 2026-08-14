@@ -60,3 +60,5 @@ data/raw_wolof/*.conllu
 # `python scripts/ingest_all_senegal.py`. La connaissance dérivée
 # (data/processed_senegal/) est versionnée, elle.
 data/raw_senegal/*.geojson
+data/raw_senegal/*.csv
+data/raw_senegal/*.json
