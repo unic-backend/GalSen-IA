@@ -147,6 +147,7 @@ from src.services.search.providers import (
     DocumentSearchProvider,
     KnowledgeSearchProvider,
     MemorySearchProvider,
+    WorldSearchProvider,
 )
 from src.services.search.governance import governance_report as search_governance_report
 from src.services.search.types import SearchQuery, SearchSource, SearchSort
@@ -550,6 +551,11 @@ search_manager.register_provider(MemorySearchProvider(memory_manager))
 search_manager.register_provider(
     DocumentSearchProvider(_moteur_partage("document", DocumentManagerImpl))
 )
+# La quatrième (phase 54.2) : la connaissance mondiale existait et **rien ne la
+# cherchait** — on ne l'atteignait qu'avec un code ISO ou un nom exact. Publique
+# et de plateforme : aucun filtre par propriétaire, et le dire évite qu'on
+# cherche un filtre absent en croyant à un oubli.
+search_manager.register_provider(WorldSearchProvider())
 file_manager = _moteur_partage("file", FileManagerImpl)
 
 # Services d'intégration externe (VOLET 02, Phase 3)

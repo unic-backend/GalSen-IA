@@ -66,7 +66,12 @@ def test_le_rapport_distingue_declare_et_branche(monkeypatch, service):
     assert rapport["sources"]["knowledge"]["wired"] is True
     assert rapport["sources"]["memory"]["wired"] is False
     assert rapport["wired_count"] == 1
-    assert rapport["declared_count"] == 4
+    # Le rapport énumère **toutes** les sources déclarées, pas seulement celles
+    # qui ont un fournisseur : c'est ce qui distingue « absente » de « vide ».
+    # Comparé à l'énumération plutôt qu'à un nombre écrit ici — la phase 54.2 en
+    # a ajouté une cinquième (`world`), et un compte figé aurait échoué sans
+    # rien apprendre.
+    assert rapport["declared_count"] == len(SearchSource)
 
 
 def test_seules_les_sources_branchees_reclament_un_responsable(monkeypatch, service):

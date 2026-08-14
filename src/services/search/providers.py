@@ -17,7 +17,7 @@ contrôle d'accès compris.
 """
 
 import logging
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .interfaces import SearchProvider
 from .types import SearchQuery, SearchResultItem, SearchSource
@@ -231,6 +231,26 @@ class DocumentSearchProvider(SearchProvider):
             proprietaire and query.subject and str(proprietaire) == str(query.subject)
         )
 
+    @staticmethod
+    def _extrait(indexeur: Any, document: Any, requete: str) -> Dict[str, Any]:
+        """
+        L'extrait verbatim d'un document, centré sur ce qui a correspondu.
+
+        Les termes viennent de l'index lui-même quand il sait les nommer
+        (phase 54.1) ; sinon des mots de la requête. Aucun n'est deviné.
+        """
+        from .excerpt import excerpt_around
+
+        termes: List[str] = []
+        if indexeur is not None and hasattr(indexeur, "matched_terms"):
+            try:
+                termes = indexeur.matched_terms(document.document_id, requete)
+            except Exception:
+                termes = []
+        if not termes:
+            termes = str(requete or "").split()
+        return excerpt_around(getattr(document, "content", ""), termes)
+
     def search(self, query: SearchQuery) -> List[SearchResultItem]:
         """
         Recherche dans les documents enregistrés et adapte les résultats.
@@ -252,6 +272,7 @@ class DocumentSearchProvider(SearchProvider):
             self._logger.warning("Recherche documentaire impossible : %s", error)
             return []
 
+        indexeur = getattr(self._document_manager, "_indexer", None)
         resultats: List[SearchResultItem] = []
         for document, score in trouves:
             if not self._visible(document, query):
@@ -277,6 +298,140 @@ class DocumentSearchProvider(SearchProvider):
                     "status": getattr(document.status, "value", None),
                     "version": document.version,
                     "chunks": len(document.chunks),
+                    # Un extrait **verbatim** (phase 54.3), pas un résumé : le
+                    # résumé reste `None` parce que rien ici ne l'écrit.
+                    "excerpt": self._extrait(indexeur, document, query.query),
                 },
             ))
+        return resultats
+
+
+class WorldSearchProvider(SearchProvider):
+    """
+    Expose la connaissance mondiale dérivée (VOLET 52) à la recherche unifiée.
+
+    Elle existait et **rien ne la cherchait** : on ne l'atteignait qu'en donnant
+    un code ISO ou un nom exact à `/knowledge/world/country/…`. Une question
+    posée en langue — « quelle est la monnaie du Sénégal » — ne la touchait pas.
+
+    Trois règles la distinguent des autres sources.
+
+    **Elle est publique et de plateforme.** Contrairement à la mémoire et aux
+    documents, elle n'appartient à personne : aucun filtre par propriétaire, et
+    le dire évite qu'on cherche un filtre absent en croyant à un oubli.
+
+    **Elle ne devine pas de pays.** Les mots de la requête sont confrontés aux
+    noms et codes déclarés, **terme entier contre terme entier**. « Nigeria » ne
+    déclenche pas « Niger », et une requête qui ne nomme aucun pays connu ne
+    rend rien plutôt que le pays le plus proche.
+
+    **Un code ne compte que s'il est écrit comme un code.** Le premier essai
+    rendait l'Estonie et le Laos pour « quelle **est** la monnaie du Sénégal » :
+    `EST` et `LA` sont des codes ISO, et ce sont aussi des mots français
+    courants. Un code n'est donc reconnu qu'en majuscules, telles que la norme
+    l'écrit ; « sen » dans une phrase est un mot, « SEN » est un pays.
+
+    **Elle ne porte ni droit, ni administration, ni langues.** Ces sujets ne se
+    transportent pas d'un pays à l'autre (`NATIONAL_SUBJECTS`), et aucune source
+    mondiale n'en déclare. `last_method` le dit, pour qu'une absence de réponse
+    sur le droit malien se lise comme une règle et non comme un trou.
+    """
+
+    source = SearchSource.WORLD
+
+    def __init__(self, world_knowledge: Any = None):
+        """
+        Args:
+            world_knowledge: La connaissance mondiale chargée. Chargée à la
+                demande si elle n'est pas fournie.
+        """
+        self._monde = world_knowledge
+        self._logger = logging.getLogger(f"{__name__}.WorldSearchProvider")
+        self.last_method = {"method": "exact", "reason": "recherche non exécutée"}
+
+    def _charger(self) -> Dict[str, Any]:
+        """La connaissance mondiale, chargée une fois."""
+        if self._monde is None:
+            from src.knowledge_engine.world import load_world
+
+            self._monde = load_world()
+        return self._monde
+
+    def search(self, query: SearchQuery) -> List[SearchResultItem]:
+        """
+        Cherche un pays nommé dans la requête, et rend ce que la source en dit.
+
+        Une panne ne fait pas tomber la recherche unifiée : elle est journalisée
+        et cette source ne rend rien.
+        """
+        from src.knowledge_engine.world import _comparable
+
+        self.last_method = {
+            "method": "exact",
+            "reason": (
+                "Confrontation terme entier contre nom déclaré : aucune "
+                "approximation, « Nigeria » ne déclenche pas « Niger ». Un code "
+                "ISO n'est reconnu qu'en majuscules — « est » est un mot "
+                "français, « EST » est l'Estonie."
+            ),
+            "carries_no": [
+                "droit", "administration", "langues — ces sujets ne se "
+                "transportent pas d'un pays à l'autre",
+            ],
+            "ownership": "publique : connaissance de plateforme, sans propriétaire",
+        }
+
+        try:
+            monde = self._charger()
+        except Exception as error:
+            self._logger.warning("Connaissance mondiale illisible : %s", error)
+            return []
+
+        pays_declares = monde.get("countries") or []
+        if not pays_declares:
+            self.last_method["reason"] = monde.get(
+                "reason", "Aucune connaissance mondiale construite."
+            )
+            return []
+
+        bruts = str(query.query or "").split()
+        mots = {_comparable(mot) for mot in bruts}
+        mots.discard("")
+        # Les codes sont cherchés séparément, et seulement en majuscules.
+        codes = {mot.strip(".,;:!?()") for mot in bruts if mot.isupper()}
+        if not mots and not codes:
+            return []
+
+        resultats: List[SearchResultItem] = []
+        for pays in pays_declares:
+            noms = {
+                _comparable(pays.get(champ, ""))
+                for champ in ("official_name_en", "official_name_fr")
+                if pays.get(champ, "UNKNOWN") != "UNKNOWN"
+            }
+            noms.discard("")
+            if not (mots & noms) and not (codes & {pays["iso2"], pays["iso3"]}):
+                continue
+            resultats.append(SearchResultItem(
+                id=pays["iso3"],
+                source=SearchSource.WORLD,
+                content=pays,
+                # Une correspondance exacte ou rien : il n'y a pas de degré à
+                # rapporter, et fabriquer un score graduel donnerait une
+                # précision que cette source n'a pas.
+                score=1.0,
+                title=pays.get("official_name_fr") or pays.get("official_name_en"),
+                summary=None,
+                source_detail=pays.get("provenance", {}).get("source"),
+                metadata={
+                    "scope": pays.get("scope"),
+                    "iso2": pays.get("iso2"),
+                    "provenance": pays.get("provenance", {}),
+                    # Le désaccord voyage avec le pays : une réponse qui le
+                    # tairait serait plus nette et moins vraie.
+                    "disagreements": pays.get("disagreements", []),
+                },
+            ))
+            if len(resultats) >= max(1, query.limit):
+                break
         return resultats

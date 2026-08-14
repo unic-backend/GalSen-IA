@@ -26,6 +26,9 @@ class SearchSource(str, Enum):
     MEMORY = "memory"
     DOCUMENT = "document"
     VISION = "vision"
+    #: La connaissance mondiale dérivée (VOLET 52). Publique et de plateforme :
+    #: elle n'appartient à personne, contrairement à la mémoire.
+    WORLD = "world"
 
 
 class SearchSort(str, Enum):

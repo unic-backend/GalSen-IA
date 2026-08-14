@@ -196,6 +196,19 @@ class SearchManagerImpl(SearchManager):
 
         execution_time = (time.time() - start_time) * 1000
 
+        # Ce qui a été **retenu** par les filtres de propriété, consolidé
+        # (phase 54.3). Une source qui filtre en silence se lit comme une source
+        # qui n'a rien trouvé ; chaque fournisseur le comptait déjà, personne ne
+        # l'additionnait.
+        retenus = {
+            nom: methode["withheld"]
+            for nom, methode in methods.items()
+            if isinstance(methode, dict) and methode.get("withheld")
+        }
+        if retenus:
+            methods["withheld_total"] = sum(retenus.values())
+            methods["withheld_by_source"] = retenus
+
         return SearchResponse(
             results=paginated,
             total=total,

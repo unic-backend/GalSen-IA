@@ -14,11 +14,10 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **54.1 terminée — VOLET 53 clos.**
-**54.2 en attente de confirmation** — la connaissance mondiale comme source de
-`/search`.
-**Terminées**      : **vagues I, II et III complètes**, **VOLETs 51, 52 et 53**,
-plus **54.1** (38 phases sur 73).
+**Phase courante** : **54.3 terminée — VOLET 54 clos.**
+**55.1 en attente de confirmation** — domaine architecture / construction.
+**Terminées**      : **vagues I, II et III complètes**, **VOLETs 51 à 54**
+(40 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -37,7 +36,7 @@ pas estimé.
 |---|---|---|---|
 | 1 | Connaissance mondiale | `src/knowledge_engine/scope.py` (axe `global`) | **à étendre** |
 | 2 | Intelligence des sources | `corpus/sources/senegal.yaml`, `source_registry.py`, `SourceTier` | **à généraliser** (registre mondial) |
-| 3 | Moteur de recherche documentaire | — | **absent** |
+| 3 | Moteur de recherche documentaire | `document_intelligence_engine/` (chargeurs, BM25, versions) + `services/search/` | **existe** — *l'audit disait « absent » : c'était faux, mesuré le 2026-08-14* |
 | 4 | Architecture / construction | — | **absent** (domaine de connaissance) |
 | 5 | Football / sports | — | **absent** (domaine de connaissance) |
 | 6 | Multimodal | `src/multimodal/`, `vision_intelligence_engine/` | **existe** |
@@ -247,8 +246,22 @@ ne serait qu'un registre pauvre.
        53.2 deux âges distingués, scan du dépôt, route            ✅
   V54  Moteur de recherche documentaire                           → 3 phases
        54.1 titre indexé, accents ajoutés sans effacer, explication ✅
-       54.2 la connaissance mondiale comme source de `/search`
-       54.3 extraits, pagination, et ce qui a été retenu
+       54.2 la connaissance mondiale comme source de `/search`      ✅
+       54.3 extraits verbatim, et ce qui a été retenu, compté       ✅
+
+**Ce que 54.2 a trouvé** : le fournisseur mondial rendait l'**Estonie et le
+Laos** pour « quelle **est** la monnaie du Sénégal » — `EST` et `LA` sont des
+codes ISO **et** des mots français courants. Un code n'est désormais reconnu
+qu'écrit en majuscules, telles que la norme l'écrit : « sen » dans une phrase est
+un mot, « SEN » est un pays.
+
+**Ce que 54.3 refuse** : un extrait est **verbatim**, une tranche copiée du
+document. La pagination existait déjà (`offset`/`limit` dans le gestionnaire) et
+n'a pas été refaite. Sans terme trouvé, l'extrait **dit qu'il est le début** du
+document — rendre les premiers caractères en les laissant passer pour une
+correspondance serait le mensonge discret que ce dépôt refuse. Et ce que les
+filtres de propriété retiennent est désormais **additionné** dans la réponse :
+chaque fournisseur le comptait, personne ne le totalisait.
 
 **Ce que 53.2 distingue** : `built_at` date la **dérivation**, pas les faits.
 Relancer un script rajeunit l'un sans toucher l'autre, et les confondre ferait
