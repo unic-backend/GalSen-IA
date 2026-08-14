@@ -1,6 +1,6 @@
 # État du projet GalSen IA — rapport au propriétaire
 
-**Mesuré le 2026-08-13**, commit `a89993b`, branche `claude/galsen-ia-phases-ukwz7p`.
+**Mesuré le 2026-08-14**, branche `claude/galsen-ia-phases-ukwz7p`.
 Chaque chiffre de ce rapport vient d'une commande exécutée, pas d'une estimation.
 Ce qui n'a pas été mesuré est écrit comme non mesuré.
 
@@ -12,19 +12,29 @@ Le détail des blocages de mise en ligne reste dans `docs/deployment/reste-a-fai
 ## 1. Où nous en sommes, en une page
 
 La plateforme est **construite et testée**. Elle n'est pas **en service**, et
-l'écart entre les deux tient à trois choses qui ne dépendent pas du code.
+l'écart entre les deux tient à des choses qui ne dépendent pas du code.
+
+*Mis à jour le 2026-08-14 : une couche de connaissance sénégalaise existe désormais —
+14 régions, 45 départements, 212 objets sectoriels, 271 fragments tous avec provenance, et
+un corpus wolof de 2105 phrases. Ce qui manque n'est plus « du contenu » en général, mais
+les documents **institutionnels**, et le blocage est réseau.*
 
 | Mesure | Valeur | Commande |
 |---|---|---|
-| Tests | **2925 passent, 8 ignorés** | `python -m pytest -q` |
+| Tests | **3238 passent, 8 ignorés** | `python -m pytest -q` |
 | Style | **propre** | `ruff check src tests` |
 | Fichiers Python dans `src/` | 319 | — |
 | Agents au registre | 17 | `agents/` |
 | Outils au catalogue | 22 dont 21 activés | catalogue d'outils |
 | Routes d'API | 76 | `src/api/` |
-| Décisions d'architecture (ADR) | 21, dont **ADR-020 encore `proposed`** | `docs/architecture/decisions/` |
+| Décisions d'architecture (ADR) | 22, dont **ADR-020 encore `proposed`** ; ADR-021 accepté | `docs/architecture/decisions/` |
 | CI GitHub | **1 seul échec**, l'étiquette `v0.1.0` non poussée | run 31704148980 |
-| Documents sénégalais dans la base | **0** | manifeste de connaissance |
+| Entités administratives sénégalaises | **14 régions, 45 départements** | `scripts/ingest_all_senegal.py` |
+| Objets de connaissance sectoriels | **212** (8 jeux acquis) | `scripts/ingest_senegal_domains.py` |
+| Fragments récupérables / avec provenance | **271 / 271** | `knowledge_report()` |
+| Domaines peuplés | **6 sur 16** | idem |
+| Corpus wolof | **2105 phrases** | `scripts/ingest_wolof.py` |
+| Documents **institutionnels** sénégalais | **0** — les 9 domaines `.sn` sont refusés par le mandataire | `scripts/activate_senegal_sources.py` |
 | Modèle qui répond | **aucun** — `/generate` rend 503 | `scripts/proactive_scan.py` |
 
 Autrement dit : tout ce qui pouvait être bâti et vérifié sans toi l'a été.
@@ -90,12 +100,29 @@ mandataire de cet environnement refuse les étiquettes (403, réessayé le 2026-
 aucun outil d'API disponible ici n'en crée. Le test n'est ni ignoré ni affaibli : il dit
 la vérité, et l'affaiblir effacerait la seule trace du travail restant.
 
-### 3.3 La base contient **0 document sénégalais**
+### 3.3 Les sources institutionnelles sénégalaises sont injoignables **depuis cet environnement**
 
-Les chapitres 11 et 12 du VOLET 35 — le premier vrai corpus sénégalais, puis le corpus
-mondial — demandent de **vrais documents déclarés dans un manifeste**. Les écrire ici
-reviendrait à fabriquer de la connaissance. Servir une affirmation inventée à un
-agriculteur serait le pire usage possible de ce dépôt : c'est refusé par construction.
+*Mis à jour le 2026-08-14.* Le chemin d'acquisition existe et est testé de bout en bout
+(ADR-021). Il ne peut atteindre aucune institution sénégalaise : les neuf domaines `.sn`
+inscrits au registre répondent `CONNECT → 403` **avant qu'aucune requête n'atteigne les
+sites**. C'est le mandataire de l'environnement, pas un refus des sites — et les deux
+demandent des actions opposées.
+
+Mesurable en une commande :
+
+```bash
+python scripts/activate_senegal_sources.py
+curl -sS "$HTTPS_PROXY/__agentproxy/status"   # section recentRelayFailures
+```
+
+Conséquence : histoire, culture, agriculture, pêche, élevage, mines, tourisme, éducation,
+santé et juridique **ne contiennent rien**, et le disent. Les remplir de mémoire
+fabriquerait des faits sur un pays réel — servir une affirmation inventée à un agriculteur
+serait le pire usage possible de ce dépôt.
+
+Ce qui a pu être acquis l'a été depuis des redistributions publiques joignables (Banque
+mondiale, ISO, UN/LOCODE, OurAirports), **au rang de ce qui a été récupéré** et jamais à
+celui de l'institution en amont.
 
 ### 3.4 Trois décisions attendent ton arbitrage
 
@@ -138,17 +165,30 @@ git push origin v0.1.0
 
 La CI passe au vert au run suivant.
 
-### Action 3 — Fournir les premiers vrais documents sénégalais
+### Action 3 — Lancer le pilote d'acquisition depuis une machine sans ce mandataire
 
-Rassemble des documents que tu peux **citer** : Journal officiel, textes de l'ANSD, de
-l'ISRA, de l'ANACIM, des impôts et domaines. Déclare-les dans le manifeste décrit par
-`docs/knowledge/README.md` — un document, une source, une portée, un sujet.
+*Mis à jour le 2026-08-14.* Le travail n'est plus de fournir des documents à la main : le
+chemin d'acquisition est construit et testé. Il lui faut un réseau qui laisse passer.
 
-Règle du projet, à ne pas contourner : **un document sans source déclarée n'entre pas.**
-Si sa source n'est pas au registre (`corpus/sources/senegal.yaml`), inscris-la d'abord.
+Sur ton PC :
 
-C'est ce qui débloque les chapitres 11 et 12, et c'est ce qui transforme la plateforme
-d'un moteur vide en une IA qui connaît le Sénégal.
+```bash
+python scripts/activate_senegal_sources.py     # doit dire « reachable », pas « blocked »
+# puis, pour la ou les sources dont tu as lu les conditions d'utilisation,
+# dans corpus/sources/senegal.yaml :
+#   enabled: true
+#   allowed_content_types: [pdf, html]
+#   access_policy: { terms_reviewed: "2026-08-14" }
+python scripts/acquisition_pilot.py plan
+# approuver la demande, puis
+python scripts/acquisition_pilot.py run --approval <id>
+```
+
+**Lire les conditions d'utilisation reste à toi** : `robots.txt` dit ce qu'un agent peut
+atteindre, pas ce qu'on a le droit d'en faire. Aucun programme ne peut le faire
+honnêtement à ta place.
+
+Règle inchangée : **un document sans source déclarée n'entre pas.**
 
 ### Action 4 — Trancher ADR-020
 

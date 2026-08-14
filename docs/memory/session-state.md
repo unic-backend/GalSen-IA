@@ -10,46 +10,43 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 ## Dernière session
 
-**Date** : 2026-08-13
+**Date** : 2026-08-14
 
-**En cours** : **acquisition de connaissance sénégalaise** — conception écrite et
-**approuvée par le propriétaire** (`docs/architecture/senegal-knowledge-acquisition.md`,
-13 sections). Aucun code de production modifié. **Prochaine action = ADR-021** (étape 0).
-Contexte : VOLET 36 terminé (8/8), VOLET 35 à 10/12 — les chapitres 11 et 12 sont
-précisément ce que ce pipeline débloque.
+**En cours** : rien. Le chantier d'acquisition sénégalaise est construit et mesuré ;
+ce qui reste dépend du réseau et du propriétaire.
 
 **Terminé dans cette session**
-- VOLET 36 complet (A→H) : barrière de confiance sur les **9 chemins externes**, trois
-  langues nationales, évaluation factuelle mécanique, agents `verifier` et `senegal`,
-  entités et relations avec provenance obligatoire, dix axes de plan, `knowledge_architect`
-  et `data_engineer`, capacités différées **mesurées**.
-- VOLET 35, tours 2 à 4 (ch. 03–10) : registre des sources, récupération par portée, la
-  réponse dit d'où elle vient, manques mesurés, découverte de sources, contradictions
-  rapportées, collecte sous portillon, politique santé.
-- Trois workflows ajoutés (`question`, `ingestion`, `series`) : quatre agents étaient au
-  registre sans qu'aucun pipeline ne les cite — donc inatteignables.
-- `DocumentSearchProvider` branché ; le branchement a révélé une **fuite** entre
-  utilisateurs, réparée par une règle de propriété, pas par un test affaibli.
-- Relecture : `contradictions.py` comptait les **années** comme des valeurs mesurées
-  (2022 vs 2023 = faux conflit sur chaque série) ; `source_registry.py` lisait
-  `//ansd.sn/x` comme « aucune URL », la porte exacte d'une autorité usurpée. Les deux
-  corrigés, avec leurs tests dans les deux sens.
-- **Rapport au propriétaire écrit** : `docs/deployment/etat-du-projet.md` — où en est le
-  projet, ce qui bloque, et les cinq actions humaines dans l'ordre.
-- Suite complète : **2925 tests passent**, 8 ignorés ; `ruff` propre.
+- **ADR-021 accepté et implémenté** : le report de `automated_acquisition` reposait sur un
+  déclencheur **circulaire** (il mesurait le corpus que seule l'acquisition pouvait
+  produire). Corrigé dans le code le 2026-08-14 — il mesure désormais **une source activée
+  au registre**, ce qui peut bouger sans que la capacité existe. Un test garde la
+  non-circularité.
+- **Chaîne d'acquisition complète** (`src/acquisition/`, étapes 1→10) : registre étendu,
+  enregistrement candidat et machine à états, récupérateur poli (agent véridique,
+  `robots.txt`, débit par hôte, redirections hors domaine refusées), portillon par lot avec
+  empreinte, découverte profondeur 1, métadonnées, détection de langue, barrière de
+  confiance obligatoire (A8 passé), dix contrôles, proposition de manifeste, script de
+  pilote. **Rien n'ingère tout seul ; aucune source n'est activée.**
+- **Wolof** : `src/wolof/clad.py` (alphabet 27 lettres, normalisation déterministe),
+  corpus **2105 phrases** acquis réellement, `src/services/wolof/`. Marqueurs de langue
+  **mesurés sur le corpus** — 0 faux positif sur 2105 phrases.
+- **Connaissance sénégalaise** : 14 régions et 45 départements **dérivés** de geoBoundaries
+  (rattachement calculé par géométrie), 8 jeux acquis, **212 objets**, 271 fragments, 100 %
+  avec provenance. **6 domaines peuplés sur 16.**
+- **RAG multilingue** : `corpus/languages/aliases.yaml` (16 concepts, 115 termes fr/wo/en),
+  expansion qui **ajoute et ne retire jamais**, latence **0,1–0,5 ms**.
+- **Refus tenus** : 45 départements et non 46 (la source prime sur la directive) ;
+  « Keur Massar » cherché dans les 8 sources et **introuvable** → `UNVERIFIED_CLAIM` ;
+  histoire, culture, agriculture répondent `UNKNOWN`.
+- Suite complète : **3239 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-**ADR-021** — rouvrir `automated_acquisition`, corriger son déclencheur (l'actuel est
-circulaire : il mesure le résultat de la capacité manquante), inscrire la limite de portée
-et ce qui reste différé. Ensuite seulement les étapes 1→12 de l'ordre d'implémentation.
-Le reste dépend toujours du propriétaire — voir
-`docs/deployment/etat-du-projet.md` §4 : `ollama serve`, `git push origin v0.1.0`, les
-premiers vrais documents sénégalais, ADR-020, la cible de déploiement.
+Rien n'est en cours. Ce qui reste dépend du propriétaire — voir
+`docs/deployment/etat-du-projet.md` §4.
 
 **Bloqué / à surveiller**
-- **C1** : `ollama serve` avec un modèle de contexte ≥ 8192 — bloque génération et
-  récupération sémantique.
-- **`git push origin v0.1.0`** : seul échec de CI restant (403 depuis cet environnement).
-- **0 document sénégalais** dans la base : le corpus ne s'invente pas.
-- **ADR-020**, fin de vie de `/cloud/*`, cible de déploiement (C4) : décisions en attente.
-- **TEST 2 et TEST 6 non exécutés** : ils demandent un hôte Docker.
+- **Mandataire réseau** : les 9 domaines `.sn`, la Banque mondiale, l'UNESCO, la FAO, l'OMS
+  répondent `CONNECT → 403`. Mesuré, non contourné. C'est ce qui laisse 10 domaines vides.
+- **C1** : `ollama serve` — génération et récupération sémantique non mesurées.
+- **`git push origin v0.1.0`** : seul échec de CI restant.
+- **ADR-020**, fin de vie de `/cloud/*`, cible de déploiement : décisions en attente.

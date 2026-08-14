@@ -304,8 +304,13 @@ decision — it is work waiting on someone or something outside this repository.
 
 1. **C1 — a local model that answers.** `ollama serve` with a context of 8 192 or more.
    It gates generation, semantic retrieval, and L4 of the language plan.
-2. **A real Senegalese corpus.** The ingestion works, the registry declares who has
-   authority, and the base holds **0 Senegalese documents**. Nothing here will invent
-   them: chapters 11 and 12 of VOLET 35 wait on declared documents.
+2. **Real Senegalese institutional documents.** *Updated 2026-08-14.* The gated
+   acquisition path is built (ADR-021, `src/acquisition/`) and a Senegalese knowledge
+   layer exists — 14 regions, 45 departments and 212 sector objects, all derived from
+   acquired sources with full provenance. What is still missing is the **institutional**
+   corpus: the nine `.sn` domains in the registry are refused by this environment's proxy
+   (`CONNECT → 403`, measured by `scripts/activate_senegal_sources.py`), and that is an
+   environment policy, not a site refusal. Six of sixteen domains are populated; history,
+   culture, agriculture, health, education and law hold nothing, and say so.
 3. **The `v0.1.0` tag** has never been pushed; it is the single red test in CI.
 3. Expose the engines through an API layer

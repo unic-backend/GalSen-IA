@@ -69,9 +69,10 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - ALWAYS update `docs/memory/completed-work.md` and `CHANGELOG.md` after meaningful progress.
 
 ## Current Status
-*Measured 2026-08-13.* Foundation and core engines are done (ADR-001, ADR-002). Fourteen
-engines, **17 agents**, **21 enabled tools**, 76 API routes, 22 ADRs (ADR-020 is `proposed`; ADR-021 accepted 2026-08-13) — see
-`docs/architecture/overview.md`, which is kept synchronized with the measured state.
+*Measured 2026-08-14.* Foundation and core engines are done (ADR-001, ADR-002). Fourteen
+engines, **17 agents**, **21 enabled tools**, 76 API routes, 22 ADRs (ADR-020 is `proposed`;
+ADR-021 accepted) — see `docs/architecture/overview.md`, kept synchronized with the
+measured state. **3238 tests pass**, 8 skipped.
 
 Persistence is decided and implemented (ADR-005, SQLite): every engine holding state —
 audit and approval included — selects its store through `GALSEN_STORAGE_BACKEND`
@@ -88,9 +89,32 @@ overview's *Knowledge architecture* section). Its rules are worth knowing before
 - External text is **data with an origin**, never an instruction (`src/security/trust.py`).
 - `unknown` is not `no`, and every report shows its own gaps.
 
+## Acquisition and Senegalese knowledge (ADR-021)
+
+A gated acquisition path now exists end to end (`src/acquisition/`,
+`docs/architecture/senegal-knowledge-acquisition.md`): registry → discovery → decision →
+**batch human approval** → polite fetch → trust boundary → ten quality checks → a `DRAFT`
+manifest proposal. It ingests nothing on its own, and **no source is enabled**, so it can
+reach nothing today. That is the rule working, not a failure.
+
+Three knowledge layers are built and measured:
+
+| Layer | State |
+|---|---|
+| Wolof (`src/wolof/`, `src/services/wolof/`) | **2105 sentences**, CLAD orthography, ë/ñ/ŋ preserved |
+| Senegalese administration (`src/services/senegal/`) | **14 regions, 45 departments** derived from geoBoundaries — never written from memory |
+| Sector knowledge | **8 datasets, 212 objects, 271 chunks, 100 % with provenance** |
+
+**6 of 16 domains are populated.** The other ten carry the reason they are empty; the
+retrieval answers `UNKNOWN` for them rather than the least-bad fragment. Queries work in
+French, Wolof and English (`corpus/languages/aliases.yaml`, 16 concepts, 115 terms) at
+0.1–0.5 ms.
+
 Open, and depending on someone outside this repository: **C1** (`ollama serve`) gates
-generation and semantic retrieval; the base holds **0 Senegalese documents**; the `v0.1.0`
-tag has never been pushed and is the single red test in CI.
+generation and semantic retrieval; **the nine Senegalese institutional domains are refused
+by this environment's proxy** (`CONNECT → 403`, measured — not a site refusal), so
+history, culture, agriculture, health, education and law hold nothing; the `v0.1.0` tag
+has never been pushed and is the single red test in CI.
 
 ## Cerveau Local (nouveau)
 Le projet a maintenant un **Cerveau local** qui connecte les engines GalSen IA à Ollama.

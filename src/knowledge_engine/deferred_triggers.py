@@ -18,6 +18,18 @@ Ce module **mesure** l'état réel du dépôt contre chaque seuil, et le détect
 franchi. Tant que rien n'est atteint, il se tait : c'est la différence entre
 une décision différée et une décision oubliée.
 
+## Un déclencheur peut être faux, et celui-ci l'était
+
+`automated_acquisition` était différée sur « un corpus sénégalais existant qu'il
+faut tenir à jour ». Ce déclencheur mesurait le **résultat** de la capacité
+manquante : aucun chemin du dépôt ne pouvait produire ce corpus tant que
+l'acquisition n'existait pas, et `met` ne pouvait donc jamais devenir vrai.
+
+Corrigé le 2026-08-14 par l'ADR-021. La question à poser à tout déclencheur est
+écrite ici pour la prochaine fois : **ce que je mesure peut-il bouger sans que
+la capacité existe ?** Si non, ce n'est pas un report — c'est un refus déguisé
+en mesure.
+
 ## Ce que ce module ne fait pas
 
 Il ne construit aucune de ces capacités, et il n'en recommande aucune tant que
@@ -65,6 +77,21 @@ def _compter_entites() -> Dict[str, Any]:
         return {"count": None, "backend": "unknown"}
 
 
+def _compter_sources_activees() -> int:
+    """
+    Retourne le nombre de sources **activées et acquérables** au registre.
+
+    C'est la mesure qui remplace celle du corpus : elle porte sur ce qu'une
+    personne a décidé, pas sur le résultat de la capacité différée.
+    """
+    try:
+        from src.knowledge_engine.source_registry import acquirable_sources
+
+        return len(acquirable_sources())
+    except Exception:
+        return 0
+
+
 def _compter_documents_senegalais() -> Optional[int]:
     """Retourne le nombre d'éléments de portée `country:sn`, ou None."""
     try:
@@ -93,6 +120,7 @@ def deferred_report() -> Dict[str, Any]:
     connaissances = _compter_connaissances()
     entites = _compter_entites()
     senegalais = _compter_documents_senegalais()
+    sources_activees = _compter_sources_activees()
 
     capacites: List[Dict[str, Any]] = [
         {
@@ -160,16 +188,32 @@ def deferred_report() -> Dict[str, Any]:
         },
         {
             "capability": "automated_acquisition",
-            "trigger": "un corpus sénégalais existant qu'il faut tenir à jour",
-            "measured": senegalais,
+            # **Déclencheur corrigé le 2026-08-14 (ADR-021).** Il disait « un
+            # corpus sénégalais existant qu'il faut tenir à jour » et mesurait
+            # donc le **résultat** de la capacité manquante : rien ne pouvait
+            # produire ce corpus tant que l'acquisition n'existait pas, et `met`
+            # ne pouvait devenir vrai par aucun chemin du dépôt.
+            "trigger": (
+                "une source déclarée **et activée** au registre, dont les "
+                "conditions d'accès ont été établies (ADR-021)"
+            ),
+            "measured": sources_activees,
             "threshold": 1,
-            "measurable": senegalais is not None,
-            "met": bool(senegalais),
+            "measurable": True,
+            "met": bool(sources_activees),
+            # La capacité n'est plus différée : elle est construite (étapes 1 à
+            # 10 de `docs/architecture/senegal-knowledge-acquisition.md`). Ce qui
+            # reste ouvert est l'activation d'une source — une décision humaine,
+            # pas une ligne de code manquante.
+            "status": "built_and_gated",
             "note": (
-                "Le goulot n'est pas l'ingestion — elle fonctionne, manifeste "
-                "compris. Il est qu'aucun document sénégalais n'est encore "
-                "déclaré. Automatiser la collecte avant d'avoir une source "
-                "collecterait du vide, régulièrement."
+                "Le chemin existe : registre, découverte, décision, approbation "
+                "par lot, récupération polie, barrière de confiance, dix "
+                "contrôles, proposition de manifeste. Il n'atteint aucune source "
+                "tant qu'aucune n'est activée, et l'activer demande d'avoir lu "
+                "des conditions d'utilisation — ce qu'aucun programme ne fait "
+                "honnêtement. Documents sénégalais en base : "
+                f"{senegalais if senegalais is not None else 'non mesurable'}."
             ),
         },
     ]

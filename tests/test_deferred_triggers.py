@@ -70,22 +70,47 @@ def test_aucun_declencheur_n_est_atteint_aujourd_hui(monkeypatch):
     )
 
 
-def test_le_corpus_senegalais_declenche_l_acquisition_automatisee(monkeypatch):
+def test_une_source_activee_declenche_l_acquisition_automatisee(monkeypatch):
     """
-    Le goulot n'est pas l'ingestion — elle marche. C'est qu'aucun document
-    sénégalais n'est déclaré : automatiser la collecte avant d'avoir une source
-    collecterait du vide, régulièrement. Le premier document renverse cela.
+    **Ce test a changé de mesure le 2026-08-14 (ADR-021), et c'est le sujet.**
+
+    Il vérifiait que le premier document sénégalais renversait le déclencheur.
+    C'était circulaire : rien dans le dépôt ne pouvait produire ce document tant
+    que l'acquisition n'existait pas, donc `met` ne pouvait devenir vrai par
+    aucun chemin. Le déclencheur mesurait le **résultat** de la capacité
+    différée.
+
+    Il mesure désormais ce qu'une personne décide — une source activée au
+    registre — et cela peut bouger sans que la capacité existe.
     """
-    monkeypatch.setattr(deferred_triggers, "_compter_documents_senegalais", lambda: 0)
+    monkeypatch.setattr(deferred_triggers, "_compter_sources_activees", lambda: 0)
     avant = next(e for e in deferred_report()["capabilities"]
                  if e["capability"] == "automated_acquisition")
 
-    monkeypatch.setattr(deferred_triggers, "_compter_documents_senegalais", lambda: 12)
+    monkeypatch.setattr(deferred_triggers, "_compter_sources_activees", lambda: 2)
     apres = next(e for e in deferred_report()["capabilities"]
                  if e["capability"] == "automated_acquisition")
 
     assert avant["met"] is False
-    assert apres["met"] is True and apres["measured"] == 12
+    assert apres["met"] is True and apres["measured"] == 2
+
+
+def test_le_declencheur_de_l_acquisition_ne_mesure_plus_son_propre_resultat(monkeypatch):
+    """
+    La garde qui empêche la circularité de revenir : le nombre de documents
+    sénégalais ne doit plus décider du déclencheur.
+    """
+    monkeypatch.setattr(deferred_triggers, "_compter_sources_activees", lambda: 0)
+    monkeypatch.setattr(deferred_triggers, "_compter_documents_senegalais", lambda: 5000)
+
+    entree = next(e for e in deferred_report()["capabilities"]
+                  if e["capability"] == "automated_acquisition")
+
+    assert entree["met"] is False, "Le corpus décide encore du déclencheur"
+    assert entree["measured"] == 0
+    assert "activée" in entree["trigger"]
+    # La capacité est construite : ce qui reste est une décision humaine.
+    assert entree["status"] == "built_and_gated"
 
 
 def test_non_mesurable_n_est_pas_la_meme_reponse_que_non_atteint():
