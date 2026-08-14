@@ -1,0 +1,209 @@
+"""
+L'exposition des capacités d'outils : par `ToolEngine`, puis par l'API.
+
+Phase 38.1 a écrit ce que chaque outil touche. Sans cette phase, la réponse
+restait dans un fichier YAML que trois chantiers auraient dû relire chacun de
+leur côté — c'est ainsi qu'on obtient trois vérités divergentes.
+
+Ce que ces tests gardent :
+
+1. **La capacité voyage avec l'outil.** Apprendre qu'un outil existe, c'est
+   apprendre ce qu'il touche, dans la même réponse.
+2. **Un outil inconnu n'est pas un 404.** La réponse utile est « je ne sais
+   pas, donc non », pas « il n'y a rien à savoir ».
+3. **Un registre incohérent empêche le moteur d'exister**, au lieu de le
+   laisser exécuter sans savoir.
+4. **Consulter une capacité n'exécute aucun outil.**
+"""
+
+import os
+import sys
+
+import pytest
+import yaml
+from fastapi.testclient import TestClient
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from src.api import server as server_module  # noqa: E402
+from src.api.server import app  # noqa: E402
+from src.tool.capabilities import CapabilityError, DataScope, Effect  # noqa: E402
+from src.tool.tool_engine import ToolEngine  # noqa: E402
+
+REGISTRE_REEL = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools", "tools.yaml"
+)
+
+
+@pytest.fixture
+def moteur():
+    """Le moteur d'outils construit sur le registre réel du dépôt."""
+    return ToolEngine(REGISTRE_REEL)
+
+
+@pytest.fixture
+def cles(monkeypatch):
+    """Clés admin et lecture seule, avec restauration de l'état RBAC partagé."""
+    from src.api.rate_limiter import set_valid_api_key_digests
+
+    ancien = dict(server_module.rbac_manager._key_role_map)
+    monkeypatch.setenv("GALSEN_API_KEYS", "cle-admin:admin,cle-lecture:readonly")
+    server_module.rbac_manager.reload()
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
+    yield {"admin": "cle-admin", "readonly": "cle-lecture"}
+    server_module.rbac_manager._key_role_map = ancien
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
+
+
+@pytest.fixture
+def moteur_branche(moteur, monkeypatch):
+    """Branche un vrai moteur d'outils sur le module serveur, le temps du test."""
+    monkeypatch.setattr(server_module, "tool_engine", moteur)
+    return moteur
+
+
+@pytest.fixture
+def client():
+    """Client HTTP sur l'application réelle."""
+    with TestClient(app) as essai:
+        yield essai
+
+
+# ----------------------------------------------------------------------
+# 1. Le moteur
+# ----------------------------------------------------------------------
+
+def test_la_capacite_voyage_avec_l_information_d_outil(moteur):
+    """Un appelant qui apprend qu'un outil existe apprend ce qu'il touche."""
+    info = moteur.get_tool_info("email")
+
+    assert info["capability"]["data_scope"] == "user_private"
+    assert info["capability"]["requires_approval"] is True
+    assert "external" in info["capability"]["effects"]
+
+
+def test_tous_les_outils_listes_portent_leur_capacite(moteur):
+    """Aucune entrée sans capacité : l'oubli serait invisible autrement."""
+    manquants = [
+        outil["id"] for outil in moteur.list_tools() if "capability" not in outil
+    ]
+
+    assert manquants == []
+    assert len(moteur.list_tools()) == 22
+
+
+def test_le_moteur_repond_aux_trois_questions_des_couches_suivantes(moteur):
+    """Permissions, connecteurs, routines : les trois lisent d'ici."""
+    assert moteur.may_run_unattended("email")[0] is False
+    assert moteur.may_reach("email", DataScope.USER_PRIVATE)[0] is True
+    assert "email" in moteur.list_tools_by_effect(Effect.EXTERNAL)
+    assert "email" not in moteur.list_unattended_tools()
+
+
+def test_un_outil_inconnu_recoit_un_refus_motive_pas_une_exception(moteur):
+    """Demander pour un outil absent est une question valide."""
+    autorise, raison = moteur.may_run_unattended("outil_qui_n_existe_pas")
+
+    assert autorise is False
+    assert "non déclarée" in raison
+    assert moteur.get_tool_capability("outil_qui_n_existe_pas").declared is False
+
+
+def test_un_registre_incoherent_empeche_le_moteur_d_exister(tmp_path):
+    """
+    Mieux vaut un moteur d'outils absent — `/tool/execute` répond 503 — qu'un
+    moteur qui exécute sans savoir ce que ses outils touchent.
+    """
+    chemin = tmp_path / "tools.yaml"
+    chemin.write_text(yaml.safe_dump({"version": "1.0", "tools": [{
+        "id": "contradictoire",
+        "module": "tools.metrics.tool",
+        "class": "MetricsTool",
+        "capability": {
+            "effects": ["read"], "data_scope": "public",
+            "requires_approval": True, "unattended": True,
+        },
+    }]}, allow_unicode=True), encoding="utf-8")
+
+    with pytest.raises(CapabilityError, match="incompatibles"):
+        ToolEngine(str(chemin))
+
+
+def test_consulter_une_capacite_n_execute_aucun_outil(moteur):
+    """Demander si un outil est dangereux ne doit pas revenir à le lancer."""
+    avant = set(sys.modules)
+
+    moteur.get_capability_report()
+    moteur.may_run_unattended("terminal")
+    moteur.list_tools()
+
+    nouveaux = {m for m in set(sys.modules) - avant if m.startswith("src.tools.")}
+    assert nouveaux == set(), f"Modules d'outils chargés : {nouveaux}"
+
+
+# ----------------------------------------------------------------------
+# 2. L'API
+# ----------------------------------------------------------------------
+
+def test_le_rapport_publie_sa_propre_couverture(client, cles, moteur_branche):
+    """Un outil oublié apparaîtrait dans `undeclared`, pas dans le silence."""
+    reponse = client.get(
+        "/tools/capabilities", headers={"X-API-Key": cles["admin"]}
+    )
+
+    assert reponse.status_code == 200
+    corps = reponse.json()
+    assert corps["tools"] == 22
+    assert corps["undeclared"] == []
+    assert corps["coverage"] == 1.0
+    assert "email" in corps["by_scope"]["user_private"]
+
+
+def test_la_capacite_d_un_outil_est_consultable(client, cles, moteur_branche):
+    """La route que le moteur de routines interrogera avant de planifier."""
+    reponse = client.get(
+        "/tools/email/capability", headers={"X-API-Key": cles["admin"]}
+    )
+
+    assert reponse.status_code == 200
+    corps = reponse.json()
+    assert corps["declared"] is True
+    assert corps["known_to_registry"] is True
+    assert corps["may_run_unattended"] is False
+    assert "ne revient pas" in corps["reason"]
+
+
+def test_un_outil_inconnu_repond_deux_cents_avec_un_refus(client, cles, moteur_branche):
+    """
+    Un 404 dirait « il n'y a rien à savoir ». La réponse utile est
+    « je ne sais pas, donc non ».
+    """
+    reponse = client.get(
+        "/tools/jamais_vu/capability", headers={"X-API-Key": cles["admin"]}
+    )
+
+    assert reponse.status_code == 200
+    corps = reponse.json()
+    assert corps["declared"] is False
+    assert corps["known_to_registry"] is False
+    assert corps["may_run_unattended"] is False
+    assert corps["unattended_reason"].strip() != ""
+
+
+def test_les_routes_de_capacite_exigent_une_cle(client, moteur_branche):
+    """La liste des outils privilégiés n'est pas une donnée publique."""
+    for route in ("/tools/capabilities", "/tools/email/capability"):
+        assert client.get(route).status_code in (401, 403), route
+
+
+def test_sans_moteur_d_outils_les_routes_disent_cinq_cent_trois(
+    client, cles, monkeypatch
+):
+    """Un moteur absent se signale ; il ne rend pas un rapport vide."""
+    monkeypatch.setattr(server_module, "tool_engine", None)
+
+    reponse = client.get(
+        "/tools/capabilities", headers={"X-API-Key": cles["admin"]}
+    )
+
+    assert reponse.status_code == 503

@@ -1113,6 +1113,50 @@ async def execute_tool(request: ToolExecuteRequest):
     except Exception as e:
         raise erreur_interne("Erreur lors de l'exécution de l'outil", e)
 
+
+# Capacités des outils.
+#
+# Le registre disait comment charger un outil, jamais ce que l'exécuter coûte.
+# Trois chantiers en dépendent — le modèle de permissions, les connecteurs et le
+# moteur de routines — et aucun ne doit relire le YAML pour le savoir.
+@app.get("/tools/capabilities", tags=["tool"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.TOOL_EXECUTE))])
+async def list_tool_capabilities():
+    """Ce que le registre d'outils déclare, et ce qu'il laisse en blanc.
+
+    Le rapport **nomme ses propres lacunes** : un outil sans déclaration
+    apparaît dans `undeclared` au lieu de passer pour sûr par omission.
+    `coverage` est mesurée, pas promise.
+    """
+    if tool_engine is None:
+        raise HTTPException(status_code=503, detail="Moteur d'outils non initialisé")
+    return tool_engine.get_capability_report()
+
+
+@app.get("/tools/{tool_id}/capability", tags=["tool"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.TOOL_EXECUTE))])
+async def get_tool_capability(tool_id: str):
+    """Ce qu'un outil touche, ce qu'il change, et s'il peut tourner sans humain.
+
+    Un outil inconnu **n'est pas un 404** : la réponse porte `declared: false`
+    et le refus qui va avec. Répondre « introuvable » laisserait croire qu'il
+    n'y a rien à savoir, alors que la réponse utile est « je ne sais pas, donc
+    non ».
+    """
+    if tool_engine is None:
+        raise HTTPException(status_code=503, detail="Moteur d'outils non initialisé")
+
+    autorise, raison = tool_engine.may_run_unattended(tool_id)
+    return {
+        **tool_engine.get_tool_capability(tool_id).as_dict(),
+        "known_to_registry": tool_engine.get_tool_info(tool_id) is not None,
+        "may_run_unattended": autorise,
+        "unattended_reason": raison,
+    }
+
+
 # Endpoints workflows
 #
 # L'orchestration existait, était testée, et **aucune route ne l'atteignait** :

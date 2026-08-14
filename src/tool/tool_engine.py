@@ -5,7 +5,17 @@ Provides a unified interface for discovering, executing, and managing tools.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+from .capabilities import (
+    CapabilityRegistry,
+    DataScope,
+    Effect,
+    ToolCapability,
+    capability_report,
+    load_capabilities,
+    may_reach,
+    may_run_unattended,
+)
 from .tool_loader import ToolLoader
 from .tool_executor import ToolExecutor
 
@@ -31,7 +41,18 @@ class ToolEngine:
         self.logger = logging.getLogger(__name__)
         self.tool_loader = ToolLoader(registry_path)
         self.tool_executor = ToolExecutor(registry_path)
-        self.logger.info("ToolEngine initialized successfully.")
+        # Les capacités sont lues au démarrage, une fois. Une déclaration
+        # incohérente lève ici et empêche le moteur d'exister : mieux vaut un
+        # moteur d'outils absent — `/tool/execute` répond alors 503 — qu'un
+        # moteur qui exécute sans savoir ce que ses outils touchent.
+        self.capabilities: CapabilityRegistry = load_capabilities(
+            self.tool_loader.registry_path
+        )
+        self.logger.info(
+            "ToolEngine initialized successfully (%d/%d outils déclarent leur capacité).",
+            len(self.capabilities.declared_ids()),
+            len(self.capabilities.capabilities),
+        )
 
     def execute_tool(self, tool_id: str, *args, **kwargs) -> Any:
         """
@@ -101,6 +122,10 @@ class ToolEngine:
             'category': config.get('category'),
             'module': config.get('module'),
             'class': config.get('class'),
+            # La capacité voyage avec l'outil : un appelant qui apprend qu'un
+            # outil existe apprend du même coup ce qu'il touche. Un outil non
+            # déclaré porte `declared: false`, il ne disparaît pas du champ.
+            'capability': self.capabilities.get(tool_id).as_dict(),
             # Note: we don't return the full config for security reasons
             # but we can return a sanitized version if needed
         }
@@ -171,3 +196,92 @@ class ToolEngine:
             List of tool information dictionaries for the specified category.
         """
         return [t for t in self.list_tools() if t.get('category') == category]
+
+    # ------------------------------------------------------------------
+    # Capacités — ce qu'un outil touche, change, et qui peut le lancer
+    #
+    # Ces méthodes ne chargent aucun outil : demander si un outil est dangereux
+    # ne doit jamais revenir à l'exécuter. Vocabulaire → `capabilities.py`.
+    # ------------------------------------------------------------------
+
+    def get_tool_capability(self, tool_id: str) -> ToolCapability:
+        """
+        Retourne la capacité déclarée d'un outil.
+
+        Un outil absent du registre, ou présent sans déclaration, reçoit la même
+        réponse restrictive : « non déclaré » n'est pas « inoffensif ».
+
+        Args:
+            tool_id: The identifier of the tool.
+
+        Returns:
+            La capacité de l'outil.
+        """
+        return self.capabilities.get(tool_id)
+
+    def may_run_unattended(self, tool_id: str) -> Tuple[bool, str]:
+        """
+        Une routine peut-elle exécuter cet outil sans personne devant ?
+
+        Args:
+            tool_id: The identifier of the tool.
+
+        Returns:
+            Le verdict et sa raison. Un refus porte toujours son motif.
+        """
+        return may_run_unattended(tool_id, self.capabilities)
+
+    def may_reach(self, tool_id: str, scope: DataScope) -> Tuple[bool, str]:
+        """
+        Cet outil peut-il atteindre cette classe de données ?
+
+        Args:
+            tool_id: The identifier of the tool.
+            scope: La classe de données visée.
+
+        Returns:
+            Le verdict et sa raison.
+        """
+        return may_reach(tool_id, scope, self.capabilities)
+
+    def list_tools_by_effect(self, effect: Effect) -> List[str]:
+        """
+        Les outils produisant cet effet.
+
+        Args:
+            effect: L'effet recherché.
+
+        Returns:
+            Les identifiants, triés.
+        """
+        return self.capabilities.with_effect(effect)
+
+    def list_tools_by_scope(self, scope: DataScope) -> List[str]:
+        """
+        Les outils atteignant cette classe de données.
+
+        Args:
+            scope: La classe de données recherchée.
+
+        Returns:
+            Les identifiants, triés.
+        """
+        return self.capabilities.with_scope(scope)
+
+    def list_unattended_tools(self) -> List[str]:
+        """
+        Les outils qu'une routine peut exécuter sans humain.
+
+        Returns:
+            Les identifiants, triés.
+        """
+        return self.capabilities.unattended_ids()
+
+    def get_capability_report(self) -> Dict[str, Any]:
+        """
+        Ce que le registre déclare, et ce qu'il laisse en blanc.
+
+        Returns:
+            Le décompte, la couverture et la liste des outils non déclarés.
+        """
+        return capability_report(self.tool_loader.registry_path)
