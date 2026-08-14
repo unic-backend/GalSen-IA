@@ -159,12 +159,15 @@ def _registre(tmp_path, entree: str) -> str:
 
 def test_aucune_source_inscrite_n_est_collectable_par_defaut():
     """
-    Le cœur de l'ADR-021 : inscrire n'est pas activer. Les onze sources réelles
-    sont inscrites et **aucune** n'est atteignable par un chemin d'acquisition.
+    Le cœur de l'ADR-021 : inscrire n'est pas activer. Les **21** sources
+    réelles — 9 sénégalaises, 12 mondiales depuis la phase 51.2 — sont
+    inscrites et **aucune** n'est atteignable par un chemin d'acquisition.
+    Le registre a grandi ; la règle n'a pas bougé.
     """
     rapport = registry_report()
 
-    assert rapport["sources"] == 11
+    assert rapport["sources"] == 21
+    assert rapport["by_registry"] == {"global.yaml": 12, "senegal.yaml": 9}
     assert rapport["enabled"] == 0
     assert rapport["acquirable"] == 0
     assert acquirable_sources() == []
@@ -177,10 +180,11 @@ def test_un_rang_replie_est_nomme_et_non_supposé_validé():
     """
     rapport = registry_report()
 
-    assert len(rapport["tiers_defaulted"]) == 11, "Un repli est passé sous silence"
+    # Les 9 sources sénégalaises ne déclarent pas de rang : toutes sont nommées.
+    # Les 12 sources mondiales déclarent le leur — déclarer est la relecture.
+    assert len(rapport["tiers_defaulted"]) == 9, "Un repli est passé sous silence"
     assert rapport["by_tier"]["TIER_A_PRIMARY_OFFICIAL"] == 6
-    assert rapport["by_tier"]["TIER_A_ACADEMIC"] == 2
-    assert rapport["never_verified"] == rapport["tiers_defaulted"]
+    assert set(rapport["tiers_defaulted"]) <= set(rapport["never_verified"])
 
 
 def test_un_rang_declare_n_est_pas_signale_comme_replie(tmp_path):

@@ -264,5 +264,5 @@ def test_sur_le_vrai_registre_le_pilote_s_arrete_faute_de_source_activee(manager
 
     assert rapport["ready"] is False
     assert rapport["acquirable"] == 0
-    assert rapport["registered"] == 11
+    assert rapport["registered"] == 21
     assert "enabled: true" in rapport["reason"]

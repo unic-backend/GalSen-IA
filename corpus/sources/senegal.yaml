@@ -92,17 +92,11 @@ sources:
     category: peer_reviewed
     base_url: https://ifan.ucad.sn
 
-  - name: "Organisation des Nations unies pour l'alimentation et l'agriculture (FAO)"
-    scope: global
-    subjects: [agriculture, fisheries, environment, economics]
-    category: institutional
-    base_url: https://www.fao.org
-
-  - name: "Organisation mondiale de la santé (OMS)"
-    scope: global
-    subjects: [health]
-    category: institutional
-    base_url: https://www.who.int
+# La FAO et l'OMS étaient déclarées ici avec `scope: global`. Elles sont passées
+# dans `global.yaml` (phase 51.2) : une source mondiale n'appartient pas au
+# registre d'un pays, et un domaine n'est déclaré que dans un seul registre —
+# le chargement refuse le contraire. Rien n'a été perdu : leurs sujets déclarés
+# ont été repris tels quels, économie comprise.
 
 # Ce qui ne peut soutenir aucune affirmation, quelle que soit la catégorie
 # déclarée. Le refus est **explicite et motivé** : rétrograder en silence

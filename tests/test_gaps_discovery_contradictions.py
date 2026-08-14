@@ -156,13 +156,33 @@ def test_un_sujet_que_le_registre_ne_couvre_pas_dit_quoi_faire():
     """
     Aucun candidat n'est une réponse en soi : le rapport dit alors ce qui
     trancherait, et rappelle qu'aucune recherche libre n'est faite.
+
+    Le pays choisi n'est pas le Sénégal, et c'est le point. Depuis le registre
+    mondial (phase 51.2), `engineering` au Sénégal **a** des candidats — l'IETF,
+    le W3C, l'ISO. Le droit malien n'en a aucun, et aucune organisation
+    internationale ne vient le combler : un texte de loi n'a d'existence que sur
+    son territoire.
     """
     proposition = propose_for_gap("history", "country:sn")
-    proposition_vide = propose_for_gap("engineering", "country:sn")
+    proposition_vide = propose_for_gap("law", "country:ml")
 
     assert proposition["candidates"], "L'IFAN devrait couvrir l'histoire sénégalaise"
     assert proposition_vide["candidates"] == []
     assert any("registre" in ligne for ligne in proposition_vide["what_would_settle_it"])
+
+
+def test_le_registre_mondial_ne_comble_pas_le_droit_d_un_pays():
+    """
+    La contre-épreuve, dans le même geste : pour un pays sans registre, un
+    sujet **non** national trouve des sources mondiales, le droit n'en trouve
+    aucune. Sans ce contraste, l'absence de candidat pourrait n'être qu'un
+    registre pauvre.
+    """
+    histoire = propose_for_gap("history", "country:ml")
+    droit = propose_for_gap("law", "country:ml")
+
+    assert any(c["scope"] == "global" for c in histoire["candidates"])
+    assert droit["candidates"] == []
 
 
 def test_la_proposition_suit_une_mesure():

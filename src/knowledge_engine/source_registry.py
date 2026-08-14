@@ -42,8 +42,15 @@ from urllib.parse import urlparse
 from .scope import KnowledgeScope
 from .types import SourceCategory
 
-#: Registre par défaut, relatif à la racine du dépôt.
+#: Registre par défaut, relatif à la racine du dépôt. Conservé : il reste le
+#: registre sénégalais, qui n'est plus le seul mais n'a rien perdu.
 REGISTRE_PAR_DEFAUT = os.path.join("corpus", "sources", "senegal.yaml")
+
+#: Répertoire des registres. **Tous** les fichiers `.yaml` qu'il contient sont
+#: chargés et fusionnés (phase 51.1) : le Sénégal devient un registre parmi
+#: d'autres au lieu d'être le registre. Un registre mondial dans un seul fichier
+#: rendrait toute relecture d'un domaine national un diff de mille lignes.
+REPERTOIRE_DES_REGISTRES = os.path.join("corpus", "sources")
 
 #: Valeur d'un champ que personne n'a encore établi. `unknown` n'est pas `no` :
 #: une politique d'accès inconnue n'est pas une politique permissive.
@@ -230,17 +237,105 @@ def _politique_d_acces(declaree: Any) -> Dict[str, Any]:
     }
 
 
+def _fichiers_a_charger(chemin: Optional[str]) -> List[str]:
+    """
+    Résout ce qu'il faut charger.
+
+    Trois cas, et le troisième est celui de la phase 51.1 : sans argument, ce
+    sont **tous** les registres du répertoire, dans l'ordre alphabétique — un
+    ordre stable, pour qu'un doublon soit toujours signalé de la même façon.
+
+    Args:
+        chemin: Un fichier, un répertoire, ou `None`.
+
+    Returns:
+        Les chemins à charger.
+    """
+    if chemin and os.path.isfile(chemin):
+        return [chemin]
+
+    repertoire = chemin or os.path.join(_racine(), REPERTOIRE_DES_REGISTRES)
+    if not os.path.isdir(repertoire):
+        return [chemin] if chemin else []
+    return sorted(
+        os.path.join(repertoire, nom)
+        for nom in os.listdir(repertoire)
+        if nom.endswith((".yaml", ".yml"))
+    )
+
+
 def load_registry(chemin: Optional[str] = None) -> Dict[str, Any]:
     """
-    Charge le registre déclaré.
+    Charge les registres déclarés.
+
+    Sans argument, **tous** les fichiers de `corpus/sources/` sont chargés et
+    fusionnés ; un chemin de fichier n'en charge qu'un.
 
     Un fichier absent rend un registre vide — et un registre vide **refuse les
     catégories d'autorité** au lieu de les accepter toutes : perdre le fichier
     ne doit pas ouvrir la porte.
+
+    Args:
+        chemin: Un fichier, un répertoire, ou `None` pour tous les registres.
+
+    Returns:
+        Les sources fusionnées, les refus fusionnés, et les fichiers lus.
+
+    Raises:
+        SourceRefused: Si deux registres déclarent le même domaine. La
+            plateforme répondrait alors selon l'ordre de chargement, ce qui est
+            la pire sorte de désaccord — celle que personne ne voit.
+    """
+    fichiers = _fichiers_a_charger(chemin)
+    sources: List[Dict[str, Any]] = []
+    refus: List[Dict[str, Any]] = []
+    lus: List[str] = []
+    declare_par: Dict[str, str] = {}
+
+    for fichier in fichiers:
+        partiel = _charger_fichier(fichier)
+        if not partiel["loaded"]:
+            continue
+        lus.append(fichier)
+        for entree in partiel["sources"]:
+            precedent = declare_par.get(entree["domain"])
+            if precedent is not None:
+                raise SourceRefused(
+                    f"Le domaine « {entree['domain'] } » est déclaré deux fois : "
+                    f"dans {os.path.basename(precedent)} et dans "
+                    f"{os.path.basename(fichier)}. La plateforme répondrait selon "
+                    "l'ordre de chargement — un désaccord que personne ne voit. "
+                    "Un domaine appartient à un seul registre."
+                )
+            declare_par[entree["domain"]] = fichier
+            sources.append(entree)
+        refus.extend(partiel["deny"])
+
+    return {
+        "sources": sources,
+        # Un refus déclaré dans un registre vaut pour tous : c'est le sens sûr
+        # de la fusion.
+        "deny": refus,
+        "path": lus[0] if len(lus) == 1 else os.path.join(
+            _racine(), REPERTOIRE_DES_REGISTRES
+        ),
+        "files": lus,
+        "loaded": bool(lus),
+    }
+
+
+def _charger_fichier(cible: str) -> Dict[str, Any]:
+    """
+    Charge un seul fichier de registre.
+
+    Args:
+        cible: Le chemin du fichier.
+
+    Returns:
+        Ses sources et ses refus, chacun sachant d'où il vient.
     """
     import yaml
 
-    cible = chemin or os.path.join(_racine(), REGISTRE_PAR_DEFAUT)
     if not os.path.isfile(cible):
         return {"sources": [], "deny": [], "path": cible, "loaded": False}
 
@@ -277,10 +372,17 @@ def load_registry(chemin: Optional[str] = None) -> Dict[str, Any]:
             "reliability_notes": str(entree.get("reliability_notes") or ""),
             "last_verified": str(entree.get("last_verified") or INCONNU),
             "enabled": bool(entree.get("enabled", False)),
+            # D'où vient cette déclaration. Un rapport qui ne le dit pas oblige
+            # à chercher dans quel fichier relire une source.
+            "registry_file": os.path.basename(cible),
         })
 
     refus = [
-        {"domain": _domaine_declare(entree.get("domain", "")), "reason": entree.get("reason", "")}
+        {
+            "domain": _domaine_declare(entree.get("domain", "")),
+            "reason": entree.get("reason", ""),
+            "registry_file": os.path.basename(cible),
+        }
         for entree in (donnees.get("deny", []) or [])
         if entree.get("domain")
     ]
@@ -363,8 +465,9 @@ def check_source(
             "reason": (
                 f"« {declaree.value} » affirme une autorité : elle n'est acceptée que "
                 f"pour un domaine inscrit au registre, et « {_domaine(url)} » ne l'est "
-                "pas. Inscrire la source dans `corpus/sources/senegal.yaml`, ou "
-                "déclarer une catégorie qui n'affirme pas d'autorité."
+                f"pas. Inscrire la source dans `{REPERTOIRE_DES_REGISTRES}/` — le "
+                "registre du pays concerné, ou le registre mondial —, ou déclarer "
+                "une catégorie qui n'affirme pas d'autorité."
             ),
             "url": url,
             "declared_category": declaree.value,
@@ -442,9 +545,17 @@ def registry_report(chemin: Optional[str] = None) -> Dict[str, Any]:
     jamais_verifiees = [
         e["name"] for e in registre["sources"] if e["last_verified"] == INCONNU
     ]
+    par_registre: Dict[str, int] = {}
+    for entree in registre["sources"]:
+        fichier = entree.get("registry_file", "?")
+        par_registre[fichier] = par_registre.get(fichier, 0) + 1
 
     return {
         "file": REGISTRE_PAR_DEFAUT,
+        # Les registres réellement lus. `file` reste le registre sénégalais, qui
+        # n'est plus le seul : le lecteur doit voir la différence.
+        "files": [os.path.basename(f) for f in registre.get("files", [])],
+        "by_registry": dict(sorted(par_registre.items())),
         "loaded": registre["loaded"],
         "sources": len(registre["sources"]),
         "denied_domains": len(registre["deny"]),

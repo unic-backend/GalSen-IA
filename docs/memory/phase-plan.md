@@ -14,10 +14,11 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **50.2 terminée — VOLET 50 clos, VAGUE III complète (10 phases).**
-**51.1 en attente de confirmation** — registre de sources mondial, ouverture de la
-vague IV.
-**Terminées**      : **vagues I, II et III complètes** (30 phases sur 73).
+**Phase courante** : **51.2 terminée — VOLET 51 clos.**
+**52.1 en attente de confirmation** — connaissance mondiale : peupler la portée
+`global`.
+**Terminées**      : **vagues I, II et III complètes**, plus **VOLET 51** (32
+phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -221,6 +222,22 @@ routine qui s'arrête seule, une exécution longue qui meurt en route — et un
 
 VAGUE IV — La connaissance                                        → 16 phases
   V51  Registre de sources mondial (généralise le sénégalais)     → 2 phases
+       51.1 chargement multi-registres, doublon de domaine refusé   ✅
+       51.2 registre mondial peuplé, sujets nationaux interdits     ✅
+
+**Ce que 51.2 a déplacé** : la FAO et l'OMS étaient déclarées dans
+`senegal.yaml` avec `scope: global`. Une source mondiale n'appartient pas au
+registre d'un pays — et depuis 51.1 le chargement refuse qu'un domaine soit
+déclaré deux fois. Elles sont passées dans `global.yaml`, sujets déclarés
+repris tels quels. **21 sources, 0 activée, 0 acquérable.**
+
+**Ce que 51.2 a rendu visible** : `propose_for_gap("engineering", "country:sn")`
+ne rendait aucun candidat ; il en rend quatre depuis que l'IETF, le W3C, l'ISO et
+arXiv sont inscrits. Le test qui encodait cette absence a été **remplacé par un
+cas qui prouve la règle** : le droit malien n'a aucun candidat, et aucune
+organisation internationale ne vient le combler — alors que l'histoire malienne,
+sujet non national, en trouve. Le contraste est la preuve ; sans lui, l'absence
+ne serait qu'un registre pauvre.
   V52  Connaissance mondiale : portée `global` peuplée            → 3 phases
   V53  Fraîcheur : âge mesuré, péremption dite                    → 2 phases
   V54  Moteur de recherche documentaire                           → 3 phases
