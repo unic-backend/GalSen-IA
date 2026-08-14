@@ -118,6 +118,13 @@ from src.connectors.google import (
     GmailConnector,
 )
 from src.connectors.oauth.session import OAuthSession
+from src.routines import (
+    RoutineAction,
+    RoutineJournal,
+    RoutineRefused,
+    RoutineRegistry,
+    RoutineScheduler,
+)
 from src.connectors.safety import safety_report
 
 # Import des services
@@ -455,6 +462,28 @@ tool_engine = None  # sera initialisé au démarrage, par lifespan()
 _oauth_sessions: Dict[str, OAuthSession] = {}
 
 
+# Routines : registre, planificateur et journal, pour la durée du processus.
+#
+# **Aucune boucle ne tourne d'elle-même.** Une plateforme qui se met à déclencher
+# des routines au démarrage, sans que personne l'ait demandé, est exactement ce
+# qu'un moteur de routines ne doit pas être. Le déclenchement est provoqué —
+# `POST /routines/tick` — par un opérateur ou par une entrée cron, et le rapport
+# le dit en toutes lettres.
+routine_registry = RoutineRegistry()
+routine_journal = RoutineJournal()
+_routine_scheduler: Optional[RoutineScheduler] = None
+
+
+def _scheduler() -> RoutineScheduler:
+    """Retourne le planificateur, construit au premier besoin."""
+    global _routine_scheduler
+    if _routine_scheduler is None or _routine_scheduler._outils is not tool_engine:
+        _routine_scheduler = RoutineScheduler(
+            routine_registry, tool_engine=tool_engine
+        )
+    return _routine_scheduler
+
+
 def _oauth_session(provider_id: str) -> OAuthSession:
     """Retourne la session d'un fournisseur, ou 404 s'il n'est pas déclaré."""
     session = _oauth_sessions.get(provider_id)
@@ -566,6 +595,42 @@ class WorkflowRunRequest(BaseModel):
     request: str = Field(..., min_length=1, description="La demande à traiter")
     workflow_id: Optional[str] = Field(None, description="Workflow à utiliser ; le défaut sinon")
     session_id: Optional[str] = Field(None, description="Session, pour relier plusieurs demandes")
+
+
+class RoutineActionRequest(BaseModel):
+    """Une action d'une routine, telle qu'une requête la déclare."""
+
+    tool_id: str = Field(..., description="Identifiant de l'outil appelé")
+    operation: Any = Field(
+        None,
+        description=(
+            "Premier argument de l'appel : l'opération nommée, ou la commande. "
+            "C'est lui qui décide si une borne pré-approuvée couvre l'appel."
+        ),
+    )
+    options: Optional[Dict[str, Any]] = Field(None, description="Arguments nommés")
+
+
+class RoutineDeclareRequest(BaseModel):
+    """Une routine à déclarer. Elle naîtra désactivée."""
+
+    routine_id: str = Field(..., description="Identifiant de la routine")
+    description: str = Field(
+        ...,
+        description=(
+            "Ce qu'elle fait, lisible par son propriétaire au moment où il se "
+            "demandera pourquoi elle tourne."
+        ),
+    )
+    actions: List[RoutineActionRequest] = Field(..., description="Les appels d'outils")
+    interval_seconds: int = Field(..., description="Temps entre deux exécutions")
+    platform: bool = Field(
+        False,
+        description=(
+            "Routine de plateforme, n'appartenant à personne. Elle ne peut "
+            "alors toucher aucune donnée de personne."
+        ),
+    )
 
 
 class ToolExecuteRequest(BaseModel):
@@ -1305,6 +1370,157 @@ async def get_tool_authorization_matrix():
     if tool_engine is None:
         raise HTTPException(status_code=503, detail="Moteur d'outils non initialisé")
     return authorization_report(tool_engine.capabilities)
+
+
+# Routines (VOLET 47).
+#
+# Une routine tourne sans personne devant : tout ce qui coûte cher est vérifié à
+# la **déclaration**, et l'exécution n'a plus rien à décider. Les routines d'une
+# personne ne sont visibles que d'elle — la liste de ce que quelqu'un surveille
+# dit quelque chose de lui.
+@app.get("/routines", tags=["routines"],
+         dependencies=[Depends(rate_limit_dependency)])
+async def list_routines(
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Les routines visibles par l'appelant, et celles de la plateforme."""
+    return {
+        "routines": [
+            routine.as_dict()
+            for routine in routine_registry.list_routines(subject=ctx.subject)
+        ],
+        "registry": routine_registry.registry_report(),
+    }
+
+
+@app.post("/routines", tags=["routines"], status_code=201,
+          dependencies=[Depends(rate_limit_dependency)])
+async def declare_routine(
+    request: RoutineDeclareRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Déclare une routine — **désactivée**.
+
+    Écrire une routine et la faire tourner sont deux décisions, à deux moments.
+    Un refus nomme sa cause : une routine refusée sans motif est une routine que
+    son auteur réécrira à l'identique.
+
+    Le propriétaire est **l'appelant**, jamais un champ du corps : déclarer une
+    routine au nom de quelqu'un d'autre ne doit pas être une requête formulable.
+    """
+    try:
+        routine = routine_registry.declare(
+            request.routine_id, request.description,
+            [RoutineAction(a.tool_id, a.operation, a.options or {})
+             for a in request.actions],
+            request.interval_seconds,
+            subject=None if request.platform else ctx.subject,
+        )
+    except RoutineRefused as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
+    return routine.as_dict()
+
+
+@app.post("/routines/{routine_id}/enable", tags=["routines"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def enable_routine(
+    routine_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Active une routine déclarée."""
+    return _routine_de(routine_id, ctx, activer=True).as_dict()
+
+
+@app.post("/routines/{routine_id}/disable", tags=["routines"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def disable_routine(
+    routine_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Arrête une routine.
+
+    **Réussit toujours** pour son propriétaire : une routine qu'on ne peut pas
+    arrêter est pire qu'une routine absente.
+    """
+    return _routine_de(routine_id, ctx, activer=False).as_dict()
+
+
+@app.get("/routines/status", tags=["routines"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.TOOL_EXECUTE))])
+async def routines_status():
+    """Ce qui est dû maintenant, sans rien déclencher.
+
+    **Aucune boucle ne tourne d'elle-même** : le déclenchement est provoqué par
+    `POST /routines/tick`. Une plateforme qui se met à exécuter des routines au
+    démarrage sans que personne l'ait demandé est ce qu'un moteur de routines ne
+    doit pas être.
+    """
+    return _scheduler().scheduler_report()
+
+
+@app.post("/routines/tick", tags=["routines"],
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.ADMIN_MANAGE))])
+async def tick_routines():
+    """Exécute ce qui est dû, une fois.
+
+    Réservé à l'administration : déclencher toutes les routines dues est un acte
+    d'exploitation, pas une consultation.
+    """
+    import time as _temps
+
+    tours = []
+    for tour in _scheduler().tick(_temps.time()):
+        routine = routine_registry.get(tour.routine_id)
+        routine_journal.record(tour, subject=routine.subject if routine else None)
+        tours.append(tour.as_dict())
+    return {"runs": tours, "count": len(tours)}
+
+
+@app.get("/routines/{routine_id}/journal", tags=["routines"],
+         dependencies=[Depends(rate_limit_dependency)])
+async def routine_journal_entries(
+    routine_id: str, limit: int = 20,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Les derniers tours d'une routine, et ses compteurs.
+
+    Les compteurs **survivent à l'oubli des entrées** : sans eux, une routine
+    cassée lundi et rétablie jeudi paraîtrait n'avoir jamais échoué.
+    """
+    compteurs = routine_journal.stats(routine_id, subject=ctx.subject)
+    if compteurs is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Aucun journal pour la routine '{routine_id}'.",
+        )
+    return {
+        "routine_id": routine_id,
+        "stats": compteurs,
+        "runs": routine_journal.runs(routine_id, subject=ctx.subject, limit=limit),
+    }
+
+
+def _routine_de(routine_id: str, ctx: RBACContext, activer: bool):
+    """Retrouve une routine visible par l'appelant, puis l'active ou l'arrête."""
+    visibles = {
+        routine.routine_id
+        for routine in routine_registry.list_routines(subject=ctx.subject)
+    }
+    if routine_id not in visibles:
+        # Le même message qu'une routine inexistante : dire « elle existe mais
+        # elle n'est pas à vous » renseignerait sur ce qu'une autre personne
+        # surveille.
+        raise HTTPException(
+            status_code=404, detail=f"Routine '{routine_id}' inconnue."
+        )
+    try:
+        return (routine_registry.enable if activer else routine_registry.disable)(
+            routine_id
+        )
+    except RoutineRefused as refus:
+        raise HTTPException(status_code=404, detail=str(refus))
 
 
 # Endpoints workflows

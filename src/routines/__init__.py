@@ -5,6 +5,7 @@ Tout ce qui coûte cher est vérifié à la **déclaration** : une routine qui �
 chaque nuit à trois heures est une routine dont personne ne voit l'échec.
 """
 
+from .journal import TOURS_CONSERVES, RoutineJournal, RoutineStats
 from .registry import RoutineRegistry
 from .scheduler import (
     ECHECS_AVANT_ARRET,
@@ -28,7 +29,10 @@ __all__ = [
     "Routine",
     "RoutineAction",
     "RoutineRefused",
+    "RoutineJournal",
     "RoutineRegistry",
     "RoutineRun",
     "RoutineScheduler",
+    "RoutineStats",
+    "TOURS_CONSERVES",
 ]
