@@ -1,0 +1,35 @@
+# OAuth 2.0 providers known to the platform.
+#
+# Endpoints are **configuration**, not code: a provider that moves its token
+# endpoint must be fixable without a release. Each entry names its
+# `discovery_url`, the authoritative document published by the provider itself.
+#
+# The values below are written here so the flow can be built and tested. They
+# are NOT fetched: this environment cannot reach these hosts, and no network
+# call is made when this file is read. **Confirm them against `discovery_url`
+# when you configure the client** — that check belongs to whoever holds the
+# credentials, and it is one `curl` away.
+#
+# No client_id and no client_secret appear here, ever. They are read from the
+# environment (ADR-004), and this file is committed.
+
+version: "1.0"
+
+providers:
+  - id: google
+    name: Google
+    discovery_url: "https://accounts.google.com/.well-known/openid-configuration"
+    authorization_endpoint: "https://accounts.google.com/o/oauth2/v2/auth"
+    token_endpoint: "https://oauth2.googleapis.com/token"
+    revocation_endpoint: "https://oauth2.googleapis.com/revoke"
+    # Les variables d'environnement lues. Leur **nom** seulement.
+    client_id_variable: "GALSEN_OAUTH_GOOGLE_CLIENT_ID"
+    client_secret_variable: "GALSEN_OAUTH_GOOGLE_CLIENT_SECRET"
+    redirect_uri_variable: "GALSEN_OAUTH_GOOGLE_REDIRECT_URI"
+    # Les portées que la plateforme s'autorise à demander. Une portée absente
+    # de cette liste est refusée : c'est le moindre privilège appliqué au
+    # moment où il est le plus facile de demander trop.
+    allowed_scopes:
+      - "https://www.googleapis.com/auth/gmail.readonly"
+      - "https://www.googleapis.com/auth/drive.readonly"
+      - "https://www.googleapis.com/auth/calendar.readonly"
