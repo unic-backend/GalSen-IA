@@ -34,6 +34,7 @@ from typing import Any, Dict, List, Optional
 
 from ..tool.capabilities import CapabilityRegistry, may_run_unattended
 from .registry import RoutineRegistry
+from .safety import RoutineSafety
 from .types import Routine, RoutineAction
 
 #: Échecs consécutifs au-delà desquels une routine s'arrête d'elle-même. Trois :
@@ -129,6 +130,7 @@ class RoutineScheduler:
         registry: RoutineRegistry,
         tool_engine: Any = None,
         capabilities: Optional[CapabilityRegistry] = None,
+        safety: Optional[RoutineSafety] = None,
     ) -> None:
         """
         Args:
@@ -137,8 +139,12 @@ class RoutineScheduler:
                 son indisponibilité au lieu de prétendre avoir tourné.
             capabilities: Les capacités, pour la revérification au
                 déclenchement. Celles du moteur d'outils par défaut.
+            safety: Le budget et l'arrêt d'urgence (VOLET 48). Séparé du
+                planificateur : ce qui protège ne doit pas dépendre de ce qui
+                exécute.
         """
         self.registry = registry
+        self.safety = safety if safety is not None else RoutineSafety()
         self._outils = tool_engine
         self._capacites = capabilities if capabilities is not None else getattr(
             tool_engine, "capabilities", None
@@ -167,6 +173,11 @@ class RoutineScheduler:
         Returns:
             Les routines dues, triées par identifiant.
         """
+        if self.safety.halted:
+            # Rien n'est dû pendant un arrêt : le dire ici évite que l'appelant
+            # boucle sur des tours refusés un par un.
+            return []
+
         dues = []
         with self._verrou:
             for routine in self.registry.enabled_routines():
@@ -211,6 +222,17 @@ class RoutineScheduler:
         instant = now if now is not None else time.time()
         tour = RoutineRun(routine_id=routine.routine_id, started_at=instant)
 
+        permis, motif = self.safety.check(routine.routine_id, instant)
+        if not permis:
+            tour.skipped = motif
+            if "Budget épuisé" in motif:
+                # Épuisé n'est pas « saute ce tour » : une routine sautée en
+                # silence paraît tourner et ne fait rien. Elle s'arrête, et
+                # quelqu'un relèvera le budget délibérément.
+                self.registry.disable(routine.routine_id)
+                tour.disabled_after = True
+            return tour
+
         with self._verrou:
             if routine.routine_id in self._en_cours:
                 tour.skipped = (
@@ -221,6 +243,7 @@ class RoutineScheduler:
                 return tour
             self._en_cours.add(routine.routine_id)
             self._derniere_execution[routine.routine_id] = instant
+        self.safety.consume(routine.routine_id, instant)
 
         try:
             for action in routine.actions:
@@ -342,6 +365,7 @@ class RoutineScheduler:
             "failures": dict(self._echecs),
             "failures_before_stop": ECHECS_AVANT_ARRET,
             "tool_engine_attached": self._outils is not None,
+            "safety": self.safety.safety_report(),
             "rules": [
                 "La capacité est revérifiée au déclenchement, pas seulement à "
                 "la déclaration.",

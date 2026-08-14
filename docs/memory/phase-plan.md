@@ -14,9 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **47.3 terminée — VOLET 47 clos.**
-**48.1 en attente de confirmation** — sûreté des routines.
-**Terminées**      : **vagues I et II complètes** (20 phases), puis **VOLET 47** complet.
+**Phase courante** : **48.1 terminée** — budget et arrêt d'urgence.
+**48.2 en attente de confirmation** — routes de sûreté, clôture du VOLET 48.
+**Terminées**      : **vagues I et II complètes** (20 phases), **VOLET 47** complet, **48.1**.
 **Cadence**        : une phase par tour (défaut du protocole).
 
 ---
@@ -185,6 +185,8 @@ VAGUE III — Le temps et l'exécution longue                        → 10 phas
        47.2 décision pure, exécution gardée, arrêt sur échec       ✅
        47.3 journal borné, compteurs qui survivent, routes         ✅
   V48  Sûreté des routines (plafonds, arrêt, portillon)           → 2 phases
+       48.1 budget quotidien, arrêt d'urgence global                 ✅
+       48.2 routes de sûreté et clôture
   V49  Workflows longs : reprise, point de contrôle, annulation   → 3 phases
   V50  Notifications : moteur au-dessus du magasin existant       → 2 phases
 
