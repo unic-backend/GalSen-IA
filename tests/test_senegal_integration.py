@@ -518,6 +518,8 @@ def test_le_rapport_dit_ce_qui_est_tenu_et_ce_qui_ne_l_est_pas():
     # des vides suit la mesure, il ne la précède pas.
     assert len(rapport["domains_empty"]) == 10
     assert len(rapport["domains_populated"]) == 6
+    # Le compte de fragments suit l'acquisition ; il ne la précède pas.
+    assert rapport["chunks"] >= 246
 
 
 def test_l_invite_systeme_pose_les_regles_et_ne_se_declare_pas_autorite():

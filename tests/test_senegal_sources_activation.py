@@ -279,6 +279,24 @@ def test_les_domaines_sectoriels_sont_visibles_par_le_rag():
     assert rapport["chunks"] > 200
 
 
+def test_la_revendication_du_46e_departement_n_est_ni_crue_ni_inscrite():
+    """
+    Une directive n'est pas une source. Inscrire « Keur Massar » parce qu'elle
+    l'affirme fabriquerait un fait administratif sur un pays réel à partir d'une
+    affirmation sans source — exactement ce que la contrainte 3 interdit.
+    """
+    from src.services.senegal.discrepancy import investigate_claimed_department
+
+    verdict = investigate_claimed_department()
+
+    assert verdict["status"] == "UNVERIFIED_CLAIM"
+    assert verdict["found_in_sources"] == []
+    assert verdict["resolved"] is False
+    assert len(verdict["sources_searched"]) >= 5
+    assert verdict["what_would_settle_it"]
+    assert "affirmation" in verdict["claim_source"]
+
+
 def test_un_domaine_peuple_par_les_deux_fichiers_additionne_sans_ecraser():
     """Écraser perdrait la source du premier fichier."""
     verdict = query_by_sector("ADMINISTRATION")

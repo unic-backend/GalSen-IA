@@ -1,0 +1,116 @@
+# Alias multilingues — français ↔ wolof ↔ anglais (VOLET multilingue, 2026-08-14).
+#
+# Ce fichier existe parce que les données acquises sont en anglais (`currency`,
+# `population`, `capital`) et que les questions arrivent en français ou en
+# wolof. Sans lui, « Quelle est la monnaie du Sénégal ? » ne trouvait rien alors
+# que la réponse était en base — mesuré, pas supposé.
+#
+# ## Ce que ce fichier est, et n'est pas
+#
+# C'est une **table de vocabulaire**, pas une table de faits. Elle dit que
+# « monnaie », « currency » et « xaalis » désignent la même notion ; elle ne dit
+# rien sur le Sénégal. Une erreur ici fait manquer ou ajouter une
+# correspondance ; elle ne peut pas fabriquer une affirmation.
+#
+# ## Provenance des termes wolof
+#
+# `wo_source: owner` — les termes wolof ont été **déclarés par le propriétaire du
+# projet**, locuteur, dans la directive du 2026-08-14. C'est une source, et elle
+# est nommée. Ils n'ont pas été confrontés à un dictionnaire : `reviewed: false`
+# le dit, et chaque expansion qui s'appuie sur eux porte cette réserve.
+#
+# `corpus_attested: true` marque les termes retrouvés dans UD_Wolof-WTB — une
+# vérification indépendante, mesurée par `python -m pytest tests/test_multilingual.py`.
+#
+# ## Orthographe
+#
+# Les termes wolof suivent le standard CLAD (décret n° 2005-992) : `ë`, `ñ`, `ŋ`
+# sont des lettres, jamais pliées. L'expansion compare des formes normalisées
+# par `src/text_normalization.py`, qui plie les accents des **deux** côtés — la
+# comparaison reste donc symétrique et sans perte.
+
+version: "1.0"
+wo_source: "propriétaire du projet (locuteur), directive du 2026-08-14"
+wo_reviewed: false
+
+concepts:
+
+  - id: currency
+    en: [currency, currencies, money]
+    fr: [monnaie, devise, franc]
+    wo: [xaalis, koppu]
+
+  - id: population
+    en: [population, inhabitants, people]
+    fr: [population, habitants, peuplement]
+    wo: [askaan, nit]
+
+  - id: capital
+    en: [capital, chief_town]
+    fr: [capitale, chef-lieu, cheflieu]
+    wo: [péey]
+
+  - id: region
+    en: [region, regions]
+    fr: [region, régions]
+    wo: [diiwaan]
+
+  - id: department
+    en: [department, departments]
+    fr: [departement, départements]
+    wo: [tund]
+
+  - id: agriculture
+    en: [agriculture, farming, crop, crops]
+    fr: [agriculture, culture, cultures, récolte]
+    wo: [mbéy]
+
+  - id: fishing
+    en: [fishing, fishery, fisheries]
+    fr: [peche, pêcheurs, halieutique]
+    wo: [géej, mool]
+
+  - id: livestock
+    en: [livestock, cattle, herding]
+    fr: [elevage, bétail, troupeau]
+    wo: [samm]
+
+  - id: health
+    en: [health, healthcare, medical]
+    fr: [sante, santé, médical]
+    wo: [wér-gu-yaram, wergu]
+
+  - id: education
+    en: [education, school, university, teaching]
+    fr: [education, éducation, enseignement, école, université]
+    wo: [njàng]
+
+  - id: language
+    en: [language, languages]
+    fr: [langue, langues]
+    wo: [làkk]
+
+  - id: economy
+    en: [economy, gdp, economic]
+    fr: [economie, économie, pib]
+    wo: [koom-koom]
+
+  - id: transport
+    en: [transport, airport, port]
+    fr: [transport, aéroport, port]
+    wo: [yóbbu]
+
+  - id: country
+    en: [country, state, nation]
+    fr: [pays, état, nation]
+    wo: [réew]
+
+  - id: history
+    en: [history, historical, kingdom]
+    fr: [histoire, historique, royaume]
+    wo: [cosaan, nguur]
+
+  - id: culture
+    en: [culture, cultural, heritage]
+    fr: [culture, culturel, patrimoine]
+    wo: [aada]

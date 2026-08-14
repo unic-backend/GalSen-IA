@@ -132,6 +132,35 @@ JEUX = {
         "unit": INCONNU,
         "entity_field": "name",
     },
+    "states": {
+        "url": (
+            "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/"
+            "master/json/states.json"
+        ),
+        "file": "dr5hn-states.json",
+        "domain": "ADMINISTRATION",
+        "publisher": "dr5hn/countries-states-cities-database (base communautaire)",
+        "upstream_source": "ISO 3166-2 et sources nationales, non individuellement tracées",
+        "upstream_tier": "UNKNOWN",
+        "tier": "TIER_C_SECONDARY",
+        "licence": "ODbL (redistribution)",
+        "filter": ("__json_country_code__", "SN"),
+        "unit": INCONNU,
+        "entity_field": "name",
+    },
+    "country_profile": {
+        "url": "https://raw.githubusercontent.com/mledoze/countries/master/countries.json",
+        "file": "mledoze-countries.json",
+        "domain": "PUBLIC_INSTITUTIONS",
+        "publisher": "mledoze/countries (base communautaire)",
+        "upstream_source": "ISO 3166 ; CIA World Factbook ; sources ouvertes agrégées",
+        "upstream_tier": "UNKNOWN",
+        "tier": "TIER_C_SECONDARY",
+        "licence": "ODbL (redistribution)",
+        "filter": ("__json_cca3__", "SEN"),
+        "unit": INCONNU,
+        "entity_field": "name",
+    },
     "locode": {
         "url": "https://raw.githubusercontent.com/datasets/un-locode/master/data/code-list.csv",
         "file": "datasets-un-locode.csv",
@@ -245,6 +274,18 @@ def rows_for_senegal(contenu: bytes, cle: str) -> List[Dict[str, str]]:
         pays = (json.loads(texte).get(valeur) or {}).get("divisions", {})
         return [{"code": code, "name": nom} for code, nom in sorted(pays.items())]
 
+    if champ == "__json_country_code__":
+        return [
+            entree for entree in json.loads(texte)
+            if (entree.get("country_code") or "").strip() == valeur
+        ]
+
+    if champ == "__json_cca3__":
+        return [
+            entree for entree in json.loads(texte)
+            if (entree.get("cca3") or "").strip() == valeur
+        ]
+
     lecteur = csv.DictReader(io.StringIO(texte))
     return [
         ligne for ligne in lecteur
@@ -338,6 +379,41 @@ def build_items(cle: str, lignes: List[Dict[str, str]], telechargement: Dict[str
                 "entity": ligne["name"],
                 "type": "iso_3166_2_subdivision",
                 "value": {"code": ligne["code"], "name": ligne["name"]},
+                "year": INCONNU,
+                **provenance,
+            })
+        elif cle == "states":
+            objets.append({
+                "entity": ligne.get("name", INCONNU),
+                "type": "administrative_division",
+                "value": {
+                    "iso3166_2": ligne.get("iso3166_2") or INCONNU,
+                    "level": ligne.get("level") if ligne.get("level") is not None else INCONNU,
+                    "type_declare": ligne.get("type") or INCONNU,
+                    # La population vient de cette base communautaire, pas de
+                    # l'ANSD : elle est rapportée avec son rang, jamais fondue
+                    # dans les entités dérivées de geoBoundaries.
+                    "population": ligne.get("population") if ligne.get("population") else INCONNU,
+                    "latitude": ligne.get("latitude") or INCONNU,
+                    "longitude": ligne.get("longitude") or INCONNU,
+                },
+                "year": INCONNU,
+                **provenance,
+            })
+        elif cle == "country_profile":
+            objets.append({
+                "entity": ((ligne.get("name") or {}).get("official") or INCONNU),
+                "type": "country_profile",
+                "value": {
+                    "common_name": (ligne.get("name") or {}).get("common", INCONNU),
+                    "capital": ", ".join(ligne.get("capital") or []) or INCONNU,
+                    "currencies": ", ".join(sorted(ligne.get("currencies") or {})) or INCONNU,
+                    "languages": ", ".join(sorted((ligne.get("languages") or {}).values())) or INCONNU,
+                    "area_km2": ligne.get("area", INCONNU),
+                    "borders": ", ".join(ligne.get("borders") or []) or INCONNU,
+                    "region": ligne.get("region", INCONNU),
+                    "subregion": ligne.get("subregion", INCONNU),
+                },
                 "year": INCONNU,
                 **provenance,
             })

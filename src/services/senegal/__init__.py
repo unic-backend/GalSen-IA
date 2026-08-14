@@ -16,7 +16,13 @@ résolve en import nu. Le module vit donc sous le paquet existant, comme le
 wolof avant lui.
 """
 
-from .discrepancy import compare_department_count, compare_regions, discrepancy_report
+from .discrepancy import (
+    compare_department_count,
+    compare_regions,
+    discrepancy_report,
+    investigate_claimed_department,
+)
+from .multilingual_aliases import alias_report, expand_terms, translate
 from .master_rag import (
     KnowledgeUnavailable,
     get_wolof_corpus,
@@ -34,6 +40,10 @@ __all__ = [
     "compare_department_count",
     "compare_regions",
     "discrepancy_report",
+    "investigate_claimed_department",
+    "alias_report",
+    "expand_terms",
+    "translate",
     "load_domain_knowledge",
     "get_wolof_corpus",
     "iterate_chunks",

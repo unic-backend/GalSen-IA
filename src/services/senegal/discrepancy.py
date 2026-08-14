@@ -229,6 +229,89 @@ def compare_department_count(
     }
 
 
+#: Statut d'une affirmation qu'aucune source acquise ne confirme ni n'infirme.
+REVENDICATION_NON_VERIFIEE = "UNVERIFIED_CLAIM"
+
+
+def investigate_claimed_department(
+    nom: str = "Keur Massar",
+    decret: str = "décret n° 2021-687",
+    connaissance: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Cherche un département revendiqué dans **toutes** les sources acquises.
+
+    La directive affirme qu'un 46ᵉ département existe. Cette fonction ne la croit
+    pas et ne la contredit pas : elle **cherche**, et rapporte ce qu'elle trouve.
+
+    Le point qui compte : écrire « Keur Massar, décret n° 2021-687 » dans la base
+    parce que la directive le dit reviendrait à fabriquer un fait administratif
+    sur un pays réel depuis une affirmation sans source. C'est précisément ce que
+    la contrainte 3 du VOLET interdit, et le statut `UNVERIFIED_CLAIM` est la
+    seule réponse honnête tant qu'aucune source acquise ne le porte.
+
+    Returns:
+        Le résultat de la recherche dans chaque source, le statut, et ce qui
+        trancherait.
+    """
+    from .master_rag import load_all_knowledge, load_domain_knowledge
+
+    donnees = connaissance or load_all_knowledge()
+    cible = _normalise(nom)
+    trouvailles = []
+
+    for departement in donnees["departments"]:
+        if cible in _normalise(departement["name"]):
+            trouvailles.append({
+                "source": "geoBoundaries (gbOpen) SEN ADM2",
+                "entity": departement["name"],
+                "type": "department",
+                "provenance": departement["provenance"]["source_url"],
+            })
+
+    sectorielle = load_domain_knowledge()
+    for domaine, contenu in (sectorielle.get("domains") or {}).items():
+        for objet in contenu.get("items", []):
+            if cible in _normalise(str(objet.get("entity", ""))):
+                trouvailles.append({
+                    "source": objet.get("source", INCONNU),
+                    "entity": objet["entity"],
+                    "type": f"{domaine}:{objet.get('type', INCONNU)}",
+                    "provenance": objet.get("source_url", INCONNU),
+                })
+
+    return {
+        "claim": f"{nom} serait le 46ᵉ département du Sénégal ({decret})",
+        "claim_source": "directive du projet — affirmation, sans source citée",
+        "found_in_sources": trouvailles,
+        "sources_searched": [
+            "geoBoundaries (gbOpen) SEN ADM1 et ADM2",
+            "ISO 3166-2 (redistribution)",
+            "dr5hn/countries-states-cities-database",
+            "mledoze/countries",
+            "UN/LOCODE, OurAirports, Banque mondiale (redistributions)",
+        ],
+        "status": REVENDICATION_NON_VERIFIEE if not trouvailles else CONFLIT,
+        "resolved": False,
+        "reason": (
+            f"Aucune source acquise ne porte « {nom} » comme département. La "
+            "revendication n'est ni confirmée ni infirmée. L'inscrire parce "
+            "qu'une directive l'affirme fabriquerait un fait administratif sur "
+            "un pays réel à partir d'une affirmation sans source — exactement ce "
+            "que ce moteur existe pour empêcher."
+            if not trouvailles else
+            f"« {nom} » apparaît dans une source acquise ; le rapprochement avec "
+            "le statut de département reste à établir."
+        ),
+        "what_would_settle_it": [
+            f"Le texte du {decret} au Journal officiel (`jo.gouv.sn`)",
+            "Le découpage publié par l'ANSD (`ansd.sn`)",
+            "Ces deux domaines sont refusés par le mandataire de cet "
+            "environnement — voir `python scripts/activate_senegal_sources.py`",
+        ],
+    }
+
+
 def discrepancy_report(
     connaissance: Optional[Dict[str, Any]] = None, expected_departments: int = 46
 ) -> Dict[str, Any]:
@@ -238,17 +321,19 @@ def discrepancy_report(
     donnees = connaissance or load_all_knowledge()
     regions = compare_regions(donnees)
     departements = compare_department_count(donnees, expected_departments)
+    revendication = investigate_claimed_department(connaissance=donnees)
 
     return {
         "regions": regions,
         "department_count": departements,
+        "claimed_department": revendication,
         "unresolved": [
             ligne["entity"] for ligne in regions.get("rows", [])
             if ligne["status"] not in (MATCH,)
         ],
         "statuses_used": sorted({
             ligne["status"] for ligne in regions.get("rows", [])
-        } | {departements["status"]}),
+        } | {departements["status"], revendication["status"]}),
         "resolved_by_guessing": False,
         "note": (
             "Les divergences sont représentées, pas arbitrées. Une divergence "
