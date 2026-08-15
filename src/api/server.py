@@ -119,6 +119,7 @@ from src.connectors.google import (
 )
 from src.connectors.oauth.session import OAuthSession
 from src.routines import (
+    AGENTS_PAR_FENETRE_PAR_DEFAUT,
     RoutineAction,
     RoutineJournal,
     RoutineRefused,
@@ -723,6 +724,14 @@ class RoutineBudgetRequest(BaseModel):
 
     runs_per_day: int = Field(
         ..., description="Tours autorisés par jour. Zéro est refusé."
+    )
+    agents_per_day: Optional[int] = Field(
+        None,
+        description=(
+            "Agents exécutés autorisés par jour. Depuis qu'un tour peut "
+            "déclencher un workflow entier, le nombre de tours ne dit plus ce "
+            "qu'une routine coûte. Absent, le plafond en place est conservé."
+        ),
     )
 
 
@@ -1801,11 +1810,16 @@ async def set_routine_budget(
     request: RoutineBudgetRequest,
     ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
 ):
-    """Fixe le nombre de tours autorisés par jour pour une routine.
+    """Fixe ce qu'une routine peut consommer par jour : tours et **travail**.
 
     Une limite nulle est refusée : ce serait une désactivation déguisée, qui
     laisserait la routine paraître active sans jamais tourner. Arrêter une
     routine se fait explicitement.
+
+    Depuis le VOLET 64, un tour peut déclencher un workflow entier : le nombre
+    de tours ne dit donc plus ce qu'une routine coûte. `agents_per_day` plafonne
+    le travail réellement exécuté, et c'est lui qui attrape le jour où quelqu'un
+    ajoute un agent au workflow sans qu'aucun budget ne bouge.
     """
     visibles = {
         routine.routine_id
@@ -1817,9 +1831,17 @@ async def set_routine_budget(
         )
     try:
         limite = routine_safety.set_limit(routine_id, request.runs_per_day)
+        plafond = (
+            routine_safety.set_agent_limit(routine_id, request.agents_per_day)
+            if request.agents_per_day is not None
+            else AGENTS_PAR_FENETRE_PAR_DEFAUT
+        )
     except ValueError as refus:
         raise HTTPException(status_code=400, detail=str(refus))
-    return {"routine_id": routine_id, "runs_per_day": limite}
+    return {
+        "routine_id": routine_id, "runs_per_day": limite,
+        "agents_per_day": plafond,
+    }
 
 
 # Endpoints workflows

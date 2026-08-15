@@ -8,6 +8,7 @@ chaque nuit à trois heures est une routine dont personne ne voit l'échec.
 from .journal import TOURS_CONSERVES, RoutineJournal, RoutineStats
 from .registry import RoutineRegistry
 from .safety import (
+    AGENTS_PAR_FENETRE_PAR_DEFAUT,
     FENETRE_SECONDES,
     TOURS_PAR_FENETRE_PAR_DEFAUT,
     BudgetState,
@@ -37,6 +38,7 @@ from .workflow_action import (
 
 __all__ = [
     "ACTION_WORKFLOW",
+    "AGENTS_PAR_FENETRE_PAR_DEFAUT",
     "ACTIONS_MAXIMUM",
     "ActionOutcome",
     "ECHECS_AVANT_ARRET",

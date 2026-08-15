@@ -204,7 +204,11 @@ def test_le_budget_pose_par_l_api_est_celui_qui_s_applique(client, cles, routine
         json={"runs_per_day": 1},
     )
 
-    assert pose.json() == {"routine_id": "veille", "runs_per_day": 1}
+    # Depuis le VOLET 67 la route rend aussi le plafond de **travail** : un tour
+    # n'est plus une unité de coût depuis qu'il peut déclencher un workflow.
+    assert pose.json()["routine_id"] == "veille"
+    assert pose.json()["runs_per_day"] == 1
+    assert pose.json()["agents_per_day"] > 0
     server_module.routine_safety.consume("veille", now=0)
     autorise, motif = server_module.routine_safety.check("veille", now=1)
     assert autorise is False

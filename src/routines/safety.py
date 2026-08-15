@@ -45,6 +45,19 @@ FENETRE_SECONDES = 86_400
 #: déclarable ; il attrape ce qui **change** après coup.
 TOURS_PAR_FENETRE_PAR_DEFAUT = 288
 
+#: Agents autorisés par fenêtre, à défaut de déclaration (VOLET 67).
+#:
+#: Depuis le VOLET 64, un tour de routine peut déclencher un **workflow
+#: entier** : le budget en tours ne dit donc plus ce qu'une routine coûte. Une
+#: routine peut rester très en deçà de ses 288 tours et faire tourner huit
+#: agents à chaque fois — et le jour où quelqu'un ajoute un agent au workflow,
+#: la dépense augmente d'un tiers sans qu'aucun budget ne bouge.
+#:
+#: 2304 = 288 tours × 8 agents, la taille du plus gros workflow déclaré. Le
+#: défaut ne restreint donc rien de ce qui tourne déjà ; comme pour les tours,
+#: il attrape ce qui **change** après coup.
+AGENTS_PAR_FENETRE_PAR_DEFAUT = 2304
+
 
 class RoutineHalted(RuntimeError):
     """L'arrêt d'urgence est engagé. Aucune routine ne démarre."""
@@ -64,10 +77,16 @@ class BudgetState:
     window_started_at: float
     runs: int = 0
     limit: int = TOURS_PAR_FENETRE_PAR_DEFAUT
+    agents: int = 0
+    agent_limit: int = AGENTS_PAR_FENETRE_PAR_DEFAUT
 
     def remaining(self) -> int:
         """Ce qu'il reste, jamais négatif."""
         return max(0, self.limit - self.runs)
+
+    def remaining_agents(self) -> int:
+        """Ce qu'il reste de travail, jamais négatif."""
+        return max(0, self.agent_limit - self.agents)
 
     def as_dict(self) -> Dict[str, Any]:
         """Représentation sérialisable."""
@@ -76,6 +95,12 @@ class BudgetState:
             "runs": self.runs,
             "limit": self.limit,
             "remaining": self.remaining(),
+            # Le travail déclenché, à côté des tours : depuis le VOLET 64 un
+            # tour peut faire tourner un workflow entier, et compter les tours
+            # ne dit plus ce que la routine coûte.
+            "agents": self.agents,
+            "agent_limit": self.agent_limit,
+            "remaining_agents": self.remaining_agents(),
         }
 
 
@@ -97,6 +122,7 @@ class RoutineSafety:
         self._fenetre = int(window_seconds)
         self._budgets: Dict[str, BudgetState] = {}
         self._limites: Dict[str, int] = {}
+        self._plafonds_agents: Dict[str, int] = {}
         self._arret: Optional[Dict[str, Any]] = None
 
     # ------------------------------------------------------------------
@@ -226,6 +252,13 @@ class RoutineSafety:
                     f"Budget épuisé : {budget.runs} tours dans la fenêtre, "
                     f"limite {budget.limit}."
                 )
+            if budget.remaining_agents() <= 0:
+                return False, (
+                    f"Budget épuisé : {budget.agents} agents exécutés dans la "
+                    f"fenêtre, limite {budget.agent_limit}. Le travail "
+                    "déclenché a dépassé le plafond alors que les tours "
+                    "restaient dans le leur."
+                )
         return True, "Dans le budget."
 
     def consume(self, routine_id: str, now: float) -> BudgetState:
@@ -247,13 +280,76 @@ class RoutineSafety:
                 runs=budget.runs, limit=budget.limit,
             )
 
+    def consume_work(
+        self, routine_id: str, agents: int, now: float
+    ) -> BudgetState:
+        """
+        Décompte le travail réellement déclenché par un tour (VOLET 67).
+
+        Appelé **après** l'exécution, avec ce qui a tourné : le coût d'un
+        workflow n'est pas connu avant de l'avoir fait tourner, et le deviner
+        avant reviendrait à refuser sur une estimation. Le dépassement arrête
+        donc le tour **suivant**, ce que `check()` dira en le nommant.
+
+        Args:
+            routine_id: La routine.
+            agents: Nombre d'agents exécutés par ce tour.
+            now: L'instant considéré.
+
+        Returns:
+            L'état du budget après décompte.
+        """
+        with self._verrou:
+            budget = self._budget(routine_id, now)
+            budget.agents += max(0, int(agents))
+            return BudgetState(
+                window_started_at=budget.window_started_at,
+                runs=budget.runs, limit=budget.limit,
+                agents=budget.agents, agent_limit=budget.agent_limit,
+            )
+
+    def set_agent_limit(self, routine_id: str, agents_per_window: int) -> int:
+        """
+        Fixe le plafond de travail d'une routine.
+
+        Args:
+            routine_id: La routine.
+            agents_per_window: Agents autorisés par fenêtre.
+
+        Returns:
+            Le plafond retenu.
+
+        Raises:
+            ValueError: Si le plafond est nul ou négatif. Un plafond de zéro
+                désactive la routine sans le dire ; `disable()` existe pour
+                cela, et se lit.
+        """
+        plafond = int(agents_per_window)
+        if plafond <= 0:
+            raise ValueError(
+                "Un plafond de travail nul ou négatif désactiverait la routine "
+                "sans le dire. Utiliser `disable()`, qui se lit."
+            )
+        with self._verrou:
+            self._plafonds_agents[routine_id] = plafond
+            budget = self._budgets.get(routine_id)
+            if budget is not None:
+                budget.agent_limit = plafond
+        return plafond
+
     def _budget(self, routine_id: str, now: float) -> BudgetState:
         """Retourne le budget courant, en ouvrant une fenêtre si besoin."""
         budget = self._budgets.get(routine_id)
         limite = self._limites.get(routine_id, TOURS_PAR_FENETRE_PAR_DEFAUT)
+        plafond = self._plafonds_agents.get(
+            routine_id, AGENTS_PAR_FENETRE_PAR_DEFAUT
+        )
 
         if budget is None or now - budget.window_started_at >= self._fenetre:
-            budget = BudgetState(window_started_at=now, runs=0, limit=limite)
+            budget = BudgetState(
+                window_started_at=now, runs=0, limit=limite,
+                agents=0, agent_limit=plafond,
+            )
             self._budgets[routine_id] = budget
         return budget
 
@@ -286,10 +382,17 @@ class RoutineSafety:
             "halt": arret,
             "window_seconds": self._fenetre,
             "default_runs_per_window": TOURS_PAR_FENETRE_PAR_DEFAUT,
+            "default_agents_per_window": AGENTS_PAR_FENETRE_PAR_DEFAUT,
             "budgets": budgets,
             "rules": [
                 "Le budget épuisé **arrête** la routine ; il ne la saute pas. "
                 "Une routine sautée en silence paraît tourner et ne fait rien.",
+                "Un tour n'est pas une unité de coût : depuis qu'un tour peut "
+                "déclencher un workflow entier, le travail est plafonné à part, "
+                "en agents exécutés.",
+                "Le travail est décompté **après** l'exécution : le coût d'un "
+                "workflow n'est pas connu avant de l'avoir fait tourner, et "
+                "refuser sur une estimation refuserait à tort.",
                 "L'arrêt d'urgence est global : au moment où l'on en a besoin, "
                 "on n'a pas la liste des routines.",
                 "Il ne se lève jamais tout seul — un arrêt qui expire est un "

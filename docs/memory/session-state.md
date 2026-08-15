@@ -13,7 +13,7 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Date** : 2026-08-15
 
 **En cours** : **programme d'expansion VOLETs 37→76** (directive du 2026-08-14).
-**VAGUES I à V CLOSES, vague VI en cours** — 66 phases sur 73. **67.1 attend
+**VAGUES I à V CLOSES, vague VI en cours** — 67 phases sur 73. **68.1 attend
 confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases par tour.**
 
 **Terminé dans cette session**
@@ -43,11 +43,15 @@ confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases pa
   **reprend**, et `/observability/trail/{id}` assemble les sources autour de lui
   — en **appelant** la trace d'audit du VOLET 19 plutôt qu'en la refaisant.
   Vide ≠ illisible ; rien n'est rapproché par l'heure.
-- Suite : **4258 tests passent** après V65 ; 8 ignorés ; `ruff` propre.
+- **Vague VI, V67** : le budget des routines comptait des tours ; depuis qu'un
+  tour peut déclencher un workflow entier, il ne dit plus ce qu'une routine
+  coûte. Le travail est plafonné à part, en **agents exécutés**, décompté après
+  l'exécution et même quand le tour échoue.
+- Suite : **4290 tests passent** ; 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-Phase **67.1** — maîtrise des coûts sur les nouveaux chemins
-(vague VI, 7 phases restantes).
+Phase **68.1** — évaluation : le barème couvre les nouveaux domaines
+(vague VI, 6 phases restantes).
 
 **Bloqué / à surveiller**
 - **Aucun identifiant OAuth Google** — arrête l'activation des VOLETs 43 à 45.

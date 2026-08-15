@@ -56,6 +56,9 @@ class ActionOutcome:
         status: `success`, `refused` ou `error`.
         detail: Ce qui s'est passé, en clair.
         elapsed_ms: Durée mesurée.
+        run_id: L'exécution ouverte, pour un workflow.
+        agents: Nombre d'agents réellement exécutés (VOLET 67). Un appel
+            d'outil en vaut zéro : il n'en fait tourner aucun.
     """
 
     tool_id: str
@@ -63,6 +66,7 @@ class ActionOutcome:
     detail: str = ""
     elapsed_ms: float = 0.0
     run_id: str = ""
+    agents: int = 0
 
     @property
     def ok(self) -> bool:
@@ -87,6 +91,8 @@ class ActionOutcome:
             # Sans lui, une exécution suspendue attend une décision que personne
             # ne peut retrouver.
             rendu["run_id"] = self.run_id
+        if self.agents:
+            rendu["agents"] = self.agents
         return rendu
 
 
@@ -291,6 +297,12 @@ class RoutineScheduler:
         finally:
             with self._verrou:
                 self._en_cours.discard(routine.routine_id)
+            # Décompté même si une action a levé : le travail a bien eu lieu, et
+            # un budget qui n'enregistre que les tours réussis se laisse épuiser
+            # par ceux qui échouent.
+            travail = sum(action.agents for action in tour.actions)
+            if travail:
+                self.safety.consume_work(routine.routine_id, travail, instant)
 
         self._compter(routine, tour)
         return tour
@@ -410,6 +422,9 @@ class RoutineScheduler:
         duree = (time.monotonic() - depart) * 1000
         statut = reponse.get("status")
         identifiant = str(reponse.get("run_id") or "")
+        # Ce que le tour a réellement coûté en travail : un tour n'est pas une
+        # unité de coût depuis qu'il peut faire tourner un workflow entier.
+        travail = int((reponse.get("metadata") or {}).get("total_agents_executed") or 0)
 
         if statut == "requires_approval":
             return ActionOutcome(
@@ -419,14 +434,14 @@ class RoutineScheduler:
                     "attend une décision humaine. Personne n'était là pour la "
                     "prendre, et l'absence de refus n'est pas un accord."
                 ),
-                elapsed_ms=duree, run_id=identifiant,
+                elapsed_ms=duree, run_id=identifiant, agents=travail,
             )
 
         if statut == "success":
             return ActionOutcome(
                 tool_id=ACTION_WORKFLOW, status="success",
                 detail=f"Workflow '{action.workflow_id}' exécuté.",
-                elapsed_ms=duree, run_id=identifiant,
+                elapsed_ms=duree, run_id=identifiant, agents=travail,
             )
 
         return ActionOutcome(
@@ -435,7 +450,7 @@ class RoutineScheduler:
                 f"Workflow '{action.workflow_id}' : {statut}. "
                 f"{reponse.get('error') or ''}".strip()
             ),
-            elapsed_ms=duree, run_id=identifiant,
+            elapsed_ms=duree, run_id=identifiant, agents=travail,
         )
 
     def _compter(self, routine: Routine, tour: RoutineRun) -> None:

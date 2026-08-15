@@ -14,9 +14,12 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **66.2 terminée — VOLET 66 clos (vague VI, 8 phases sur 15).**
-**67.1 en attente de confirmation** — maîtrise des coûts sur les nouveaux chemins.
-**Terminées**      : **vagues I à V complètes, plus 63 à 66** (66 phases sur 73).
+**Phase courante** : **67.1 terminée — VOLET 67 clos (vague VI, 9 phases sur 15).**
+**68.1 en attente de confirmation** — évaluation : le barème couvre les nouveaux
+domaines.
+**Terminées**      : **vagues I à V complètes, plus 63 à 67** (67 phases sur 73).
+*Un seul phase ce tour : le VOLET 67 est indivisible, et la limite des 25 minutes
+était atteinte.*
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -343,7 +346,8 @@ VAGUE VI — La preuve                                              → 15 phase
   V66  Observabilité de bout en bout                              → 2 phases  ✅
        66.1 un identifiant qui traverse les frontières             ✅
        66.2 la piste assemblée : `/observability/trail/{id}`       ✅
-  V67  Maîtrise des coûts sur les nouveaux chemins                → 1 phase
+  V67  Maîtrise des coûts sur les nouveaux chemins                → 1 phase  ✅
+       67.1 un tour n'est pas une unité de coût (indivisible)      ✅
   V68  Évaluation : le barème couvre les nouveaux domaines        → 2 phases
   V69  Démonstration de bout en bout                              → 2 phases
   V70  Non-régression : la suite complète                         → 1 phase
@@ -404,6 +408,18 @@ l'assemblage des sources que la trace ne voyait pas. Deux règles : une source
 rapproché par l'heure** — les exécutions viennent des fragments qui les nomment.
 Suivre une piste n'est pas une dérogation : `find_by_correlation()` applique la
 même règle d'audience que `runs()`.
+
+**Ce que 67 a mesuré** : le budget des routines comptait des **tours** — 288 par
+jour, la cadence maximale que le plancher d'intervalle autorise. C'était juste
+tant qu'un tour valait un appel d'outil. Depuis le VOLET 64 un tour peut faire
+tourner un **workflow entier** : une routine peut rester très en deçà de ses 288
+tours en exécutant huit agents à chaque fois, et le jour où quelqu'un ajoute un
+agent au workflow, la dépense monte d'un tiers **sans qu'aucun budget ne bouge**.
+Le travail est donc plafonné à part, en agents exécutés (défaut 2304 = 288 × 8 :
+il ne restreint rien de ce qui tourne, il attrape ce qui change). Décompté
+**après** l'exécution — le coût d'un workflow n'est pas connu avant de l'avoir
+fait tourner, et refuser sur une estimation refuserait à tort — et décompté même
+quand le tour échoue, sans quoi les échecs épuiseraient le budget en silence.
 
 VOLETs 72 à 76 : réservés. Ils seront ouverts si l'audit d'une vague révèle un
 manque réel — pas pour remplir un numéro.
