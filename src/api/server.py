@@ -2504,6 +2504,31 @@ async def knowledge_factual_benchmark():
     return benchmark_report()
 
 
+@app.get("/knowledge/benchmark-coverage", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def knowledge_benchmark_coverage(scope: str = "country:sn"):
+    """Ce que le barème couvre, et surtout ce qu'il ne couvre pas (VOLET 68).
+
+    Compter les entrées dit combien de questions existent ; cela ne dit pas
+    **ce qui n'est pas évalué**, qui est la seule des deux informations sur
+    laquelle on puisse agir.
+
+    Quatre états, et les trois derniers appellent des gestes différents : un
+    domaine peuplé sans question est un **trou d'évaluation** (l'écrire) ; un
+    domaine vide ne s'évalue pas (acquérir des sources) ; un domaine **non
+    mesuré** n'est pas un domaine vide (brancher un compteur). Un domaine écrit
+    dans le barème et inconnu de `KnowledgeSubject` est nommé, sinon il ne
+    serait couvert par personne, en silence.
+    """
+    from src.knowledge_engine.factual_evaluation import benchmark_coverage
+
+    try:
+        return benchmark_coverage(scope=scope)
+    except ValueError as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
+
+
 @app.get("/knowledge/health-policy", tags=["knowledge"],
          dependencies=[Depends(rate_limit_dependency),
                        Depends(require_permission(Permission.HEALTH_VIEW))])

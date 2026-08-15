@@ -356,6 +356,10 @@ class BenchmarkEntry:
         source_type: L'institution qui ferait autorité (ANSD, ISRA, ministère…).
         expected_claims: Les affirmations attendues — seulement pour `verified`.
         source: Le document qui l'établit — seulement pour `verified`.
+        domain: Le sujet dont relève la question (VOLET 68), pris dans
+            `KnowledgeSubject`. Sans lui, on peut compter les entrées mais pas
+            dire **ce qui n'est pas évalué** — et c'est la seule des deux
+            informations sur laquelle on puisse agir.
     """
 
     question: str
@@ -364,6 +368,7 @@ class BenchmarkEntry:
     source_type: str = ""
     expected_claims: tuple = ()
     source: str = ""
+    domain: str = ""
 
     @property
     def scorable(self) -> bool:
@@ -380,6 +385,7 @@ class BenchmarkEntry:
             source_type=str(donnees.get("source_type", "")).strip(),
             expected_claims=tuple(donnees.get("expected_claims", ()) or ()),
             source=str(donnees.get("source", "")).strip(),
+            domain=str(donnees.get("domain", "")).strip().lower(),
         )
 
 
@@ -442,6 +448,124 @@ def score_entry(entry: BenchmarkEntry, answer: str, passages: Iterable[Any]) -> 
     rapport["expected_claims_found"] = sum(attendues)
     rapport["source"] = entry.source
     return rapport
+
+
+#: Ce qu'un domaine peut être vis-à-vis du barème (VOLET 68).
+EVALUABLE = "EVALUABLE"
+SANS_ENTREE = "NO_ENTRY"
+RIEN_A_EVALUER = "NOTHING_TO_EVALUATE"
+
+#: Personne n'a compté ce que le domaine contient. Cet état existe parce que la
+#: première version tombait dans le piège que tout ce dépôt combat : sans
+#: compteur, `domain_state` répond « non mesuré », et le confondre avec « vide »
+#: aurait fait dire au barème « rien à évaluer » là où il fallait lire « personne
+#: n'a regardé ». Les deux appellent des gestes opposés — écrire des questions,
+#: ou brancher un compteur.
+COUVERTURE_INCONNUE = "COVERAGE_UNKNOWN"
+
+
+def benchmark_coverage(
+    chemin: Optional[str] = None,
+    scope: Any = "country:sn",
+    counter: Optional[Any] = None,
+) -> Dict[str, Any]:
+    """
+    Ce que le barème couvre, confronté à ce que la plateforme sait.
+
+    Compter les entrées dit combien de questions existent ; cela ne dit pas
+    **ce qui n'est pas évalué**, qui est la seule des deux informations sur
+    laquelle on puisse agir. Les vagues III à VI ont ajouté des domaines
+    entiers — construction, sport, connaissance mondiale — et rien ne signalait
+    qu'aucune question ne les touchait.
+
+    Trois états, et le troisième compte autant que les deux autres :
+
+    - `EVALUABLE` — le domaine porte de la connaissance et le barème
+      l'interroge.
+    - `NO_ENTRY` — le domaine porte de la connaissance et **personne n'a écrit
+      de question** : c'est un trou d'évaluation, et il se comble en écrivant.
+    - `NOTHING_TO_EVALUATE` — le domaine est vide, avec sa raison. Y ajouter des
+      questions ne mesurerait rien, et un barème qui note zéro sur un domaine
+      vide mesure son propre vide.
+
+    Args:
+        chemin: Le fichier de barème. Celui du dépôt par défaut.
+        scope: La portée mesurée — le pays spécialisé par défaut.
+        counter: Le compteur de la base, s'il existe.
+
+    Returns:
+        L'état de chaque domaine, les décomptes, et les limites assumées.
+    """
+    from .domains import NOT_MEASURED, POPULATED, domain_coverage
+
+    entrees = load_benchmark(chemin)
+    par_domaine: Dict[str, int] = {}
+    for entree in entrees:
+        if entree.domain:
+            par_domaine[entree.domain] = par_domaine.get(entree.domain, 0) + 1
+
+    couverture = domain_coverage(scope=scope, counter=counter)
+    etats = []
+    for domaine in couverture["domains"]:
+        nom = domaine["subject"]
+        questions = par_domaine.get(nom, 0)
+        if domaine["state"] == NOT_MEASURED:
+            etat, note = COUVERTURE_INCONNUE, (
+                "Personne n'a compté ce que ce domaine contient : impossible "
+                "de dire si l'évaluer aurait un sens. Brancher un compteur, "
+                "pas écrire des questions."
+            )
+        elif domaine["state"] != POPULATED:
+            etat, note = RIEN_A_EVALUER, domaine.get("reason") or domaine["state"]
+        elif questions:
+            etat, note = EVALUABLE, ""
+        else:
+            etat, note = SANS_ENTREE, (
+                "Ce domaine porte de la connaissance et aucune question ne "
+                "l'interroge : le barème ne dirait rien s'il se dégradait."
+            )
+        etats.append({
+            "domain": nom, "state": etat, "questions": questions, "note": note,
+        })
+
+    # Un domaine écrit dans le barème et inconnu de l'énumération ne serait
+    # jamais couvert par personne, en silence. Le nommer est tout l'intérêt.
+    connus = {domaine["subject"] for domaine in couverture["domains"]}
+    inconnus = sorted(nom for nom in par_domaine if nom not in connus)
+
+    return {
+        "scope": couverture["scope"],
+        "entries": len(entrees),
+        "entries_without_domain": sum(1 for e in entrees if not e.domain),
+        "domains": etats,
+        "evaluable": [e["domain"] for e in etats if e["state"] == EVALUABLE],
+        "no_entry": [e["domain"] for e in etats if e["state"] == SANS_ENTREE],
+        "nothing_to_evaluate": [
+            e["domain"] for e in etats if e["state"] == RIEN_A_EVALUER
+        ],
+        "coverage_unknown": [
+            e["domain"] for e in etats if e["state"] == COUVERTURE_INCONNUE
+        ],
+        "measured": counter is not None,
+        "unknown_domains": inconnus,
+        "rules": [
+            "Un domaine vide ne s'évalue pas : noter zéro sur un domaine sans "
+            "connaissance mesure le vide, pas la plateforme.",
+            "« Personne n'a compté » n'est pas « rien à évaluer » : le premier "
+            "se corrige en branchant un compteur, le second en acquérant des "
+            "sources.",
+            "Un domaine peuplé sans question est un **trou d'évaluation** — il "
+            "se dégraderait sans que rien ne le dise.",
+            "Un domaine écrit dans le barème et inconnu de `KnowledgeSubject` "
+            "est nommé : sinon il ne serait couvert par personne, en silence.",
+        ],
+        "does_not": [
+            "Écrire une question de mémoire pour combler un trou : ce serait "
+            "mesurer cette mémoire.",
+            "Noter quoi que ce soit : ce rapport dit ce qui est évaluable, pas "
+            "ce qui est juste.",
+        ],
+    }
 
 
 def benchmark_report(chemin: Optional[str] = None) -> Dict[str, Any]:

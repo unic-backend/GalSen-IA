@@ -14,12 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **67.1 terminée — VOLET 67 clos (vague VI, 9 phases sur 15).**
-**68.1 en attente de confirmation** — évaluation : le barème couvre les nouveaux
-domaines.
-**Terminées**      : **vagues I à V complètes, plus 63 à 67** (67 phases sur 73).
-*Un seul phase ce tour : le VOLET 67 est indivisible, et la limite des 25 minutes
-était atteinte.*
+**Phase courante** : **68.2 terminée — VOLET 68 clos (vague VI, 11 phases sur 15).**
+**69.1 en attente de confirmation** — démonstration de bout en bout.
+**Terminées**      : **vagues I à V complètes, plus 63 à 68** (69 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -348,7 +345,9 @@ VAGUE VI — La preuve                                              → 15 phase
        66.2 la piste assemblée : `/observability/trail/{id}`       ✅
   V67  Maîtrise des coûts sur les nouveaux chemins                → 1 phase  ✅
        67.1 un tour n'est pas une unité de coût (indivisible)      ✅
-  V68  Évaluation : le barème couvre les nouveaux domaines        → 2 phases
+  V68  Évaluation : le barème couvre les nouveaux domaines        → 2 phases  ✅
+       68.1 chaque entrée déclare son domaine ; la couverture       ✅
+       68.2 questions des domaines récents, `/benchmark-coverage`   ✅
   V69  Démonstration de bout en bout                              → 2 phases
   V70  Non-régression : la suite complète                         → 1 phase
   V71  Documentation et ADR                                       → 1 phase
@@ -420,6 +419,20 @@ il ne restreint rien de ce qui tourne, il attrape ce qui change). Décompté
 **après** l'exécution — le coût d'un workflow n'est pas connu avant de l'avoir
 fait tourner, et refuser sur une estimation refuserait à tort — et décompté même
 quand le tour échoue, sans quoi les échecs épuiseraient le budget en silence.
+
+**Ce que 68 a mesuré** : `benchmark_report()` comptait les entrées — combien
+existent, combien sont vérifiées (**0**, et c'est l'état honnête). Il ne disait
+pas **ce qui n'est pas évalué**, la seule des deux informations sur laquelle on
+puisse agir : les vagues IV à VI ont ajouté construction, sport, géographie et
+langues, et **aucune question ne les touchait**. Chaque entrée déclare désormais
+son domaine, un domaine inconnu de `KnowledgeSubject` est **nommé** (sinon il ne
+serait couvert par personne, en silence), et sept questions couvrent les domaines
+récents — toutes `to_source`, aucune réponse écrite.
+
+Défaut trouvé en écrivant le rapport, et corrigé : la première version rangeait
+un domaine **non mesuré** parmi les « rien à évaluer » — exactement le piège que
+`domains.py` avait déjà dû corriger pour lui-même. Quatre états, et les gestes
+diffèrent : écrire une question, acquérir des sources, ou brancher un compteur.
 
 VOLETs 72 à 76 : réservés. Ils seront ouverts si l'audit d'une vague révèle un
 manque réel — pas pour remplir un numéro.
