@@ -12,6 +12,52 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-15 — Vagues V et VI du programme d'expansion (VOLETs 58 à 71)
+
+L'extension par des tiers, puis **la preuve**. Décision d'ensemble → **ADR-022**.
+
+- **Greffons** (`src/plugins/`) — le manifeste est jugé **avant** que le code soit
+  lu ; `privé + externe` et la portée `system` sont refusés d'emblée ; l'exécution
+  passe par le bac à sable du VOLET 34, pas un second. **Modifier un greffon le
+  désactive** : l'autorisation portait sur ce que son auteur avait écrit.
+- **Couches de mémoire** (`src/memory_engine/layers.py`) — une couche **est** une
+  durée de vie. Défaut refermé : `expires_at` était respecté à la lecture et
+  **rien ne le remplissait**.
+- **Une routine peut déclencher un workflow** (VOLET 64), par **le même**
+  orchestrateur — mêmes points de reprise, même historique, même audit. Règle du
+  travail sans témoin : **une approbation n'est jamais accordée par l'absence de
+  quelqu'un pour la refuser** (`suspended`, avec le `run_id`).
+- **Dégradation mesurée** (`src/integration/degradation.py`) — neuf sous-systèmes
+  sondés isolément ; une sonde qui lève est rapportée, jamais propagée. **Dégradé
+  n'est pas en panne** : ni bascule du statut global, ni perte de readiness.
+  `GET /system/degradation`.
+- **Un travail se suit de bout en bout** — le tour porte un `correlation_id` que
+  l'exécution **reprend** ; `GET /observability/trail/{id}` assemble les sources
+  en **appelant** la trace d'audit du VOLET 19 plutôt qu'en la refaisant. Vide ≠
+  illisible ; rien n'est rapproché par l'heure.
+- **Le travail est plafonné, pas les tours** — un tour n'est plus une unité de
+  coût depuis qu'il peut faire tourner un workflow entier. Décompté **après**
+  l'exécution, et même quand le tour échoue.
+- **Le barème dit ce qu'il ne couvre pas** — chaque entrée déclare son domaine ;
+  sept questions couvrent construction, sport, géographie, langues, santé,
+  entreprise. Toutes `to_source` : **aucune réponse n'a été écrite**, et le
+  barème compte toujours **0 entrée vérifiée**.
+- **Démonstration de bout en bout** (`python scripts/demonstration.py`) — 5
+  étapes `OK`, 2 `NOT_CONFIGURED`, 0 échec. **Elle a trouvé un défaut réel** : le
+  routage passait la question entière à `answer_country()`, qui attend un nom de
+  pays ; la couche mondiale était muette dès qu'on lui posait une vraie question.
+  Corrigé par `find_country()`.
+
+### Fixed — 2026-08-15
+
+- Les chiffres publiés dans `CLAUDE.md` et `docs/architecture/overview.md`
+  annonçaient **76 routes** et **3238 tests** ; la mesure en donne **123** et
+  **4334**. Corrigés, et **tenus par une suite** (`tests/test_published_numbers.py`) :
+  routes, agents, outils, ADR et sous-systèmes sont désormais confrontés au dépôt
+  à chaque exécution.
+- Un fichier de déclaration de canaux absent était indistinguable d'une
+  déclaration vide (`declaration: NOT_FOUND — <chemin>`).
+
 ### Added — 2026-08-14 — Vague IV du programme d'expansion (VOLETs 51 à 57)
 
 La connaissance. Rien n'y a été écrit de mémoire, aucune sortie réseau n'a eu lieu,

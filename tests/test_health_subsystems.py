@@ -2,7 +2,7 @@
 `/health` connaît enfin la moitié récente de la plateforme (phase 65.2).
 
 Le rapport de santé couvrait sept composants — API, mémoire, modèles,
-connaissance, outils, stockage, connecteurs — tous d'avant le VOLET 47. Les dix
+connaissance, outils, stockage, connecteurs — tous d'avant le VOLET 47. Les neuf
 sous-systèmes construits ensuite n'y figuraient nulle part : un exploitant
 pouvait lire `healthy` pendant que les routines, les greffons, la connaissance
 mondiale ou l'orchestration étaient inutilisables.
@@ -152,7 +152,7 @@ def test_la_sante_reste_publique(client_sante):
 
 def test_la_sante_par_defaut_ne_sonde_pas_les_sous_systemes(client_sante):
     """
-    Mesuré : sonder les dix coûte ~70 ms, la cible de supervision est 50 ms.
+    Mesuré : sonder les neuf coûte ~70 ms, la cible de supervision est 50 ms.
 
     Une supervision qui interroge `/health` toutes les cinq secondes paierait
     ce prix sans arrêt pour une information qui change quelques fois par mois.

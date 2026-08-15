@@ -18,7 +18,7 @@ the check that covers them, and it found a real defect the first time it ran
 
 | Step | What it exercises |
 |---|---|
-| `subsystems` | The ten subsystems of volets 47–64, probed in isolation. |
+| `subsystems` | The nine subsystems of volets 47–64, probed in isolation. |
 | `knowledge_routing` | The declared routing: which layer answers, and why. |
 | `world_knowledge` | The derived world reference, asked in a real sentence. |
 | `routine_fires_workflow` | The central seam: a declared routine, a turn with nobody watching, the shared orchestrator, a checkpoint, a correlation identifier. |

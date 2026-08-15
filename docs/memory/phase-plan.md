@@ -14,9 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **69.2 terminée — VOLET 69 clos (vague VI, 13 phases sur 15).**
-**70.1 en attente de confirmation** — non-régression : la suite complète.
-**Terminées**      : **vagues I à V complètes, plus 63 à 69** (71 phases sur 73).
+**Phase courante** : **71.1 terminée — VOLET 71 clos. VAGUE VI COMPLÈTE.**
+**Programme terminé : 73 phases sur 73.** Les VOLETs 72 à 76 restent réservés et
+ne seront ouverts que si un manque réel est mesuré.
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -351,8 +351,10 @@ VAGUE VI — La preuve                                              → 15 phase
   V69  Démonstration de bout en bout                              → 2 phases  ✅
        69.1 la chaîne réelle traverse, et rapporte ce qui s'est passé ✅
        69.2 lanceur, documentation confrontée au code, tests        ✅
-  V70  Non-régression : la suite complète                         → 1 phase
-  V71  Documentation et ADR                                       → 1 phase
+  V70  Non-régression : la suite complète                         → 1 phase  ✅
+       70.1 chiffres publiés confrontés à la mesure (indivisible)  ✅
+  V71  Documentation et ADR                                       → 1 phase  ✅
+       71.1 ADR-022, changelog, mémoire (indivisible)              ✅
 
 **Ce que 63 a mesuré** : la connaissance construite en vague IV n'était joignable
 que par HTTP. Un agent qui tourne dans le même processus devait sortir par le
@@ -376,7 +378,7 @@ quelqu'un la reprend.
 **Ce que 65 a mesuré** : `EngineRegistry` isole les **quatorze moteurs** des
 premiers VOLETs — celui qui ne se construit pas est rapporté, jamais propagé.
 Cette garantie n'avait jamais été étendue à ce qui a été bâti ensuite : les
-**dix sous-systèmes** des VOLETs 47 à 64 n'apparaissaient dans aucun rapport, et
+**neuf sous-systèmes** des VOLETs 47 à 64 n'apparaissaient dans aucun rapport, et
 `/health` couvrait sept composants tous antérieurs à la vague III. Un exploitant
 pouvait lire `healthy` pendant que la moitié récente était inutilisable.
 `src/integration/degradation.py` les sonde, **isolément** — une sonde qui lève
@@ -387,7 +389,7 @@ non prête. Chaque état porte **ce qui fonctionne encore sans lui**. Mesuré su
 ce dépôt : 9 disponibles, 0 dégradé, 0 indisponible.
 
 Deux corrections imposées par la suite complète, et non par un avis : sonder les
-dix coûte **~70 ms** pour une cible de supervision de **50 ms**, donc la section
+neuf coûte **~70 ms** pour une cible de supervision de **50 ms**, donc la section
 est **demandée** (`/health?subsystems=true`) et non subie ; et
 `/system/degradation` **exige une clé** — il nomme les dépendances internes et la
 cause de chaque manque, ce que `/health`, porte publique, ne dit pas.
@@ -451,6 +453,23 @@ cherché dans de la prose (piège `EST`/`LA` du VOLET 54).
 Verdict mesuré : **PARTIAL** — 5 étapes `OK`, 2 `NOT_CONFIGURED` (génération,
 acquisition), 0 échec. Le blocage est **vérifié à l'exécution**, jamais répété
 depuis une note périmée.
+
+**Ce que 70 a mesuré** : `CLAUDE.md` et `docs/architecture/overview.md`
+promettent d'être « kept synchronized with the measured state » et annonçaient
+**76 routes** et **3238 tests** ; la mesure du 2026-08-15 donne **123** et
+**4334**. Un chiffre périmé dans le document qu'un agent lit en premier est pire
+qu'aucun chiffre : il est cité, il fait décider, et rien ne le contredit. Corrigés
+— et désormais **tenus par une suite** (`tests/test_published_numbers.py`) qui
+confronte routes, agents, outils, ADR et sous-systèmes au dépôt à chaque
+exécution. Défaut trouvé dans ce que je venais d'écrire : « dix sous-systèmes »
+alors qu'il y a **neuf** sondes (le bac à sable est mesuré dans celle des
+greffons) — corrigé partout plutôt qu'arrondi.
+
+**Ce que 71 a écrit** : **ADR-022 — le travail sans témoin passe par le seul
+orchestrateur**, qui rassemble les décisions des VOLETs 64 à 69 et nomme les
+alternatives écartées (un second chemin d'exécution, l'auto-approbation, une
+estimation du coût avant exécution, la dégradation dans le statut global).
+Changelog, `completed-work.md` et vue d'ensemble mis à jour dans la même passe.
 
 VOLETs 72 à 76 : réservés. Ils seront ouverts si l'audit d'une vague révèle un
 manque réel — pas pour remplir un numéro.

@@ -4,10 +4,12 @@ Un sous-système absent n'en fait tomber aucun autre (phase 65.1).
 `EngineRegistry` isole depuis longtemps les quatorze moteurs des premiers
 VOLETs : celui qui ne se construit pas est rapporté indisponible et ne propage
 jamais son exception. Cette garantie n'a jamais été étendue à ce qui a été
-construit après. À la fin du VOLET 64, dix sous-systèmes de plus existent —
+construit après. À la fin du VOLET 64, neuf sous-systèmes de plus existent —
 routines, points de reprise, canaux, connaissance mondiale, routage, greffons,
-couches de mémoire, bac à sable, registre de sources, orchestration — et aucun
-n'apparaissait dans le moindre rapport de disponibilité.
+couches de mémoire, registre de sources, orchestration — et aucun n'apparaissait
+dans le moindre rapport de disponibilité. Le bac à sable est mesuré **dans** la
+sonde des greffons : un bac indisponible est exactement ce que son absence
+signifie ici.
 
 Ce que ces tests gardent :
 
@@ -150,6 +152,10 @@ def test_tous_les_sous_systemes_repondent_dans_ce_depot():
 def test_les_sous_systemes_des_vagues_III_a_VI_sont_couverts():
     """C'est l'écart que cette phase referme : ils n'étaient nulle part."""
     couverts = set(SOUS_SYSTEMES)
+
+    # Neuf sondes, et le chiffre est publié dans `CLAUDE.md` : une sonde
+    # ajoutée sans mettre le document à jour fait échouer ce test.
+    assert len(couverts) == 9
 
     assert {"routines", "workflow_checkpoints", "notification_channels",
             "world_knowledge", "knowledge_routing", "plugins",

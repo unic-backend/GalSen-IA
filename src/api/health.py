@@ -201,7 +201,7 @@ class ComponentHealthChecker(HealthChecker):
         n'empêche pas la vérification des autres.
 
         Args:
-            include_subsystems: Sonde aussi les dix sous-systèmes des VOLETs 47
+            include_subsystems: Sonde aussi les neuf sous-systèmes des VOLETs 47
                 à 64. **Hors du défaut, et mesuré** : la sonde complète coûte
                 environ 70 ms, pour une cible de supervision de 50 ms. Une
                 supervision qui interroge `/health` toutes les cinq secondes

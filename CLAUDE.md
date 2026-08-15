@@ -69,10 +69,18 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - ALWAYS update `docs/memory/completed-work.md` and `CHANGELOG.md` after meaningful progress.
 
 ## Current Status
-*Measured 2026-08-14.* Foundation and core engines are done (ADR-001, ADR-002). Fourteen
-engines, **17 agents**, **21 enabled tools**, 76 API routes, 22 ADRs (ADR-020 is `proposed`;
-ADR-021 accepted) — see `docs/architecture/overview.md`, kept synchronized with the
-measured state. **3238 tests pass**, 8 skipped.
+*Measured 2026-08-15.* Foundation and core engines are done (ADR-001, ADR-002). Fourteen
+engines **plus nine subsystems probed after the registry** (volets 47–64, probed by
+`src/integration/degradation.py`), **17 agents**, **22 declared tools** (12 runnable
+unattended), **123 API routes**, 23 ADRs (ADR-020 is `proposed`; ADR-021 and ADR-022 accepted) — see
+`docs/architecture/overview.md`, kept synchronized with the measured state.
+**4334 tests pass**, 8 skipped.
+
+Unattended work is real: a routine can fire a workflow through the one orchestrator, and
+**an approval is never granted by the absence of someone to refuse it**. One job is
+followable end to end (`/observability/trail/{id}`), and
+`python scripts/demonstration.py` runs the whole chain and reports what actually
+happened — 5 steps `OK`, 2 `NOT_CONFIGURED`, 0 failed.
 
 Persistence is decided and implemented (ADR-005, SQLite): every engine holding state —
 audit and approval included — selects its store through `GALSEN_STORAGE_BACKEND`

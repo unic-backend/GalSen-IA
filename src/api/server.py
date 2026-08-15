@@ -961,7 +961,7 @@ async def health_check(subsystems: bool = False):
     Code HTTP toujours 200 — le statut global est dans le corps de la réponse
     (champ ``status`` : ``healthy``, ``degraded`` ou ``unhealthy``).
 
-    `?subsystems=true` ajoute l'état des dix sous-systèmes des VOLETs 47 à 64.
+    `?subsystems=true` ajoute l'état des neuf sous-systèmes des VOLETs 47 à 64.
     **Hors du défaut, et mesuré** : les sonder coûte environ 70 ms pour une cible
     de supervision de 50 ms, et une supervision qui interroge `/health` toutes
     les cinq secondes paierait ce prix sans arrêt pour une information qui change
@@ -996,7 +996,7 @@ async def system_degradation():
     de chaque manque. C'est ce qu'un exploitant doit lire, et ce qu'un inconnu
     n'a pas à connaître — `/health` reste la porte publique.
 
-    Les dix sous-systèmes construits après le registre des moteurs (VOLETs 47 à
+    Les neuf sous-systèmes construits après le registre des moteurs (VOLETs 47 à
     64) n'apparaissaient dans aucun rapport : un exploitant pouvait lire une
     plateforme saine pendant que la moitié récente était inutilisable.
 

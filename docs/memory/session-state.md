@@ -13,8 +13,9 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Date** : 2026-08-15
 
 **En cours** : **programme d'expansion VOLETs 37→76** (directive du 2026-08-14).
-**VAGUES I à V CLOSES, vague VI en cours** — 71 phases sur 73. **70.1 attend
-confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases par tour.**
+**PROGRAMME TERMINÉ — 73 phases sur 73**, vagues I à VI closes. Aucune phase en
+attente. Plan → `docs/memory/phase-plan.md`. Les VOLETs 72 à 76 restent réservés :
+ils ne s'ouvrent que si un manque réel est mesuré.
 
 **Terminé dans cette session**
 - **Vague V — l'extension par des tiers** : greffons (manifeste jugé avant le
@@ -33,7 +34,7 @@ confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases pa
   Règle du travail sans témoin : **une approbation n'est jamais accordée par
   l'absence de quelqu'un pour la refuser** — `suspended`, avec le `run_id`.
 - **Vague VI, V65** : l'isolement des pannes ne couvrait que les 14 moteurs du
-  registre ; les **10 sous-systèmes** des VOLETs 47→64 n'étaient dans aucun
+  registre ; les **9 sous-systèmes** des VOLETs 47→64 n'étaient dans aucun
   rapport, et `/health` ne connaissait que des composants d'avant la vague III.
   `src/integration/degradation.py` les sonde isolément — une sonde qui lève est
   rapportée, pas propagée. **Dégradé n'est pas en panne** : pas de bascule du
@@ -57,10 +58,15 @@ confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases pa
   question entière à `answer_country()`, qui attend un nom de pays — la couche
   mondiale était muette dès qu'on lui posait une vraie question. `find_country()`
   corrige. Verdict mesuré : **PARTIAL** (5 OK, 2 non configurés, 0 échec).
-- Suite : **4308 tests passent** après V68 ; 8 ignorés ; `ruff` propre.
+- **Vague VI, V70–V71** : les chiffres publiés étaient périmés (76 routes / 3238
+  tests annoncés, **123 / 4334** mesurés) — corrigés et **tenus par une suite**.
+  **ADR-022** rassemble les décisions du travail sans témoin ; changelog,
+  `completed-work.md` et vue d'ensemble à jour.
+- Suite : **4334 tests passent** ; 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-Phase **70.1** — non-régression : la suite complète (vague VI, 2 phases restantes).
+Aucune : le programme d'expansion est terminé. Ce qui reste dépend de quelqu'un
+d'autre (voir « Bloqué »). Un VOLET 72 ne s'ouvre que sur un manque **mesuré**.
 
 **Bloqué / à surveiller**
 - **Aucun identifiant OAuth Google** — arrête l'activation des VOLETs 43 à 45.

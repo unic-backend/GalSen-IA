@@ -4,10 +4,12 @@ What still works when something is missing — measured, not promised.
 `EngineRegistry` already isolates the fourteen engines of the early volets: one
 that cannot be built is recorded as unavailable and never propagates its
 exception. That guarantee was never extended to anything built afterwards. By
-VOLET 64 the platform carries ten more subsystems — routines, checkpoints,
-delivery channels, world knowledge, routing, plugins, memory layers, the
-sandbox, the source registry, orchestration — and none of them appeared in any
-availability report. An operator could read a healthy platform while half of it
+VOLET 64 the platform carries nine more probed subsystems — routines, checkpoints,
+delivery channels, world knowledge, routing, plugins, memory layers, the source
+registry, orchestration — and none of them appeared in any availability report.
+(The sandbox is measured inside the plugin probe: a sandbox that cannot run is
+exactly what its absence means here, and probing it twice would let the two
+answers diverge.) An operator could read a healthy platform while half of it
 was unusable.
 
 This module probes them, and the probing itself follows the rule it is

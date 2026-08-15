@@ -1,11 +1,14 @@
 # GalSen IA — Architecture Overview
 
 ## Current Status
-*Measured 2026-08-13. Every number below was counted, not remembered.*
+*Measured 2026-08-15. Every number below was counted, not remembered.*
 
-The platform runs. Fourteen engines and services are registered in `EngineRegistry`, reachable through a
-REST API (`src/api/server.py`, 76 routes behind API-key authentication and RBAC) and
-covered by their own test suites — 166 test files, 2 893 tests passing in CI.
+The platform runs. Fourteen engines and services are registered in `EngineRegistry`, and
+**nine more subsystems** built after it (volets 47–64) are probed separately — see
+*Subsystems and degradation* below. All of it is reachable through a REST API
+(`src/api/server.py`, **123 routes** behind API-key authentication and RBAC) and covered
+by their own test suites — **230 test files, 4 334 tests passing**, 8 skipped.
+17 agents, 22 declared tools (12 of which may run unattended), 22 ADRs.
 Persistence exists and now covers the audit and approval engines too: every engine
 holding state selects a SQLite store through `GALSEN_STORAGE_BACKEND` (ADR-005), which
 defaults to `in-memory`.
@@ -283,6 +286,60 @@ Two habits run through all of it and are worth keeping when extending:
 - **A report shows its gaps.** `unavailable`, `not_detected`, `blocked_on`,
   `entities_without_source` — a report that only showed what works would reassure
   wrongly, which is worse than showing nothing.
+
+## Unattended work (VOLETs 47–67)
+
+A routine is work the platform does with nobody watching, and everything expensive is
+checked when it is **declared**, not when it fires at three in the morning. Declaring is
+not enabling. A routine belongs to someone or to the platform, never to nobody.
+
+Since VOLET 64 a routine can fire a **workflow** through the one orchestrator — the same
+plan, checkpoints, execution history and `REQUEST` audit event as a person's request. A
+second execution path without those guarantees would have been the parallel
+implementation the directive forbids. What differs is not the machinery but what can be
+decided: **an approval is never granted by the absence of someone to refuse it**. A run
+that stops on `requires_approval` is reported `suspended` with its `run_id`, and a human
+resumes it.
+
+Cost follows the same reasoning. The budget used to count **turns**; a turn stopped
+being a unit of cost the day it could run a whole workflow, so work is capped separately
+in agents executed — counted after execution, because a workflow's cost is not known
+before it has run.
+
+`GET /orchestrator/paths` publishes both entry paths and what the unattended one cannot
+decide.
+
+## Subsystems and degradation (VOLET 65)
+
+`EngineRegistry` isolates its fourteen engines: one that cannot be built is recorded and
+never propagates. The nine subsystems built afterwards — routines, checkpoints, delivery
+channels, world knowledge, routing, plugins, memory layers, source registry,
+orchestration — are probed (the sandbox is measured inside the plugin probe) by `src/integration/degradation.py`, each in isolation. A
+probe that raises is reported `UNAVAILABLE`, never propagated.
+
+**Degraded is not down.** A subsystem that says what it is missing works as designed: it
+does not flip the global status and does not cost readiness. Each state carries *what
+still works without it*, because "degraded" alone does not say whether to act tonight or
+on Monday. Probing all nine costs ~70 ms against a 50 ms supervision target, so
+`/health` takes it on request (`?subsystems=true`); the full report lives on
+`GET /system/degradation` and requires a key.
+
+## Following one job (VOLET 66)
+
+A routine turn carries a `correlation_id`, set before its guards run, and the workflow it
+fires takes that identifier as its `request_id` — hence the `request_id` of its audit
+events. `GET /observability/trail/{id}` assembles what each store knows about that one
+job, calling the audit trace that has existed since VOLET 19 rather than writing a second
+reader. An empty source and an unreadable one are never merged, and nothing is correlated
+by time.
+
+## Demonstration (VOLET 69)
+
+`python scripts/demonstration.py` runs the real chain end to end and reports what
+happened — including the steps that cannot run here, with the reason, verified at run
+time. It caught a real defect on its first run: the routing was handing whole questions
+to `answer_country()`, which expects a country name. Details →
+`docs/demonstration/README.md`.
 
 ## Design Principles
 - Start simple and grow gradually
