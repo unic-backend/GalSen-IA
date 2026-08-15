@@ -14,9 +14,10 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **57.2 terminée — VOLET 57 clos, VAGUE IV complète (16 phases).**
-**58.1 en attente de confirmation** — système de greffons, ouverture de la vague V.
-**Terminées**      : **vagues I à IV complètes** (46 phases sur 73).
+**Phase courante** : **58.2 terminée.**
+**58.3 en attente de confirmation** — routes des greffons, et le greffon d'exemple.
+**Terminées**      : **vagues I à IV complètes**, plus **58.1** et **58.2**
+(48 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -41,7 +42,7 @@ pas estimé.
 | 6 | Multimodal | `src/multimodal/`, `vision_intelligence_engine/` | **existe** |
 | 7 | Connecteurs Google | `src/connectors/` (email, storage) | **à étendre** — OAuth absent |
 | 8 | SDK de connecteurs | `connectors/interfaces.py`, `registry.py` (188 l.) | **à formaliser** |
-| 9 | Système de greffons | — | **absent** |
+| 9 | Système de greffons | `src/plugins/` (manifeste, registre, exécution) — s'appuie sur `src/sandbox/` du VOLET 34 | **construit** (VOLET 58) |
 | 10 | Registre d'outils | `src/tool/` + `src/tools/` (22 outils) | **existe** — métadonnées à enrichir |
 | 11 | Routines (tâches planifiées) | — | **absent** |
 | 12 | Workflows longs | `router/workflow_loader.py`, `workflow_history.py` | **à étendre** (reprise, durée) |
