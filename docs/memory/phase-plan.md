@@ -14,10 +14,10 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **59.1 terminée — VOLET 58 clos.**
-**59.2 en attente de confirmation** — le SDK de connecteurs formalisé.
-**Terminées**      : **vagues I à IV complètes**, **VOLET 58**, plus **59.1**
-(50 phases sur 73).
+**Phase courante** : **60.1 terminée — VOLET 59 clos.**
+**60.2 en attente de confirmation** — application des couches aux magasins.
+**Terminées**      : **vagues I à IV complètes**, **VOLETs 58 et 59**, plus
+**60.1** (52 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -41,7 +41,7 @@ pas estimé.
 | 5 | Football / sports | sujet `sports` + `perishable.py` (VOLET 56) | **déclaré, vide** — 2 fédérations inscrites, aucune activée |
 | 6 | Multimodal | `src/multimodal/`, `vision_intelligence_engine/` | **existe** |
 | 7 | Connecteurs Google | `src/connectors/` (email, storage) | **à étendre** — OAuth absent |
-| 8 | SDK de connecteurs | `connectors/interfaces.py`, `registry.py` (188 l.) | **à formaliser** |
+| 8 | SDK de connecteurs | `src/connectors/sdk.py` + `docs/connectors/` | **formalisé** (VOLET 59) |
 | 9 | Système de greffons | `src/plugins/` (manifeste, registre, exécution) — s'appuie sur `src/sandbox/` du VOLET 34 | **construit** (VOLET 58) |
 | 10 | Registre d'outils | `src/tool/` + `src/tools/` (22 outils) | **existe** — métadonnées à enrichir |
 | 11 | Routines (tâches planifiées) | — | **absent** |
