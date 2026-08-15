@@ -27,6 +27,22 @@ READABLE_BY_ROLE: Dict[str, FrozenSet[KnowledgeSensitivity]] = {
         KnowledgeSensitivity.CONFIDENTIAL,
     }),
     "admin": frozenset(KnowledgeSensitivity),
+
+    # Rôles éducatifs (Darra J, VOLET 13). Ils lisent le **public** et rien
+    # d'autre : le curriculum officiel et les connaissances qui l'accompagnent
+    # sont publics par nature, et une position dans une école n'a jamais donné
+    # de raison de lire l'interne d'une plateforme.
+    #
+    # Une autorité éducative n'est pas une exception : elle définit un programme
+    # national, ce qui ne demande rien de confidentiel **ici**. Lui accorder
+    # `INTERNAL` par respect institutionnel serait accorder un privilège pour un
+    # motif qui n'est pas un besoin.
+    "student": frozenset({KnowledgeSensitivity.PUBLIC}),
+    "parent": frozenset({KnowledgeSensitivity.PUBLIC}),
+    "teacher": frozenset({KnowledgeSensitivity.PUBLIC}),
+    "school_admin": frozenset({KnowledgeSensitivity.PUBLIC}),
+    "education_authority": frozenset({KnowledgeSensitivity.PUBLIC}),
+    "researcher": frozenset({KnowledgeSensitivity.PUBLIC}),
 }
 
 # Ce que lit un appelant dont le rôle n'est pas connu.

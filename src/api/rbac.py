@@ -43,6 +43,17 @@ class Role(str, enum.Enum):
     USER = "user"
     READONLY = "readonly"
 
+    # Rôles éducatifs (Darra J, VOLET 13). Ils décrivent une position dans un
+    # système scolaire, pas un niveau de privilège : une autorité éducative
+    # publie un curriculum et ne lit aucune copie d'élève, un chercheur lit des
+    # agrégats et jamais un enfant.
+    STUDENT = "student"
+    PARENT = "parent"
+    TEACHER = "teacher"
+    SCHOOL_ADMIN = "school_admin"
+    EDUCATION_AUTHORITY = "education_authority"
+    RESEARCHER = "researcher"
+
 
 class Permission(str, enum.Enum):
     """Permissions granulaires pour chaque ressource de la plateforme."""
@@ -81,10 +92,57 @@ class Permission(str, enum.Enum):
     ADMIN_MANAGE = "admin:manage"
     ADMIN_AUDIT = "admin:audit"
 
+    # Curriculum officiel (Darra J, VOLET 13)
+    CURRICULUM_READ = "curriculum:read"
+    CURRICULUM_PROPOSE = "curriculum:propose"
+    CURRICULUM_VALIDATE = "curriculum:validate"
+    CURRICULUM_PUBLISH = "curriculum:publish"
+
+    # Évaluation
+    ASSESSMENT_CREATE = "assessment:create"
+    ASSESSMENT_SCORE = "assessment:score"
+
+    # Données d'apprenant. Le nom porte la restriction : cette permission
+    # n'ouvre **que** les apprenants rattachés au demandeur, et le rattachement
+    # est vérifié séparément par `src/darra_j/access.py`. Aucune permission
+    # n'ouvre un apprenant non rattaché — il n'en existe pas.
+    LEARNER_DATA_READ_LINKED = "learner:read_linked"
+    LEARNER_DECISION_RECORD = "learner:decide"
+
+    # Recherche : des agrégats, jamais un enfant.
+    RESEARCH_AGGREGATE_READ = "research:aggregate"
+
+
+#: Les permissions qu'aucun rôle **de la plateforme** ne reçoit, même
+#: administrateur.
+#:
+#: `Role.ADMIN` est calculé comme « toutes les permissions », ce qui est correct
+#: tant que toute permission décrit un pouvoir de la plateforme. Deux familles
+#: n'en sont pas : publier un curriculum appartient à une autorité éducative —
+#: « GalSen IA n'est pas l'autorité qui définit le curriculum » — et lire le
+#: travail d'un enfant appartient à ceux qui lui sont rattachés. Les laisser
+#: entrer par la compréhension ferait de l'ajout d'un membre d'énumération un
+#: élargissement silencieux du rôle administrateur.
+PERMISSIONS_HORS_PLATEFORME: FrozenSet[Permission] = frozenset({
+    Permission.CURRICULUM_VALIDATE,
+    Permission.CURRICULUM_PUBLISH,
+    Permission.LEARNER_DATA_READ_LINKED,
+    Permission.LEARNER_DECISION_RECORD,
+})
+
+#: Les rôles éducatifs, distingués des rôles de plateforme.
+EDUCATION_ROLES: FrozenSet[Role] = frozenset({
+    Role.STUDENT, Role.PARENT, Role.TEACHER, Role.SCHOOL_ADMIN,
+    Role.EDUCATION_AUTHORITY, Role.RESEARCHER,
+})
+
 
 # Correspondance rôle → permissions
 _ROLE_PERMISSIONS: Dict[Role, FrozenSet[Permission]] = {
-    Role.ADMIN: frozenset({p for p in Permission}),
+    # Toutes les permissions de la plateforme, et **seulement** celles-là : la
+    # soustraction est explicite pour qu'un membre ajouté à l'énumération
+    # n'élargisse pas le rôle administrateur sans que personne l'ait décidé.
+    Role.ADMIN: frozenset(set(Permission) - PERMISSIONS_HORS_PLATEFORME),
     Role.OPERATOR: frozenset({
         Permission.HEALTH_VIEW,
         Permission.MEMORY_READ,
@@ -111,6 +169,46 @@ _ROLE_PERMISSIONS: Dict[Role, FrozenSet[Permission]] = {
         Permission.KNOWLEDGE_SEARCH,
         Permission.APPROVAL_VIEW,
         Permission.CONNECTOR_VIEW,
+    }),
+
+    # --- Rôles éducatifs (Darra J, VOLET 13) ---------------------------------
+    # Chacun tient une position, pas un niveau de privilège. Un élève et une
+    # autorité éducative ne sont pas comparables : leurs ensembles ne
+    # s'emboîtent pas, et c'est voulu.
+    Role.STUDENT: frozenset({
+        Permission.CURRICULUM_READ,
+        Permission.LEARNER_DATA_READ_LINKED,
+    }),
+    Role.PARENT: frozenset({
+        Permission.CURRICULUM_READ,
+        Permission.LEARNER_DATA_READ_LINKED,
+    }),
+    Role.TEACHER: frozenset({
+        Permission.CURRICULUM_READ,
+        Permission.LEARNER_DATA_READ_LINKED,
+        Permission.ASSESSMENT_CREATE,
+        Permission.ASSESSMENT_SCORE,
+        Permission.LEARNER_DECISION_RECORD,
+    }),
+    Role.SCHOOL_ADMIN: frozenset({
+        Permission.CURRICULUM_READ,
+        Permission.LEARNER_DATA_READ_LINKED,
+        Permission.LEARNER_DECISION_RECORD,
+    }),
+    # Une autorité éducative définit le curriculum et **ne lit aucune copie
+    # d'élève** : publier un programme national n'a jamais demandé de savoir ce
+    # qu'un enfant a répondu.
+    Role.EDUCATION_AUTHORITY: frozenset({
+        Permission.CURRICULUM_READ,
+        Permission.CURRICULUM_PROPOSE,
+        Permission.CURRICULUM_VALIDATE,
+        Permission.CURRICULUM_PUBLISH,
+    }),
+    # Un chercheur lit des agrégats. Aucun rattachement ne peut lui ouvrir un
+    # enfant, parce qu'il n'a pas la permission qui le demanderait.
+    Role.RESEARCHER: frozenset({
+        Permission.CURRICULUM_READ,
+        Permission.RESEARCH_AGGREGATE_READ,
     }),
 }
 

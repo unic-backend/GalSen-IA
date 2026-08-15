@@ -21,13 +21,87 @@ import pytest
 class TestRolePermissions:
     """Vérifie que chaque rôle possède les bonnes permissions."""
 
-    def test_admin_has_all_permissions(self):
-        """L'administrateur doit avoir toutes les permissions."""
-        from src.api.rbac import Role, Permission, get_permissions_for_role
+    def test_admin_has_all_platform_permissions(self):
+        """L'administrateur a toutes les permissions **de la plateforme**.
+
+        L'invariant était « toutes les permissions » tant que toute permission
+        décrivait un pouvoir de la plateforme. Deux familles n'en sont pas :
+        publier un curriculum appartient à une autorité éducative, lire le
+        travail d'un enfant à ceux qui lui sont rattachés. L'invariant est donc
+        resserré, pas assoupli — et la liste des exceptions est nommée.
+        """
+        from src.api.rbac import (
+            PERMISSIONS_HORS_PLATEFORME, Permission, Role,
+            get_permissions_for_role,
+        )
 
         perms = get_permissions_for_role(Role.ADMIN)
         for perm in Permission:
+            if perm in PERMISSIONS_HORS_PLATEFORME:
+                continue
             assert perm in perms, f"Admin devrait avoir la permission {perm.value}"
+
+    def test_admin_ne_recoit_pas_les_permissions_hors_plateforme(self):
+        """Ajouter un membre d'énumération ne doit pas élargir l'administrateur.
+
+        `Role.ADMIN` est calculé par compréhension : sans soustraction explicite,
+        déclarer `curriculum:publish` aurait suffi à rendre GalSen IA capable de
+        publier un curriculum officiel — exactement ce que la directive lui
+        refuse.
+        """
+        from src.api.rbac import (
+            PERMISSIONS_HORS_PLATEFORME, Permission, Role,
+            get_permissions_for_role,
+        )
+
+        perms = get_permissions_for_role(Role.ADMIN)
+
+        assert Permission.CURRICULUM_PUBLISH in PERMISSIONS_HORS_PLATEFORME
+        assert Permission.LEARNER_DATA_READ_LINKED in PERMISSIONS_HORS_PLATEFORME
+        for perm in PERMISSIONS_HORS_PLATEFORME:
+            assert perm not in perms, f"Admin ne doit pas avoir {perm.value}"
+
+    def test_les_roles_de_plateforme_ne_lisent_aucun_apprenant(self):
+        """Aucun rôle de plateforme ne lit le travail d'un enfant."""
+        from src.api.rbac import (
+            EDUCATION_ROLES, Permission, Role, get_permissions_for_role,
+        )
+
+        for role in Role:
+            if role in EDUCATION_ROLES:
+                continue
+            perms = get_permissions_for_role(role)
+            assert Permission.LEARNER_DATA_READ_LINKED not in perms, role.value
+
+    def test_une_autorite_educative_ne_lit_aucune_copie(self):
+        """Publier un programme national n'a jamais demandé de lire un élève."""
+        from src.api.rbac import Permission, Role, get_permissions_for_role
+
+        perms = get_permissions_for_role(Role.EDUCATION_AUTHORITY)
+
+        assert Permission.CURRICULUM_PUBLISH in perms
+        assert Permission.LEARNER_DATA_READ_LINKED not in perms
+        assert Permission.ASSESSMENT_SCORE not in perms
+
+    def test_un_chercheur_ne_lit_que_des_agregats(self):
+        """Aucun rattachement ne peut lui ouvrir un enfant."""
+        from src.api.rbac import Permission, Role, get_permissions_for_role
+
+        perms = get_permissions_for_role(Role.RESEARCHER)
+
+        assert Permission.RESEARCH_AGGREGATE_READ in perms
+        assert Permission.LEARNER_DATA_READ_LINKED not in perms
+
+    def test_un_eleve_ne_publie_ni_ne_corrige(self):
+        """Un rôle éducatif est une position, pas un niveau de privilège."""
+        from src.api.rbac import Permission, Role, get_permissions_for_role
+
+        perms = get_permissions_for_role(Role.STUDENT)
+
+        assert Permission.CURRICULUM_READ in perms
+        assert Permission.CURRICULUM_PUBLISH not in perms
+        assert Permission.ASSESSMENT_SCORE not in perms
+        assert Permission.ADMIN_MANAGE not in perms
 
     def test_operator_permissions(self):
         """L'opérateur doit pouvoir voir et décider les approbations."""

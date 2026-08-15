@@ -4,8 +4,8 @@ Programme : **DARRA J — moteur d'intelligence éducative nationale**
 (directive du propriétaire, 20 VOLETs).
 Base gelée : `1a586bc`, 4480 tests, `ruff` propre.
 
-**État** : VOLETs 1 à 12 terminés.
-**Suivant** : VOLET 13 — confidentialité et autorisation.
+**État** : VOLETs 1 à 13 terminés.
+**Suivant** : VOLET 14 — graphe éducatif.
 
 ---
 
@@ -38,7 +38,7 @@ V9   Quiz et évaluation                               → 2 phases  ✅
 V10  Mode enseignant                                  → 1 phase   ✅
 V11  Mode élève                                       → 1 phase   ✅
 V12  Mode parent                                      → 1 phase   ✅
-V13  Confidentialité et autorisation                  → 2 phases
+V13  Confidentialité et autorisation                  → 2 phases  ✅
 V14  Graphe éducatif                                  → 2 phases
 V15  Modèle de maîtrise                               → 1 phase
 V16  Couche multilingue éducative                     → 1 phase
@@ -48,7 +48,7 @@ V19  Auditabilité institutionnelle                    → 1 phase
 V20  Aptitude à la production                         → 1 phase
 ```
 
-**Total : 28 phases.** Terminées : 17.
+**Total : 28 phases.** Terminées : 19.
 
 ---
 
@@ -117,6 +117,38 @@ compris ceux qui n'existaient pas quand la vue a été écrite**.
 `src/darra_j/access.py` porte la frontière commune aux deux modes. Les rôles
 éducatifs eux-mêmes rejoignent `src/api/rbac.py` au VOLET 13 : c'est une garde,
 pas un second système de permissions.
+
+---
+
+## Ce que le VOLET 13 a trouvé
+
+**Un élargissement silencieux, évité de justesse.** `Role.ADMIN` était calculé
+par compréhension — *toutes* les permissions. Déclarer `curriculum:publish`
+aurait donc suffi à rendre GalSen IA capable de publier un curriculum officiel,
+c'est-à-dire exactement ce que la directive lui refuse, sans que personne l'ait
+décidé. `PERMISSIONS_HORS_PLATEFORME` soustrait explicitement les permissions
+qui appartiennent à quelqu'un d'extérieur : publier un programme (une autorité
+éducative) et lire le travail d'un enfant (ceux qui lui sont rattachés).
+
+L'invariant existant `test_admin_has_all_permissions` a donc été **resserré**,
+pas assoupli : l'administrateur a toutes les permissions *de la plateforme*, et
+la liste des exceptions est nommée et pinnée.
+
+**Trois gardes existantes ont attrapé la même omission**, et c'est ce qu'elles
+avaient été écrites pour faire : ajouter six rôles à `rbac.Role` sans les
+déclarer ailleurs les aurait fait tomber en silence au minimum.
+
+| Garde | Ce qu'elle a attrapé |
+|---|---|
+| `tests/test_tool_authorization.py` | six rôles sans plafond d'outils |
+| `tests/test_knowledge_security.py` | six rôles absents de la table de sensibilité |
+| `tests/test_rbac.py` | l'invariant « admin a tout », devenu faux à dessein |
+
+**L'autorisation est une conjonction.** `src/darra_j/privacy.py` exige la
+permission *et* le rattachement, et rapporte les deux refus séparément :
+« ce rôle ne lit aucun apprenant » et « pas cet enfant-là » sont deux faits, et
+les confondre rendrait le second impossible à diagnostiquer. Aucune permission
+n'ouvre un apprenant non rattaché — elle n'a pas été créée.
 
 ---
 

@@ -167,6 +167,61 @@ PLAFONDS: Dict[str, RoleCeiling] = {
         effects=frozenset({Effect.READ}),
         rationale="Consultation de données publiques, sans effet sur le monde.",
     ),
+
+    # --- Rôles éducatifs (Darra J, VOLET 13) ---------------------------------
+    # Aucun d'eux n'atteint `SYSTEM` : une position dans une école ne donne
+    # aucune raison d'atteindre l'état de la plateforme.
+    "student": RoleCeiling(
+        scopes=frozenset({DataScope.PUBLIC, DataScope.USER_PRIVATE}),
+        effects=frozenset({Effect.READ, Effect.WRITE}),
+        rationale=(
+            "Un élève atteint le curriculum public et ses propres données. "
+            "`USER_PRIVATE` dit la classe de la donnée ; à qui elle appartient "
+            "reste vérifié par `src/darra_j/access.py`."
+        ),
+    ),
+    "parent": RoleCeiling(
+        scopes=frozenset({DataScope.PUBLIC, DataScope.USER_PRIVATE}),
+        effects=frozenset({Effect.READ}),
+        rationale=(
+            "Un responsable **lit** : il consulte le programme et les mesures "
+            "de l'enfant qui lui est déclaré, et ne produit rien."
+        ),
+    ),
+    "teacher": RoleCeiling(
+        scopes=frozenset({DataScope.PUBLIC, DataScope.USER_PRIVATE}),
+        effects=frozenset({Effect.READ, Effect.WRITE}),
+        rationale=(
+            "Un enseignant prépare, corrige et enregistre ses décisions. Il "
+            "n'atteint pas l'état de la plateforme."
+        ),
+    ),
+    "school_admin": RoleCeiling(
+        scopes=frozenset({DataScope.PUBLIC, DataScope.USER_PRIVATE}),
+        effects=frozenset({Effect.READ, Effect.WRITE}),
+        rationale=(
+            "Une direction d'établissement enregistre des décisions scolaires ; "
+            "administrer une école n'est pas administrer la plateforme."
+        ),
+    ),
+    "education_authority": RoleCeiling(
+        scopes=frozenset({DataScope.PUBLIC}),
+        effects=frozenset({Effect.READ, Effect.WRITE}),
+        rationale=(
+            "Une autorité éducative définit un programme **public** et "
+            "n'atteint aucune donnée privée : publier un curriculum national "
+            "n'a jamais demandé de lire ce qu'un enfant a répondu."
+        ),
+    ),
+    "researcher": RoleCeiling(
+        scopes=frozenset({DataScope.PUBLIC}),
+        effects=frozenset({Effect.READ}),
+        rationale=(
+            "La recherche porte sur des agrégats publiés. Aucun rattachement "
+            "ne peut lui ouvrir un enfant : le plafond l'en empêche avant même "
+            "la permission."
+        ),
+    ),
 }
 
 
