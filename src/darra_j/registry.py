@@ -326,6 +326,26 @@ class CurriculumRegistry:
             identifiants = self._par_dimensions.get((version_id, grade_id, subject_id), [])
             return [self._unites[i] for i in identifiants if i in self._unites]
 
+    def units_in_version(self, version_id: str) -> List[CurriculumUnit]:
+        """
+        Toutes les unités d'une version, triées par identifiant.
+
+        Le tri est là pour que deux constructions du même graphe donnent le
+        même résultat : un ordre qui dépend de l'ordre d'insertion rendrait les
+        rapports incomparables d'une exécution à l'autre.
+
+        Args:
+            version_id: La version.
+
+        Returns:
+            Ses unités, ou une liste vide si la version n'en porte aucune.
+        """
+        with self._verrou:
+            return sorted(
+                (u for u in self._unites.values() if u.version_id == version_id),
+                key=lambda unite: unite.unit_id,
+            )
+
     def provenance_of(self, unit_id: str) -> Dict[str, Any]:
         """
         Répond à « d'où vient exactement ce fait de curriculum ? ».

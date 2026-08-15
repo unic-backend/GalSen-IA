@@ -4,8 +4,8 @@ Programme : **DARRA J — moteur d'intelligence éducative nationale**
 (directive du propriétaire, 20 VOLETs).
 Base gelée : `1a586bc`, 4480 tests, `ruff` propre.
 
-**État** : VOLETs 1 à 13 terminés.
-**Suivant** : VOLET 14 — graphe éducatif.
+**État** : VOLETs 1 à 15 terminés.
+**Suivant** : VOLET 16 — couche multilingue éducative.
 
 ---
 
@@ -39,8 +39,8 @@ V10  Mode enseignant                                  → 1 phase   ✅
 V11  Mode élève                                       → 1 phase   ✅
 V12  Mode parent                                      → 1 phase   ✅
 V13  Confidentialité et autorisation                  → 2 phases  ✅
-V14  Graphe éducatif                                  → 2 phases
-V15  Modèle de maîtrise                               → 1 phase
+V14  Graphe éducatif                                  → 2 phases  ✅
+V15  Modèle de maîtrise                               → 1 phase   ✅
 V16  Couche multilingue éducative                     → 1 phase
 V17  Laboratoire d'évaluation                         → 2 phases
 V18  Échelle et résilience                            → 1 phase
@@ -48,7 +48,7 @@ V19  Auditabilité institutionnelle                    → 1 phase
 V20  Aptitude à la production                         → 1 phase
 ```
 
-**Total : 28 phases.** Terminées : 19.
+**Total : 28 phases.** Terminées : 22.
 
 ---
 
@@ -149,6 +149,38 @@ permission *et* le rattachement, et rapporte les deux refus séparément :
 « ce rôle ne lit aucun apprenant » et « pas cet enfant-là » sont deux faits, et
 les confondre rendrait le second impossible à diagnostiquer. Aucune permission
 n'ouvre un apprenant non rattaché — elle n'a pas été créée.
+
+---
+
+## Ce que les VOLETs 14 et 15 ont trouvé
+
+Aucun défaut à corriger cette fois — deux pièges évités, et il vaut mieux les
+écrire que les oublier.
+
+**Un graphe est l'artefact le plus convaincant qu'une plateforme puisse
+produire**, et personne ne lit une arête en demandant qui l'a décidée. Chaque
+arête porte donc `derived_from` : l'unité **et** le champ officiel dont elle
+vient. Les prérequis officiels sont du texte (« La division euclidienne »), pas
+des identifiants ; le rapprochement est une **égalité exacte** sur le titre
+replié. « La division » et « La division euclidienne » restent donc deux titres,
+et le second est rendu `DANGLING` avec son texte littéral. La leçon avait déjà
+été payée une fois (`find_country`, VOLET 69).
+
+Un cycle de prérequis publié est **rendu**, jamais coupé : couper produirait un
+ordre plausible et cacherait un défaut institutionnel pour toujours.
+
+**Tout modèle de maîtrise a la même défaillance discrète** : il produit un
+niveau pour tout le monde, parce qu'un niveau est ce qu'on lui a demandé, et
+« pas assez de données » finit arrondi au niveau le plus bas. `NOT_MEASURED` et
+`INSUFFICIENT_EVIDENCE` sont donc **hors échelle**, et sous le plancher le ratio
+n'est pas rendu du tout — deux réponses justes sur deux rendraient `1.0`, qui se
+lirait comme un niveau. Aucun total non plus : un nombre unique se lit comme une
+note.
+
+Le graphe gagne sa place au VOLET 15 : `SECURE` sur les fractions alors que rien
+n'a jamais été mesuré sur la division qu'elles exigent officiellement est une
+affirmation fragile. L'état est **qualifié**, pas abaissé — inventer une
+pénalité serait aussi fabriqué qu'inventer le niveau.
 
 ---
 
