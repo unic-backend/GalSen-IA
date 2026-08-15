@@ -14,11 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **61.2 terminée — VOLET 61 clos.**
-**62.1 en attente de confirmation** — ingénierie logicielle : la boucle atteint
-les greffons.
-**Terminées**      : **vagues I à IV complètes**, **VOLETs 58 à 61**
-(56 phases sur 73).
+**Phase courante** : **62.2 terminée — VOLET 62 clos, VAGUE V complète (12 phases).**
+**63.1 en attente de confirmation** — ouverture de la vague VI (la preuve).
+**Terminées**      : **vagues I à V complètes** (58 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -325,7 +323,7 @@ quelle couche a parlé. Mesuré : aucune couche n'est un sous-ensemble de l'autr
 — sinon la garder serait une implémentation parallèle, ce que la directive
 interdit.
 
-VAGUE V — L'extension par des tiers                               → 12 phases
+VAGUE V — L'extension par des tiers                               → 12 phases  ✅ CLOSE
   V58  Système de greffons (chargement, bac à sable, refus)       → 3 phases
   V59  Écosystème développeur (contrat, exemple, documentation)   → 2 phases
   V60  Couches de mémoire (session, utilisateur, projet, monde)   → 3 phases

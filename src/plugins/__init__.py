@@ -28,6 +28,13 @@ from .manifest import (
     manifest_report,
     read_manifest,
 )
+from .review import (
+    ReviewRefused,
+    discrepancies,
+    edited_plugin_must_be_reenabled,
+    review_plugin,
+    review_report,
+)
 from .registry import (
     PluginRefused,
     PluginRegistry,
@@ -52,7 +59,12 @@ __all__ = [
     "may_run",
     "discover",
     "install_from_directory",
+    "ReviewRefused",
+    "discrepancies",
+    "edited_plugin_must_be_reenabled",
     "read_manifest",
+    "review_plugin",
+    "review_report",
     "read_plugin_directory",
     "run_installed",
     "run_plugin",

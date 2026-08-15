@@ -137,7 +137,10 @@ from src.plugins import (
     PluginExecutionRefused,
     PluginRefused,
     PluginRegistry,
+    ReviewRefused,
     execution_report,
+    review_plugin,
+    review_report,
     run_installed,
 )
 from src.plugins.registry import discover as plugin_discover
@@ -2002,6 +2005,24 @@ async def disable_plugin(plugin_id: str):
         return plugin_registry.disable(plugin_id).as_dict()
     except PluginRefused as refus:
         raise HTTPException(status_code=404, detail=str(refus))
+
+
+@app.get("/plugins/{plugin_id}/review", tags=["plugins"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.ADMIN_MANAGE))])
+async def review_plugin_route(plugin_id: str):
+    """Compare ce qu'un greffon **déclare** à ce que son code **montre**.
+
+    Un écart est un fait sur deux documents — le manifeste et le code — jamais
+    un jugement sur l'auteur. Et **« aucun écart » ne veut pas dire « sûr »** :
+    la liste des modules connus est incomplète par construction, et un greffon
+    peut atteindre le réseau par un nom construit à l'exécution.
+    """
+    try:
+        return {**review_plugin(plugin_id, plugin_registry), **review_report()}
+    except ReviewRefused as refus:
+        code = 404 if "inconnu" in str(refus) else 409
+        raise HTTPException(status_code=code, detail=str(refus))
 
 
 @app.post("/plugins/{plugin_id}/run", tags=["plugins"],

@@ -900,3 +900,12 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Routage des deux couches** (`routing.py`) : la profondeur sénégalaise et la largeur mondiale ne se recouvrent pas, et la réponse dit **laquelle a parlé**. Un sujet national ne quitte jamais son pays.
 - **Deux corrections d'audit** (domaines 3 et 23) : le tableau du plan portait « absent » pour deux capacités qui existaient entièrement.
 - **46 phases sur 73**, vagues I à IV closes. Suite complète : **4066 tests**, 8 ignorés, `ruff` propre.
+
+### 2026-08-14 (Programme d'expansion — vague V, l'extension par des tiers, VOLETs 58 à 62)
+- **Système de greffons** (`src/plugins/`) : rien ne tourne sans manifeste, jugé **avant** que le code soit lu. Deux combinaisons refusées d'emblée — donnée privée **et** sortie de la machine (chemin d'exfiltration), portée `system` (modifier la plateforme qui vous juge). Installer inscrit **désactivé** ; activer nomme qui décide et pourquoi. Exécution dans le bac à sable **du VOLET 34**, pas un second que personne n'aurait tenté de franchir. Sortie enveloppée `EXTERNAL`.
+- **Défaut refermé en 58.3** : `entry_point` était décoratif — rien ne vérifiait qu'il existait ni qu'il restait dans le répertoire du greffon. `POST /plugins/{id}/run` exécute désormais le point d'entrée **déclaré**, jamais du code venu de la requête.
+- **Écosystème développeur** : les contrats de greffon (10 règles) et de connecteur (6 règles) vivent dans le code, et un test confronte chaque page de `docs/plugins/` et `docs/connectors/` à ces règles — une règle oubliée dans la page **fait échouer la suite**.
+- **Couches de mémoire** (`src/memory_engine/layers.py`) : une couche **est** une durée de vie. Défaut refermé : `expires_at` existait, était respecté à la lecture, purgé par le ménage — et **rien ne le remplissait**. Promouvoir (garder plus longtemps) exige qui et pourquoi ; rétrograder est gratuit.
+- **Documents venus d'un connecteur** : le propriétaire vient du **contrat**, jamais de l'appelant ; le document est estampillé à la porte ; une donnée privée n'entre pas dans la base publique — refusée ici, pas espérée refusée plus loin.
+- **La boucle d'ingénierie atteint les greffons** : **modifier un greffon le désactive** — l'autorisation portait sur ce que son auteur avait écrit. La relecture statique trouve des **contradictions** entre manifeste et code, jamais des intentions, et refuse d'être lue comme une preuve d'innocuité.
+- **58 phases sur 73**, vagues I à V closes. Suite complète : **4189 tests**, 8 ignorés, `ruff` propre.
