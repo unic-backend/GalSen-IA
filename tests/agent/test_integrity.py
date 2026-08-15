@@ -27,11 +27,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 from src.agent.policies.integrity import (  # noqa: E402
     compare_inventories,
     compare_protected_hashes,
+    inventory as inventaire,
     protected_test_hashes,
 )
-# Importé sous un autre nom : `test_inventory` commence par `test_`, et pytest
-# collecterait la fonction du harnais comme s'il s'agissait d'un test.
-from src.agent.policies.integrity import test_inventory as inventaire  # noqa: E402
 
 
 @pytest.fixture

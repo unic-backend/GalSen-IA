@@ -97,7 +97,7 @@ def _analyser(chemin_absolu: str) -> Dict[str, Any]:
     return {"parsed": True, "tests": tests, "disabled": sorted(set(desactives))}
 
 
-def test_inventory(root: Optional[str] = None) -> Dict[str, Any]:
+def inventory(root: Optional[str] = None) -> Dict[str, Any]:
     """
     L'inventaire des tests : fichiers, fonctions, assertions, empreintes.
 

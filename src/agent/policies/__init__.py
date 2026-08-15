@@ -23,7 +23,7 @@ from .integrity import (
     compare_inventories,
     compare_protected_hashes,
     protected_test_hashes,
-    test_inventory,
+    inventory,
 )
 
 __all__ = [
@@ -41,5 +41,5 @@ __all__ = [
     "may_modify",
     "protected_paths",
     "protected_test_hashes",
-    "test_inventory",
+    "inventory",
 ]
