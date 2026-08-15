@@ -4,8 +4,8 @@ Programme : **DARRA J — moteur d'intelligence éducative nationale**
 (directive du propriétaire, 20 VOLETs).
 Base gelée : `1a586bc`, 4480 tests, `ruff` propre.
 
-**État** : VOLETs 1 à 10 terminés.
-**Suivant** : VOLET 11 — mode élève.
+**État** : VOLETs 1 à 12 terminés.
+**Suivant** : VOLET 13 — confidentialité et autorisation.
 
 ---
 
@@ -36,8 +36,8 @@ V7   Cohérence entre usagers                          → 1 phase   ✅
 V8   Moteur d'explication pédagogique                 → 2 phases  ✅
 V9   Quiz et évaluation                               → 2 phases  ✅
 V10  Mode enseignant                                  → 1 phase   ✅
-V11  Mode élève                                       → 1 phase
-V12  Mode parent                                      → 1 phase
+V11  Mode élève                                       → 1 phase   ✅
+V12  Mode parent                                      → 1 phase   ✅
 V13  Confidentialité et autorisation                  → 2 phases
 V14  Graphe éducatif                                  → 2 phases
 V15  Modèle de maîtrise                               → 1 phase
@@ -48,7 +48,7 @@ V19  Auditabilité institutionnelle                    → 1 phase
 V20  Aptitude à la production                         → 1 phase
 ```
 
-**Total : 28 phases.** Terminées : 15.
+**Total : 28 phases.** Terminées : 17.
 
 ---
 
@@ -95,6 +95,28 @@ qu'on fermait. Deux jeux de tests pinnent les deux sens.
 valait `GALSEN_IA_DARRA_J` — la forme exacte d'une variable d'environnement, et
 `tests/test_config_environment.py` l'a lu comme une variable non documentée. Le
 libellé était le fautif, pas le test : il est devenu `GalSen IA — Darra J`.
+
+---
+
+## Ce que les VOLETs 11 et 12 ont trouvé
+
+**Un défaut trouvé en confrontant la promesse au code.** `parent_report()`
+affirmait rendre `INSUFFICIENT_EVIDENCE` « tel quel » ; `child_progress()` ne
+rendait que des décomptes bruts. Un parent lisant « 1 sur 1 » y aurait lu une
+maîtrise là où il n'y a aucune mesure — et c'est un parent qui le lit. Le
+verdict est désormais rendu, et **recalculé sur le cumul** : deux devoirs de
+deux items mesurent quatre items, alors que chacun pris seul dirait « pas
+assez ». Les deux sens sont pinnés.
+
+**Une garantie construite plutôt que promise.** La vue élève d'un quiz
+(`student_quiz`) est bâtie champ par champ à partir d'une liste positive, jamais
+obtenue en retirant la clé de correction. Un test compare les champs de
+`QuizItem` à ceux de la vue : tout champ non déclaré visible est absent, **y
+compris ceux qui n'existaient pas quand la vue a été écrite**.
+
+`src/darra_j/access.py` porte la frontière commune aux deux modes. Les rôles
+éducatifs eux-mêmes rejoignent `src/api/rbac.py` au VOLET 13 : c'est une garde,
+pas un second système de permissions.
 
 ---
 
