@@ -150,6 +150,26 @@ class Provenance:
         """Vrai si cette provenance est une fixture d'ingénierie."""
         return MARQUE_TEST in f"{self.authority} {self.source_document}"
 
+    def documentary_fields(self) -> Dict[str, Any]:
+        """
+        Ce qui décrit le **document**, sans ce qui décrit notre réception.
+
+        `ingested_at`, `extraction_*` et `validation_status` disent quand *nous*
+        avons reçu le texte et ce que *nous* en avons fait ; ils ne disent rien
+        de ce que l'autorité a publié. Les inclure dans une empreinte rendrait
+        deux imports du même décret officiellement différents — défaut trouvé
+        en rejouant un import, pas en relisant le code.
+        """
+        return {
+            "authority": self.authority,
+            "source_tier": self.source_tier,
+            "source_document": self.source_document,
+            "document_title": self.document_title,
+            "document_hash": self.document_hash,
+            "publication_date": self.publication_date,
+            "effective_date": self.effective_date,
+        }
+
 
 def _exiger(valeur: Any, champ: str, objet: str) -> str:
     """Exige un champ non vide, en disant lequel manque et pour quoi."""
@@ -334,12 +354,18 @@ class CurriculumVersion:
         )
 
     def content_hash(self) -> str:
-        """L'empreinte de la version, calculée sur ce qui la définit."""
+        """
+        L'empreinte de la version, calculée sur ce qui la **définit**.
+
+        La provenance n'y entre que par ses champs documentaires : rejouer le
+        même import doit donner la même empreinte, sinon « inchangé » devient
+        indémontrable et le registre refuserait un import identique.
+        """
         return _empreinte({
             "version_id": self.version_id,
             "system": self.education_system.as_dict(),
             "academic_year": self.academic_year,
-            "provenance": self.provenance.as_dict(),
+            "provenance": self.provenance.documentary_fields(),
         })
 
     def as_dict(self) -> Dict[str, Any]:

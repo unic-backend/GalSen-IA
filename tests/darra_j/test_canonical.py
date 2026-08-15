@@ -319,3 +319,43 @@ def test_le_rapport_nomme_ses_regles():
     assert "gelé" in regles
     assert "provenance" in regles
     assert "dérivée" in regles
+
+
+def test_rejouer_le_meme_import_donne_la_meme_empreinte(systeme):
+    """
+    Défaut trouvé en rejouant un import, pas en relisant le code.
+
+    `ingested_at` disait quand **nous** avions reçu le document ; le mettre dans
+    l'empreinte rendait deux imports du même décret officiellement différents,
+    et le registre refusait alors un import identique.
+    """
+    premier = make_provenance(
+        authority="Ministère", source_tier="TIER_A_PRIMARY_OFFICIAL",
+        source_document="jo://x", ingested_at=1000.0,
+    )
+    second = make_provenance(
+        authority="Ministère", source_tier="TIER_A_PRIMARY_OFFICIAL",
+        source_document="jo://x", ingested_at=2000.0,
+    )
+
+    def _version(provenance):
+        return CurriculumVersion(
+            version_id="v", education_system=systeme,
+            academic_year="2026-2027", provenance=provenance,
+        )
+
+    assert _version(premier).content_hash() == _version(second).content_hash()
+
+
+def test_un_document_different_donne_une_empreinte_differente(systeme):
+    """Ce qui vient du document, lui, compte."""
+    def _version(document):
+        return CurriculumVersion(
+            version_id="v", education_system=systeme, academic_year="2026-2027",
+            provenance=make_provenance(
+                authority="Ministère", source_tier="TIER_A_PRIMARY_OFFICIAL",
+                source_document=document,
+            ),
+        )
+
+    assert _version("jo://a").content_hash() != _version("jo://b").content_hash()

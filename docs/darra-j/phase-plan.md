@@ -4,8 +4,8 @@ Programme : **DARRA J — moteur d'intelligence éducative nationale**
 (directive du propriétaire, 20 VOLETs).
 Base gelée : `1a586bc`, 4480 tests, `ruff` propre.
 
-**État** : VOLET 1 et VOLET 2 terminés.
-**Suivant** : VOLET 3 — versionnement et registre de provenance.
+**État** : VOLETs 1, 2 et 3 terminés.
+**Suivant** : VOLET 4 — récupération déterministe.
 
 ---
 
@@ -28,7 +28,7 @@ raison de prévenir de ne pas le supposer absente.
 ```
 V1   Découverte et cartographie                       → 1 phase   ✅
 V2   Modèle canonique de curriculum                   → 1 phase   ✅
-V3   Versionnement et provenance                      → 2 phases
+V3   Versionnement et provenance                      → 2 phases  ✅
 V4   Récupération déterministe                        → 2 phases
 V5   Cadre d'ingestion                                → 2 phases
 V6   Pare-feu anti-hallucination                      → 1 phase
@@ -48,7 +48,18 @@ V19  Auditabilité institutionnelle                    → 1 phase
 V20  Aptitude à la production                         → 1 phase
 ```
 
-**Total : 28 phases.**
+**Total : 28 phases.** Terminées : 4.
+
+---
+
+## Ce que le VOLET 3 a trouvé
+
+Un défaut réel, trouvé en **rejouant un import** plutôt qu'en relisant le code :
+`ingested_at` entrait dans l'empreinte d'une version. Deux imports du même décret
+officiel paraissaient donc différents, et le registre refusait un import
+identique — c'est-à-dire qu'il refusait exactement le cas normal d'une reprise.
+La provenance ne compte désormais dans l'empreinte que par ses **champs
+documentaires** : ce que l'autorité a publié, pas ce que nous en avons fait.
 
 ---
 
