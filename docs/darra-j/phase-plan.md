@@ -4,8 +4,8 @@ Programme : **DARRA J — moteur d'intelligence éducative nationale**
 (directive du propriétaire, 20 VOLETs).
 Base gelée : `1a586bc`, 4480 tests, `ruff` propre.
 
-**État** : VOLETs 1 à 6 terminés.
-**Suivant** : VOLET 7 — cohérence entre usagers.
+**État** : VOLETs 1 à 8 terminés.
+**Suivant** : VOLET 9 — quiz et évaluation.
 
 ---
 
@@ -32,8 +32,8 @@ V3   Versionnement et provenance                      → 2 phases  ✅
 V4   Récupération déterministe                        → 2 phases  ✅
 V5   Cadre d'ingestion                                → 2 phases  ✅
 V6   Pare-feu anti-hallucination                      → 1 phase   ✅
-V7   Cohérence entre usagers                          → 1 phase
-V8   Moteur d'explication pédagogique                 → 2 phases
+V7   Cohérence entre usagers                          → 1 phase   ✅
+V8   Moteur d'explication pédagogique                 → 2 phases  ✅
 V9   Quiz et évaluation                               → 2 phases
 V10  Mode enseignant                                  → 1 phase
 V11  Mode élève                                       → 1 phase
@@ -48,7 +48,7 @@ V19  Auditabilité institutionnelle                    → 1 phase
 V20  Aptitude à la production                         → 1 phase
 ```
 
-**Total : 28 phases.** Terminées : 9.
+**Total : 28 phases.** Terminées : 12.
 
 ---
 
@@ -60,6 +60,23 @@ officiel paraissaient donc différents, et le registre refusait un import
 identique — c'est-à-dire qu'il refusait exactement le cas normal d'une reprise.
 La provenance ne compte désormais dans l'empreinte que par ses **champs
 documentaires** : ce que l'autorité a publié, pas ce que nous en avons fait.
+
+---
+
+## Ce que les VOLETs 7 et 8 ont trouvé
+
+Deux défauts de forme, l'un évité, l'autre corrigé.
+
+**VOLET 7** — comparer les `unit_id` aurait suffi à faire passer le test de la
+directive VI, et n'aurait rien garanti : deux enregistrements aux mêmes
+coordonnées portent le **même** identifiant même si leurs titres officiels
+diffèrent. L'identité comparée est donc `unit_id:content_hash`, et un test pin
+exactement ce cas (`test_un_titre_reecrit_change_l_identite_pas_l_identifiant`).
+
+**VOLET 8** — la réponse « sans explication » rendait moins de clés que la
+réponse nominale : un appelant lisant `language` ou `level_name` aurait échoué
+**précisément** quand le modèle avait manqué, c'est-à-dire au pire moment. Les
+deux formes sont désormais identiques, et un test les compare.
 
 ---
 
