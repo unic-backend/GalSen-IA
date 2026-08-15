@@ -177,3 +177,141 @@ def test_le_rapport_liste_les_couches_dans_l_ordre_de_durabilite():
     ]
     assert rapport["layers"][0]["memory_type"] == "session"
     assert rapport["layers"][-1]["memory_type"] == "knowledge"
+
+
+# ----------------------------------------------------------------------
+# 4. La couche s'applique réellement au magasin (phase 60.2)
+# ----------------------------------------------------------------------
+
+def _manager():
+    """Un gestionnaire de mémoire en mémoire."""
+    from src.memory_engine.memory_manager import MemoryManager
+
+    return MemoryManager()
+
+
+def _item(type_memoire, **extra):
+    """Une mémoire d'un type donné."""
+    from src.memory_engine.types import MemoryItem
+
+    return MemoryItem(content="une note", memory_type=type_memoire, **extra)
+
+
+def test_une_memoire_de_session_recoit_enfin_une_expiration():
+    """
+    **Le défaut refermé en 60.2.** `expires_at` existait, la lecture le
+    respectait, le ménage le purgeait — et *rien ne le remplissait jamais*. Une
+    mémoire de session écrite aujourd'hui était gardée pour toujours, et la
+    durée de vie de sa couche ne changeait strictement rien.
+    """
+    memoire = _item(MemoryType.SESSION)
+
+    _manager().save_memory(memoire)
+
+    assert memoire.expires_at is not None
+    assert round(memoire.expires_at - memoire.created_at) == 43200
+
+
+def test_une_couche_qui_ne_perime_pas_ne_pose_aucune_expiration():
+    """La connaissance n'a pas de date de péremption, et cela reste vrai."""
+    memoire = _item(MemoryType.KNOWLEDGE)
+
+    _manager().save_memory(memoire)
+
+    assert memoire.expires_at is None
+
+
+def test_une_expiration_plus_courte_est_respectee():
+    """
+    Raccourcir est gratuit : celui qui écrit sait parfois que sa note ne vaut
+    qu'une heure.
+    """
+    import time
+
+    memoire = _item(MemoryType.SESSION, expires_at=time.time() + 60)
+    gestionnaire = _manager()
+
+    gestionnaire.save_memory(memoire)
+
+    assert round(memoire.expires_at - memoire.created_at) == 60
+    assert gestionnaire.capped_expirations == 0
+
+
+def test_une_expiration_plus_longue_est_ramenee_a_la_couche():
+    """
+    La rallonger ferait survivre la mémoire au-delà de ce que sa couche
+    promet : c'est une promotion, et une promotion se décide avec un auteur et
+    une raison — pas en passant un nombre plus grand.
+    """
+    import time
+
+    memoire = _item(MemoryType.SESSION, expires_at=time.time() + 10_000_000)
+    gestionnaire = _manager()
+
+    gestionnaire.save_memory(memoire)
+
+    assert round(memoire.expires_at - memoire.created_at) == 43200
+    assert gestionnaire.capped_expirations == 1
+
+
+def test_un_plafonnement_est_compte_jamais_tu():
+    """Une demande silencieusement rognée ressemblerait à une demande honorée."""
+    import time
+
+    gestionnaire = _manager()
+    for _ in range(3):
+        gestionnaire.save_memory(
+            _item(MemoryType.SHORT_TERM, expires_at=time.time() + 10_000_000)
+        )
+
+    assert gestionnaire.capped_expirations == 3
+
+
+def test_l_expiration_effective_dit_pourquoi_elle_differe():
+    """Un plafonnement sans raison se lirait comme un bogue."""
+    from src.memory_engine.layers import effective_expiry
+
+    retenue = effective_expiry(MemoryType.SESSION, 0.0, declared=10_000_000.0)
+
+    assert retenue["capped"] is True
+    assert retenue["requested"] == 10_000_000.0
+    assert "promotion" in retenue["reason"]
+
+
+def test_une_couche_sans_expiration_accepte_n_importe_quelle_demande():
+    """Il n'y a pas de plafond à appliquer, donc rien à ramener."""
+    from src.memory_engine.layers import effective_expiry
+
+    retenue = effective_expiry(MemoryType.KNOWLEDGE, 0.0, declared=10_000_000.0)
+
+    assert retenue["capped"] is False
+    assert retenue["expires_at"] == 10_000_000.0
+
+
+# ----------------------------------------------------------------------
+# 5. La route (phase 60.3)
+# ----------------------------------------------------------------------
+
+def test_la_route_publie_les_couches_et_les_plafonnements(monkeypatch):
+    """Un opérateur doit voir ce que la plateforme garde, et combien de temps."""
+    from fastapi.testclient import TestClient
+
+    from src.api import server as server_module
+    from src.api.rate_limiter import set_valid_api_key_digests
+
+    ancien = dict(server_module.rbac_manager._key_role_map)
+    monkeypatch.setenv("GALSEN_API_KEYS", "cle-awa:admin:awa")
+    server_module.rbac_manager.reload()
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
+
+    with TestClient(server_module.app) as client:
+        rapport = client.get(
+            "/memory/layers", headers={"X-API-Key": "cle-awa"},
+        ).json()
+
+    server_module.rbac_manager._key_role_map = ancien
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
+
+    assert rapport["layers"][0]["memory_type"] == "session"
+    assert rapport["layers"][0]["lifetime_seconds"] == 43200
+    assert "capped_expirations" in rapport

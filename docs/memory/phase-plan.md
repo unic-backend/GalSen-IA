@@ -14,10 +14,11 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **60.1 terminée — VOLET 59 clos.**
-**60.2 en attente de confirmation** — application des couches aux magasins.
-**Terminées**      : **vagues I à IV complètes**, **VOLETs 58 et 59**, plus
-**60.1** (52 phases sur 73).
+**Phase courante** : **60.3 terminée — VOLET 60 clos.**
+**61.1 en attente de confirmation** — intelligence documentaire branchée sur les
+connecteurs.
+**Terminées**      : **vagues I à IV complètes**, **VOLETs 58, 59 et 60**
+(54 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -46,7 +47,7 @@ pas estimé.
 | 10 | Registre d'outils | `src/tool/` + `src/tools/` (22 outils) | **existe** — métadonnées à enrichir |
 | 11 | Routines (tâches planifiées) | — | **absent** |
 | 12 | Workflows longs | `router/workflow_loader.py`, `workflow_history.py` | **à étendre** (reprise, durée) |
-| 13 | Couches de mémoire | `src/memory_engine/` (11 modules) | **à étendre** |
+| 13 | Couches de mémoire | `src/memory_engine/layers.py` — une couche **est** une durée de vie (VOLET 60) | **étendu** |
 | 14 | Isolation des données utilisateur | — | **absent** — prérequis du 7 |
 | 15 | Écosystème d'agents | `agents/` (17 agents) | **existe** |
 | 16 | Orchestrateur | `router/router_engine.py`, `agent_dispatcher.py` | **existe** |

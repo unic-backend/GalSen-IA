@@ -131,6 +131,7 @@ from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
 from src.knowledge_engine.domains import domain_coverage
+from src.memory_engine.layers import layers_report
 from src.plugins import (
     PluginExecutionRefused,
     PluginRefused,
@@ -1898,6 +1899,26 @@ async def cancel_workflow_run(
             "Interrompre une étape déjà commencée : elle finit, et aucune "
             "autre ne démarre.",
         ],
+    }
+
+
+@app.get("/memory/layers", tags=["memory"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def memory_layers():
+    """Les couches de mémoire : ce que chacune garde, et combien de temps.
+
+    Une couche **est** une durée de vie. `lifetime_seconds: null` veut dire
+    « ne périme pas » — écrit, donc décidé, jamais oublié.
+
+    `capped_expirations` compte les expirations demandées plus longues que leur
+    couche et ramenées à elle : rallonger une durée de vie est une promotion, et
+    une promotion se décide avec un auteur et une raison — pas en passant un
+    nombre plus grand.
+    """
+    return {
+        **layers_report(),
+        "capped_expirations": getattr(memory_manager, "capped_expirations", 0),
     }
 
 

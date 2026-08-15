@@ -57,15 +57,27 @@ def test_taux_de_doublons_par_sujet(memoire):
 
 
 def test_completude_des_metadonnees(memoire):
-    """La complétude compte ce qui est réellement renseigné."""
+    """
+    La complétude compte ce qui est réellement renseigné.
+
+    **Ce que la phase 60.2 a changé, et pourquoi ce test le suit** : une
+    mémoire reçoit désormais l'expiration que sa couche impose. « A-t-elle une
+    expiration ? » ne mesure donc plus le soin de celui qui l'a écrite — cela
+    mesure sa **couche**. La distinction utile est devenue celle-ci : une
+    mémoire à court terme périme, une connaissance non, et c'est écrit dans les
+    deux cas.
+    """
     memoire.save_memory(MemoryItem(content="Complète.", user_id="awa", tags=["contrat"],
                                    expires_at=time.time() + 3600))
-    memoire.save_memory(MemoryItem(content="Sans tags ni expiration.", user_id="awa"))
+    memoire.save_memory(MemoryItem(content="Sans tags.", user_id="awa"))
+    memoire.save_memory(MemoryItem(content="Connaissance commune.", user_id="awa",
+                                   memory_type=MemoryType.KNOWLEDGE))
 
     completude = memoire.quality_report()["metadata_completeness"]
     assert completude["with_owner"] == 1.0
-    assert completude["with_tags"] == 0.5
-    assert completude["with_expiry"] == 0.5
+    assert completude["with_tags"] == round(1 / 3, 4)
+    # Les deux mémoires à court terme périment ; la connaissance ne périme pas.
+    assert completude["with_expiry"] == round(2 / 3, 4)
 
 
 def test_repartition_par_statut_et_par_type(memoire):

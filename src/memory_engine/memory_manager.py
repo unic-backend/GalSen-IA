@@ -7,6 +7,7 @@ L'interface principale pour les agents afin d'interagir avec le système de mém
 import logging
 import time
 from typing import Any, Dict, List, Optional, Tuple
+from .layers import LayerRefused, effective_expiry
 from .types import MemoryItem, MemoryType, MemoryStatus
 from .interfaces import (
     MemoryStore, MemoryRetriever, MemoryIndexer,
@@ -40,6 +41,10 @@ class MemoryManager(MemoryManagerInterface):
                    Par défaut à "in-memory".
         """
         self._logger = logging.getLogger(__name__)
+        # Combien d'expirations ont été ramenées à la durée de vie de leur
+        # couche. Compté plutôt que tu : une demande silencieusement rognée
+        # ressemblerait à une demande honorée.
+        self._plafonnements = 0
         # Initialiser les composants
         if store is None:
             storage_type = storage_backend()
@@ -72,12 +77,50 @@ class MemoryManager(MemoryManagerInterface):
             L'ID de l'élément sauvegardé.
         """
         self._logger.debug(f"Sauvegarde de l'élément de mémoire : {item.id}")
+        self._appliquer_la_couche(item)
         # Indexer l'élément avant la sauvegarde (ou après, mais nous le faisons avant pour qu'il soit indexé)
         self._indexer.index(item)
         item_id = self._store.save(item)
         # Mettre en cache l'élément par son ID pour une récupération rapide
         self._cache.set(f"item:{item_id}", item, ttl=3600)  # Cache pour 1 heure
         return item_id
+
+    def _appliquer_la_couche(self, item: MemoryItem) -> None:
+        """
+        Pose l'expiration que la couche de la mémoire impose (VOLET 60).
+
+        **Le défaut refermé ici** : `expires_at` existait, la lecture le
+        respectait, le ménage le purgeait — et *rien ne le remplissait jamais*.
+        Une mémoire de session écrite aujourd'hui était donc gardée pour
+        toujours, et la durée de vie déclarée par sa couche ne changeait
+        strictement rien.
+
+        Une expiration explicite plus courte est respectée ; une plus longue est
+        ramenée à la couche, parce que rallonger est une promotion et qu'une
+        promotion se décide avec un auteur et une raison.
+        """
+        try:
+            retenue = effective_expiry(
+                item.memory_type, item.created_at, item.expires_at,
+            )
+        except LayerRefused as refus:
+            # Un type sans couche déclarée ne doit pas empêcher d'écrire, mais
+            # il ne doit pas non plus passer inaperçu.
+            self._logger.warning("Couche inconnue pour %s : %s", item.id, refus)
+            return
+
+        if retenue.get("capped"):
+            self._plafonnements += 1
+            self._logger.info(
+                "Expiration de %s ramenée à sa couche (%s) : %s",
+                item.id, item.memory_type.value, retenue["reason"],
+            )
+        item.expires_at = retenue["expires_at"]
+
+    @property
+    def capped_expirations(self) -> int:
+        """Combien d'expirations ont été ramenées à leur couche."""
+        return self._plafonnements
 
     def get_memory(self, item_id: str) -> Optional[MemoryItem]:
         """Récupérer un élément de mémoire par son ID.

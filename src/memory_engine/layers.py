@@ -259,3 +259,60 @@ def layers_report() -> Dict[str, Any]:
             "Supprimer : ce module décide des durées, il ne purge pas.",
         ],
     }
+
+
+def effective_expiry(
+    memory_type: Any, created_at: float, declared: Optional[float] = None,
+) -> Dict[str, Any]:
+    """
+    L'expiration réellement appliquée à une mémoire, et pourquoi.
+
+    Deux règles se rencontrent ici.
+
+    **Une expiration explicite plus courte est respectée.** Raccourcir est
+    gratuit : celui qui écrit sait parfois que sa note ne vaut qu'une heure.
+
+    **Une expiration explicite plus longue est ramenée à la couche.** La
+    rallonger ferait survivre la mémoire au-delà de ce que sa couche promet, ce
+    qui est une promotion — et une promotion se décide par `move()`, avec un
+    auteur et une raison, jamais en passant un nombre plus grand.
+
+    Args:
+        memory_type: Le type de la mémoire.
+        created_at: Son instant de création.
+        declared: L'expiration demandée, s'il y en a une.
+
+    Returns:
+        L'expiration retenue, et la raison si elle diffère de la demande.
+    """
+    plafond = expires_at(memory_type, created_at)
+
+    if declared is None:
+        return {
+            "expires_at": plafond,
+            "capped": False,
+            "reason": (
+                "Durée de vie de la couche."
+                if plafond is not None else
+                "Cette couche ne périme pas — décision écrite, pas un oubli."
+            ),
+        }
+
+    demande = float(declared)
+    if plafond is None or demande <= plafond:
+        return {
+            "expires_at": demande, "capped": False,
+            "reason": "Expiration demandée, plus courte ou égale à la couche.",
+        }
+
+    return {
+        "expires_at": plafond,
+        "capped": True,
+        "requested": demande,
+        "reason": (
+            "Expiration demandée plus longue que la couche : ramenée à la "
+            "couche. La rallonger serait une promotion, et une promotion se "
+            "décide avec un auteur et une raison — pas en passant un nombre "
+            "plus grand."
+        ),
+    }
