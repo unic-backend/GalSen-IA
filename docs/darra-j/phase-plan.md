@@ -4,8 +4,8 @@ Programme : **DARRA J — moteur d'intelligence éducative nationale**
 (directive du propriétaire, 20 VOLETs).
 Base gelée : `1a586bc`, 4480 tests, `ruff` propre.
 
-**État** : VOLETs 1, 2 et 3 terminés.
-**Suivant** : VOLET 4 — récupération déterministe.
+**État** : VOLETs 1 à 4 terminés.
+**Suivant** : VOLET 5 — cadre d'ingestion.
 
 ---
 
@@ -29,7 +29,7 @@ raison de prévenir de ne pas le supposer absente.
 V1   Découverte et cartographie                       → 1 phase   ✅
 V2   Modèle canonique de curriculum                   → 1 phase   ✅
 V3   Versionnement et provenance                      → 2 phases  ✅
-V4   Récupération déterministe                        → 2 phases
+V4   Récupération déterministe                        → 2 phases  ✅
 V5   Cadre d'ingestion                                → 2 phases
 V6   Pare-feu anti-hallucination                      → 1 phase
 V7   Cohérence entre usagers                          → 1 phase
@@ -48,7 +48,7 @@ V19  Auditabilité institutionnelle                    → 1 phase
 V20  Aptitude à la production                         → 1 phase
 ```
 
-**Total : 28 phases.** Terminées : 4.
+**Total : 28 phases.** Terminées : 6.
 
 ---
 
