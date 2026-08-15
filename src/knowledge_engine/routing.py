@@ -239,10 +239,18 @@ def _senegal_par_defaut(question: str) -> Dict[str, Any]:
 
 
 def _monde_par_defaut(question: str) -> Dict[str, Any]:
-    """La référence mondiale réelle, chargée à la demande."""
-    from .world import answer_country
+    """
+    La référence mondiale réelle, chargée à la demande.
 
-    return answer_country(question)
+    Cherche le nom de pays **dans** la question : `answer_country()` attend un
+    nom, et lui passer la phrase entière rendait la couche mondiale muette dès
+    que la question ressemblait à une question. Défaut trouvé par la
+    démonstration de bout en bout (VOLET 69) — invisible en test unitaire, où
+    chaque fonction était appelée correctement.
+    """
+    from .world import find_country
+
+    return find_country(question)
 
 
 def routing_report() -> Dict[str, Any]:

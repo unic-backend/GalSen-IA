@@ -14,9 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **68.2 terminée — VOLET 68 clos (vague VI, 11 phases sur 15).**
-**69.1 en attente de confirmation** — démonstration de bout en bout.
-**Terminées**      : **vagues I à V complètes, plus 63 à 68** (69 phases sur 73).
+**Phase courante** : **69.2 terminée — VOLET 69 clos (vague VI, 13 phases sur 15).**
+**70.1 en attente de confirmation** — non-régression : la suite complète.
+**Terminées**      : **vagues I à V complètes, plus 63 à 69** (71 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -348,7 +348,9 @@ VAGUE VI — La preuve                                              → 15 phase
   V68  Évaluation : le barème couvre les nouveaux domaines        → 2 phases  ✅
        68.1 chaque entrée déclare son domaine ; la couverture       ✅
        68.2 questions des domaines récents, `/benchmark-coverage`   ✅
-  V69  Démonstration de bout en bout                              → 2 phases
+  V69  Démonstration de bout en bout                              → 2 phases  ✅
+       69.1 la chaîne réelle traverse, et rapporte ce qui s'est passé ✅
+       69.2 lanceur, documentation confrontée au code, tests        ✅
   V70  Non-régression : la suite complète                         → 1 phase
   V71  Documentation et ADR                                       → 1 phase
 
@@ -433,6 +435,22 @@ Défaut trouvé en écrivant le rapport, et corrigé : la première version rang
 un domaine **non mesuré** parmi les « rien à évaluer » — exactement le piège que
 `domains.py` avait déjà dû corriger pour lui-même. Quatre états, et les gestes
 diffèrent : écrire une question, acquérir des sources, ou brancher un compteur.
+
+**Ce que 69 a trouvé** : le domaine 37 de la directive était mesuré absent, et
+c'est le seul contrôle que 4308 tests ne remplacent pas — une suite prouve que
+chaque pièce se comporte comme son auteur l'attendait, pas qu'un travail traverse
+la plateforme. **Le premier tour a attrapé un défaut réel** : `answer_country()`
+attend un **nom de pays**, et le routage lui passait la question entière. Depuis
+le VOLET 57 la couche mondiale était donc déclarée répondante et ne répondait
+qu'à une question réduite à « Ghana ». Tous les tests unitaires passaient :
+chacun appelait la fonction correctement. `find_country()` cherche désormais un
+nom **dans** la phrase, par correspondance exacte, le plus long d'abord —
+« Guinée équatoriale » n'est jamais lue « Guinée », et aucun code ISO n'est
+cherché dans de la prose (piège `EST`/`LA` du VOLET 54).
+
+Verdict mesuré : **PARTIAL** — 5 étapes `OK`, 2 `NOT_CONFIGURED` (génération,
+acquisition), 0 échec. Le blocage est **vérifié à l'exécution**, jamais répété
+depuis une note périmée.
 
 VOLETs 72 à 76 : réservés. Ils seront ouverts si l'audit d'une vague révèle un
 manque réel — pas pour remplir un numéro.

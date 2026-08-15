@@ -13,7 +13,7 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Date** : 2026-08-15
 
 **En cours** : **programme d'expansion VOLETs 37→76** (directive du 2026-08-14).
-**VAGUES I à V CLOSES, vague VI en cours** — 69 phases sur 73. **69.1 attend
+**VAGUES I à V CLOSES, vague VI en cours** — 71 phases sur 73. **70.1 attend
 confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases par tour.**
 
 **Terminé dans cette session**
@@ -52,10 +52,15 @@ confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases pa
   et sept questions couvrent construction, sport, géographie, langues, santé et
   entreprise — toutes `to_source`, **aucune réponse écrite**. Défaut corrigé en
   écrivant : « non mesuré » était rangé avec « rien à évaluer ».
-- Suite : **4290 tests passent** après V67 ; 8 ignorés ; `ruff` propre.
+- **Vague VI, V69** : démonstration de bout en bout (`scripts/demonstration.py`).
+  **Elle a attrapé un défaut réel au premier tour** : le routage passait la
+  question entière à `answer_country()`, qui attend un nom de pays — la couche
+  mondiale était muette dès qu'on lui posait une vraie question. `find_country()`
+  corrige. Verdict mesuré : **PARTIAL** (5 OK, 2 non configurés, 0 échec).
+- Suite : **4308 tests passent** après V68 ; 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-Phase **69.1** — démonstration de bout en bout (vague VI, 4 phases restantes).
+Phase **70.1** — non-régression : la suite complète (vague VI, 2 phases restantes).
 
 **Bloqué / à surveiller**
 - **Aucun identifiant OAuth Google** — arrête l'activation des VOLETs 43 à 45.

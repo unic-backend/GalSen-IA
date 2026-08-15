@@ -456,6 +456,82 @@ def _noms_comparables(pays: Dict[str, Any]) -> set:
     }
 
 
+#: Longueur maximale, en mots, d'un nom de pays cherché dans une phrase.
+#: « République démocratique du Congo » en fait quatre.
+MOTS_MAXIMUM_D_UN_NOM = 5
+
+
+def find_country(question: str, monde: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    Cherche un nom de pays **dans** une phrase, par correspondance exacte.
+
+    `answer_country()` attend un nom ou un code ; le routage lui passait la
+    question entière, si bien que la référence mondiale ne répondait qu'aux
+    questions réduites à « Ghana ». Défaut trouvé par la démonstration de bout
+    en bout (VOLET 69), et invisible pour les tests unitaires : chacun appelait
+    la fonction correctement.
+
+    Ce que cette fonction ne fait **pas** : comprendre la question. Elle
+    découpe la phrase en suites de mots et cherche chacune dans la liste des
+    noms connus, **à l'identique**. Le plus long l'emporte, pour que « Guinée
+    équatoriale » ne soit jamais lue « Guinée ». Aucun rapprochement approché :
+    « Niger » et « Nigeria » restent deux pays.
+
+    Les **codes** ne sont pas cherchés dans une phrase : `EST` et `LA` sont des
+    codes ISO et des mots français, et la recherche documentaire a déjà rendu
+    l'Estonie pour « quelle **est** la monnaie » (VOLET 54). Un code n'est
+    reconnu que si la question s'y réduit — c'est `answer_country()` qui le
+    fait.
+
+    Args:
+        question: La phrase.
+        monde: La connaissance chargée, pour éviter une relecture.
+
+    Returns:
+        Le verdict, le pays trouvé, et la méthode — `exact_name`, jamais
+        « compréhension ».
+    """
+    monde = monde if monde is not None else load_world()
+    pays_connus = monde.get("countries") or []
+    if not pays_connus:
+        return {
+            "status": "UNKNOWN", "country": None,
+            "reason": monde.get("reason", "Aucune connaissance mondiale chargée."),
+        }
+
+    index: Dict[str, Dict[str, Any]] = {}
+    for pays in pays_connus:
+        for champ in ("official_name_en", "official_name_fr"):
+            nom = pays.get(champ, INCONNU)
+            if nom != INCONNU and nom:
+                index.setdefault(_comparable(nom), pays)
+
+    mots = [mot for mot in str(question or "").split() if mot]
+    # Du plus long au plus court : « Guinée équatoriale » avant « Guinée ».
+    for taille in range(min(MOTS_MAXIMUM_D_UN_NOM, len(mots)), 0, -1):
+        for debut in range(len(mots) - taille + 1):
+            candidat = _comparable(" ".join(mots[debut:debut + taille]))
+            trouve = index.get(candidat) if candidat else None
+            if trouve is not None:
+                return {
+                    "status": "FOUND",
+                    "country": trouve,
+                    "reason": f"Nom trouvé dans la question : {trouve['official_name_en']}.",
+                    "method": "exact_name",
+                    "scope": trouve["scope"],
+                    "provenance": trouve.get("provenance", {}),
+                }
+
+    return {
+        "status": "UNKNOWN", "country": None, "method": "exact_name",
+        "reason": (
+            "Aucun nom de pays connu n'apparaît dans cette question. Rien "
+            "n'est rapproché de façon approchée : deux pays voisins par le nom "
+            "sont deux pays."
+        ),
+    }
+
+
 def answer_country(question: str, monde: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Répond sur un pays, ou dit `UNKNOWN`.
