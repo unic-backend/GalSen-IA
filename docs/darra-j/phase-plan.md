@@ -4,8 +4,8 @@ Programme : **DARRA J — moteur d'intelligence éducative nationale**
 (directive du propriétaire, 20 VOLETs).
 Base gelée : `1a586bc`, 4480 tests, `ruff` propre.
 
-**État** : VOLETs 1 à 15 terminés.
-**Suivant** : VOLET 16 — couche multilingue éducative.
+**État** : VOLETs 1 à 17 terminés.
+**Suivant** : VOLET 18 — échelle et résilience.
 
 ---
 
@@ -41,14 +41,14 @@ V12  Mode parent                                      → 1 phase   ✅
 V13  Confidentialité et autorisation                  → 2 phases  ✅
 V14  Graphe éducatif                                  → 2 phases  ✅
 V15  Modèle de maîtrise                               → 1 phase   ✅
-V16  Couche multilingue éducative                     → 1 phase
-V17  Laboratoire d'évaluation                         → 2 phases
+V16  Couche multilingue éducative                     → 1 phase   ✅
+V17  Laboratoire d'évaluation                         → 2 phases  ✅
 V18  Échelle et résilience                            → 1 phase
 V19  Auditabilité institutionnelle                    → 1 phase
 V20  Aptitude à la production                         → 1 phase
 ```
 
-**Total : 28 phases.** Terminées : 22.
+**Total : 28 phases.** Terminées : 25.
 
 ---
 
@@ -181,6 +181,34 @@ Le graphe gagne sa place au VOLET 15 : `SECURE` sur les fractions alors que rien
 n'a jamais été mesuré sur la division qu'elles exigent officiellement est une
 affirmation fragile. L'état est **qualifié**, pas abaissé — inventer une
 pénalité serait aussi fabriqué qu'inventer le niveau.
+
+---
+
+## Ce que les VOLETs 16 et 17 ont trouvé
+
+**Un défaut réel, et il touchait le wolof.** La table d'alias ne conservait que
+la forme **repliée** d'un terme : `mbéy` était stocké `mbey`, `péey` stocké
+`peey`. Le repliement est correct pour *comparer* — c'est ce que fait
+`expand_terms` — mais `translate` sert à **montrer** un terme à quelqu'un, et
+rendait donc du wolof mal orthographié, alors que `ë`, `ñ` et `ŋ` sont des
+lettres du standard CLAD et jamais des accents. La table garde désormais les
+deux formes : `written` pour l'affichage, `terms` pour la recherche. Deux tests
+pinnent les deux usages dans `tests/test_multilingual.py`.
+
+**La réserve portait sur le mauvais bout du pont.** Une question posée en wolof
+qui atteint un enregistrement par un terme français repose entièrement sur la
+liste wolof non relue ; ne regarder que le terme d'arrivée déclarait la
+correspondance sûre alors que c'est le **premier** pas qui ne l'est pas.
+
+**Le laboratoire d'évaluation mesure les garanties, pas la connaissance.** Un
+banc d'essai de curriculum a besoin de réponses attendues, elles doivent venir
+du registre officiel, et le registre est vide — les écrire de mémoire serait
+l'invention que tout ce paquet empêche. Sont donc mesurés aujourd'hui : le taux
+d'hallucination (sur un générateur **instrumenté** : on vérifie qu'il n'est pas
+appelé), la justesse des refus, la couverture de provenance, la cohérence entre
+rôles et la fuite de note. Un taux sans cas rend `NOT_MEASURABLE`, jamais 100 % :
+une suite vide qui affiche un score parfait fabrique de la confiance à partir
+d'une absence. Ce qui n'est pas mesurable est **nommé avec sa raison**.
 
 ---
 

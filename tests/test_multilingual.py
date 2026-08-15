@@ -115,6 +115,29 @@ def test_un_terme_inconnu_n_est_pas_traduit_au_plus_proche():
     assert "n'est devinée" in verdict["reason"]
 
 
+def test_une_traduction_rend_l_orthographe_ecrite():
+    """
+    `translate` sert à **montrer** un terme ; le repliement sert à comparer.
+
+    La table ne gardait que la forme repliée, donc `mbéy` sortait `mbey` et
+    `péey` sortait `peey` : du wolof mal orthographié rendu à un lecteur, alors
+    que `ë`, `ñ` et `ŋ` sont des lettres du standard CLAD et jamais des accents.
+    Trouvé en construisant la couche éducative multilingue (Darra J, VOLET 16).
+    """
+    verdict = translate("agriculture", vers="wo")
+
+    assert verdict["found"] is True
+    assert "mbéy" in verdict["terms"]
+    assert "mbey" not in verdict["terms"]
+
+
+def test_la_recherche_continue_de_replier():
+    """L'expansion sert à chercher : elle doit rester comparable, donc repliée."""
+    verdict = expand_terms({"agriculture"})
+
+    assert "mbey" in verdict["terms"]
+
+
 def test_une_expansion_depuis_le_wolof_porte_sa_reserve():
     """Une table non relue ne doit pas produire un résultat aussi sûr qu'une relue."""
     verdict = expand_terms({"xaalis"})

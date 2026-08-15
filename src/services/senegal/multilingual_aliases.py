@@ -91,14 +91,26 @@ def load_aliases(chemin: Optional[str] = None) -> Dict[str, Any]:
     concepts, index = [], {}
     for entree in donnees.get("concepts", []) or []:
         termes: Dict[str, List[str]] = {}
+        # La forme **écrite** est conservée à côté de la forme repliée. Le
+        # repliement sert à comparer ; il ne doit pas décider de ce qu'on
+        # affiche. Ne garder que `mbey` rendrait du wolof mal orthographié à un
+        # lecteur alors que `ë`, `ñ` et `ŋ` sont des lettres du standard CLAD,
+        # jamais des accents (`src/wolof/clad.py`).
+        ecrits: Dict[str, List[str]] = {}
         for langue in LANGUES:
-            termes[langue] = [
-                _normalise(terme) for terme in (entree.get(langue) or []) if str(terme).strip()
+            declares = [
+                str(terme).strip() for terme in (entree.get(langue) or [])
+                if str(terme).strip()
             ]
+            ecrits[langue] = declares
+            termes[langue] = [_normalise(terme) for terme in declares]
         toutes = {terme for liste in termes.values() for terme in liste}
         if not toutes:
             continue
-        concept = {"id": entree.get("id", INCONNU), "terms": termes, "all": sorted(toutes)}
+        concept = {
+            "id": entree.get("id", INCONNU), "terms": termes,
+            "written": ecrits, "all": sorted(toutes),
+        }
         concepts.append(concept)
         for terme in toutes:
             index.setdefault(terme, []).append(concept)
@@ -178,6 +190,12 @@ def translate(terme: str, vers: str = "en", chemin: Optional[str] = None) -> Dic
         `found: False` **avec la langue demandée** quand le terme est inconnu de
         la table — inventer une traduction plausible serait le seul moyen de se
         tromper ici, et il est fermé.
+
+    Note:
+        Les termes rendus sont dans leur forme **écrite** : `mbéy`, pas `mbey`.
+        Cette fonction sert à montrer un terme à quelqu'un, et le repliement
+        n'existe que pour comparer. `expand_terms`, qui sert à chercher,
+        continue de rendre la forme repliée.
     """
     table = load_aliases(chemin)
     cible = str(vers or "").strip().lower()
@@ -196,7 +214,7 @@ def translate(terme: str, vers: str = "en", chemin: Optional[str] = None) -> Dic
         "term": terme,
         "target": cible,
         "concepts": [concept["id"] for concept in concepts],
-        "terms": sorted({t for concept in concepts for t in concept["terms"][cible]}),
+        "terms": sorted({t for concept in concepts for t in concept["written"][cible]}),
         "reviewed": table["wo_reviewed"] if cible == "wo" else True,
     }
 
