@@ -532,6 +532,61 @@ class AgentContext:
     # ------------------------------------------------------------------
     # Moteur documentaire
     # ------------------------------------------------------------------
+    def ask_knowledge(
+        self, question: str, scope: Optional[str] = None,
+        subject: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Pose une question aux couches de connaissance, et dit **laquelle** répond.
+
+        Ce que la vague IV a construit — 249 pays dérivés, les séries mesurées,
+        la profondeur sénégalaise — n'était atteignable que par HTTP. Un agent
+        qui cherchait la monnaie du Sénégal ne pouvait pas y accéder : la
+        capacité existait et **ne leur arrivait pas**.
+
+        Le routage est celui du VOLET 57, pas un second : un sujet national ne
+        quitte pas son pays, la profondeur passe avant la largeur, et rien
+        n'est fusionné.
+
+        Args:
+            question: La question posée.
+            scope: La portée demandée, si l'agent la connaît.
+            subject: Le sujet déclaré, s'il est connu.
+
+        Returns:
+            La réponse et la couche qui l'a donnée. `UNKNOWN` est une réponse.
+        """
+        from src.knowledge_engine.routing import ask as router_ask
+
+        try:
+            reponse = router_ask(question, scope=scope, subject=subject)
+        except ValueError as refus:
+            # Une portée mal écrite est une erreur d'appel, pas une panne : elle
+            # revient à l'agent au lieu de faire tomber son tour.
+            self.record_audit(
+                AuditEventType.KNOWLEDGE, "ask_knowledge",
+                status=AuditStatus.FAILURE,
+                metadata={"question": str(question)[:500], "reason": str(refus)},
+            )
+            return {"status": "UNKNOWN", "answered_by": "none", "reason": str(refus)}
+
+        self.record_audit(
+            AuditEventType.KNOWLEDGE, "ask_knowledge",
+            status=(
+                AuditStatus.SUCCESS if reponse["status"] == "FOUND"
+                else AuditStatus.UNAVAILABLE
+            ),
+            metadata={
+                "question": str(question)[:500],
+                # Quelle couche a parlé fait partie de la trace : sans cela, un
+                # désaccord entre couches serait invisible dans l'audit aussi.
+                "answered_by": reponse["answered_by"],
+                "layers": reponse["layers"],
+                "scope": reponse["scope"],
+            },
+        )
+        return reponse
+
     def load_document(self, path: str) -> Optional[Any]:
         """
         Charge un document depuis un fichier.

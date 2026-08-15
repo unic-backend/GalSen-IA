@@ -10,29 +10,28 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 ## Dernière session
 
-**Date** : 2026-08-14
+**Date** : 2026-08-15
 
 **En cours** : **programme d'expansion VOLETs 37→76** (directive du 2026-08-14).
-**VAGUES I à IV CLOSES** — 46 phases sur 73. **58.1 attend confirmation** (greffons).
-Plan complet → `docs/memory/phase-plan.md`. **Cadence : deux phases par tour.**
+**VAGUES I à V CLOSES, vague VI ouverte** — 60 phases sur 73. **64.1 attend
+confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases par tour.**
 
 **Terminé dans cette session**
-- **Vague III** : routines (budget, arrêt d'urgence), workflows longs à points de
-  reprise, notifications des événements que personne ne verrait, canaux honnêtes.
-- **Vague IV — la connaissance** : registre de sources mondial, **249 pays
-  dérivés** de jeux déjà acquis, séries mesurées, fraîcheur à deux échelles
-  (années et jours), recherche documentaire corrigée, domaines `construction` et
-  `sports` **déclarés vides avec leur raison**, routage des deux couches.
-- **Deux corrections d'audit** : « recherche documentaire » et « notifications »
-  étaient annoncés absents dans le plan ; les deux existaient entièrement.
-- **Défauts trouvés en construisant** : FAO/OMS dans le mauvais registre ;
-  `delete()` de l'index qui recalculait au lieu de relire ; l'Estonie rendue pour
-  le mot « est » ; « base vide » là où il fallait lire « personne n'a compté ».
-- Suite : **4066 tests passent**, 8 ignorés ; `ruff` propre.
+- **Vague V — l'extension par des tiers** : greffons (manifeste jugé avant le
+  code, `privé + externe` et `system` refusés, exécution dans le bac à sable du
+  VOLET 34), contrats développeur vérifiés par la suite, couches de mémoire
+  (une couche **est** une durée de vie), documents venus d'un connecteur
+  (propriétaire pris au contrat), **modifier un greffon le désactive**.
+- **Vague VI ouverte (V63)** : la connaissance des vagues III–IV n'était joignable
+  que par HTTP — un agent du même processus devait sortir par le réseau pour
+  interroger son propre dépôt. `AgentContext.ask_knowledge()` referme l'écart ;
+  `agent_reach()` le **mesure par recherche d'attribut** (13 atteintes, 0
+  manquante) et nomme ce qui est hors de portée par décision.
+- Suite : **4203 tests passent**, 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-Phase **58.1** — système de greffons (chargement, bac à sable, refus). Ouvre la
-vague V (l'extension par des tiers, 12 phases).
+Phase **64.1** — orchestrateur : routines et workflows dans le routage
+(vague VI, 13 phases restantes).
 
 **Bloqué / à surveiller**
 - **Aucun identifiant OAuth Google** — arrête l'activation des VOLETs 43 à 45.

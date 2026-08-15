@@ -131,6 +131,7 @@ from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
 from src.knowledge_engine.domains import domain_coverage
+from src.agent.capabilities_reach import agent_reach
 from src.document_intelligence_engine.from_connector import ingestion_report
 from src.memory_engine.layers import layers_report
 from src.plugins import (
@@ -1904,6 +1905,24 @@ async def cancel_workflow_run(
             "autre ne démarre.",
         ],
     }
+
+
+@app.get("/agents/reach", tags=["agents"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def agents_reach():
+    """Ce que les agents peuvent réellement appeler — et ce qui leur manque.
+
+    Le mode de panne que cette route existe pour rendre visible est silencieux :
+    une capacité arrive dans `src/`, reçoit une route et des tests, et
+    n'apparaît jamais dans `AgentContext`. Elle marche alors pour tout le monde
+    **sauf** pour les agents dont la plateforme est faite, et rien n'échoue.
+
+    Ce qui est volontairement hors de portée est nommé aussi : une capacité
+    manquante et une capacité écartée se ressemblent, et seule la seconde est
+    une décision.
+    """
+    return agent_reach()
 
 
 @app.get("/documents/from-connector", tags=["documents"],

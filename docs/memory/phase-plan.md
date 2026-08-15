@@ -14,9 +14,10 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **62.2 terminée — VOLET 62 clos, VAGUE V complète (12 phases).**
-**63.1 en attente de confirmation** — ouverture de la vague VI (la preuve).
-**Terminées**      : **vagues I à V complètes** (58 phases sur 73).
+**Phase courante** : **63.2 terminée — VOLET 63 clos (vague VI, 2 phases sur 15).**
+**64.1 en attente de confirmation** — orchestrateur : routines et workflows dans
+le routage.
+**Terminées**      : **vagues I à V complètes, plus 63.1 et 63.2** (60 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -331,7 +332,9 @@ VAGUE V — L'extension par des tiers                               → 12 phase
   V62  Ingénierie logicielle : la boucle atteint les greffons     → 2 phases
 
 VAGUE VI — La preuve                                              → 15 phases
-  V63  Écosystème d'agents : les nouveaux outils leur arrivent    → 2 phases
+  V63  Écosystème d'agents : les nouveaux outils leur arrivent    → 2 phases  ✅
+       63.1 la connaissance des vagues III–IV atteint les agents   ✅
+       63.2 portée mesurée, pas déclarée : `/agents/reach`         ✅
   V64  Orchestrateur : routines et workflows dans le routage      → 2 phases
   V65  Sûreté intégrée : un moteur absent ne fait rien tomber     → 2 phases
   V66  Observabilité de bout en bout                              → 2 phases
@@ -340,6 +343,15 @@ VAGUE VI — La preuve                                              → 15 phase
   V69  Démonstration de bout en bout                              → 2 phases
   V70  Non-régression : la suite complète                         → 1 phase
   V71  Documentation et ADR                                       → 1 phase
+
+**Ce que 63 a mesuré** : la connaissance construite en vague IV n'était joignable
+que par HTTP. Un agent qui tourne dans le même processus devait sortir par le
+réseau pour interroger son propre dépôt — c'est-à-dire ne l'interrogeait pas.
+`AgentContext.ask_knowledge()` referme cet écart, et `agent_reach()` le vérifie
+**par recherche d'attribut**, pas par déclaration : 13 capacités atteintes, 0
+manquante, et ce qui est volontairement hors de portée (greffons, routines,
+notifications, connecteurs) est nommé avec sa raison. Une capacité qu'on croit
+donnée et qui ne l'est pas est plus coûteuse qu'une capacité absente.
 
 VOLETs 72 à 76 : réservés. Ils seront ouverts si l'audit d'une vague révèle un
 manque réel — pas pour remplir un numéro.
