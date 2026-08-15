@@ -4,8 +4,8 @@ Programme : **DARRA J — moteur d'intelligence éducative nationale**
 (directive du propriétaire, 20 VOLETs).
 Base gelée : `1a586bc`, 4480 tests, `ruff` propre.
 
-**État** : VOLETs 1 à 8 terminés.
-**Suivant** : VOLET 9 — quiz et évaluation.
+**État** : VOLETs 1 à 10 terminés.
+**Suivant** : VOLET 11 — mode élève.
 
 ---
 
@@ -34,8 +34,8 @@ V5   Cadre d'ingestion                                → 2 phases  ✅
 V6   Pare-feu anti-hallucination                      → 1 phase   ✅
 V7   Cohérence entre usagers                          → 1 phase   ✅
 V8   Moteur d'explication pédagogique                 → 2 phases  ✅
-V9   Quiz et évaluation                               → 2 phases
-V10  Mode enseignant                                  → 1 phase
+V9   Quiz et évaluation                               → 2 phases  ✅
+V10  Mode enseignant                                  → 1 phase   ✅
 V11  Mode élève                                       → 1 phase
 V12  Mode parent                                      → 1 phase
 V13  Confidentialité et autorisation                  → 2 phases
@@ -48,7 +48,7 @@ V19  Auditabilité institutionnelle                    → 1 phase
 V20  Aptitude à la production                         → 1 phase
 ```
 
-**Total : 28 phases.** Terminées : 12.
+**Total : 28 phases.** Terminées : 15.
 
 ---
 
@@ -77,6 +77,24 @@ exactement ce cas (`test_un_titre_reecrit_change_l_identite_pas_l_identifiant`).
 réponse nominale : un appelant lisant `language` ou `level_name` aurait échoué
 **précisément** quand le modèle avait manqué, c'est-à-dire au pire moment. Les
 deux formes sont désormais identiques, et un test les compare.
+
+---
+
+## Ce que les VOLETs 9 et 10 ont trouvé
+
+**Un trou réel, et il était petit.** `record_decision()` exige un décideur nommé
+— mais acceptait n'importe quelle chaîne, y compris le nom de la plateforme.
+Darra J pouvait donc prendre une décision scolaire puis l'enregistrer sous son
+propre nom : elle serait passée de « ne décide pas » à « décide et le note ».
+`is_platform_identity()` ferme le trou, **mot par mot** et jamais par
+sous-chaîne : « ia » est contenu dans « Mariama », et refuser une décision parce
+que la personne s'appelle Mariama aurait été un défaut bien pire que celui
+qu'on fermait. Deux jeux de tests pinnent les deux sens.
+
+**Une régression, trouvée par la suite complète.** Le libellé d'attribution
+valait `GALSEN_IA_DARRA_J` — la forme exacte d'une variable d'environnement, et
+`tests/test_config_environment.py` l'a lu comme une variable non documentée. Le
+libellé était le fautif, pas le test : il est devenu `GalSen IA — Darra J`.
 
 ---
 
