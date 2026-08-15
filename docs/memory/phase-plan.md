@@ -14,9 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **65.2 terminée — VOLET 65 clos (vague VI, 6 phases sur 15).**
-**66.1 en attente de confirmation** — observabilité de bout en bout.
-**Terminées**      : **vagues I à V complètes, plus 63, 64 et 65** (64 phases sur 73).
+**Phase courante** : **66.2 terminée — VOLET 66 clos (vague VI, 8 phases sur 15).**
+**67.1 en attente de confirmation** — maîtrise des coûts sur les nouveaux chemins.
+**Terminées**      : **vagues I à V complètes, plus 63 à 66** (66 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -340,7 +340,9 @@ VAGUE VI — La preuve                                              → 15 phase
   V65  Sûreté intégrée : un moteur absent ne fait rien tomber     → 2 phases  ✅
        65.1 dix sous-systèmes sondés, la sonde qui tombe est dite   ✅
        65.2 `/health` les connaît ; dégradé n'est pas en panne      ✅
-  V66  Observabilité de bout en bout                              → 2 phases
+  V66  Observabilité de bout en bout                              → 2 phases  ✅
+       66.1 un identifiant qui traverse les frontières             ✅
+       66.2 la piste assemblée : `/observability/trail/{id}`       ✅
   V67  Maîtrise des coûts sur les nouveaux chemins                → 1 phase
   V68  Évaluation : le barème couvre les nouveaux domaines        → 2 phases
   V69  Démonstration de bout en bout                              → 2 phases
@@ -384,6 +386,24 @@ dix coûte **~70 ms** pour une cible de supervision de **50 ms**, donc la sectio
 est **demandée** (`/health?subsystems=true`) et non subie ; et
 `/system/degradation` **exige une clé** — il nomme les dépendances internes et la
 cause de chaque manque, ce que `/health`, porte publique, ne dit pas.
+
+**Ce que 66 a mesuré** : `request_id` n'existait **nulle part** dans
+`src/routines/`, `src/plugins/`, `workflow_checkpoint.py` ni les notifications.
+Un tour de routine, le workflow qu'il déclenchait et les événements d'audit de
+celui-ci portaient trois identifiants que rien ne reliait — la question posée à
+trois heures du matin, *qu'est-il arrivé à ce travail-là ?*, n'avait pas de
+réponse. Le tour porte désormais un `correlation_id` **posé avant ses gardes**
+(un tour refusé par le budget est un fait à retrouver), et l'exécution le
+**reprend** au lieu d'en générer un.
+
+La lecture de l'audit par `request_id` existait depuis le VOLET 19
+(`src/api/tracing.py`) : `trail()` **l'appelle** au lieu d'en écrire une seconde
+qui divergerait le jour où l'une serait corrigée. Ce qui est neuf est
+l'assemblage des sources que la trace ne voyait pas. Deux règles : une source
+**vide** et une source **illisible** ne se confondent pas, et **rien n'est
+rapproché par l'heure** — les exécutions viennent des fragments qui les nomment.
+Suivre une piste n'est pas une dérogation : `find_by_correlation()` applique la
+même règle d'audience que `runs()`.
 
 VOLETs 72 à 76 : réservés. Ils seront ouverts si l'audit d'une vague révèle un
 manque réel — pas pour remplir un numéro.

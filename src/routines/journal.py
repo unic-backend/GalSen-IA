@@ -176,6 +176,39 @@ class RoutineJournal:
 
         return [tour.as_dict() for tour in reversed(tours)][: max(1, int(limit))]
 
+    def find_by_correlation(
+        self, correlation_id: str, subject: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Les tours portant un identifiant de corrélation (VOLET 66).
+
+        La règle d'audience est **la même** que pour `runs()` : suivre une piste
+        ne doit pas devenir la façon de lire le journal de quelqu'un d'autre. Un
+        identifiant que l'on ne peut pas voir rend une liste vide, exactement
+        comme une routine que l'on ne possède pas.
+
+        Args:
+            correlation_id: L'identifiant suivi.
+            subject: Pour qui la lecture est faite.
+
+        Returns:
+            Les tours visibles portant cet identifiant, du plus récent au plus
+            ancien.
+        """
+        cible = (correlation_id or "").strip()
+        if not cible:
+            return []
+
+        with self._verrou:
+            visibles = [
+                tour
+                for entree in self._entrees.values()
+                if self._visible(entree, subject)
+                for tour in entree.tours
+                if tour.correlation_id == cible
+            ]
+        return [tour.as_dict() for tour in reversed(visibles)]
+
     def stats(
         self, routine_id: str, subject: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:

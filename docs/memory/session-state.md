@@ -13,7 +13,7 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Date** : 2026-08-15
 
 **En cours** : **programme d'expansion VOLETs 37→76** (directive du 2026-08-14).
-**VAGUES I à V CLOSES, vague VI en cours** — 64 phases sur 73. **66.1 attend
+**VAGUES I à V CLOSES, vague VI en cours** — 66 phases sur 73. **67.1 attend
 confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases par tour.**
 
 **Terminé dans cette session**
@@ -38,10 +38,16 @@ confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases pa
   `src/integration/degradation.py` les sonde isolément — une sonde qui lève est
   rapportée, pas propagée. **Dégradé n'est pas en panne** : pas de bascule du
   statut global, pas de perte de readiness. Mesuré : 9 disponibles, 0 dégradé.
-- Suite : **4234 tests passent** après V64 ; 8 ignorés ; `ruff` propre.
+- **Vague VI, V66** : `request_id` n'existait dans aucun sous-système récent.
+  Un tour de routine porte désormais un `correlation_id` que l'exécution
+  **reprend**, et `/observability/trail/{id}` assemble les sources autour de lui
+  — en **appelant** la trace d'audit du VOLET 19 plutôt qu'en la refaisant.
+  Vide ≠ illisible ; rien n'est rapproché par l'heure.
+- Suite : **4258 tests passent** après V65 ; 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-Phase **66.1** — observabilité de bout en bout (vague VI, 9 phases restantes).
+Phase **67.1** — maîtrise des coûts sur les nouveaux chemins
+(vague VI, 7 phases restantes).
 
 **Bloqué / à surveiller**
 - **Aucun identifiant OAuth Google** — arrête l'activation des VOLETs 43 à 45.

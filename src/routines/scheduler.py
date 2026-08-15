@@ -33,6 +33,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from ..audit_engine.types import generate_request_id
 from ..tool.capabilities import CapabilityRegistry, may_run_unattended
 from .registry import RoutineRegistry
 from .safety import RoutineSafety
@@ -100,6 +101,11 @@ class RoutineRun:
         actions: Le résultat de chaque action, dans l'ordre.
         skipped: Pourquoi le tour a été sauté, s'il l'a été.
         disabled_after: Vrai si la routine s'est arrêtée à la fin de ce tour.
+        correlation_id: L'identifiant qui suit ce tour partout où il va
+            (VOLET 66). Il devient le `request_id` du workflow déclenché, donc
+            celui de ses événements d'audit : c'est ce qui permet de relire un
+            travail de bout en bout au lieu de trois fragments qui se
+            ressemblent.
     """
 
     routine_id: str
@@ -107,6 +113,7 @@ class RoutineRun:
     actions: List[ActionOutcome] = field(default_factory=list)
     skipped: str = ""
     disabled_after: bool = False
+    correlation_id: str = ""
 
     @property
     def ok(self) -> bool:
@@ -128,6 +135,7 @@ class RoutineRun:
             "ok": self.ok,
             "skipped": self.skipped,
             "disabled_after": self.disabled_after,
+            "correlation_id": self.correlation_id,
             "actions": [action.as_dict() for action in self.actions],
         }
 
@@ -245,7 +253,13 @@ class RoutineScheduler:
             Le compte rendu du tour, y compris quand il a été sauté.
         """
         instant = now if now is not None else time.time()
-        tour = RoutineRun(routine_id=routine.routine_id, started_at=instant)
+        # L'identifiant est posé avant tout, y compris avant les gardes : un
+        # tour refusé par le budget est un fait à retrouver, pas un non-
+        # événement.
+        tour = RoutineRun(
+            routine_id=routine.routine_id, started_at=instant,
+            correlation_id=generate_request_id(),
+        )
 
         permis, motif = self.safety.check(routine.routine_id, instant)
         if not permis:
@@ -273,7 +287,7 @@ class RoutineScheduler:
 
         try:
             for action in routine.actions:
-                tour.actions.append(self._executer(action, routine))
+                tour.actions.append(self._executer(action, routine, tour.correlation_id))
         finally:
             with self._verrou:
                 self._en_cours.discard(routine.routine_id)
@@ -281,7 +295,9 @@ class RoutineScheduler:
         self._compter(routine, tour)
         return tour
 
-    def _executer(self, action: RoutineAction, routine: Routine) -> ActionOutcome:
+    def _executer(
+        self, action: RoutineAction, routine: Routine, correlation_id: str = "",
+    ) -> ActionOutcome:
         """
         Exécute une action, en revérifiant qu'elle peut tourner sans témoin.
 
@@ -293,9 +309,11 @@ class RoutineScheduler:
             routine: La routine à qui elle appartient. C'est d'elle que vient le
                 propriétaire de l'exécution : à trois heures du matin il n'y a
                 pas de session dont le déduire.
+            correlation_id: L'identifiant du tour, transmis à ce qui sait le
+                porter.
         """
         if isinstance(action, WorkflowAction):
-            return self._executer_workflow(action, routine)
+            return self._executer_workflow(action, routine, correlation_id)
 
         autorise, motif = may_run_unattended(
             action.tool_id, self._capacites, arguments=action.operation
@@ -333,7 +351,7 @@ class RoutineScheduler:
         )
 
     def _executer_workflow(
-        self, action: WorkflowAction, routine: Routine
+        self, action: WorkflowAction, routine: Routine, correlation_id: str = "",
     ) -> ActionOutcome:
         """
         Fait tourner un workflow complet, sans personne devant.
@@ -353,6 +371,10 @@ class RoutineScheduler:
             action: L'action de workflow.
             routine: La routine, d'où viennent le propriétaire et la demande de
                 repli.
+            correlation_id: L'identifiant du tour. Il **devient** le
+                `request_id` de l'exécution, donc celui de ses événements
+                d'audit : sans cela, un tour de routine et le travail qu'il
+                déclenche portent deux identifiants que rien ne relie.
 
         Returns:
             Le résultat de l'exécution, y compris suspendue.
@@ -376,6 +398,7 @@ class RoutineScheduler:
                 # approbation restée sans réponse toute la nuit se lirait sinon
                 # comme un utilisateur qui a changé d'avis.
                 unattended=True,
+                request_id=correlation_id or None,
             )
         except Exception as erreur:
             return ActionOutcome(

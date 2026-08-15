@@ -128,6 +128,7 @@ from src.routines import (
 )
 from src.connectors.safety import safety_report
 from src.integration.degradation import degradation_report
+from src.observability import observability_report, trail
 from src.router.orchestration_paths import orchestration_paths
 from src.router.workflow_checkpoint import CheckpointRefused
 
@@ -1612,6 +1613,51 @@ async def routines_status():
     doit pas être.
     """
     return _scheduler().scheduler_report()
+
+
+@app.get("/observability/trail/{correlation_id}", tags=["health"],
+         dependencies=[Depends(rate_limit_dependency)])
+async def observability_trail(
+    correlation_id: str,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Ce qu'un même travail a laissé dans chaque source.
+
+    Un tour de routine, le workflow qu'il déclenche et les événements d'audit de
+    celui-ci portent désormais **le même identifiant** : c'est ce qui permet de
+    relire un travail de bout en bout au lieu de trois fragments qui se
+    ressemblent.
+
+    Une source **vide** et une source **illisible** ne sont pas confondues :
+    « aucun événement ne porte cet identifiant » et « le moteur d'audit est
+    indisponible » mènent à des conclusions opposées. Et rien n'est rapproché
+    par l'heure — c'est ainsi qu'une piste devient confiante et fausse.
+
+    Chaque source garde sa règle d'audience : suivre une piste n'est pas une
+    façon de lire le journal de quelqu'un d'autre.
+    """
+    try:
+        return trail(
+            correlation_id,
+            audit_manager=get_shared_registry().try_get("audit"),
+            journal=routine_journal,
+            checkpoints=get_router_engine().checkpoints,
+            subject=ctx.subject,
+        )
+    except ValueError as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
+
+
+@app.get("/observability/report", tags=["health"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.TOOL_EXECUTE))])
+async def observability_coverage():
+    """Ce qui est traçable de bout en bout, et ce qui ne l'est pas.
+
+    Nommer ce qui n'est **pas** corrélé vaut mieux que de laisser un exploitant
+    le découvrir en cherchant une piste qui n'existe pas.
+    """
+    return observability_report()
 
 
 @app.get("/orchestrator/paths", tags=["router"],

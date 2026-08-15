@@ -102,6 +102,7 @@ class RouterEngine:
         session_id: Optional[str] = None,
         resume_run_id: Optional[str] = None,
         unattended: bool = False,
+        request_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Traite une requête utilisateur en orchestrant les agents selon le workflow.
@@ -121,12 +122,17 @@ class RouterEngine:
                 métriques une exécution que personne n'a lancée — sans quoi une
                 approbation restée sans réponse toute la nuit se lit comme un
                 utilisateur qui a changé d'avis.
+            request_id: L'identifiant de corrélation, quand l'appelant en porte
+                déjà un (VOLET 66) — le tour de routine qui déclenche cette
+                exécution, par exemple. En générer un nouveau ici couperait la
+                piste en deux au moment précis où elle traverse une frontière.
+                Absent, il est généré.
 
         Returns:
             Un dictionnaire contenant la réponse finale et les métadonnées d'exécution.
         """
         start_time = time.time()
-        request_id = generate_request_id()
+        request_id = request_id or generate_request_id()
         # Le contexte n'est créé qu'après la planification ; il reste None si une
         # exception survient avant, et l'audit d'échec doit le prendre en compte.
         context: Optional[AgentContext] = None
