@@ -4,8 +4,8 @@ Programme : **DARRA J — moteur d'intelligence éducative nationale**
 (directive du propriétaire, 20 VOLETs).
 Base gelée : `1a586bc`, 4480 tests, `ruff` propre.
 
-**État** : VOLETs 1 à 5 terminés.
-**Suivant** : VOLET 6 — pare-feu anti-hallucination.
+**État** : VOLETs 1 à 6 terminés.
+**Suivant** : VOLET 7 — cohérence entre usagers.
 
 ---
 
@@ -31,7 +31,7 @@ V2   Modèle canonique de curriculum                   → 1 phase   ✅
 V3   Versionnement et provenance                      → 2 phases  ✅
 V4   Récupération déterministe                        → 2 phases  ✅
 V5   Cadre d'ingestion                                → 2 phases  ✅
-V6   Pare-feu anti-hallucination                      → 1 phase
+V6   Pare-feu anti-hallucination                      → 1 phase   ✅
 V7   Cohérence entre usagers                          → 1 phase
 V8   Moteur d'explication pédagogique                 → 2 phases
 V9   Quiz et évaluation                               → 2 phases
@@ -48,7 +48,7 @@ V19  Auditabilité institutionnelle                    → 1 phase
 V20  Aptitude à la production                         → 1 phase
 ```
 
-**Total : 28 phases.** Terminées : 8.
+**Total : 28 phases.** Terminées : 9.
 
 ---
 
