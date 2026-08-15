@@ -920,3 +920,13 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Démonstration de bout en bout** (`scripts/demonstration.py`, `docs/demonstration/`) : 5 `OK`, 2 `NOT_CONFIGURED`, 0 échec. **Elle a trouvé un défaut réel au premier tour** — le routage passait la question entière à `answer_country()`, qui attend un nom de pays. Corrigé par `find_country()`.
 - **Les chiffres publiés étaient périmés** (76 routes / 3238 tests annoncés ; 123 / 4334 mesurés) et sont désormais **tenus par une suite**, `tests/test_published_numbers.py`.
 - **71 phases sur 73**, vagues I à VI (moins 71.1 en cours). Suite complète : **4334 tests**, 8 ignorés, `ruff` propre.
+
+### 2026-08-15 (Harnais d'auto-réparation — directive du propriétaire, 9 phases)
+- **Outils sûrs** (`src/agent/tools/`) : un seul point de décision pour les chemins, jugé **après `realpath`** (lien symbolique évadé bloqué) ; commande en **liste**, jamais en chaîne — les valeurs qui arrivent ici viennent de traces ; environnement non hérité ; compteurs pytest relus (code 0 sans test collecté n'est pas un succès).
+- **Isolation** (`git_tools.py`) : chaque réparation dans son `git worktree` + branche `auto-patch/<incident>`. Annuler = **détruire l'espace** ; jamais de `reset --hard` sur un arbre non créé par le harnais ; identifiant d'incident **validé**, pas échappé.
+- **Politiques** (`src/agent/policies/`) : le **harnais n'est ouvert par aucune classification** (règle 18 de la directive), la frontière de sécurité seulement par `SECURITY_MAINTENANCE` déclarée ; intégrité des tests détectant suppression, `skip`/`xfail` et **assertions retirées d'un test qui garde son nom**.
+- **Moteur** (`self_healer.py`) : une trace est une **donnée** — seules les formes que CPython écrit sont lues, et `UNKNOWN_DIAGNOSIS` est une réponse. Six portes, toutes exécutées même après un échec ; 3 tentatives puis arrêt ; `KEEP` valide **sur la branche de réparation**, la fusion reste humaine.
+- **Journal** (`src/agent/audit/`) : écrit au fil de l'action, empreintes SHA-256, expurgation par `src/security/redaction.py`, panne disque absorbée, compteurs survivant à l'éviction.
+- **CLI et santé** : 6 commandes, seule `repair` écrit ; santé du dépôt en **650 ms** sans lancer la suite, et le dit.
+- **Défaut trouvé par les tests** : la porte de sécurité annulait *toute* réparation sur un dépôt sans `tests/agent` — panne déguisée en garantie. Devient `NOT_MEASURED` si la cible manquait **déjà** ; la supprimer pour l'esquiver est attrapé par l'intégrité.
+- **Sept cas A→G** simulés sur un vrai dépôt git jetable. Base 4334 → **4480 tests**, **+146, 0 régression** ; `ruff` propre. Documentation → `docs/agent/README.md`.

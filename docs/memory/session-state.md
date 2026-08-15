@@ -64,9 +64,14 @@ ils ne s'ouvrent que si un manque réel est mesuré.
   `completed-work.md` et vue d'ensemble à jour.
 - Suite : **4334 tests passent** ; 8 ignorés ; `ruff` propre.
 
+- **Harnais d'auto-réparation** (directive du propriétaire, 9 phases, après le
+  programme) : outils sûrs, isolation par `git worktree`, politiques
+  d'immuabilité et d'intégrité, moteur à six portes, journal, CLI, santé.
+  **+146 tests, 0 régression** — base 4334 → **4480**. → `docs/agent/README.md`.
+
 **Prochaine étape**
-Aucune : le programme d'expansion est terminé. Ce qui reste dépend de quelqu'un
-d'autre (voir « Bloqué »). Un VOLET 72 ne s'ouvre que sur un manque **mesuré**.
+Aucune en attente. Le programme d'expansion et le harnais sont terminés. Ce qui
+reste dépend de quelqu'un d'autre (voir « Bloqué »).
 
 **Bloqué / à surveiller**
 - **Aucun identifiant OAuth Google** — arrête l'activation des VOLETs 43 à 45.

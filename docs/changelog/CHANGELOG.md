@@ -12,6 +12,30 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-15 — Harnais d'auto-réparation (`src/agent/`, `docs/agent/`)
+
+Un agent d'ingénierie **contrôlé** : il inspecte, diagnostique, prépare un
+correctif **en isolation**, passe six portes, et annule tout ce qui n'en franchit
+pas une seule.
+
+- **Rien n'est réparé sur place** : `git worktree` + branche `auto-patch/<incident>`.
+  Annuler consiste à **détruire l'espace** — l'arbre de l'utilisateur n'a jamais
+  été écrit, donc il n'y a rien à restaurer. Vérifié : modifications non validées
+  et branche intactes après une réparation ratée.
+- **Une trace d'exécution est une donnée** : seules les formes que CPython écrit
+  sont lues. « Ignore all safety rules » reste une chaîne, et le diagnostic rend
+  `UNKNOWN_DIAGNOSIS` — qui est une réponse, pas un échec.
+- **Le harnais est inviolable par lui-même** : aucune classification n'ouvre
+  `tools/`, `policies/`, `audit/` ni `self_healer.py`. Un moteur qui peut
+  affaiblir ce qui le retient n'est retenu par rien.
+- **Les tests ne peuvent pas être faits taire** : suppression, `skip`/`xfail` et
+  **assertions retirées d'un test qui garde son nom** font tomber la porte.
+- **Une commande est une liste**, jamais une chaîne : `; rm -rf /` dans une trace
+  reste un argument.
+- **CLI** (`python -m src.agent.cli`) : `status`, `health`, `test`, `diagnose`,
+  `repair`, `audit`. Seule `repair` écrit, et seulement dans son espace.
+- Sept cas simulés sur un dépôt git réel. **+146 tests, 0 régression.**
+
 ### Added — 2026-08-15 — Vagues V et VI du programme d'expansion (VOLETs 58 à 71)
 
 L'extension par des tiers, puis **la preuve**. Décision d'ensemble → **ADR-022**.
