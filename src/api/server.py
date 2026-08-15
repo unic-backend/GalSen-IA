@@ -131,6 +131,7 @@ from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
 from src.knowledge_engine.domains import domain_coverage
+from src.knowledge_engine.routing import ask, layer_comparison, routing_report
 from src.knowledge_engine.freshness import (
     freshness_of_year,
     freshness_report,
@@ -1941,6 +1942,35 @@ async def world_country_series(query: str, indicator: str, year: Optional[str] =
         reponse["scope"] = pays["country"]["scope"]
         reponse["freshness"] = freshness_of_year(reponse["year"], indicator)
     return reponse
+
+
+@app.get("/knowledge/ask", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.KNOWLEDGE_SEARCH))])
+async def knowledge_ask(q: str, scope: Optional[str] = None,
+                        subject: Optional[str] = None):
+    """Pose une question à la couche qui doit y répondre — et dit **laquelle**.
+
+    Deux corps de connaissance peuvent parler du Sénégal : la référence
+    mondiale (largeur, 249 pays) et la couche sénégalaise (profondeur, un
+    pays). Deux moteurs qui répondent à la même question ne sont pas une
+    fonctionnalité : le jour où ils divergent, le désaccord serait invisible.
+
+    Un sujet national — droit, administration, langues — **ne quitte pas son
+    pays** : la référence mondiale n'en est pas un repli, elle est hors sujet.
+    """
+    try:
+        return ask(q, scope=scope, subject=subject)
+    except ValueError as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
+
+
+@app.get("/knowledge/layers", tags=["knowledge"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def knowledge_layers():
+    """Ce que chaque couche porte, mesuré, et le routage qui les sépare."""
+    return {**layer_comparison(), "routing": routing_report()}
 
 
 @app.get("/knowledge/domains", tags=["knowledge"],

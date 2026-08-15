@@ -14,11 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **56.2 terminée — VOLET 56 clos.**
-**57.1 en attente de confirmation** — le Sénégal comme domaine spécialisé d'un
-moteur mondial.
-**Terminées**      : **vagues I, II et III complètes**, **VOLETs 51 à 56**
-(44 phases sur 73).
+**Phase courante** : **57.2 terminée — VOLET 57 clos, VAGUE IV complète (16 phases).**
+**58.1 en attente de confirmation** — système de greffons, ouverture de la vague V.
+**Terminées**      : **vagues I à IV complètes** (46 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -220,7 +218,7 @@ isolation par destinataire. Ce qui manquait, ce sont les **événements** — un
 routine qui s'arrête seule, une exécution longue qui meurt en route — et un
 **canal** autre que la boîte interne. Le VOLET a donc étendu, jamais reconstruit.
 
-VAGUE IV — La connaissance                                        → 16 phases
+VAGUE IV — La connaissance                                        → 16 phases  ✅ CLOSE
   V51  Registre de sources mondial (généralise le sénégalais)     → 2 phases
        51.1 chargement multi-registres, doublon de domaine refusé   ✅
        51.2 registre mondial peuplé, sujets nationaux interdits     ✅
@@ -311,6 +309,19 @@ pays porte sa propre portée `country:xx`. 249 pays dérivés, 0 ligne perdue,
   V55  Domaine architecture / construction                        → 2 phases
   V56  Domaine football / sports                                  → 2 phases
   V57  Sénégal comme domaine spécialisé d'un moteur mondial       → 2 phases
+       57.1 routage déclaré : quelle couche répond, et pourquoi    ✅
+       57.2 comparaison mesurée des deux couches, routes           ✅
+
+**Ce que 57 empêche** : deux corps de connaissance peuvent désormais parler du
+Sénégal — la référence mondiale (largeur, 249 pays) et la couche sénégalaise
+(profondeur, un pays). Deux moteurs capables de répondre à la même question ne
+sont pas une fonctionnalité : non parce que l'un se tromperait, mais parce que
+**personne ne saurait lequel a répondu**, et le jour où ils divergeraient le
+désaccord serait invisible. Le routage est donc **déclaré** : un sujet national
+ne quitte pas son pays, la profondeur passe avant la largeur, et la réponse dit
+quelle couche a parlé. Mesuré : aucune couche n'est un sous-ensemble de l'autre
+— sinon la garder serait une implémentation parallèle, ce que la directive
+interdit.
 
 VAGUE V — L'extension par des tiers                               → 12 phases
   V58  Système de greffons (chargement, bac à sable, refus)       → 3 phases

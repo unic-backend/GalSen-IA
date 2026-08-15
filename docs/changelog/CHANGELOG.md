@@ -12,6 +12,45 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-14 — Vague IV du programme d'expansion (VOLETs 51 à 57)
+
+La connaissance. Rien n'y a été écrit de mémoire, aucune sortie réseau n'a eu lieu,
+et deux domaines sont **déclarés vides avec leur raison** plutôt que remplis.
+
+- **Registre de sources mondial** (`corpus/sources/`) — le répertoire entier est
+  chargé ; un domaine déclaré deux fois **refuse le chargement**, en nommant les
+  deux fichiers. **23 sources, aucune activée.**
+- **249 pays dérivés** (`src/knowledge_engine/world.py`) de jeux déjà acquis.
+  `global` porte la taxonomie, chaque pays porte sa propre portée. **34 désaccords
+  entre sources rapportés côte à côte, jamais réconciliés.**
+- **Séries mesurées** — population et PIB. Rien n'est interpolé, un pays absent
+  rend `UNKNOWN` et jamais zéro, les agrégats ne sont pas des pays.
+- **Fraîcheur** — l'âge se mesure contre la cadence de la chose. `built_at` date
+  la dérivation, pas les faits. Le sport a imposé une seconde échelle, en
+  **jours**, et une troisième valeur : `PERMANENT`.
+- **Recherche documentaire** — titre indexé, accents ajoutés sans rien effacer
+  (`ñ` distingue des mots en wolof), correspondance expliquée. La connaissance
+  mondiale devient une source de `/search`, et les résultats portent un **extrait
+  verbatim** — jamais un résumé.
+- **Domaines `construction` et `sports`** — déclarés, vides, avec leur raison.
+  La part normative de la construction est **territoriale** ; la particularité du
+  sport est le **temps**.
+- **Routage des deux couches** — la profondeur sénégalaise et la largeur mondiale
+  ne se recouvrent pas, et la réponse dit laquelle a parlé.
+
+### Fixed — 2026-08-14 — Défauts trouvés en construisant la vague IV
+
+- **La FAO et l'OMS étaient déclarées dans le registre sénégalais** avec une
+  portée mondiale. La garde des doublons introduite le même jour l'a révélé.
+- **`delete()` de l'index documentaire recalculait** les termes d'un document au
+  lieu de relire ceux qui avaient été indexés : un document réindexé restait
+  trouvable par son ancien titre.
+- **Le fournisseur mondial rendait l'Estonie et le Laos** pour « quelle **est** la
+  monnaie du Sénégal » : `EST` et `LA` sont des codes ISO et des mots français.
+- **`domain_state()` annonçait « base vide » sans compteur branché**, là où il
+  fallait lire « personne n'a regardé » — la confusion que ce module prétend
+  empêcher, commise par lui.
+
 ### Added — 2026-08-14 — Vagues II et III du programme d'expansion (VOLETs 43 à 50)
 
 Ce que la plateforme sait faire quand personne ne la regarde. Rien n'y authentifie
