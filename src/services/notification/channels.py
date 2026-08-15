@@ -131,14 +131,30 @@ class ChannelRegistry:
     vérité disponible — et la dire est préférable à laisser croire.
     """
 
-    def __init__(self, channels: Optional[List[DeliveryChannel]] = None) -> None:
+    def __init__(
+        self,
+        channels: Optional[List[DeliveryChannel]] = None,
+        path: Optional[Path] = None,
+    ) -> None:
         """
         Args:
             channels: Les canaux. Ceux du fichier de déclaration par défaut.
+            path: Le fichier de déclaration, quand les canaux ne sont pas
+                fournis directement.
         """
+        fichier = path if path is not None else FICHIER_CANAUX
+        # « Aucun canal déclaré » et « le fichier de déclaration a disparu »
+        # sont deux situations différentes, et un registre vide les rendait
+        # identiques. Retenir laquelle est la seule façon qu'un rapport puisse
+        # le dire.
+        self._declaration = (
+            "channels provided directly" if channels is not None
+            else str(fichier) if fichier.exists()
+            else f"NOT_FOUND — {fichier}"
+        )
         self._canaux: Dict[str, DeliveryChannel] = {
             canal.channel_id: canal
-            for canal in (channels if channels is not None else load_channels())
+            for canal in (channels if channels is not None else load_channels(fichier))
         }
 
     def get(self, channel_id: str) -> Optional[DeliveryChannel]:
@@ -188,6 +204,9 @@ class ChannelRegistry:
         """
         canaux = self.all_channels()
         return {
+            # D'où viennent ces canaux — ou qu'il n'y en a aucun parce que le
+            # fichier est absent, ce qu'une liste vide ne dit pas.
+            "declaration": self._declaration,
             "channels": [c.as_dict() for c in canaux],
             "available": [c.channel_id for c in canaux
                           if c.state is ChannelState.AVAILABLE],

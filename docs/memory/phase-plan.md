@@ -14,10 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **64.2 terminée — VOLET 64 clos (vague VI, 4 phases sur 15).**
-**65.1 en attente de confirmation** — sûreté intégrée : un moteur absent ne fait
-rien tomber.
-**Terminées**      : **vagues I à V complètes, plus 63 et 64** (62 phases sur 73).
+**Phase courante** : **65.2 terminée — VOLET 65 clos (vague VI, 6 phases sur 15).**
+**66.1 en attente de confirmation** — observabilité de bout en bout.
+**Terminées**      : **vagues I à V complètes, plus 63, 64 et 65** (64 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -338,7 +337,9 @@ VAGUE VI — La preuve                                              → 15 phase
   V64  Orchestrateur : routines et workflows dans le routage      → 2 phases  ✅
        64.1 une routine peut déclencher un workflow complet        ✅
        64.2 deux chemins, un seul moteur : `/orchestrator/paths`   ✅
-  V65  Sûreté intégrée : un moteur absent ne fait rien tomber     → 2 phases
+  V65  Sûreté intégrée : un moteur absent ne fait rien tomber     → 2 phases  ✅
+       65.1 dix sous-systèmes sondés, la sonde qui tombe est dite   ✅
+       65.2 `/health` les connaît ; dégradé n'est pas en panne      ✅
   V66  Observabilité de bout en bout                              → 2 phases
   V67  Maîtrise des coûts sur les nouveaux chemins                → 1 phase
   V68  Évaluation : le barème couvre les nouveaux domaines        → 2 phases
@@ -364,6 +365,25 @@ parallèle que la directive interdit. Une routine peut désormais déclencher un
 est écrite : **une approbation n'est jamais accordée par l'absence de quelqu'un
 pour la refuser** — l'exécution est rendue `suspended` avec son `run_id`, et
 quelqu'un la reprend.
+
+**Ce que 65 a mesuré** : `EngineRegistry` isole les **quatorze moteurs** des
+premiers VOLETs — celui qui ne se construit pas est rapporté, jamais propagé.
+Cette garantie n'avait jamais été étendue à ce qui a été bâti ensuite : les
+**dix sous-systèmes** des VOLETs 47 à 64 n'apparaissaient dans aucun rapport, et
+`/health` couvrait sept composants tous antérieurs à la vague III. Un exploitant
+pouvait lire `healthy` pendant que la moitié récente était inutilisable.
+`src/integration/degradation.py` les sonde, **isolément** — une sonde qui lève
+est rapportée `UNAVAILABLE`, pas propagée (vérifié en cassant une sonde
+volontairement). Trois états, et le milieu est le point : **dégradé n'est pas en
+panne**, il ne fait pas basculer le statut global et ne rend pas la plateforme
+non prête. Chaque état porte **ce qui fonctionne encore sans lui**. Mesuré sur
+ce dépôt : 9 disponibles, 0 dégradé, 0 indisponible.
+
+Deux corrections imposées par la suite complète, et non par un avis : sonder les
+dix coûte **~70 ms** pour une cible de supervision de **50 ms**, donc la section
+est **demandée** (`/health?subsystems=true`) et non subie ; et
+`/system/degradation` **exige une clé** — il nomme les dépendances internes et la
+cause de chaque manque, ce que `/health`, porte publique, ne dit pas.
 
 VOLETs 72 à 76 : réservés. Ils seront ouverts si l'audit d'une vague révèle un
 manque réel — pas pour remplir un numéro.

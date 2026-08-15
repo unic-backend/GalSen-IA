@@ -127,6 +127,7 @@ from src.routines import (
     RoutineScheduler,
 )
 from src.connectors.safety import safety_report
+from src.integration.degradation import degradation_report
 from src.router.orchestration_paths import orchestration_paths
 from src.router.workflow_checkpoint import CheckpointRefused
 
@@ -941,7 +942,7 @@ init_health_checker(
 
 
 @app.get("/health", tags=["health"], dependencies=[Depends(rate_limit_dependency)])
-async def health_check():
+async def health_check(subsystems: bool = False):
     """Rapport de santé détaillé de la plateforme.
 
     Retourne l'état de tous les composants (API, moteurs, stockage, fournisseurs)
@@ -949,9 +950,15 @@ async def health_check():
 
     Code HTTP toujours 200 — le statut global est dans le corps de la réponse
     (champ ``status`` : ``healthy``, ``degraded`` ou ``unhealthy``).
+
+    `?subsystems=true` ajoute l'état des dix sous-systèmes des VOLETs 47 à 64.
+    **Hors du défaut, et mesuré** : les sonder coûte environ 70 ms pour une cible
+    de supervision de 50 ms, et une supervision qui interroge `/health` toutes
+    les cinq secondes paierait ce prix sans arrêt pour une information qui change
+    quelques fois par mois. Le rapport complet vit sur `/system/degradation`.
     """
     checker = get_health_checker()
-    report = checker.check_health()
+    report = checker.check_health(include_subsystems=subsystems)
     donnees = report.to_dict()
     # La plateforme ne tourne aujourd'hui qu'en une seule instance (ADR-009).
     # La contrainte est exposée ici plutôt que laissée à la documentation :
@@ -967,6 +974,27 @@ async def health_check():
         # `/health` ne tombe pas parce qu'une section refuse de se calculer.
         logger.warning("Rapport de souveraineté indisponible : %s", erreur)
     return donnees
+
+
+@app.get("/system/degradation", tags=["health"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.TOOL_EXECUTE))])
+async def system_degradation():
+    """Ce qui fonctionne encore, et ce qui manque à chacun.
+
+    Exige une clé : ce rapport nomme les dépendances internes et la cause exacte
+    de chaque manque. C'est ce qu'un exploitant doit lire, et ce qu'un inconnu
+    n'a pas à connaître — `/health` reste la porte publique.
+
+    Les dix sous-systèmes construits après le registre des moteurs (VOLETs 47 à
+    64) n'apparaissaient dans aucun rapport : un exploitant pouvait lire une
+    plateforme saine pendant que la moitié récente était inutilisable.
+
+    **Dégradé n'est pas en panne** : un sous-système qui dit ce qui lui manque
+    fonctionne comme prévu. Chaque état porte donc *ce qui fonctionne encore
+    sans lui* — sans quoi personne ne sait s'il faut agir ce soir ou lundi.
+    """
+    return degradation_report()
 
 
 @app.get("/ready", tags=["health"], dependencies=[Depends(rate_limit_dependency)])

@@ -67,6 +67,7 @@ class HealthReport:
     components: Dict[str, ComponentHealth]
     storage_backend: str
     configured_providers: List[str]
+    subsystems: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convertit le rapport en dictionnaire pour la réponse JSON."""
@@ -78,7 +79,7 @@ class HealthReport:
                 entry["error"] = comp.error
             components_dict[name] = entry
 
-        return {
+        rendu = {
             "status": self.status,
             "timestamp": self.timestamp,
             "version": self.version,
@@ -87,6 +88,15 @@ class HealthReport:
             "storage_backend": self.storage_backend,
             "configured_providers": self.configured_providers,
         }
+        if self.subsystems is not None:
+            # Les sous-systèmes construits après le registre des moteurs
+            # (VOLETs 47 à 64). Ils vivent dans une section à part parce qu'ils
+            # ne pèsent pas sur le statut global : un sous-système dégradé
+            # fonctionne comme prévu, et l'ajouter aux composants ferait passer
+            # la plateforme en `degraded` chaque fois qu'un canal externe n'a
+            # pas d'identifiants — c'est-à-dire toujours.
+            rendu["subsystems"] = self.subsystems
+        return rendu
 
 
 # ---------------------------------------------------------------------------
@@ -103,8 +113,13 @@ class HealthChecker(ABC):
     """
 
     @abstractmethod
-    def check_health(self) -> HealthReport:
+    def check_health(self, include_subsystems: bool = False) -> HealthReport:
         """Exécute toutes les vérifications et retourne un rapport complet.
+
+        Args:
+            include_subsystems: Sonde aussi les sous-systèmes des VOLETs 47 à
+                64. Hors du défaut parce que la supervision interroge `/health`
+                sans arrêt : la sonde complète coûte ~70 ms, la cible en est 50.
 
         Returns:
             HealthReport avec l'état de chaque composant et le statut global.
@@ -179,11 +194,20 @@ class ComponentHealthChecker(HealthChecker):
     # API publique
     # ------------------------------------------------------------------
 
-    def check_health(self) -> HealthReport:
+    def check_health(self, include_subsystems: bool = False) -> HealthReport:
         """Vérifie la santé de tous les composants de la plateforme.
 
         Chaque composant est vérifié indépendamment ; une défaillance dans l'un
         n'empêche pas la vérification des autres.
+
+        Args:
+            include_subsystems: Sonde aussi les dix sous-systèmes des VOLETs 47
+                à 64. **Hors du défaut, et mesuré** : la sonde complète coûte
+                environ 70 ms, pour une cible de supervision de 50 ms. Une
+                supervision qui interroge `/health` toutes les cinq secondes
+                paierait, chaque fois, la lecture de la connaissance mondiale et
+                la validation des workflows — pour une information qui change
+                quelques fois par mois.
 
         Returns:
             HealthReport complet avec le statut global et le détail par composant.
@@ -208,7 +232,29 @@ class ComponentHealthChecker(HealthChecker):
             components=components,
             storage_backend=self._get_storage_backend(),
             configured_providers=self._get_configured_providers(),
+            subsystems=self._check_subsystems() if include_subsystems else None,
         )
+
+    @staticmethod
+    def _check_subsystems() -> Optional[Dict[str, Any]]:
+        """Interroge les sous-systèmes construits après le registre des moteurs.
+
+        Ils n'entrent pas dans le statut global : « dégradé » y veut dire « il
+        dit ce qui lui manque et continue », pas « en panne ». Les compter
+        comme des composants ferait sonner l'alarme en permanence, et une
+        alarme toujours allumée n'est plus lue.
+
+        Returns:
+            Le rapport de dégradation, ou None s'il n'a pas pu être calculé —
+            `/health` ne tombe pas parce qu'une section refuse de se calculer.
+        """
+        try:
+            from src.integration.degradation import degradation_report
+
+            return degradation_report()
+        except Exception as erreur:
+            logger.warning("Rapport de dégradation indisponible : %s", erreur)
+            return None
 
     def check_readiness(self) -> Tuple[bool, str]:
         """Vérifie si l'application est prête à servir des requêtes.

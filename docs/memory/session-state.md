@@ -13,7 +13,7 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 **Date** : 2026-08-15
 
 **En cours** : **programme d'expansion VOLETs 37→76** (directive du 2026-08-14).
-**VAGUES I à V CLOSES, vague VI en cours** — 62 phases sur 73. **65.1 attend
+**VAGUES I à V CLOSES, vague VI en cours** — 64 phases sur 73. **66.1 attend
 confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases par tour.**
 
 **Terminé dans cette session**
@@ -32,11 +32,16 @@ confirmation**. Plan → `docs/memory/phase-plan.md`. **Cadence : deux phases pa
   Elle peut désormais déclencher un **workflow** par le même moteur.
   Règle du travail sans témoin : **une approbation n'est jamais accordée par
   l'absence de quelqu'un pour la refuser** — `suspended`, avec le `run_id`.
-- Suite : **4203 tests passent** avant V64 ; 8 ignorés ; `ruff` propre.
+- **Vague VI, V65** : l'isolement des pannes ne couvrait que les 14 moteurs du
+  registre ; les **10 sous-systèmes** des VOLETs 47→64 n'étaient dans aucun
+  rapport, et `/health` ne connaissait que des composants d'avant la vague III.
+  `src/integration/degradation.py` les sonde isolément — une sonde qui lève est
+  rapportée, pas propagée. **Dégradé n'est pas en panne** : pas de bascule du
+  statut global, pas de perte de readiness. Mesuré : 9 disponibles, 0 dégradé.
+- Suite : **4234 tests passent** après V64 ; 8 ignorés ; `ruff` propre.
 
 **Prochaine étape**
-Phase **65.1** — sûreté intégrée : un moteur absent ne fait rien tomber
-(vague VI, 11 phases restantes).
+Phase **66.1** — observabilité de bout en bout (vague VI, 9 phases restantes).
 
 **Bloqué / à surveiller**
 - **Aucun identifiant OAuth Google** — arrête l'activation des VOLETs 43 à 45.
