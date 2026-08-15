@@ -7,7 +7,7 @@ The platform runs. Fourteen engines and services are registered in `EngineRegist
 **nine more subsystems** built after it (volets 47–64) are probed separately — see
 *Subsystems and degradation* below. All of it is reachable through a REST API
 (`src/api/server.py`, **123 routes** behind API-key authentication and RBAC) and covered
-by their own test suites — **230 test files, 4 334 tests passing**, 8 skipped.
+by their own test suites — **236 test files, 4 480 tests passing**, 8 skipped.
 17 agents, 22 declared tools (12 of which may run unattended), 22 ADRs.
 Persistence exists and now covers the audit and approval engines too: every engine
 holding state selects a SQLite store through `GALSEN_STORAGE_BACKEND` (ADR-005), which

@@ -30,6 +30,7 @@ changing a repository nobody is watching.
 
 from __future__ import annotations
 
+import os
 import re
 import time
 import uuid
@@ -290,8 +291,6 @@ class GalSenSelfHealer:
 
     def _relatif(self, chemin: str) -> str:
         """Le chemin d'un cadre, relativement au dépôt."""
-        import os
-
         absolu = resolve(chemin, self.root)
         return os.path.relpath(absolu, self.root).replace(os.sep, "/")
 
@@ -509,8 +508,35 @@ class GalSenSelfHealer:
 
         statique = self.validate_patch(context)
         tests = run_test_suite(target=self.test_target, cwd=espace, root=espace)
-        securite = run_test_suite(target=self.security_target, cwd=espace, root=espace)
         lint = run_ruff(self.lint_target, cwd=espace, root=espace)
+
+        # La suite de sécurité peut ne pas exister dans le dépôt gardé — ce
+        # harnais est fait pour en garder d'autres que celui-ci. Une porte qui
+        # échoue faute de cible ferait annuler **toute** réparation sur un tel
+        # dépôt, ce qui n'est pas une garantie mais une panne.
+        #
+        # Elle n'est déclarée non applicable que si la cible manquait **déjà**
+        # avant le correctif : la faire disparaître pour esquiver la porte est
+        # attrapé par l'intégrité des tests, qui voit les fichiers supprimés.
+        cible_avant = os.path.isdir(os.path.join(self.root, self.security_target))
+        cible_apres = os.path.isdir(os.path.join(espace, self.security_target))
+        if not cible_avant and not cible_apres:
+            securite = {
+                "applicable": False,
+                "reason": (
+                    f"Aucune suite de sécurité à « {self.security_target} » dans "
+                    "ce dépôt : la porte n'est pas mesurée, et ne prétend pas "
+                    "l'avoir été."
+                ),
+            }
+        else:
+            mesure = run_test_suite(
+                target=self.security_target, cwd=espace, root=espace,
+            )
+            securite = {
+                "applicable": True, "meaningful": mesure["meaningful"],
+                "passed": mesure["passed"], "failed": mesure["failed"],
+            }
         integrite = compare_inventories(avant, inventory(espace))
         proteges = compare_protected_hashes(empreintes_avant, protected_test_hashes(espace))
 
@@ -520,9 +546,11 @@ class GalSenSelfHealer:
                 "passed": tests["passed"], "failed": tests["failed"],
                 "errors": tests["errors"], "timed_out": tests["timed_out"],
             }},
-            "security_tests": {"passed": securite["meaningful"], "detail": {
-                "passed": securite["passed"], "failed": securite["failed"],
-            }},
+            "security_tests": {
+                "passed": securite.get("meaningful", False),
+                "applicable": securite["applicable"],
+                "detail": securite,
+            },
             "ruff": {"passed": lint["clean"], "detail": lint["stdout"][:1000]},
             "test_integrity": {"passed": integrite["intact"], "detail": {
                 "deleted_files": integrite["deleted_files"],
@@ -533,17 +561,30 @@ class GalSenSelfHealer:
             "protected_tests": {"passed": proteges["unchanged"], "detail": proteges},
         }
 
-        franchies = all(porte["passed"] for porte in portes.values())
+        # Une porte non applicable ne compte ni comme franchie ni comme tombée :
+        # elle est **nommée**, et le rapport dit ce qui n'a pas été mesuré.
+        tombees = [
+            nom for nom, p in portes.items()
+            if p.get("applicable", True) and not p["passed"]
+        ]
+        non_mesurees = [
+            nom for nom, p in portes.items() if not p.get("applicable", True)
+        ]
+
         self.journal.record(
             "test", incident_id=context.incident_id, target=espace,
-            result="passed" if franchies else "failed",
-            detail=", ".join(f"{nom}={'ok' if p['passed'] else 'KO'}"
-                             for nom, p in portes.items()),
+            result="passed" if not tombees else "failed",
+            detail=", ".join(
+                f"{nom}=" + ("n/a" if not p.get("applicable", True)
+                             else "ok" if p["passed"] else "KO")
+                for nom, p in portes.items()
+            ),
         )
         return {
-            "passed": franchies,
+            "passed": not tombees,
             "gates": portes,
-            "failed_gates": [nom for nom, p in portes.items() if not p["passed"]],
+            "failed_gates": tombees,
+            "not_measured": non_mesurees,
         }
 
     # ------------------------------------------------------------------

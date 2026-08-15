@@ -74,7 +74,7 @@ engines **plus nine subsystems probed after the registry** (volets 47–64, prob
 `src/integration/degradation.py`), **17 agents**, **22 declared tools** (12 runnable
 unattended), **123 API routes**, 23 ADRs (ADR-020 is `proposed`; ADR-021 and ADR-022 accepted) — see
 `docs/architecture/overview.md`, kept synchronized with the measured state.
-**4334 tests pass**, 8 skipped.
+**4480 tests pass**, 8 skipped.
 
 Unattended work is real: a routine can fire a workflow through the one orchestrator, and
 **an approval is never granted by the absence of someone to refuse it**. One job is
