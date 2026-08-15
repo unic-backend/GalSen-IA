@@ -14,11 +14,11 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **60.3 terminée — VOLET 60 clos.**
-**61.1 en attente de confirmation** — intelligence documentaire branchée sur les
-connecteurs.
-**Terminées**      : **vagues I à IV complètes**, **VOLETs 58, 59 et 60**
-(54 phases sur 73).
+**Phase courante** : **61.2 terminée — VOLET 61 clos.**
+**62.1 en attente de confirmation** — ingénierie logicielle : la boucle atteint
+les greffons.
+**Terminées**      : **vagues I à IV complètes**, **VOLETs 58 à 61**
+(56 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 

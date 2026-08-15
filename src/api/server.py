@@ -131,6 +131,7 @@ from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
 from src.knowledge_engine.domains import domain_coverage
+from src.document_intelligence_engine.from_connector import ingestion_report
 from src.memory_engine.layers import layers_report
 from src.plugins import (
     PluginExecutionRefused,
@@ -1900,6 +1901,26 @@ async def cancel_workflow_run(
             "autre ne démarre.",
         ],
     }
+
+
+@app.get("/documents/from-connector", tags=["documents"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def documents_from_connector(connector_id: Optional[str] = None):
+    """Ce que la jonction connecteur → documents garantit, et pour quel connecteur.
+
+    Un document tiré du disque ou de la boîte de quelqu'un appartient à une
+    personne, et **rien dans son contenu ne le dit** : c'est le connecteur qui
+    le sait. Cette jonction porte cette propriété, ou refuse l'entrée.
+    """
+    connecteur = None
+    if connector_id:
+        connecteur = get_shared_connector_registry().get(connector_id)
+        if connecteur is None:
+            raise HTTPException(
+                status_code=404, detail=f"Connecteur '{connector_id}' inconnu.",
+            )
+    return ingestion_report(connecteur)
 
 
 @app.get("/memory/layers", tags=["memory"],
