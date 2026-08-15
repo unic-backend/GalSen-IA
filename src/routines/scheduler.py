@@ -37,6 +37,7 @@ from ..tool.capabilities import CapabilityRegistry, may_run_unattended
 from .registry import RoutineRegistry
 from .safety import RoutineSafety
 from .types import Routine, RoutineAction
+from .workflow_action import ACTION_WORKFLOW, STATUT_SUSPENDU, WorkflowAction
 
 #: Échecs consécutifs au-delà desquels une routine s'arrête d'elle-même. Trois :
 #: assez pour absorber une panne passagère, assez peu pour qu'une routine
@@ -60,20 +61,32 @@ class ActionOutcome:
     status: str
     detail: str = ""
     elapsed_ms: float = 0.0
+    run_id: str = ""
 
     @property
     def ok(self) -> bool:
-        """Vrai pour un succès franc."""
+        """
+        Vrai pour un succès franc.
+
+        `suspended` n'en est pas un : une exécution arrêtée sur une approbation
+        n'a pas fini. La compter comme réussie ferait de « personne n'était là
+        pour répondre » un « oui ».
+        """
         return self.status == "success"
 
     def as_dict(self) -> Dict[str, Any]:
         """Représentation sérialisable, sans le résultat de l'outil."""
-        return {
+        rendu = {
             "tool_id": self.tool_id,
             "status": self.status,
             "detail": self.detail,
             "elapsed_ms": round(self.elapsed_ms, 2),
         }
+        if self.run_id:
+            # Sans lui, une exécution suspendue attend une décision que personne
+            # ne peut retrouver.
+            rendu["run_id"] = self.run_id
+        return rendu
 
 
 @dataclass
@@ -133,6 +146,7 @@ class RoutineScheduler:
         capabilities: Optional[CapabilityRegistry] = None,
         safety: Optional[RoutineSafety] = None,
         notifier: Any = None,
+        orchestrator: Any = None,
     ) -> None:
         """
         Args:
@@ -148,9 +162,13 @@ class RoutineScheduler:
                 une routine qui s'arrête à trois heures du matin ne le dit à
                 personne, et un journal n'est pas une notification — il est lu
                 par quelqu'un qui soupçonne déjà quelque chose.
+            orchestrator: Le moteur de routage (VOLET 64), pour les routines qui
+                déclenchent un workflow. Sans lui, une telle action rapporte
+                l'orchestrateur absent au lieu de prétendre avoir tourné.
         """
         self.registry = registry
         self._temoin = notifier
+        self._orchestrateur = orchestrator
         self.safety = safety if safety is not None else RoutineSafety()
         self._outils = tool_engine
         self._capacites = capabilities if capabilities is not None else getattr(
@@ -255,7 +273,7 @@ class RoutineScheduler:
 
         try:
             for action in routine.actions:
-                tour.actions.append(self._executer(action))
+                tour.actions.append(self._executer(action, routine))
         finally:
             with self._verrou:
                 self._en_cours.discard(routine.routine_id)
@@ -263,13 +281,22 @@ class RoutineScheduler:
         self._compter(routine, tour)
         return tour
 
-    def _executer(self, action: RoutineAction) -> ActionOutcome:
+    def _executer(self, action: RoutineAction, routine: Routine) -> ActionOutcome:
         """
         Exécute une action, en revérifiant qu'elle peut tourner sans témoin.
 
         La déclaration l'avait vérifié (47.1) ; le registre des capacités peut
         avoir été rechargé depuis. Revérifier ne coûte rien et ferme la fenêtre.
+
+        Args:
+            action: L'action à exécuter — un appel d'outil, ou un workflow.
+            routine: La routine à qui elle appartient. C'est d'elle que vient le
+                propriétaire de l'exécution : à trois heures du matin il n'y a
+                pas de session dont le déduire.
         """
+        if isinstance(action, WorkflowAction):
+            return self._executer_workflow(action, routine)
+
         autorise, motif = may_run_unattended(
             action.tool_id, self._capacites, arguments=action.operation
         )
@@ -303,6 +330,89 @@ class RoutineScheduler:
         return ActionOutcome(
             tool_id=action.tool_id, status="success",
             elapsed_ms=(time.monotonic() - depart) * 1000,
+        )
+
+    def _executer_workflow(
+        self, action: WorkflowAction, routine: Routine
+    ) -> ActionOutcome:
+        """
+        Fait tourner un workflow complet, sans personne devant.
+
+        Le travail passe par l'**orchestrateur du dépôt**, celui de tout le
+        reste : il apporte ses points de reprise, son historique d'exécution,
+        ses reprises d'agent et son événement d'audit. Un second chemin
+        d'exécution qui n'aurait rien de tout cela serait une implémentation
+        parallèle, et c'est précisément ce que ce VOLET referme.
+
+        La règle propre à l'exécution sans témoin : **une approbation n'est
+        jamais accordée par l'absence de quelqu'un pour la refuser.** Une
+        exécution arrêtée sur `requires_approval` est rendue `suspended`, avec
+        son `run_id` — quelqu'un la reprendra.
+
+        Args:
+            action: L'action de workflow.
+            routine: La routine, d'où viennent le propriétaire et la demande de
+                repli.
+
+        Returns:
+            Le résultat de l'exécution, y compris suspendue.
+        """
+        if self._orchestrateur is None:
+            return ActionOutcome(
+                tool_id=ACTION_WORKFLOW, status="error",
+                detail=(
+                    "Orchestrateur indisponible : le tour est rapporté comme en "
+                    "échec, pas comme réussi sans rien faire."
+                ),
+            )
+
+        depart = time.monotonic()
+        try:
+            reponse = self._orchestrateur.process_request(
+                action.operation or routine.description,
+                workflow_id=action.workflow_id,
+                user_id=routine.subject,
+                # L'exécution est la même ; sa lecture d'après ne l'est pas. Une
+                # approbation restée sans réponse toute la nuit se lirait sinon
+                # comme un utilisateur qui a changé d'avis.
+                unattended=True,
+            )
+        except Exception as erreur:
+            return ActionOutcome(
+                tool_id=ACTION_WORKFLOW, status="error",
+                detail=f"{type(erreur).__name__}: {erreur}",
+                elapsed_ms=(time.monotonic() - depart) * 1000,
+            )
+
+        duree = (time.monotonic() - depart) * 1000
+        statut = reponse.get("status")
+        identifiant = str(reponse.get("run_id") or "")
+
+        if statut == "requires_approval":
+            return ActionOutcome(
+                tool_id=ACTION_WORKFLOW, status=STATUT_SUSPENDU,
+                detail=(
+                    f"Workflow '{action.workflow_id}' suspendu : une étape "
+                    "attend une décision humaine. Personne n'était là pour la "
+                    "prendre, et l'absence de refus n'est pas un accord."
+                ),
+                elapsed_ms=duree, run_id=identifiant,
+            )
+
+        if statut == "success":
+            return ActionOutcome(
+                tool_id=ACTION_WORKFLOW, status="success",
+                detail=f"Workflow '{action.workflow_id}' exécuté.",
+                elapsed_ms=duree, run_id=identifiant,
+            )
+
+        return ActionOutcome(
+            tool_id=ACTION_WORKFLOW, status="error",
+            detail=(
+                f"Workflow '{action.workflow_id}' : {statut}. "
+                f"{reponse.get('error') or ''}".strip()
+            ),
+            elapsed_ms=duree, run_id=identifiant,
         )
 
     def _compter(self, routine: Routine, tour: RoutineRun) -> None:

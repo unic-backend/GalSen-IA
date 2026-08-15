@@ -127,6 +127,7 @@ from src.routines import (
     RoutineScheduler,
 )
 from src.connectors.safety import safety_report
+from src.router.orchestration_paths import orchestration_paths
 from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
@@ -517,8 +518,28 @@ def _scheduler() -> RoutineScheduler:
         _routine_scheduler = RoutineScheduler(
             routine_registry, tool_engine=tool_engine, safety=routine_safety,
             notifier=platform_notifier,
+            # L'orchestrateur du dépôt, celui de `POST /process` (VOLET 64).
+            # Une routine qui déclenche un workflow emprunte le même moteur :
+            # un second chemin d'exécution sans points de reprise ni historique
+            # serait l'implémentation parallèle que la directive interdit.
+            orchestrator=_OrchestrateurALaDemande(),
         )
     return _routine_scheduler
+
+
+class _OrchestrateurALaDemande:
+    """
+    L'orchestrateur, ouvert seulement quand une routine en déclenche un.
+
+    Le passer construit ferait payer à tout déploiement le chargement de trois
+    registres et la validation des workflows, y compris à celui dont aucune
+    routine ne déclenche de workflow — exactement ce que `get_router_engine()`
+    évite déjà pour les requêtes.
+    """
+
+    def process_request(self, *args, **kwargs):
+        """Transmet la demande à l'orchestrateur partagé du processus."""
+        return get_router_engine().process_request(*args, **kwargs)
 
 
 def _oauth_session(provider_id: str) -> OAuthSession:
@@ -1563,6 +1584,25 @@ async def routines_status():
     doit pas être.
     """
     return _scheduler().scheduler_report()
+
+
+@app.get("/orchestrator/paths", tags=["router"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.TOOL_EXECUTE))])
+async def orchestrator_paths():
+    """Les deux chemins par lesquels un travail atteint l'orchestrateur.
+
+    Une personne qui demande, et une routine qui se déclenche sans personne
+    devant. **Le même moteur** pour les deux — mêmes points de reprise, même
+    historique, même audit : un second chemin d'exécution sans ces garanties
+    serait une implémentation parallèle. Ce qui diffère n'est pas la mécanique,
+    c'est ce qui peut être **décidé** : une approbation n'est jamais accordée
+    par l'absence de quelqu'un pour la refuser.
+    """
+    return orchestration_paths(
+        workflow_loader=get_router_engine().workflow_loader,
+        routine_registry=routine_registry,
+    )
 
 
 @app.post("/routines/tick", tags=["routines"],

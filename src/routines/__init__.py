@@ -28,8 +28,15 @@ from .types import (
     RoutineAction,
     RoutineRefused,
 )
+from .workflow_action import (
+    ACTION_WORKFLOW,
+    STATUT_SUSPENDU,
+    WorkflowAction,
+    workflow_runnable_unattended,
+)
 
 __all__ = [
+    "ACTION_WORKFLOW",
     "ACTIONS_MAXIMUM",
     "ActionOutcome",
     "ECHECS_AVANT_ARRET",
@@ -48,5 +55,8 @@ __all__ = [
     "RoutineStats",
     "TOURS_PAR_FENETRE_PAR_DEFAUT",
     "routine_reachable_tools",
+    "STATUT_SUSPENDU",
     "TOURS_CONSERVES",
+    "WorkflowAction",
+    "workflow_runnable_unattended",
 ]

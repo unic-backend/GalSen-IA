@@ -101,6 +101,7 @@ class RouterEngine:
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
         resume_run_id: Optional[str] = None,
+        unattended: bool = False,
     ) -> Dict[str, Any]:
         """
         Traite une requête utilisateur en orchestrant les agents selon le workflow.
@@ -113,6 +114,13 @@ class RouterEngine:
             resume_run_id: Exécution interrompue à reprendre (VOLET 49). Les
                 étapes déjà abouties ne sont pas refaites, et le workflow vient
                 du point de reprise, pas de l'appelant.
+            unattended: Vrai quand une routine déclenche l'exécution, sans
+                personne devant (VOLET 64). Ne change rien à ce qui tourne :
+                l'orchestration ne doit pas se comporter autrement selon qui
+                regarde. Le marquer permet de **distinguer** dans l'audit et les
+                métriques une exécution que personne n'a lancée — sans quoi une
+                approbation restée sans réponse toute la nuit se lit comme un
+                utilisateur qui a changé d'avis.
 
         Returns:
             Un dictionnaire contenant la réponse finale et les métadonnées d'exécution.
@@ -423,6 +431,10 @@ class RouterEngine:
                         [r.get('agent') for r in all_agent_results if r.get('agent')],
                         applied=selection_appliquee_effectivement,
                     ),
+                    # Qui a lancé cette exécution : quelqu'un, ou une routine à
+                    # trois heures du matin. Les deux suivent le même chemin ;
+                    # seule la lecture d'après diffère.
+                    "unattended": unattended,
                 }
             }
             if approval_request_ids:
@@ -451,6 +463,7 @@ class RouterEngine:
                         "successful_agents": successful_agents,
                         "failed_agents": failed_agents,
                         "pending_approval_agents": pending_approval_agents,
+                        "unattended": unattended,
                     },
                 )
             response["request_id"] = request_id
@@ -492,7 +505,7 @@ class RouterEngine:
                     status=AuditStatus.FAILURE,
                     execution_time_seconds=round(time.time() - start_time, 2),
                     detail=str(e),
-                    metadata={"workflow_id": workflow_id},
+                    metadata={"workflow_id": workflow_id, "unattended": unattended},
                 )
             return error_response
 

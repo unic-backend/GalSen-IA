@@ -14,10 +14,10 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **63.2 terminée — VOLET 63 clos (vague VI, 2 phases sur 15).**
-**64.1 en attente de confirmation** — orchestrateur : routines et workflows dans
-le routage.
-**Terminées**      : **vagues I à V complètes, plus 63.1 et 63.2** (60 phases sur 73).
+**Phase courante** : **64.2 terminée — VOLET 64 clos (vague VI, 4 phases sur 15).**
+**65.1 en attente de confirmation** — sûreté intégrée : un moteur absent ne fait
+rien tomber.
+**Terminées**      : **vagues I à V complètes, plus 63 et 64** (62 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -335,7 +335,9 @@ VAGUE VI — La preuve                                              → 15 phase
   V63  Écosystème d'agents : les nouveaux outils leur arrivent    → 2 phases  ✅
        63.1 la connaissance des vagues III–IV atteint les agents   ✅
        63.2 portée mesurée, pas déclarée : `/agents/reach`         ✅
-  V64  Orchestrateur : routines et workflows dans le routage      → 2 phases
+  V64  Orchestrateur : routines et workflows dans le routage      → 2 phases  ✅
+       64.1 une routine peut déclencher un workflow complet        ✅
+       64.2 deux chemins, un seul moteur : `/orchestrator/paths`   ✅
   V65  Sûreté intégrée : un moteur absent ne fait rien tomber     → 2 phases
   V66  Observabilité de bout en bout                              → 2 phases
   V67  Maîtrise des coûts sur les nouveaux chemins                → 1 phase
@@ -352,6 +354,16 @@ réseau pour interroger son propre dépôt — c'est-à-dire ne l'interrogeait p
 manquante, et ce qui est volontairement hors de portée (greffons, routines,
 notifications, connecteurs) est nommé avec sa raison. Une capacité qu'on croit
 donnée et qui ne l'est pas est plus coûteuse qu'une capacité absente.
+
+**Ce que 64 a mesuré** : le travail planifié n'appelait que des **outils**. Il
+n'empruntait donc jamais l'orchestrateur — ni points de reprise, ni historique
+d'exécution, ni reprise d'agent, ni événement d'audit `REQUEST`. Deux chemins
+d'exécution dont un sans aucune de ces garanties, c'est-à-dire l'implémentation
+parallèle que la directive interdit. Une routine peut désormais déclencher un
+**workflow**, par le même moteur, et la seule règle propre au travail sans témoin
+est écrite : **une approbation n'est jamais accordée par l'absence de quelqu'un
+pour la refuser** — l'exécution est rendue `suspended` avec son `run_id`, et
+quelqu'un la reprend.
 
 VOLETs 72 à 76 : réservés. Ils seront ouverts si l'audit d'une vague révèle un
 manque réel — pas pour remplir un numéro.

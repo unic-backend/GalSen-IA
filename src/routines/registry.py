@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..security.isolation import Audience, Owner, may_read
 from ..tool.capabilities import (
@@ -32,6 +32,7 @@ from .types import (
     RoutineAction,
     RoutineRefused,
 )
+from .workflow_action import WorkflowAction, workflow_runnable_unattended
 
 
 class RoutineRegistry:
@@ -42,14 +43,26 @@ class RoutineRegistry:
     compte ici est que rien n'entre sans avoir été vérifié.
     """
 
-    def __init__(self, capabilities: Optional[CapabilityRegistry] = None) -> None:
+    def __init__(
+        self,
+        capabilities: Optional[CapabilityRegistry] = None,
+        workflow_loader: Optional[Any] = None,
+    ) -> None:
         """
         Args:
             capabilities: Le registre des capacités d'outils. Relu par défaut.
+            workflow_loader: Le chargeur de workflows, pour les routines qui en
+                déclenchent un (VOLET 64). Celui du dépôt par défaut, ouvert
+                seulement si une telle action est déclarée.
         """
         self._verrou = threading.RLock()
         self._routines: Dict[str, Routine] = {}
         self._capacites = capabilities if capabilities is not None else load_capabilities()
+        self._workflows = workflow_loader
+
+    def _verifier_workflow(self, workflow_id: str) -> Tuple[bool, str]:
+        """Dit si un workflow peut être déclenché sans témoin."""
+        return workflow_runnable_unattended(workflow_id, self._workflows)
 
     # ------------------------------------------------------------------
     # Déclaration
@@ -152,6 +165,21 @@ class RoutineRegistry:
         audience = Audience.user(subject) if subject else Audience.platform()
 
         for position, action in enumerate(actions):
+            if isinstance(action, WorkflowAction):
+                # Un workflow ne se juge pas comme un outil : ce qui est
+                # vérifiable à la déclaration est qu'il existe et que le
+                # chargeur accepte de l'exécuter. Ce que le workflow fera au
+                # moment venu relève de l'orchestrateur, qui a ses propres
+                # gardes — les redoubler ici les ferait diverger.
+                autorise, motif = self._verifier_workflow(action.workflow_id)
+                if not autorise:
+                    raise RoutineRefused(
+                        f"Routine '{routine_id}', action {position + 1} "
+                        f"(workflow) : {motif} Refuser à la déclaration vaut "
+                        "mieux qu'échouer chaque nuit sans témoin."
+                    )
+                continue
+
             autorise, motif = may_run_unattended(
                 action.tool_id, self._capacites, arguments=action.operation
             )
@@ -224,6 +252,32 @@ class RoutineRegistry:
         if routine is None:
             raise RoutineRefused(f"Routine '{routine_id}' inconnue.")
         return routine
+
+    def counts(self) -> Dict[str, int]:
+        """
+        Combien de routines existent, sans dire lesquelles ni à qui.
+
+        `list_routines()` filtre par audience, et c'est ce qu'il doit faire : la
+        liste des routines de quelqu'un dit ce qu'il surveille. Un rapport
+        d'orchestration a pourtant besoin de savoir *combien* il en existe.
+        Les deux besoins sont séparés ici — des nombres, jamais des
+        identifiants ni des propriétaires.
+
+        Returns:
+            Le nombre de routines déclarées, actives, et déclenchant un
+            workflow.
+        """
+        with self._verrou:
+            toutes = list(self._routines.values())
+
+        return {
+            "declared": len(toutes),
+            "enabled": sum(1 for routine in toutes if routine.enabled),
+            "running_a_workflow": sum(
+                1 for routine in toutes
+                if any(isinstance(action, WorkflowAction) for action in routine.actions)
+            ),
+        }
 
     def list_routines(self, subject: Optional[str] = None) -> List[Routine]:
         """
