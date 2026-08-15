@@ -69,3 +69,6 @@ data/raw_senegal/*.json
 # `data/processed_senegal/` et `data/processed_wolof/` :
 #   data/processed_global/world_countries.json  (VOLET 52)
 # Reproductible par `python scripts/build_world_knowledge.py`.
+
+# Espaces isolés des réparations automatiques (VOLET 72)
+.worktrees/
