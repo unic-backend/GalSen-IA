@@ -49,6 +49,10 @@ class PluginRegistry:
         self._verrou = threading.RLock()
         self._greffons: Dict[str, PluginManifest] = {}
         self._activations: Dict[str, Dict[str, str]] = {}
+        # Où vit chaque greffon, quand il vient d'un répertoire. Un greffon
+        # installé depuis un simple dictionnaire n'a pas de code sur le disque
+        # et ne s'exécute donc pas : la distinction est portée ici.
+        self._emplacements: Dict[str, Dict[str, str]] = {}
 
     # ------------------------------------------------------------------
     # Installer
@@ -80,6 +84,26 @@ class PluginRegistry:
             self._greffons[manifeste.plugin_id] = manifeste
         return manifeste
 
+    def bind_directory(self, plugin_id: str, directory: str, entry_file: str) -> None:
+        """
+        Rattache un greffon au code qui lui appartient.
+
+        Args:
+            plugin_id: Le greffon.
+            directory: Son répertoire.
+            entry_file: Le fichier réellement exécuté, déjà vérifié.
+        """
+        with self._verrou:
+            self._emplacements[plugin_id] = {
+                "directory": directory, "entry_file": entry_file,
+            }
+
+    def location_of(self, plugin_id: str) -> Optional[Dict[str, str]]:
+        """Où vit un greffon, ou `None` s'il n'a pas de code sur le disque."""
+        with self._verrou:
+            emplacement = self._emplacements.get(plugin_id)
+            return dict(emplacement) if emplacement else None
+
     def uninstall(self, plugin_id: str) -> bool:
         """
         Retire un greffon et son activation.
@@ -92,6 +116,7 @@ class PluginRegistry:
         """
         with self._verrou:
             self._activations.pop(plugin_id, None)
+            self._emplacements.pop(plugin_id, None)
             return self._greffons.pop(plugin_id, None) is not None
 
     # ------------------------------------------------------------------
@@ -217,3 +242,122 @@ class PluginRegistry:
                 "Vérifier l'identité d'un auteur.",
             ],
         }
+
+
+#: Répertoire des greffons installés, relatif à la racine du dépôt.
+REPERTOIRE_DES_GREFFONS = "plugins"
+
+#: Nom du manifeste dans le répertoire d'un greffon.
+FICHIER_MANIFESTE = "manifest.yaml"
+
+
+def _racine_depot() -> str:
+    """La racine du dépôt."""
+    import os
+
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def read_plugin_directory(chemin: str) -> Dict[str, Any]:
+    """
+    Lit le manifeste d'un répertoire de greffon, et **vérifie son point d'entrée**.
+
+    Le défaut que cette fonction referme : jusqu'ici, `entry_point` était
+    décoratif. Rien ne vérifiait qu'il existait, et rien n'empêchait un
+    manifeste de le faire pointer ailleurs — `../../src/api/server.py` est un
+    chemin parfaitement valide dans une chaîne. Un greffon ne peut désigner que
+    du code **dans son propre répertoire**.
+
+    Args:
+        chemin: Le répertoire du greffon.
+
+    Returns:
+        La déclaration lue et le chemin absolu du point d'entrée.
+
+    Raises:
+        PluginRefused: Manifeste absent, illisible, ou point d'entrée hors du
+            répertoire du greffon.
+    """
+    import os
+
+    import yaml
+
+    manifeste = os.path.join(chemin, FICHIER_MANIFESTE)
+    if not os.path.isfile(manifeste):
+        raise PluginRefused(
+            f"Aucun « {FICHIER_MANIFESTE} » dans {chemin} : rien ne tourne sans "
+            "manifeste, et un répertoire n'en est pas un."
+        )
+
+    with open(manifeste, "r", encoding="utf-8") as flux:
+        declaration = yaml.safe_load(flux) or {}
+
+    point = str(declaration.get("entry_point", "") or "").strip()
+    racine = os.path.realpath(chemin)
+    cible = os.path.realpath(os.path.join(racine, point))
+
+    if not point or os.path.isabs(point) or not cible.startswith(racine + os.sep):
+        raise PluginRefused(
+            f"Point d'entrée « {point or '—'} » hors du répertoire du greffon. "
+            "Un greffon ne désigne que du code qui lui appartient : "
+            "« ../../src/api/server.py » est une chaîne parfaitement valide, et "
+            "c'est exactement pourquoi elle est refusée."
+        )
+    if not os.path.isfile(cible):
+        raise PluginRefused(
+            f"Point d'entrée « {point} » introuvable. Un manifeste qui désigne "
+            "un fichier absent décrit un greffon qui n'existe pas."
+        )
+
+    return {"declaration": declaration, "entry_file": cible, "directory": racine}
+
+
+def install_from_directory(registry: "PluginRegistry", chemin: str) -> PluginManifest:
+    """
+    Installe un greffon depuis son répertoire.
+
+    Args:
+        registry: Le registre.
+        chemin: Le répertoire du greffon.
+
+    Returns:
+        Le manifeste validé, désactivé.
+    """
+    lu = read_plugin_directory(chemin)
+    manifeste = registry.install(lu["declaration"])
+    registry.bind_directory(manifeste.plugin_id, lu["directory"], lu["entry_file"])
+    return manifeste
+
+
+def discover(registry: "PluginRegistry", racine: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Installe tous les greffons présents dans le répertoire déclaré.
+
+    Un répertoire qui échoue **n'arrête pas les autres**, et sa raison est
+    rendue : un greffon mal écrit ne doit pas empêcher les greffons corrects
+    d'exister.
+
+    Args:
+        registry: Le registre.
+        racine: Le répertoire parcouru.
+
+    Returns:
+        Les greffons installés et ceux qui ont été refusés, avec leur raison.
+    """
+    import os
+
+    dossier = racine or os.path.join(_racine_depot(), REPERTOIRE_DES_GREFFONS)
+    if not os.path.isdir(dossier):
+        return {"installed": [], "refused": [], "directory": dossier,
+                "reason": "Aucun répertoire de greffons."}
+
+    installes, refuses = [], []
+    for nom in sorted(os.listdir(dossier)):
+        chemin = os.path.join(dossier, nom)
+        if not os.path.isdir(chemin):
+            continue
+        try:
+            installes.append(install_from_directory(registry, chemin).plugin_id)
+        except (PluginRefused, ValueError) as refus:
+            refuses.append({"directory": nom, "reason": str(refus)})
+    return {"installed": installes, "refused": refuses, "directory": dossier}

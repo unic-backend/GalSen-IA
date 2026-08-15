@@ -14,10 +14,10 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (40 volets, directive du propriétaire du 2026-08-14).
 **Phases**         : **73**, réparties en 6 vagues ordonnées par dépendance.
 (72 au départ ; **39.3 ajoutée le 2026-08-14**, voir ci-dessous.)
-**Phase courante** : **58.2 terminée.**
-**58.3 en attente de confirmation** — routes des greffons, et le greffon d'exemple.
-**Terminées**      : **vagues I à IV complètes**, plus **58.1** et **58.2**
-(48 phases sur 73).
+**Phase courante** : **59.1 terminée — VOLET 58 clos.**
+**59.2 en attente de confirmation** — le SDK de connecteurs formalisé.
+**Terminées**      : **vagues I à IV complètes**, **VOLET 58**, plus **59.1**
+(50 phases sur 73).
 **Cadence**        : **deux phases par tour** — demandée par le propriétaire le
 2026-08-14. Revient à une phase par tour dès qu'il le dit.
 
@@ -61,7 +61,7 @@ pas estimé.
 | 25 | Intelligence documentaire | `src/document_intelligence_engine/` | **existe** |
 | 26 | Ingénierie logicielle | `src/agent/repo_graph.py`, `guarded_editor.py` | **existe** |
 | 27 | Plateforme d'API | `src/api/` (76 routes) | **existe** |
-| 28 | Écosystème développeur | — | **absent** (dépend du 9) |
+| 28 | Écosystème développeur | `src/plugins/contract.py` + `docs/plugins/` + greffon d'exemple | **construit** (VOLET 59) |
 | 29 | Observabilité | `api/tracing.py`, `metrics.py`, `router/decision_trace.py` | **existe** |
 | 30 | Maîtrise des coûts | `model_engine` routage par coût (VOLET 30) | **existe** |
 | 31 | Intelligence à sûreté intégrée | `retry_manager.py`, chaque moteur en `try/except` | **à formaliser** |

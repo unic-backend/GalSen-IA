@@ -8,11 +8,17 @@ s'exécute dans le bac à sable existant du VOLET 34 — jamais dans un second �
 pour l'occasion, que personne n'aurait essayé de franchir (`execution.py`).
 """
 
+from .contract import (
+    VERSION_DU_CONTRAT,
+    plugin_contract,
+    refusal_rules,
+)
 from .execution import (
     POLITIQUE_GREFFON,
     PluginExecutionRefused,
     execution_report,
     may_run,
+    run_installed,
     run_plugin,
 )
 from .manifest import (
@@ -22,10 +28,17 @@ from .manifest import (
     manifest_report,
     read_manifest,
 )
-from .registry import PluginRefused, PluginRegistry
+from .registry import (
+    PluginRefused,
+    PluginRegistry,
+    discover,
+    install_from_directory,
+    read_plugin_directory,
+)
 
 __all__ = [
     "POLITIQUE_GREFFON",
+    "VERSION_DU_CONTRAT",
     "ManifestRefused",
     "PluginExecutionRefused",
     "PluginManifest",
@@ -34,7 +47,13 @@ __all__ = [
     "execution_report",
     "forbidden_combination",
     "manifest_report",
+    "plugin_contract",
+    "refusal_rules",
     "may_run",
+    "discover",
+    "install_from_directory",
     "read_manifest",
+    "read_plugin_directory",
+    "run_installed",
     "run_plugin",
 ]

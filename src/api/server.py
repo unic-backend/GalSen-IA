@@ -131,6 +131,14 @@ from src.router.workflow_checkpoint import CheckpointRefused
 
 # Import des services
 from src.knowledge_engine.domains import domain_coverage
+from src.plugins import (
+    PluginExecutionRefused,
+    PluginRefused,
+    PluginRegistry,
+    execution_report,
+    run_installed,
+)
+from src.plugins.registry import discover as plugin_discover
 from src.knowledge_engine.routing import ask, layer_comparison, routing_report
 from src.knowledge_engine.freshness import (
     freshness_of_year,
@@ -538,6 +546,10 @@ platform_notifier = PlatformNotifier(notification_manager)
 # dans cette installation, et il le dit plutôt que de simuler un envoi.
 notification_channels_registry = ChannelRegistry()
 
+# Les greffons (VOLET 58). Vide au démarrage : rien n'est installé sans qu'on le
+# demande, et rien n'est activé sans qu'une personne le décide.
+plugin_registry = PluginRegistry()
+
 search_manager = _moteur_partage("search", SearchManagerImpl)
 # Sans cet enregistrement, la recherche unifiée n'a aucune source et ne peut rien
 # trouver (VOLET 14, ch. 04).
@@ -639,6 +651,18 @@ class WorkflowRunRequest(BaseModel):
     request: str = Field(..., min_length=1, description="La demande à traiter")
     workflow_id: Optional[str] = Field(None, description="Workflow à utiliser ; le défaut sinon")
     session_id: Optional[str] = Field(None, description="Session, pour relier plusieurs demandes")
+
+
+class PluginEnableRequest(BaseModel):
+    """L'activation d'un greffon. Qui active vient de la clé, jamais du corps."""
+
+    reason: str = Field(
+        ...,
+        description=(
+            "Pourquoi ce greffon est activé. Elle sera lue par quelqu'un qui "
+            "n'était pas là quand la confiance a été accordée."
+        ),
+    )
 
 
 class WorkflowCancelRequest(BaseModel):
@@ -1875,6 +1899,88 @@ async def cancel_workflow_run(
             "autre ne démarre.",
         ],
     }
+
+
+# Greffons (VOLET 58)
+#
+# Un greffon est du code que ce dépôt n'a pas écrit. Installer l'inscrit
+# **désactivé** ; activer est une décision d'exploitation, tracée.
+@app.get("/plugins", tags=["plugins"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def list_plugins():
+    """Les greffons installés, lesquels sont activés, et par qui."""
+    return {
+        **plugin_registry.registry_report(),
+        "execution": execution_report(plugin_registry),
+    }
+
+
+@app.post("/plugins/discover", tags=["plugins"],
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.ADMIN_MANAGE))])
+async def discover_plugins():
+    """Installe les greffons présents dans `plugins/`, **désactivés**.
+
+    Un répertoire qui échoue n'arrête pas les autres, et sa raison est rendue :
+    un greffon mal écrit ne doit pas empêcher les greffons corrects d'exister.
+    """
+    return plugin_discover(plugin_registry)
+
+
+@app.post("/plugins/{plugin_id}/enable", tags=["plugins"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def enable_plugin(
+    plugin_id: str,
+    request: PluginEnableRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.ADMIN_MANAGE)),
+):
+    """Active un greffon. **Qui décide vient de la clé, jamais du corps.**
+
+    La raison sera lue par quelqu'un qui n'était pas là quand la confiance a été
+    accordée à du code écrit ailleurs.
+    """
+    try:
+        manifeste = plugin_registry.enable(plugin_id, ctx.subject, request.reason)
+    except PluginRefused as refus:
+        code = 404 if "inconnu" in str(refus) else 400
+        raise HTTPException(status_code=code, detail=str(refus))
+    return {
+        **manifeste.as_dict(),
+        "activation": plugin_registry.activation_of(plugin_id),
+    }
+
+
+@app.post("/plugins/{plugin_id}/disable", tags=["plugins"],
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.ADMIN_MANAGE))])
+async def disable_plugin(plugin_id: str):
+    """Désactive un greffon. **Aucune raison demandée** : arrêter doit être gratuit."""
+    try:
+        return plugin_registry.disable(plugin_id).as_dict()
+    except PluginRefused as refus:
+        raise HTTPException(status_code=404, detail=str(refus))
+
+
+@app.post("/plugins/{plugin_id}/run", tags=["plugins"],
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.ADMIN_MANAGE))])
+async def run_plugin_route(plugin_id: str):
+    """Exécute le **point d'entrée déclaré** d'un greffon, dans le bac à sable.
+
+    Aucun code n'est accepté dans la requête : il vient du fichier que le
+    manifeste désigne, et de nulle part ailleurs. Sans cela, l'autorisation
+    porterait sur un manifeste et l'exécution sur autre chose.
+
+    La sortie revient enveloppée comme **donnée externe** — jamais comme une
+    instruction — et ce que le bac à sable ne garantit pas voyage avec elle.
+    """
+    try:
+        resultat = run_installed(plugin_id, plugin_registry)
+    except PluginExecutionRefused as refus:
+        code = 404 if "inconnu" in str(refus) else 409
+        raise HTTPException(status_code=code, detail=str(refus))
+    return {**resultat, "output": resultat["output"].to_dict()}
 
 
 # Connaissance mondiale (VOLET 52)

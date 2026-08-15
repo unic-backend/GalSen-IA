@@ -1,0 +1,21 @@
+# Greffon d'exemple — le plus petit greffon honnête possible (VOLET 58).
+#
+# Il ne fait rien d'utile, et c'est délibéré : un exemple qui appelle une API
+# externe demanderait un identifiant que ce dépôt n'a pas, et un exemple qui
+# ment sur ce qu'il fait apprendrait à mentir.
+#
+# Ce qu'il montre : la forme d'un manifeste, et le fait qu'un greffon est jugé
+# sur ce qu'il déclare avant que son code soit lu.
+
+plugin_id: exemple-meteo
+version: "0.1.0"
+author: "GalSen IA"
+description: "Greffon d'exemple : il rend un objet JSON et rien d'autre."
+entry_point: main.py
+
+# Ce qu'il demande. Un greffon qui demanderait `user_private` **et** `external`
+# serait refusé au chargement, quelles que soient ses intentions.
+effects:
+  - read
+scopes:
+  - public

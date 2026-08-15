@@ -193,3 +193,57 @@ def execution_report(registry: PluginRegistry) -> Dict[str, Any]:
             "pas garantir.",
         ],
     }
+
+
+def run_installed(
+    plugin_id: str,
+    registry: PluginRegistry,
+    effect: Optional[Effect] = None,
+    scope: Optional[DataScope] = None,
+    policy: Optional[SandboxPolicy] = None,
+) -> Dict[str, Any]:
+    """
+    Exécute le **point d'entrée déclaré** d'un greffon installé.
+
+    Le défaut que cette fonction referme : `run_plugin` prend le code en
+    paramètre, ce qui convient à un test mais laisserait un appelant exécuter
+    n'importe quoi sous le nom d'un greffon approuvé. L'autorisation porterait
+    alors sur un manifeste et l'exécution sur autre chose. Ici, le code vient du
+    fichier que le manifeste désigne, et de nulle part ailleurs.
+
+    Args:
+        plugin_id: Le greffon.
+        registry: Le registre.
+        effect: L'effet demandé.
+        scope: La classe de données demandée.
+        policy: Bornes appliquées.
+
+    Returns:
+        Le résultat, comme `run_plugin`.
+
+    Raises:
+        PluginExecutionRefused: Greffon inconnu, sans code sur le disque, ou
+            refusé par sa déclaration.
+    """
+    if registry.get(plugin_id) is None:
+        # Distingué de « sans code » : un greffon inexistant et un greffon
+        # déclaré sans fichiers sont deux situations, et les confondre ferait
+        # chercher un répertoire pour quelque chose qui n'a jamais été installé.
+        raise PluginExecutionRefused(f"Greffon « {plugin_id} » inconnu.")
+
+    emplacement = registry.location_of(plugin_id)
+    if emplacement is None:
+        raise PluginExecutionRefused(
+            f"Greffon « {plugin_id} » sans code sur le disque : il a été "
+            "déclaré, pas installé depuis un répertoire. Un manifeste seul ne "
+            "s'exécute pas."
+        )
+
+    with open(emplacement["entry_file"], "r", encoding="utf-8") as flux:
+        code = flux.read()
+
+    return {
+        **run_plugin(plugin_id, code, registry, effect=effect, scope=scope,
+                     policy=policy),
+        "entry_file": emplacement["entry_file"],
+    }

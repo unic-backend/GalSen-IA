@@ -307,3 +307,272 @@ def test_le_rapport_dit_qu_aucun_second_bac_a_sable_n_a_ete_ecrit(registre):
 
     assert "n'est pas réécrit ici" in regles
     assert "VOLET 34" in regles
+
+
+# ----------------------------------------------------------------------
+# 4. Le répertoire, le point d'entrée, et l'exemple (58.3)
+# ----------------------------------------------------------------------
+
+def test_un_point_d_entree_hors_du_repertoire_est_refuse(tmp_path):
+    """
+    **Le défaut refermé en 58.3** : `entry_point` était décoratif. Rien ne
+    vérifiait qu'il existait, et rien n'empêchait un manifeste de le faire
+    pointer ailleurs — « ../../src/api/server.py » est une chaîne parfaitement
+    valide.
+    """
+    from src.plugins import read_plugin_directory
+
+    greffon = tmp_path / "mechant"
+    greffon.mkdir()
+    (greffon / "manifest.yaml").write_text(
+        "plugin_id: mechant\nversion: '1'\nauthor: a\ndescription: d\n"
+        "entry_point: ../../src/api/server.py\n", encoding="utf-8",
+    )
+
+    with pytest.raises(PluginRefused, match="hors du répertoire"):
+        read_plugin_directory(str(greffon))
+
+
+def test_un_point_d_entree_absent_est_refuse(tmp_path):
+    """Un manifeste qui désigne un fichier absent décrit un greffon qui n'existe pas."""
+    from src.plugins import read_plugin_directory
+
+    greffon = tmp_path / "vide"
+    greffon.mkdir()
+    (greffon / "manifest.yaml").write_text(
+        "plugin_id: vide\nversion: '1'\nauthor: a\ndescription: d\n"
+        "entry_point: main.py\n", encoding="utf-8",
+    )
+
+    with pytest.raises(PluginRefused, match="introuvable"):
+        read_plugin_directory(str(greffon))
+
+
+def test_un_repertoire_sans_manifeste_est_refuse(tmp_path):
+    """Un répertoire n'est pas une déclaration."""
+    from src.plugins import read_plugin_directory
+
+    (tmp_path / "nu").mkdir()
+
+    with pytest.raises(PluginRefused, match="manifeste"):
+        read_plugin_directory(str(tmp_path / "nu"))
+
+
+def test_un_greffon_mal_ecrit_n_empeche_pas_les_autres(tmp_path):
+    """Sa raison est rendue, et les corrects existent quand même."""
+    from src.plugins import discover
+
+    bon = tmp_path / "bon"
+    bon.mkdir()
+    (bon / "manifest.yaml").write_text(
+        "plugin_id: bon\nversion: '1'\nauthor: a\ndescription: d\n"
+        "entry_point: main.py\neffects: [read]\nscopes: [public]\n", encoding="utf-8",
+    )
+    (bon / "main.py").write_text("print('ok')\n", encoding="utf-8")
+    (tmp_path / "casse").mkdir()
+
+    trouve = discover(PluginRegistry(), str(tmp_path))
+
+    assert trouve["installed"] == ["bon"]
+    assert [r["directory"] for r in trouve["refused"]] == ["casse"]
+
+
+def test_le_greffon_d_exemple_du_depot_s_installe_et_tourne():
+    """Lu sur le dépôt réel, pas sur une fixture."""
+    from src.plugins import discover, run_installed
+
+    registre = PluginRegistry()
+    trouve = discover(registre)
+
+    assert "exemple-meteo" in trouve["installed"]
+    assert registre.get("exemple-meteo").enabled is False
+
+    registre.enable("exemple-meteo", "awa", "démonstration")
+    resultat = run_installed(
+        "exemple-meteo", registre, effect=Effect.READ, scope=DataScope.PUBLIC,
+    )
+
+    assert resultat["exit_code"] == 0
+    assert "exemple-meteo" in resultat["output"].text
+
+
+def test_un_manifeste_seul_ne_s_execute_pas(registre):
+    """
+    Installé depuis un dictionnaire, il n'a pas de code sur le disque — et le
+    dire vaut mieux que de lever une erreur de fichier absent.
+    """
+    from src.plugins import run_installed
+
+    registre.enable("meteo-sn", "awa", "pilote")
+
+    with pytest.raises(PluginExecutionRefused, match="sans code sur le disque"):
+        run_installed("meteo-sn", registre)
+
+
+# ----------------------------------------------------------------------
+# 5. Le contrat développeur (59.1)
+# ----------------------------------------------------------------------
+
+def test_le_contrat_liste_toutes_les_regles_de_refus():
+    """
+    Un auteur qui découvre un refus au moment d'être refusé a lu une
+    documentation incomplète.
+    """
+    from src.plugins import plugin_contract
+
+    contrat = plugin_contract()
+
+    regles = {refus["rule"] for refus in contrat["refusals"]}
+    assert {
+        "manifest_required", "required_fields", "identifier_shape",
+        "private_and_external", "system_scope", "entry_point_inside",
+        "identifier_taken", "disabled_by_default", "undeclared_capability",
+        "no_sandbox_no_run",
+    } <= regles
+
+
+def test_chaque_regle_de_refus_dit_pourquoi():
+    """Une règle sans raison se lit comme un caprice, et se contourne."""
+    from src.plugins import refusal_rules
+
+    for regle in refusal_rules():
+        assert regle["why"].strip(), regle["rule"]
+        assert regle["refuses"].strip(), regle["rule"]
+
+
+def test_la_documentation_ne_peut_pas_deriver_du_code():
+    """
+    **La garde de la phase.** La page est écrite depuis le contrat ; une règle
+    ajoutée au code et oubliée dans la page fait échouer la suite, au lieu
+    d'être découverte par celui qu'elle refuse.
+    """
+    from src.plugins import plugin_contract, refusal_rules
+
+    page = os.path.join(os.path.dirname(__file__), "..", "docs", "plugins", "README.md")
+    with open(page, "r", encoding="utf-8") as flux:
+        texte = flux.read()
+
+    for regle in refusal_rules():
+        assert regle["rule"] in texte, f"Règle « {regle['rule']} » absente de la page"
+    assert plugin_contract()["contract_version"] in texte
+
+
+def test_le_contrat_dit_ce_que_la_plateforme_ne_fait_pas():
+    """Y compris ce qui est inconfortable à écrire."""
+    from src.plugins import plugin_contract
+
+    ne_fait_pas = " ".join(plugin_contract()["does_not"])
+
+    assert "n'inspecte pas l'exécution" in ne_fait_pas
+    assert "identité" in ne_fait_pas
+
+
+def test_la_sortie_est_declaree_externe_dans_le_contrat():
+    """Ce qu'un auteur doit savoir avant d'écrire un `print`."""
+    from src.plugins import plugin_contract
+
+    sortie = plugin_contract()["output"]
+
+    assert sortie["trust_level"] == "external"
+    assert "reste une chaîne" in sortie["note"]
+
+
+# ----------------------------------------------------------------------
+# 6. Les routes (58.3)
+# ----------------------------------------------------------------------
+
+@pytest.fixture
+def client_greffons(monkeypatch):
+    """Client HTTP, clé admin, et un registre de greffons neuf."""
+    from fastapi.testclient import TestClient
+
+    from src.api import server as server_module
+    from src.api.rate_limiter import set_valid_api_key_digests
+
+    ancien = dict(server_module.rbac_manager._key_role_map)
+    monkeypatch.setenv("GALSEN_API_KEYS", "cle-awa:admin:awa,cle-fatou:user:fatou")
+    server_module.rbac_manager.reload()
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
+    monkeypatch.setattr(server_module, "plugin_registry", PluginRegistry())
+    with TestClient(server_module.app) as essai:
+        yield essai, {"X-API-Key": "cle-awa"}, {"X-API-Key": "cle-fatou"}
+    server_module.rbac_manager._key_role_map = ancien
+    set_valid_api_key_digests(server_module.rbac_manager.get_valid_key_digests())
+
+
+def test_la_decouverte_installe_desactive(client_greffons):
+    """Rien n'est activé parce qu'un fichier est arrivé."""
+    client, admin, _ = client_greffons
+
+    trouve = client.post("/plugins/discover", headers=admin).json()
+    liste = client.get("/plugins", headers=admin).json()
+
+    assert "exemple-meteo" in trouve["installed"]
+    assert liste["installed"] >= 1
+    assert liste["enabled"] == 0
+
+
+def test_un_greffon_non_active_ne_s_execute_pas_par_la_route(client_greffons):
+    """409 : l'état du greffon s'oppose à l'exécution."""
+    client, admin, _ = client_greffons
+    client.post("/plugins/discover", headers=admin)
+
+    reponse = client.post("/plugins/exemple-meteo/run", headers=admin)
+
+    assert reponse.status_code == 409
+    assert "désactivé" in reponse.json()["detail"]
+
+
+def test_l_activation_nomme_l_appelant_pas_un_champ_du_corps(client_greffons):
+    """Qui accorde sa confiance vient de la clé (ADR-010)."""
+    client, admin, _ = client_greffons
+    client.post("/plugins/discover", headers=admin)
+
+    active = client.post(
+        "/plugins/exemple-meteo/enable", headers=admin,
+        json={"reason": "démonstration"},
+    ).json()
+
+    assert active["activation"]["enabled_by"] == "awa"
+    assert active["enabled"] is True
+
+
+def test_la_route_execute_le_point_d_entree_declare(client_greffons):
+    """
+    Aucun code n'est accepté dans la requête : sans cela, l'autorisation
+    porterait sur un manifeste et l'exécution sur autre chose.
+    """
+    client, admin, _ = client_greffons
+    client.post("/plugins/discover", headers=admin)
+    client.post("/plugins/exemple-meteo/enable", headers=admin,
+                json={"reason": "démonstration"})
+
+    resultat = client.post("/plugins/exemple-meteo/run", headers=admin).json()
+
+    assert resultat["exit_code"] == 0
+    assert resultat["output"]["level"] == "external"
+    assert resultat["entry_file"].endswith("main.py")
+
+
+def test_l_administration_des_greffons_est_reservee(client_greffons):
+    """Activer du code écrit ailleurs est un acte d'exploitation."""
+    client, admin, utilisateur = client_greffons
+    client.post("/plugins/discover", headers=admin)
+
+    assert client.post("/plugins/discover", headers=utilisateur).status_code == 403
+    assert client.post(
+        "/plugins/exemple-meteo/enable", headers=utilisateur, json={"reason": "x"},
+    ).status_code == 403
+    assert client.post(
+        "/plugins/exemple-meteo/run", headers=utilisateur,
+    ).status_code == 403
+
+
+def test_un_greffon_inconnu_est_un_404(client_greffons):
+    """Ni erreur obscure, ni exécution."""
+    client, admin, _ = client_greffons
+
+    assert client.post(
+        "/plugins/fantome/enable", headers=admin, json={"reason": "x"},
+    ).status_code == 404
+    assert client.post("/plugins/fantome/run", headers=admin).status_code == 404
