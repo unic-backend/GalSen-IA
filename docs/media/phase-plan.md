@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 12.
+**Total: 32 phases.** Completed: 14.
 
 ---
 
@@ -342,6 +342,43 @@ invisible in a plan and obvious in a finished video.
 
 ---
 
-**Next**: VOLET M08 — motion design and render backends (2 phases). `frame_encode`
-is the one capability measured AVAILABLE on this machine, so this volet produces
-real video. Then stop.
+## What M08 built — the first real video
+
+`src/media/motion/scene.py` and `render.py`, 27 tests. This volet produces video
+rather than describing it: `frame_encode` is the one capability measured
+AVAILABLE here, and a 24-frame animation encodes to a real 6.7 kB WebM.
+
+**A scene is entirely data, so a render is a pure function of it.** That is the
+same demand as §8's "do not hardcode one visual style", stated twice: if the
+description is data and the identity is data, the same input produces the same
+bytes. Verified — two renders of the same frame are byte-identical, and two
+visual identities over the same scene give different pixels with identical
+structure. Without that property a quality control has nothing to compare.
+
+**Time is a frame index at a declared rate.** Frame *n* is at exactly `n / fps`,
+computed. A renderer that reads the wall clock produces a different video every
+run, and nobody notices until two QC diffs are compared. Easing curves are
+declared and an undeclared one is refused, because a hidden default easing is a
+style decision made by whoever wrote the framework rather than whoever is making
+the film.
+
+**§9's browser pipeline is one backend, not the engine.** A media engine welded
+to Chromium can only animate what a browser draws and inherits all of its
+non-determinism — font substitution, subpixel AA, GPU rasterisation. So backends
+are a registry: `pillow` is deterministic and available, `browser` is declared
+and reports unavailable here (Chromium present, no driver), which is exactly how
+an absent capability should look.
+
+The encode path uses M01's measurement rather than the obvious command — frames
+piped as MJPEG, because this ffmpeg reads `image2pipe` not `image2` and decodes
+MJPEG but not PNG. And `render_video()` reports what was **written**, never a
+verdict: an encoder exiting zero says nothing about what the file contains
+(§21). A cross-check reads the output back through M03's identifier, so the two
+volets verify each other.
+
+What is not implemented — particles, masks, 3D, object tracking — is named with
+its reason rather than implied.
+
+---
+
+**Next**: VOLET M09 — video providers and the WanGP adapter (2 phases). Then stop.
