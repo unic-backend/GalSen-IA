@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 20.
+**Total: 32 phases.** Completed: 23.
 
 ---
 
@@ -492,5 +492,36 @@ was generated, the answer must come from the record.
 
 ---
 
-**Next**: VOLET M13 — media skills and style memory (1 phase), then M14 — quality
-control and final render verification (2 phases). Then stop.
+## What M13 and M14 built
+
+`src/media/skills/registry.py` and `src/media/qc/checks.py`, 38 tests.
+
+**§17's binding rule guards a silent failure.** A client asks for larger
+captions on a Tuesday; the system helpfully records the preference; three months
+later a different client on another continent gets larger captions and nobody
+can say why — the rule has no author, no date and no reason, so nobody can argue
+with it either. So a correction becomes a **candidate**: visible, countable, and
+doing nothing. Promotion requires a named validator who is not the platform
+(same word-by-word identity check as Darra J — "ia" is inside "Mariama"). Scope
+is the second guard: a project rule stays in its project, and reaching global
+needs its own promotion, because "this worked for one client" and "this is how
+we work" are different claims.
+
+**§21 only survives if a check that could not run is impossible to confuse with
+one that passed.** So there are three outcomes, never two: `PASS`, `FAIL`,
+`NOT_CHECKED` — the last naming the capability that would enable it.
+`PRODUCTION_SUCCESS` requires everything applicable to pass **and** nothing to
+remain unchecked; otherwise `INCOMPLETE`, not "passed with notes". A pipeline
+reporting "12 checks passed" when four never ran is more dangerous than one with
+no checks: it produces a green report a human trusts instead of watching the
+video.
+
+The end-to-end test renders a real video and asserts the honest verdict for this
+machine: video checks pass, audio checks are `NOT_CHECKED` for want of a codec,
+verdict `INCOMPLETE`. An empty report is not a success either — it is the
+absence of control.
+
+---
+
+**Next**: VOLET M15 — multi-format and multilingual adaptation (1 phase), then
+M16 — the job queue (1 phase). Then stop.
