@@ -339,6 +339,9 @@ def test_les_capacites_media_sont_publiees_mesurees(client, cles, racine_media):
                                               "UNAVAILABLE")
     assert corps["tools"]["count"] == 16
     assert corps["boundary"]["allowed_extensions"]
+    # L'aptitude est calculée sur les 17 étapes de §40 et nomme ce qui manque.
+    assert sum(corps["readiness"]["counts"].values()) == 17
+    assert "PENDING" in corps["readiness"]["state"]
 
 
 def test_une_cle_en_lecture_seule_ne_lance_aucun_rendu(client, cles, racine_media):

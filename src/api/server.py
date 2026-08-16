@@ -102,6 +102,7 @@ from src.media.core.project import MediaProject, ProjectRefused
 from src.media.core.store import project_store as media_project_store
 from src.media.ingestion.inspect import inspect_media
 from src.media.queue.jobs import PRIORITE_NORMALE, QueueRefused, RenderQueue
+from src.media.readiness import readiness as media_readiness
 from src.media.security.boundary import (
     MediaPathRefused,
     boundary_report as media_boundary_report,
@@ -3706,11 +3707,16 @@ def _media_project_or_404(project_id: str):
          dependencies=[Depends(rate_limit_dependency),
                        Depends(require_permission(Permission.HEALTH_VIEW))])
 async def media_capabilities():
-    """Ce que cette machine peut réellement faire, **mesuré** et non supposé."""
+    """Ce que cette machine peut réellement faire, **mesuré** et non supposé.
+
+    L'état d'aptitude est calculé sur les dix-sept étapes de §40 : il nomme ce
+    qui manque, et il change le jour où cela n'est plus vrai.
+    """
     return {
         "capabilities": media_capability_report(),
         "tools": media_runnable_now(),
         "boundary": media_boundary_report(),
+        "readiness": media_readiness(),
     }
 
 

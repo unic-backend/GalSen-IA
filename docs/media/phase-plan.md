@@ -624,5 +624,74 @@ rewritten into one that resolves.
 
 ---
 
-**Next**: VOLET M19 — tests, benchmarks and the readiness report (2 phases),
-then M20 — Media Studio UI (1 phase, conditional on `src/web/`).
+---
+
+## What M19 built
+
+`src/media/benchmarks/harness.py` and `src/media/readiness.py`, 29 tests.
+
+**§33 ends on "never invent benchmark results", and nobody invents them on
+purpose.** What actually happens is quieter: render time reads `0.0 ms` because
+the renderer was skipped, transcription latency is `null` and prints as an empty
+cell, GPU memory is `0` because no GPU answered. Each of those reads as a
+measurement — the first describes a fast renderer, the last a machine under no
+memory pressure, and both are false. So a benchmark whose capability is absent
+returns `NOT_MEASURED` with the capability named, and is never coerced into a
+number on the way out.
+
+Two smaller decisions carry weight. The **median**, not the mean: one garbage
+collection pause moves a mean and does not move a median, and reporting the mean
+of five runs where one was 40× the others describes an event that happened once
+as if it were normal. And the **machine travels with the number** — "scene
+detection: 3 ms" is half a result. A bug found by running it: the registry calls
+each benchmark with one positional argument, and `bench_queue_throughput` took
+`jobs` first, so it measured three jobs while reporting two hundred.
+
+Measured on this machine, `Linux-6.18.5 x86_64`, 4 CPU, 15.7 GB RAM, **no GPU**,
+Python 3.11.15, OpenCV 5.0.0, Pillow 12.3.0 — five samples each:
+
+| Benchmark | Median | Range | Samples |
+|---|---|---|---|
+| `render` (12 frames → WebM) | 52.28 ms | — | 1 |
+| `intent_to_plan` | 18.91 ms | 18.27–24.97 | 5 |
+| `scene_detection` (24 frames) | 3.05 ms | 2.99–23.07 | 5 |
+| `queue_throughput` (200 jobs) | 1.05 ms | 1.02–1.29 | 5 |
+| `motion_frame` | 0.67 ms | 0.55–13.16 | 5 |
+| `edit_plan` | 0.37 ms | 0.34–0.39 | 5 |
+| `subtitle_segmentation` (120 words) | 0.26 ms | 0.25–0.34 | 5 |
+| `transcription` | `NOT_MEASURED` | capability `transcription` absent | — |
+| `media_probe` | `NOT_MEASURED` | capability `media_probe` absent | — |
+
+**The readiness report walks §40's seventeen stages and computes its own
+verdict.** Each stage names the module implementing it — *checked on disk* — and
+the capabilities it needs — *checked by the probes*. Three outcomes, and the
+third is the one that matters: `ABSENT` is not `BLOCKED`, because a blocked
+stage names something to install and an absent one names something to write.
+Calling the first the second sends an operator looking for a package that was
+never the problem.
+
+Walking it found the thing the report exists to find: **speech synthesis does
+not exist in this repository**. Nothing turns text into voice; the planner's
+`voice` slot holds the text *to be said*, not its audio. It is reported `ABSENT`
+with that reason rather than folded into the missing-dependency list.
+
+```
+READY   10  IDEA · SCRIPT · STORYBOARD · MOTION_DESIGN · MUSIC · SOUND_DESIGN
+            SUBTITLES · QUALITY_CONTROL · MULTI_FORMAT · MULTILINGUAL
+BLOCKED  6  MEDIA_ANALYSIS · SCENES · VISUAL_GENERATION · VIDEO_GENERATION
+            EDITING · FINAL_MASTER   → media_probe, video_decode, video_encode,
+                                       transcription, gpu_compute
+ABSENT   1  VOICE
+```
+
+State, computed and not written: **`ENGINE READY — MEDIA RUNTIME DEPENDENCIES
+PENDING, 1 STAGE(S) NOT IMPLEMENTED (VOICE)`**. It is served at
+`GET /media/capabilities` beside the measured capability report, and the fifteen
+test areas of §32 are mapped to the files covering them — each file verified on
+disk, because a coverage table resting on a file that does not exist still reads
+like coverage.
+
+---
+
+**Next**: VOLET M20 — Media Studio UI (1 phase, conditional on `src/web/`),
+then the final report in the thirteen points of §42.
