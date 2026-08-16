@@ -10,29 +10,41 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 
 ---
 
-**Programme en cours** : **Universal Media & Video Intelligence Engine — M01 à M20**
-(20 volets, directive du propriétaire, 42 sections).
-**Phases**         : **32**. Plan complet et audit → `docs/media/phase-plan.md`.
-**Phase courante** : **aucune — le programme est terminé.**
-**Terminées**      : M01 à M20 — **32 phases sur 32**. Rapport final →
-`docs/media/final-report.md`.
+**Programme en cours** : **Universal Creative Intelligence — C00 à C18**
+(directive propriétaire V4, 81 sections).
+**Phases**         : **38**. Plan complet → `docs/creative/phase-plan.md`.
+Audit du dépôt (PHASE 0) → `docs/creative/repository-audit.md`.
+**Phase courante** : **C01.1 — en attente de confirmation** (recherche écosystème).
+**Terminées**      : C00 — 1 phase sur 38.
 **Cadence**        : **deux volets par tour**, comme pour les programmes précédents.
 
-**Contraintes mesurées avant de planifier** : `ffmpeg`/`ffprobe`, `torch`, GPU et
-`whisper` sont **absents de cet environnement** (mesuré, non supposé). OpenCV 5.0
-et Pillow 12.3 sont présents. La couche média déterministe et la génération vidéo
-sont donc construites en **adaptateurs avec sondes de capacité** : une capacité
-indisponible rapporte son état, elle ne rend jamais un résultat plausible.
+**Mesuré avant de planifier, et décisif** :
+- **`raw.githubusercontent.com` répond `200`** : les licences officielles des
+  dépôts sont lisibles. **`huggingface.co` n'a aucune route depuis ce conteneur**
+  (`000`) : les **licences de poids** resteront `UNKNOWN` (§40).
+- **Rien de génératif ne s'exécute ici** : aucun GPU, ni `torch`, ni
+  `transformers`, ni `ffmpeg` complet, ni modèle de parole — et même la cascade
+  de détection de visages est absente (`is_available() == False`). Aucune phase
+  ne peut donc affirmer une qualité de génération, de fidélité d'identité ou de
+  continuité par exécution.
+- **Trois familles de fournisseurs existent déjà** (`model_engine`, `multimodal`,
+  `media`). En ajouter une quatrième serait la duplication que §2 interdit :
+  ADR-001 tranche unifier-ou-étendre **avant** toute ligne de code fournisseur.
 
-**Déjà construit, à ne pas refaire** (§39) : `src/multimodal/` (transcription),
-`src/vision_intelligence_engine/` (analyse d'image), `src/model_engine/providers/`
-(forme fournisseur/registre), `src/tool/` (capacités + plafonds), `src/agent/`
-(auto-réparation), `src/security/` (frontière de confiance), ADR-005 (stockage),
-`workflow_checkpoint.py` (reprise).
+**Déjà construit, à ne pas refaire** (§2, §75) : `src/security/` (frontière de
+confiance), `src/agent/` (auto-réparation), `src/approval_engine/` (ADR-006),
+`src/knowledge_engine/` (deux axes, `SourceTier`), `src/acquisition/` (échelle
+observation → validation, ADR-021), `src/memory_engine/` (couches),
+`src/media/` (file, provenance, contrôle qualité, formats), `src/tool/`
+(capacités + plafonds), ADR-005 (stockage).
 
 ---
 
 ## Programmes terminés
+
+**Universal Media & Video Intelligence Engine** : 20 volets, **32 phases sur 32**.
+Rapport → `docs/media/final-report.md`.
+
 
 **Darra J — moteur d'intelligence éducative** : 20 volets, **28 phases sur 28**.
 Rapport → `docs/darra-j/final-report.md`.
