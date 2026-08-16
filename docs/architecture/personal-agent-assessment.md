@@ -126,7 +126,7 @@ agents" has, today, **no counterpart here**.
 The server speaks JSON-RPC 2.0 with no dependency — `initialize`, `tools/list`,
 `tools/call`, `ping`. Three properties matter more than the protocol:
 
-- **The exposure is a whitelist of eight**, not the catalogue of twenty-one.
+- **The exposure is a whitelist of eight**, not the catalogue of twenty-three.
   `terminal`, `gui`, `screen`, `filesystem`, `database`, `email`, `calendar`,
   `git`, `github`, `api`, `browser`, `model` are refused **with a reason**.
   Serving the whole catalogue would hand an outside agent the platform's hands.
@@ -145,7 +145,7 @@ erasing the attempt would erase the evidence of the attempt.
 
 ---
 
-## 3. Tools: twenty-one enabled, all importable
+## 3. Tools: twenty-three enabled, all importable
 
 > **Updated 2026-08-12 by VOLET 34 chapters 05 and 06.** `screen` reads the
 > accessibility tree; `gui` proposes gestures and executes none without a human
@@ -154,11 +154,15 @@ erasing the attempt would erase the evidence of the attempt.
 
 ```
 filesystem terminal screen gui git github web_search browser api database model
-memory rag embeddings ocr pdf email calendar logging metrics agri_advice → enabled
+memory rag embeddings ocr pdf email calendar logging metrics agri_advice
+media media_generation                                                   → enabled
 docker                                                                   → disabled
 ```
 
-All twenty-two modules import cleanly. `docker` is off **for a stated security
+All twenty-four modules import cleanly. `media` and `media_generation` are two
+declarations of one engine for the same reason `screen` and `gui` are two tools:
+the local one reads and writes on this machine, the generative one sends the
+material off it, and only the second needs a human. `docker` is off **for a stated security
 reason**, not neglect: from inside the production container it would need the
 host's Docker socket, which is root on the host — an agent could start a
 privileged container mounting `/`. The brief asks for a sandbox; this is why the

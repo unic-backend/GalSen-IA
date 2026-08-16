@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 import logging
+import os
 import threading
 import time
 import uuid
@@ -91,6 +92,28 @@ from src.api.rbac import (
     Permission,
     RBACContext,
 )
+
+# Moteur média (§29). Les noms sont préfixés `media_` à l'import : ce fichier
+# porte déjà `capability_report` et `availability` pour d'autres moteurs, et
+# deux fonctions du même nom dans un module de 3600 lignes finissent par être
+# confondues par un lecteur avant de l'être par un appelant.
+from src.media.core.capabilities import capability_report as media_capability_report
+from src.media.core.project import MediaProject, ProjectRefused
+from src.media.core.store import project_store as media_project_store
+from src.media.ingestion.inspect import inspect_media
+from src.media.queue.jobs import PRIORITE_NORMALE, QueueRefused, RenderQueue
+from src.media.security.boundary import (
+    MediaPathRefused,
+    boundary_report as media_boundary_report,
+    media_root,
+    safe_media_path,
+    safe_output_name,
+)
+from src.media.tools.catalog import (
+    availability as media_availability,
+    runnable_now as media_runnable_now,
+)
+from src.media.tools.intent import IntentRefused, production_plan as media_production_plan
 
 # Import de l'interface web (ADR-008)
 from src.web import STATIC_DIRECTORY, UI_PREFIX
@@ -3595,6 +3618,218 @@ async def email_delete(email_id: str):
     if not success:
         raise HTTPException(status_code=404, detail=f"Email {email_id} introuvable")
     return {"email_id": email_id, "status": "deleted"}
+
+
+# ----------------------------------------------------------------------
+# Média (§29) — le moteur exposé sans être couplé à une interface
+#
+# Ce que ces routes ajoutent par rapport à un appel direct au moteur, c'est la
+# **frontière** : tout chemin reçu ici est jugé par `src/media/security/`
+# avant d'atteindre quoi que ce soit, et une capacité absente répond `503`
+# avec ce qui manque plutôt qu'un résultat plausible.
+# ----------------------------------------------------------------------
+
+class MediaProjectRequest(BaseModel):
+    """L'ouverture d'une production. Qui l'ouvre vient de la clé, pas du corps."""
+
+    objective: str = Field(
+        ...,
+        description=(
+            "Ce que la production doit accomplir. Sans objectif, rien ne dirait "
+            "si elle a réussi."
+        ),
+    )
+
+
+class MediaAnalyzeRequest(BaseModel):
+    """Un média à mesurer, désigné **relativement à la racine média**."""
+
+    path: str = Field(
+        ...,
+        description=(
+            "Le chemin du média, sous la racine média. Un chemin absolu ou "
+            "remontant est refusé en le nommant, jamais réécrit en silence."
+        ),
+    )
+
+
+class MediaPlanRequest(BaseModel):
+    """Une demande en langage naturel (§25)."""
+
+    request: str = Field(..., description="Ce que l'utilisateur demande.")
+    available: List[str] = Field(
+        default_factory=lambda: ["media", "project"],
+        description="Ce qui existe déjà — par exemple `media` pour un fichier fourni.",
+    )
+
+
+class MediaRenderRequest(BaseModel):
+    """Un rendu déposé dans la file (§28)."""
+
+    output_name: str = Field(..., description="Le nom du fichier à écrire.")
+    priority: int = Field(
+        default=PRIORITE_NORMALE,
+        description="Priorité déclarée : 10, 50 ou 90.",
+    )
+    total_units: Optional[int] = Field(
+        default=None,
+        description=(
+            "Le nombre d'unités à traiter, s'il est connu. Inconnu, "
+            "l'avancement répond `null` — jamais 0 %."
+        ),
+    )
+
+
+class MediaCancelRequest(BaseModel):
+    """L'annulation d'un rendu. **Terminale**."""
+
+    reason: str = Field(default="", description="Pourquoi le rendu est arrêté.")
+
+
+#: La file des rendus et le magasin des productions, partagés par le processus.
+#: Le magasin suit ADR-005 : `in-memory` par défaut, `sqlite` quand la
+#: plateforme est configurée pour persister.
+_media_queue = RenderQueue()
+_media_projects = media_project_store()
+
+
+def _media_project_or_404(project_id: str):
+    """Charge une production ou répond 404 en la nommant."""
+    projet = _media_projects.load(project_id)
+    if projet is None:
+        raise HTTPException(
+            status_code=404, detail=f"Production « {project_id} » introuvable.")
+    return projet
+
+
+@app.get("/media/capabilities", tags=["media"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def media_capabilities():
+    """Ce que cette machine peut réellement faire, **mesuré** et non supposé."""
+    return {
+        "capabilities": media_capability_report(),
+        "tools": media_runnable_now(),
+        "boundary": media_boundary_report(),
+    }
+
+
+@app.post("/media/projects", tags=["media"], status_code=201,
+          dependencies=[Depends(rate_limit_dependency)])
+async def media_create_project(
+    request: MediaProjectRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.MEMORY_WRITE)),
+):
+    """Ouvre une production versionnée (§18)."""
+    try:
+        projet = MediaProject(objective=request.objective,
+                              created_by=ctx.subject)
+    except ProjectRefused as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
+    _media_projects.save(projet)
+    return {"project_id": projet.project_id, "objective": projet.objective,
+            "current_version": projet.current.version_id}
+
+
+@app.get("/media/projects/{project_id}", tags=["media"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.MEMORY_READ))])
+async def media_get_project(project_id: str):
+    """Le manifeste complet : toutes les versions, pas seulement la courante."""
+    return _media_project_or_404(project_id).manifest()
+
+
+@app.post("/media/projects/{project_id}/analyze", tags=["media"],
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.TOOL_EXECUTE))])
+async def media_analyze(project_id: str, request: MediaAnalyzeRequest):
+    """Mesure un média.
+
+    Le chemin passe par la frontière avant tout : c'est le seul endroit où il
+    est jugé, et un chemin refusé est **nommé** plutôt que réécrit.
+    """
+    _media_project_or_404(project_id)
+    try:
+        chemin = safe_media_path(request.path, must_exist=True)
+    except MediaPathRefused as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
+
+    etat = media_availability("analyze_media")
+    if etat["status"] != "AVAILABLE":
+        # 503 et non 500 : la mesure est impossible **ici**, ce qui se corrige
+        # en installant ce qui manque. Rendre une durée par défaut laisserait
+        # la chaîne continuer sur une donnée fausse.
+        raise HTTPException(status_code=503, detail=etat)
+    return {"project_id": project_id, "path": os.path.basename(chemin),
+            "info": inspect_media(chemin).as_dict()}
+
+
+@app.post("/media/projects/{project_id}/plan", tags=["media"],
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.MEMORY_READ))])
+async def media_plan(project_id: str, request: MediaPlanRequest):
+    """Transforme une demande en plan structuré, ou pose les questions ouvertes."""
+    _media_project_or_404(project_id)
+    try:
+        plan = media_production_plan(request.request, request.available)
+    except IntentRefused as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
+    return {"project_id": project_id, **plan}
+
+
+@app.post("/media/projects/{project_id}/render", tags=["media"], status_code=202,
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.TOOL_EXECUTE))])
+async def media_render(project_id: str, request: MediaRenderRequest):
+    """Dépose un rendu dans la file.
+
+    `202` et non `200` : la file a **accepté** le travail, elle n'a rien
+    produit. Répondre 200 laisserait croire à un fichier qui n'existe pas.
+    """
+    _media_project_or_404(project_id)
+    try:
+        nom = safe_output_name(request.output_name)
+        job = _media_queue.submit(
+            project_id=project_id, kind="render", priority=request.priority,
+            total_units=request.total_units,
+            output_path=os.path.join(media_root(), nom),
+        )
+    except (MediaPathRefused, QueueRefused) as refus:
+        raise HTTPException(status_code=400, detail=str(refus))
+    return {"job_id": job.job_id, "status": job.status.value,
+            "output_name": nom, "progress": job.progress,
+            "capability": media_availability("render_video")}
+
+
+@app.get("/media/jobs/{job_id}", tags=["media"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.MEMORY_READ))])
+async def media_get_job(job_id: str):
+    """L'état d'un rendu, avancement **compté** compris."""
+    job = _media_queue.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404,
+                            detail=f"Travail « {job_id} » introuvable.")
+    return job.as_dict()
+
+
+@app.post("/media/jobs/{job_id}/cancel", tags=["media"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def media_cancel_job(
+    job_id: str, request: MediaCancelRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """Annule un rendu. **Terminal** : il ne reprendra pas."""
+    try:
+        job = _media_queue.cancel(job_id, by=ctx.subject)
+    except QueueRefused as refus:
+        raise HTTPException(status_code=404, detail=str(refus))
+    return {"job_id": job.job_id, "status": job.status.value,
+            "reason": request.reason, "progress": job.progress,
+            "does_not": [
+                "Reprendre plus tard : quelqu'un a décidé d'arrêter, et une "
+                "file qui redémarre en douce l'a contredit.",
+            ]}
 
 
 # L'interface web est servie sous `/ui` (ADR-008), montée plus haut. Un second

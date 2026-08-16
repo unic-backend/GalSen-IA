@@ -566,6 +566,63 @@ process from taking a GPU, but an operator can see two jobs claiming the same
 
 ---
 
-**Next**: VOLET M17 — agentic media tools and natural language (2 phases), then
-M18 — API surface and security boundary (2 phases), M19 — tests, benchmarks and
-the readiness report (2 phases), M20 — Media Studio UI (1 phase, conditional).
+---
+
+## What M17 and M18 built
+
+`src/media/tools/` (catalog, intent), `src/media/security/boundary.py`, eight
+`/media` routes in `src/api/server.py`, 67 tests.
+
+**§24's real content is the last sentence: *the main AI should be able to chain
+these tools.*** Chaining is where an agentic media pipeline fails, and it fails
+quietly — a model asked for a video calls `render_video` before
+`create_edit_plan`, the call is well-formed, its arguments are plausible, and
+what comes back is a file nobody planned. The error surfaces three steps later
+as "the render does not match the brief". So each tool declares what it
+**consumes** and **produces**, and `plan_chain()` refuses the first link nothing
+has fed, naming the tool that would have fed it. One consequence is worth
+stating on its own: `create_edit_plan` consumes a *measured* transcript, so §5's
+"no model invents a timestamp" is now structural rather than advisory.
+
+Two registry declarations, not one. `media` reads someone's footage and writes
+on this machine — the shape `memory` already had. `media_generation` sends that
+footage to a provider, and user-private plus an external effect is the
+exfiltration shape `src/tool/capabilities.py` refuses to run unattended. The
+existing coverage guards fired on the new count and were **re-measured**, not
+loosened: 22 → 24 declared tools, and the published route and tool numbers in
+`CLAUDE.md`, `overview.md` and `personal-agent-assessment.md` were brought back
+to what the repository actually serves.
+
+**§25 fails at completion, not at parsing.** A request that says nothing about
+duration gets 60 seconds; one that names no domain gets the first structure in
+the table; and the plan that comes back describes a video nobody asked for —
+convincingly, with a duration and a structure, so nobody questions it until
+delivery. An unstated field is `UNSPECIFIED` and becomes a **question**, and no
+tool chain is proposed while a question is open. Two domains in one sentence
+("turn this **interview** into a **documentary**") are settled by a *declared*
+marker or reported ambiguous — a declared rule can be argued with, a silent
+first-match cannot.
+
+**§30 said to reuse the boundary, so the traversal decision was not rewritten.**
+`src/agent/tools/workspace.py` already resolves before judging, because
+`a/b/../../../etc/passwd` is not detectable by spelling and a symlink inside the
+root pointing at `/etc` is exactly what a prefix check misses. The media layer
+gives it the media root and adds what is media-specific: a filename beginning
+with `-` is refused, because to a codec that is an **option**, not a file. What
+holds against arbitrary codec execution is not escaping — no shell is involved
+anywhere in this engine — it is that the container and codec are fixed in the
+code, and the report says so rather than claiming a protection that is not the
+one working.
+
+The boundary sits at the entry, not in the primitive: `render_video()` still
+takes the path it is given, because a second gate would mean two rules about one
+thing, and this repository has watched two copies of a rule disagree the day one
+was fixed. Over HTTP, an absent capability answers `503` with what is missing,
+a submitted render answers `202` (the queue accepted work, it produced nothing),
+and a refused path is **named** in the refusal instead of being quietly
+rewritten into one that resolves.
+
+---
+
+**Next**: VOLET M19 — tests, benchmarks and the readiness report (2 phases),
+then M20 — Media Studio UI (1 phase, conditional on `src/web/`).

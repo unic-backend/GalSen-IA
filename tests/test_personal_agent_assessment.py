@@ -43,11 +43,11 @@ def test_le_compte_d_outils_actifs_est_celui_annonce(outils, document):
     """« dix-neuf activés » est un nombre, donc il se vérifie."""
     actifs = [outil for outil in outils if outil["enabled"]]
 
-    assert len(actifs) == 21, (
-        f"{len(actifs)} outils actifs — l'état des lieux en annonce 21. "
+    assert len(actifs) == 23, (
+        f"{len(actifs)} outils actifs — l'état des lieux en annonce 23. "
         "Mettre le document à jour, ou expliquer le nouvel outil."
     )
-    assert "twenty-one enabled" in document
+    assert "twenty-three enabled" in document
 
 
 def test_l_outil_docker_reste_desactive(outils, document):
