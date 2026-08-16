@@ -359,3 +359,31 @@ def test_scipy_n_est_plus_une_dependance():
 
     orphelins = _modules_tiers_non_installes(_modules_importes(SOURCES_EXECUTION))
     assert "scipy" not in orphelins, "scipy est encore importé quelque part"
+
+
+def test_aucun_fichier_de_test_ne_partage_son_nom_de_base():
+    """
+    Deux fichiers de test homonymes cassent la collecte, pas un seul test.
+
+    `tests/` n'a pas de `__init__.py`, donc pytest importe chaque fichier par
+    son nom de base : deux `test_providers.py` dans deux répertoires produisent
+    un `import file mismatch` qui **interrompt toute la suite**. Le défaut est
+    déjà arrivé deux fois ici (`test_ingestion.py`, puis `test_providers.py`),
+    et il ne se manifeste que lorsqu'on lance les deux répertoires ensemble —
+    donc jamais pendant le développement d'un seul.
+    """
+    racine = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+    vus = {}
+    for dossier, _, fichiers in os.walk(racine):
+        if "__pycache__" in dossier:
+            continue
+        for nom in fichiers:
+            if not (nom.startswith("test_") and nom.endswith(".py")):
+                continue
+            chemin = os.path.relpath(os.path.join(dossier, nom), racine)
+            assert nom not in vus, (
+                f"« {nom} » existe deux fois : {vus.get(nom)} et {chemin}. "
+                "Sans `__init__.py`, pytest les importe sous le même nom de "
+                "module et interrompt la collecte de toute la suite."
+            )
+            vus[nom] = chemin

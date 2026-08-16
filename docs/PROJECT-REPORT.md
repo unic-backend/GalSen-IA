@@ -48,7 +48,7 @@ Nearly every design decision in this report is downstream of that sentence.
 | Declared tools | **24** (13 may run unattended) | `tools/tools.yaml` + capability registry |
 | Engines in `EngineRegistry` | **14** | the registry itself |
 | Subsystems probed after it | **9** (volets 47–64) | `src/integration/degradation.py` |
-| ADRs | **23** | `docs/architecture/decisions/` |
+| ADRs | **27** | `docs/architecture/decisions/` |
 | Git commits | 317, from 2026-08-05 to 2026-08-16 | `git log` |
 | `ruff check src tests` | clean | run |
 
@@ -404,9 +404,9 @@ adapter.
 
 ---
 
-## 12. Architecture decisions — 23 ADRs
+## 12. Architecture decisions — 27 ADRs
 
-`docs/architecture/decisions/`. ADR-020 is `proposed`; the rest are accepted.
+`docs/architecture/decisions/`. ADR-020 is `proposed`; the rest are accepted. ADR-024 to ADR-027 open the Universal Creative Intelligence programme; the mapping to that directive's own ADR numbering is in `docs/creative/adr-map.md`.
 
 | # | Decision | # | Decision |
 |---|---|---|---|
@@ -420,8 +420,10 @@ adapter.
 | 008 | Frontend approach | 020 | Analytics retention *(proposed)* |
 | 009 | Scaling posture | 021 | Autonomous knowledge acquisition |
 | 010 | Identity model | 022 | Unattended work |
-| 011 | API versioning and deprecation | | |
-| 012 | TLS termination | | |
+| 011 | API versioning and deprecation | 024 | Creative provider abstraction |
+| 012 | TLS termination | 025 | Reference entity and consent |
+| | | 026 | Identity verification declares what it cannot measure |
+| | | 027 | Original performance and language knowledge |
 
 ---
 
@@ -450,7 +452,7 @@ agents/           17 agent definitions + registry.yaml
 tools/tools.yaml  Tool registry with declared capabilities
 corpus/           Language aliases, source registry
 docs/
-  architecture/   Overview + 23 ADRs + assessments
+  architecture/   Overview + 27 ADRs + assessments
   memory/         Session state, priorities, objectives, backlog, completed work
   darra-j/ · media/   Programme phase plans and final reports
   roadmap/ · standards/ · changelog/ · tasks/

@@ -72,7 +72,7 @@ last session stopped. Keep it up to date; it is the project's continuity.
 *Measured 2026-08-16.* Foundation and core engines are done (ADR-001, ADR-002). Fourteen
 engines **plus nine subsystems probed after the registry** (volets 47–64, probed by
 `src/integration/degradation.py`), **17 agents**, **24 declared tools** (13 runnable
-unattended), **131 API routes**, 23 ADRs (ADR-020 is `proposed`; ADR-021 and ADR-022 accepted) — see
+unattended), **131 API routes**, 27 ADRs (ADR-020 is `proposed`; ADR-024 to ADR-027 open the creative programme) — see
 `docs/architecture/overview.md`, kept synchronized with the measured state.
 **5369 tests pass**, 8 skipped.
 
