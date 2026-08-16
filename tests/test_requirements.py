@@ -193,6 +193,15 @@ def test_aucun_import_ne_vise_un_paquet_ni_installe_ni_declare():
         # fois plus rapide sur CPU, est celle qui est déclarée. Le code accepte
         # les deux.
         "whisper",
+        # `torch` et `playwright` ne sont importés que **dans une sonde de
+        # capacité** (`src/media/core/capabilities.py`), à l'intérieur d'un
+        # `try/except ImportError` dont l'échec est le résultat mesuré : leur
+        # absence rend `gpu_compute` INDISPONIBLE et `browser_render` DEGRADE,
+        # et `require()` refuse alors le travail au lieu de le simuler. Les
+        # déclarer dans `requirements.txt` imposerait plusieurs gigaoctets de
+        # poids CUDA à toute installation qui ne génère aucune vidéo.
+        "torch",
+        "playwright",
     }
 
     orphelins = _modules_tiers_non_installes(_modules_importes(SOURCES_EXECUTION))
@@ -219,6 +228,19 @@ def test_les_tolerances_sont_reellement_absentes():
         "sentence-transformers est désormais installé : retirez-le de TOLERES "
         "et déclarez-le dans requirements.txt (VOLET 27)."
     )
+
+    # Les tolérances du moteur média suivent la même règle : elles ne valent que
+    # tant que le paquet est réellement absent. Le jour où l'un est installé, sa
+    # capacité cesse d'être « indisponible par construction » et doit être
+    # déclarée comme les autres.
+    for module, capacite in (("torch", "gpu_compute"),
+                             ("playwright", "browser_render")):
+        assert module not in installes, (
+            f"{module} est désormais installé : retirez-le de TOLERES, "
+            f"déclarez-le dans requirements.txt, et vérifiez que la sonde "
+            f"« {capacite} » rapporte bien son nouvel état "
+            f"(`src/media/core/capabilities.py`)."
+        )
 
 
 def test_les_outils_de_test_ne_sont_pas_dans_l_image():

@@ -61,7 +61,7 @@ The honest end state, in the same shape Darra J reached:
 ## The 20 volets, and their phases
 
 ```
-M01  Integration map & capability probes (§39, §27)     → 1 phase
+M01  Integration map & capability probes (§39, §27)     → 1 phase   ✅
 M02  Project core, manifest, versions, memory (§18,§38) → 2 phases
 M03  Ingestion & media probe adapters (§3)              → 2 phases
 M04  Analysis, scenes, structured representation (§4)   → 2 phases
@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 0.
+**Total: 32 phases.** Completed: 1.
 
 ---
 
@@ -108,6 +108,33 @@ Taken from the directive and from what this repository already enforces.
 
 ---
 
-**Next**: phase M01.1 — the integration map, written to
-`docs/media/integration-map.md`, measuring what each directive section can reach
-in this repository today. Then stop.
+## What M01 found
+
+`docs/media/integration-map.md` holds the full map. The finding that shaped the
+module: a `which ffmpeg` boolean would have been wrong **in both directions** —
+absent from the PATH here, yet present under `PLAYWRIGHT_BROWSERS_PATH` as a
+`--disable-everything` build that answers `-version` like a full one.
+
+Two distinctions cost a real failure each, both found by **running** an encode
+rather than reading a configuration string:
+
+- `image2` (numbered files on disk) is not `image2pipe` (frames on stdin). Only
+  the second exists here, so a `-i frames/%04d.png` command never opens its
+  input. A substring match conflated them — the approximate-matching mistake
+  `find_country` already cost this repository once. Names are read by token now.
+- **Encoding PNG is not decoding PNG.** This build has a PNG encoder and no PNG
+  decoder: piping PNG frames fails, piping JPEG frames produces a valid WebM.
+  `frame_pipe_format()` therefore names the format to produce, because failing
+  at the last step wastes all the rendering work before it.
+
+`frame_encode` is **AVAILABLE and verified by producing a real file** — the
+motion-design path (§8, §9) renders and encodes video on this machine today.
+
+An existing guard caught the new code immediately: `tests/test_requirements.py`
+refused `torch` and `playwright` as imported-but-undeclared. They are now
+tolerated with the reason (their absence *is* the measured signal) and the
+counter-test was extended so that tolerance cannot become permanent.
+
+---
+
+**Next**: VOLET M02 — project core, manifest and versions. Then stop.
