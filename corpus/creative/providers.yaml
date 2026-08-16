@@ -1,0 +1,340 @@
+# Candidate generative providers — research record (directive V4, §37-§40).
+#
+# This file is EVIDENCE, not a decision. Nothing here selects a provider; C04
+# and its ADR do that. What this file holds is what was actually verified, from
+# where, and on what date — and, just as importantly, what could not be.
+#
+# THE RULE THIS FILE EXISTS TO ENFORCE (§40):
+#   A repository licence is not a weight licence, and neither is a permission
+#   to use commercially. "Open source repository" does not follow from
+#   "weights downloadable", and popularity is never evidence of anything.
+#
+# Every field that was not read from an authoritative source is UNKNOWN and
+# carries the reason. `src/creative/research.py` refuses this file at load time
+# if that discipline is broken — a matrix that can drift into optimism is worse
+# than no matrix, because someone will ship against it.
+#
+# EVIDENCE LEVELS
+#   AUTHORITATIVE : read from the project's own repository or licence file
+#   SECONDARY     : a search result, an article, a third-party summary
+#   NONE          : not checked
+#
+# MEASURED ENVIRONMENT (2026-08-16, this container):
+#   raw.githubusercontent.com -> 200   official LICENSE/README readable
+#   huggingface.co            -> 000   NO ROUTE: model cards and weight
+#                                      licences are unreachable from here
+#   github.com (HTML)         -> 403   blocked by the proxy
+#   api.github.com            -> scoped to unic-backend/galsen-ia only
+#   GPU / torch / transformers-> absent: nothing here can execute a model
+
+version: "1.0"
+researched_on: "2026-08-16"
+
+candidates:
+
+  # ------------------------------------------------------------------
+  # Video generation
+  # ------------------------------------------------------------------
+  - id: wan2.2
+    name: "Wan 2.2"
+    tasks: [text_to_video, image_to_video, speech_to_video, character_animation]
+    repository: "https://github.com/Wan-Video/Wan2.2"
+    repository_license: "Apache-2.0"
+    repository_license_evidence: AUTHORITATIVE
+    repository_license_source: "https://raw.githubusercontent.com/Wan-Video/Wan2.2/main/LICENSE.txt"
+    weight_license: UNKNOWN
+    weight_license_evidence: NONE
+    weight_license_reason: >-
+      Hosted on huggingface.co, which has no route from this container
+      (measured: 000). The repository README states Apache-2.0 for the models,
+      but a README is not the licence file that ships with the weights.
+    dataset_license: UNKNOWN
+    dataset_license_evidence: NONE
+    dataset_license_reason: "No training-data licence is published in the repository."
+    commercial_status: UNKNOWN
+    commercial_status_reason: >-
+      The repository licence is permissive, which says nothing about the weight
+      licence — the question §40 exists to keep separate.
+    variants: ["T2V-A14B", "I2V-A14B", "TI2V-5B", "S2V-14B", "Animate-14B"]
+    vram_gb_min: 24
+    vram_gb_min_evidence: AUTHORITATIVE
+    vram_note: >-
+      README states the 5B TI2V model runs on consumer cards such as a 4090
+      (24 GB); the A14B models are documented against 80 GB / H100.
+    audio_support: true
+    audio_note: "S2V-14B is audio-driven (speech to video); README, authoritative."
+    lip_sync: UNKNOWN
+    reference_support: true
+    reference_note: >-
+      Animate-14B is described as character animation and replacement with
+      movement and expression replication — the closest published match to the
+      real-person reference requirement of §8.
+    identity_consistency: NOT_MEASURED
+    quality: NOT_MEASURED
+    latency: NOT_MEASURED
+    multi_entity: UNKNOWN
+    camera_control: UNKNOWN
+    limitations:
+      - "Cannot be executed here: no GPU, no torch."
+      - "Weight licence unverifiable from this environment."
+    integration_complexity: HIGH
+    integration_reason: "Python + torch + multi-GB weights + GPU; adapter only until a GPU host exists."
+
+  - id: wan2.7
+    name: "Wan 2.7"
+    tasks: [text_to_video, image_to_video, video_editing]
+    repository: UNKNOWN
+    repository_license: UNKNOWN
+    repository_license_evidence: NONE
+    repository_license_reason: "No official repository was reachable for this version."
+    weight_license: UNKNOWN
+    weight_license_evidence: SECONDARY
+    weight_license_reason: >-
+      Secondary sources report that Wan 2.7 is not published on Hugging Face and
+      is not Apache-2.0, with some weights surfacing on ModelScope under unclear
+      terms. NOT VERIFIED from an authoritative source, and recorded here only
+      so that "newer" is not mistaken for "more usable".
+    dataset_license: UNKNOWN
+    dataset_license_reason: "Aucune licence de données d'entraînement n'est publiée par le projet ; non lue, donc non déduite."
+    commercial_status: UNKNOWN
+    quality: NOT_MEASURED
+    latency: NOT_MEASURED
+    limitations:
+      - "Newer than 2.2 and, on the available evidence, less open. Newness is not availability."
+    integration_complexity: UNKNOWN
+
+  - id: hunyuanvideo
+    name: "HunyuanVideo"
+    tasks: [text_to_video, image_to_video]
+    repository: "https://github.com/Tencent-Hunyuan/HunyuanVideo"
+    repository_license: "Tencent Hunyuan Community License Agreement"
+    repository_license_evidence: AUTHORITATIVE
+    repository_license_source: "https://raw.githubusercontent.com/Tencent-Hunyuan/HunyuanVideo/main/LICENSE.txt"
+    repository_license_note: >-
+      NOT an OSI licence. Read from the licence text itself: the grant DOES NOT
+      APPLY IN THE EUROPEAN UNION, and a 100-million-monthly-active-user
+      threshold triggers separate terms. This is the single clearest example in
+      this file of why "open source repository" cannot be assumed.
+    weight_license: UNKNOWN
+    weight_license_evidence: NONE
+    weight_license_reason: "Weights on huggingface.co, unreachable from this container."
+    dataset_license: UNKNOWN
+    dataset_license_reason: "Aucune licence de données d'entraînement n'est publiée par le projet ; non lue, donc non déduite."
+    commercial_status: RESTRICTED
+    commercial_status_evidence: AUTHORITATIVE
+    commercial_status_reason: "Territorial exclusion and a user threshold are written into the licence text."
+    vram_gb_min: 45
+    vram_gb_min_evidence: AUTHORITATIVE
+    vram_note: "README documents 45 GB and 60 GB configurations, 80 GB recommended."
+    audio_support: UNKNOWN
+    lip_sync: UNKNOWN
+    reference_support: UNKNOWN
+    identity_consistency: NOT_MEASURED
+    quality: NOT_MEASURED
+    latency: NOT_MEASURED
+    limitations:
+      - "Territorial restriction (EU) written into the licence."
+      - "High VRAM floor."
+      - "Cannot be executed here."
+    integration_complexity: HIGH
+
+  - id: ltx-video
+    name: "LTX-Video"
+    tasks: [text_to_video, image_to_video]
+    repository: "https://github.com/Lightricks/LTX-Video"
+    repository_license: "Apache-2.0"
+    repository_license_evidence: AUTHORITATIVE
+    repository_license_source: "https://raw.githubusercontent.com/Lightricks/LTX-Video/main/LICENSE"
+    weight_license: "OpenRail-M"
+    weight_license_evidence: AUTHORITATIVE
+    weight_license_source: "https://raw.githubusercontent.com/Lightricks/LTX-Video/main/README.md"
+    weight_license_note: >-
+      The README states the weights are OpenRail-M while the repository is
+      Apache-2.0 — two different licences in one project, which is exactly the
+      distinction §40 requires. OpenRail-M carries use restrictions; the text
+      itself is hosted on huggingface.co and could NOT be read here.
+    dataset_license: UNKNOWN
+    dataset_license_reason: "Aucune licence de données d'entraînement n'est publiée par le projet ; non lue, donc non déduite."
+    commercial_status: PARTIAL
+    commercial_status_reason: >-
+      Permissive code, use-restricted weights. The restrictions must be read
+      before any commercial claim.
+    vram_gb_min: 8
+    vram_gb_min_evidence: AUTHORITATIVE
+    vram_note: "README documents distilled variants down to low VRAM; 2B and 13B families."
+    audio_support: UNKNOWN
+    lip_sync: UNKNOWN
+    reference_support: UNKNOWN
+    identity_consistency: NOT_MEASURED
+    quality: NOT_MEASURED
+    latency: NOT_MEASURED
+    limitations:
+      - "Weight licence text unreadable from this container."
+      - "LTX-2 / 2.x terms are UNKNOWN: secondary sources describe a community licence with a paid tier above a revenue threshold, unverified."
+    integration_complexity: HIGH
+
+  # ------------------------------------------------------------------
+  # Multimodal understanding
+  # ------------------------------------------------------------------
+  - id: qwen2.5-omni
+    name: "Qwen2.5-Omni"
+    tasks: [multimodal_understanding, speech_recognition, scene_understanding, speech_synthesis]
+    repository: "https://github.com/QwenLM/Qwen2.5-Omni"
+    repository_license: "Apache-2.0"
+    repository_license_evidence: AUTHORITATIVE
+    repository_license_source: "https://raw.githubusercontent.com/QwenLM/Qwen2.5-Omni/main/LICENSE"
+    weight_license: UNKNOWN
+    weight_license_evidence: NONE
+    weight_license_reason: "Weights on huggingface.co, unreachable."
+    dataset_license: UNKNOWN
+    dataset_license_reason: "Aucune licence de données d'entraînement n'est publiée par le projet ; non lue, donc non déduite."
+    commercial_status: UNKNOWN
+    audio_support: true
+    audio_note: >-
+      Thinker-Talker architecture: perceives text, image, audio and video and
+      produces text AND speech in a streaming manner (README, authoritative).
+      Relevant to §21 understanding and, separately, to the VOICE stage the
+      media engine reports ABSENT.
+    reference_support: false
+    identity_consistency: NOT_APPLICABLE
+    quality: NOT_MEASURED
+    latency: NOT_MEASURED
+    limitations:
+      - "Understanding, not video generation."
+      - "Cannot be executed here: no torch, no transformers, no GPU."
+    integration_complexity: MEDIUM
+
+  # ------------------------------------------------------------------
+  # Speech / voice
+  # ------------------------------------------------------------------
+  - id: pyannote-audio
+    name: "pyannote.audio"
+    tasks: [speaker_diarization]
+    repository: "https://github.com/pyannote/pyannote-audio"
+    repository_license: "MIT"
+    repository_license_evidence: AUTHORITATIVE
+    repository_license_source: "https://raw.githubusercontent.com/pyannote/pyannote-audio/develop/LICENSE"
+    weight_license: UNKNOWN
+    weight_license_evidence: AUTHORITATIVE
+    weight_license_source: "https://raw.githubusercontent.com/pyannote/pyannote-audio/develop/README.md"
+    weight_license_reason: >-
+      The pretrained pipelines are GATED: the README requires accepting user
+      conditions on Hugging Face and creating an access token. The code licence
+      is MIT; the pipeline terms are a separate acceptance that cannot be
+      performed from this container.
+    dataset_license: UNKNOWN
+    dataset_license_reason: "Aucune licence de données d'entraînement n'est publiée par le projet ; non lue, donc non déduite."
+    commercial_status: UNKNOWN
+    commercial_status_reason: "Gated acceptance not performed; terms unread."
+    audio_support: true
+    quality: NOT_MEASURED
+    latency: NOT_MEASURED
+    limitations:
+      - "Requires torch — absent here."
+      - "Pretrained pipelines require an accepted licence and a token."
+    integration_complexity: MEDIUM
+    note: "The best-documented diarization option found; §21's diarization stage has no alternative identified yet."
+
+  - id: seed-vc
+    name: "Seed-VC"
+    tasks: [voice_conversion]
+    repository: "https://github.com/Plachtaa/seed-vc"
+    repository_license: "GPL-3.0"
+    repository_license_evidence: AUTHORITATIVE
+    repository_license_source: "https://raw.githubusercontent.com/Plachtaa/seed-vc/main/LICENSE"
+    repository_license_note: >-
+      COPYLEFT. This is a different integration question from the permissive
+      candidates: calling it as an isolated external process is not the same act
+      as vendoring it into this repository, and the difference has legal
+      consequences. It must be decided in an ADR, not in passing.
+    weight_license: UNKNOWN
+    weight_license_reason: "Poids hébergés sur huggingface.co, sans route depuis ce conteneur (mesuré : 000) : les conditions n'ont pas été lues."
+    weight_license_evidence: NONE
+    dataset_license: UNKNOWN
+    dataset_license_reason: "Aucune licence de données d'entraînement n'est publiée par le projet ; non lue, donc non déduite."
+    commercial_status: UNKNOWN
+    commercial_status_reason: "GPL-3.0 code plus unverified weight terms."
+    audio_support: true
+    audio_note: >-
+      README: zero-shot voice conversion from 1-30 s of reference speech,
+      real-time mode with ~300 ms algorithmic delay, fine-tuning from as little
+      as one utterance per speaker (authoritative).
+    quality: NOT_MEASURED
+    latency: NOT_MEASURED
+    latency_note: "The ~300 ms figure is the project's claim, not a measurement made here."
+    limitations:
+      - "Copyleft licence — architectural consequence, not a detail."
+      - "Voice conversion is optional by §23; original audio preservation is the default path (§22)."
+    integration_complexity: MEDIUM
+
+  # ------------------------------------------------------------------
+  # Lip sync / portrait animation
+  # ------------------------------------------------------------------
+  - id: latentsync
+    name: "LatentSync"
+    tasks: [lip_sync]
+    repository: "https://github.com/bytedance/LatentSync"
+    repository_license: "Apache-2.0"
+    repository_license_evidence: AUTHORITATIVE
+    repository_license_source: "https://raw.githubusercontent.com/bytedance/LatentSync/main/LICENSE"
+    weight_license: UNKNOWN
+    weight_license_reason: "Poids hébergés sur huggingface.co, sans route depuis ce conteneur (mesuré : 000) : les conditions n'ont pas été lues."
+    weight_license_evidence: NONE
+    dataset_license: UNKNOWN
+    dataset_license_reason: "Aucune licence de données d'entraînement n'est publiée par le projet ; non lue, donc non déduite."
+    commercial_status: UNKNOWN
+    audio_support: true
+    lip_sync: true
+    lip_sync_note: >-
+      README: audio embeddings from Whisper melspectrograms injected into a
+      U-Net by cross-attention; v1.6 trained at 512x512; faces affine-transformed
+      from InsightFace landmarks (authoritative).
+    vram_gb_min: 20
+    vram_gb_min_evidence: AUTHORITATIVE
+    vram_note: "Figures quoted are TRAINING requirements (20-55 GB); inference VRAM is UNKNOWN."
+    quality: NOT_MEASURED
+    latency: NOT_MEASURED
+    multilingual_performance: UNKNOWN
+    multilingual_reason: >-
+      No per-language evaluation is published. This matters more here than
+      elsewhere: §24 lists Wolof, Serer, Pulaar and others, and a lip-sync model
+      trained largely on English speech may behave differently on them. Assuming
+      otherwise would be exactly the fabrication this project refuses.
+    limitations:
+      - "Depends on face detection and landmarks — unavailable in this environment."
+      - "Per-language performance unmeasured."
+    integration_complexity: HIGH
+
+  - id: hallo2
+    name: "Hallo2"
+    tasks: [portrait_animation, lip_sync]
+    repository: "https://github.com/fudan-generative-vision/hallo2"
+    repository_license: "MIT"
+    repository_license_evidence: AUTHORITATIVE
+    repository_license_source: "https://raw.githubusercontent.com/fudan-generative-vision/hallo2/main/LICENSE"
+    weight_license: UNKNOWN
+    weight_license_reason: "Poids hébergés sur huggingface.co, sans route depuis ce conteneur (mesuré : 000) : les conditions n'ont pas été lues."
+    weight_license_evidence: NONE
+    dataset_license: UNKNOWN
+    dataset_license_reason: "Aucune licence de données d'entraînement n'est publiée par le projet ; non lue, donc non déduite."
+    commercial_status: UNKNOWN
+    audio_support: true
+    lip_sync: true
+    reference_support: true
+    reference_note: "Audio-driven animation from a single portrait image; long-duration, 4K per README."
+    quality: NOT_MEASURED
+    latency: NOT_MEASURED
+    limitations:
+      - "Portrait animation, not general scene generation."
+      - "Cannot be executed here."
+    integration_complexity: HIGH
+
+# Datasets noted during research. Recorded, not adopted: a dataset's licence is
+# a separate question from a model's (§41), and none of these were read.
+datasets:
+  - id: waxal
+    name: "WAXAL"
+    relevance: "27 Sub-Saharan African languages; ~1846 h transcribed for ASR, ~565 h for TTS."
+    evidence: SECONDARY
+    license: UNKNOWN
+    license_reason: "Not read from an authoritative source; recorded as a lead for §26 and §73, nothing more."

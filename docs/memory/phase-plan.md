@@ -14,8 +14,9 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (directive propriétaire V4, 81 sections).
 **Phases**         : **38**. Plan complet → `docs/creative/phase-plan.md`.
 Audit du dépôt (PHASE 0) → `docs/creative/repository-audit.md`.
-**Phase courante** : **C01.1 — en attente de confirmation** (recherche écosystème).
-**Terminées**      : C00 — 1 phase sur 38.
+**Phase courante** : **C03.1 — en attente de confirmation** (ADR-001, fournisseurs).
+**Terminées**      : C00 à C02 — 5 phases sur 38. Recherche →
+`docs/creative/provider-research.md`, faisabilité → `docs/creative/feasibility.md`.
 **Cadence**        : **deux volets par tour**, comme pour les programmes précédents.
 
 **Mesuré avant de planifier, et décisif** :

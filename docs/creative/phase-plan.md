@@ -14,8 +14,8 @@ and because it puts the two vertical slices early, which is what §72 demands.
 
 ```
 C00  PHASE 0   Repository audit, map, classification (§79 1–8)   → 1 phase   ✅
-C01  PHASE 1a  Ecosystem research + provider comparison (§37–39) → 2 phases
-C02  PHASE 1b  Licence matrix + feasibility report (§40, §61)    → 2 phases
+C01  PHASE 1a  Ecosystem research + provider comparison (§37–39) → 2 phases  ✅
+C02  PHASE 1b  Licence matrix + feasibility report (§40, §61)    → 2 phases  ✅
 C03  PHASE 1c  ADRs + schemas + architecture proposal (§68, §69) → 3 phases
 C04  PHASE 2   Provider abstraction + registry (§34, §35)        → 2 phases
 C05  PHASE 3   ReferenceEntity vertical slice (§6–11)            → 3 phases
@@ -34,7 +34,7 @@ C17  PHASE 14  API, golden tests, hardening, MVP slice (§62–66,70)→ 3 phase
 C18  PHASE 15  Future model research + final report (§73, §76)   → 1 phase
 ```
 
-**Total: 38 phases.** Completed: **1**.
+**Total: 38 phases.** Completed: **5**.
 
 *(Nineteen labels, seventeen volets after C00 and C18 — the §71 phases that
 split into two volets keep their directive number in the `PHASE` column so the
