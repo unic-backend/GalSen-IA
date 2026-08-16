@@ -12,42 +12,37 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-16
 
-**En cours** : rien. **DARRA J est terminé — 20 VOLETs, 28 phases sur 28.**
-Rapport final → `docs/darra-j/final-report.md`. Détail des phases et des défauts
-trouvés → `docs/darra-j/phase-plan.md`.
+**En cours** : **Universal Media & Video Intelligence Engine** (directive
+propriétaire, 42 sections) — **29 phases sur 32**, M01 à M18 terminés.
+Plan et constats par volet → `docs/media/phase-plan.md`.
 
 **Terminé dans cette session**
-- **`src/darra_j/`** : 21 modules, 19 fichiers de tests, **377 tests**.
-  Modèle canonique, registre de versions, résolution déterministe, ingestion,
-  pare-feu, cohérence entre usagers, pédagogie, évaluation, modes enseignant /
-  élève / parent, confidentialité, graphe éducatif, maîtrise, multilingue,
-  laboratoire, résilience, auditabilité, aptitude à la production.
-- **État atteint, et c'est celui que la directive demande** :
-  `ARCHITECTURE READY — OFFICIAL CURRICULUM DATA PENDING`. **Aucun curriculum
-  sénégalais n'a été intégré** — aucun n'était disponible, aucun n'a été écrit
-  de mémoire. `readiness()` **mesure** le registre ; un registre ne contenant
-  que des fixtures rapporte zéro version officielle.
-- **Six rôles éducatifs dans `src/api/rbac.py`**, avec
-  `PERMISSIONS_HORS_PLATEFORME` : sans cette soustraction, déclarer
-  `curriculum:publish` aurait rendu GalSen IA capable de publier un curriculum
-  officiel. `test_admin_has_all_permissions` a été **resserré**, pas assoupli.
-- **Défaut corrigé dans du code existant** : la table d'alias ne gardait que la
-  forme repliée — `translate()` rendait `mbey` pour `mbéy`, du wolof mal
-  orthographié alors que `ë ñ ŋ` sont des lettres CLAD. Elle garde désormais
-  `written` (affichage) et `terms` (recherche).
-- **Onze défauts trouvés en exécutant**, chacun pinné par un test (tableau dans
-  le rapport final). Suite : **4864 tests**, 8 ignorés, `ruff` propre.
+- **M15-M16** : adaptation multi-format (les positions sont relatives et
+  **reposées**, le coût du recadrage centré refusé par §22 est *mesuré* à côté)
+  et file de rendu (avancement **compté**, `None` quand le total est inconnu,
+  annulation terminale, `RunStatus` réutilisé).
+- **M17** : les seize outils de §24 avec `consumes`/`produces`, donc un
+  enchaînement impossible refusé **avant** tout encodage ; deux déclarations au
+  registre (`media` local et sans témoin, `media_generation` externe et
+  approuvé). §25 : une demande non dite reste `UNSPECIFIED` et devient une
+  **question** — aucune chaîne tant qu'une question est ouverte.
+- **M18** : huit routes `/media`, et une frontière qui **donne la racine média**
+  au résolveur existant au lieu de réécrire la règle de traversée.
+- **Chiffres publiés re-mesurés, jamais assouplis** : 22 → 24 outils déclarés,
+  123 → 131 routes, après que les gardes du dépôt ont attrapé la dérive.
+- Suite : **5323 tests**, 8 ignorés, `ruff` propre. HEAD = `f56ad6c`.
 
 **Prochaine étape**
-Aucune en attente. Ce qui reste dépend de quelqu'un d'autre (voir « Bloqué »).
+**VOLET M19** (2 phases) : tests, mesures et rapport d'aptitude — puis **M20**
+(1 phase, conditionnel à `src/web/`). Ensuite le rapport final en 13 points (§42).
 
 **Bloqué / à surveiller**
-- **Aucune version de curriculum publiée par une autorité `TIER_A`** — seule
-  condition pour quitter `ARCHITECTURE READY`. Elle n'appartient pas à ce dépôt.
-- **Aucun identifiant OAuth Google** — arrête l'activation des VOLETs 43 à 45.
-- **Aucune source de connaissance activée** : inscrire n'est pas activer (ADR-021).
-- **Mandataire réseau** : les 9 domaines `.sn`, la Banque mondiale, l'UNESCO,
-  la FAO, l'OMS répondent `CONNECT → 403`. Mesuré, non contourné.
+- **`ffmpeg`, `ffprobe`, `torch`, GPU et `whisper` absents** de cet
+  environnement (mesuré). Le moteur média est donc en adaptateurs à sondes :
+  une capacité absente rapporte son état, jamais un résultat plausible.
+- **Aucun curriculum `TIER_A` publié** — seule condition pour que Darra J quitte
+  `ARCHITECTURE READY`. N'appartient pas à ce dépôt.
+- **Mandataire réseau** : 9 domaines `.sn`, Banque mondiale, UNESCO, FAO, OMS
+  répondent `CONNECT → 403`. Mesuré, non contourné.
 - **C1** : `ollama serve` — génération et récupération sémantique non mesurées.
 - **`git push origin v0.1.0`** : seul échec de CI restant.
-- **ADR-020**, fin de vie de `/cloud/*`, cible de déploiement : décisions en attente.
