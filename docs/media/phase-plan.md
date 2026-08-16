@@ -63,7 +63,7 @@ The honest end state, in the same shape Darra J reached:
 ```
 M01  Integration map & capability probes (§39, §27)     → 1 phase   ✅
 M02  Project core, manifest, versions, memory (§18,§38) → 2 phases  ✅
-M03  Ingestion & media probe adapters (§3)              → 2 phases
+M03  Ingestion & media probe adapters (§3)              → 2 phases  ✅
 M04  Analysis, scenes, structured representation (§4)   → 2 phases
 M05  Transcription & word alignment (§12, reuse V32)    → 1 phase
 M06  Deterministic timeline & auto-editing (§5)         → 2 phases
@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 3.
+**Total: 32 phases.** Completed: 5.
 
 ---
 
@@ -166,4 +166,37 @@ reliable, so the prose was rewritten rather than the test weakened.
 
 ---
 
-**Next**: VOLET M03 — ingestion and media probe adapters. Then stop.
+## What M03 built
+
+`src/media/ingestion/identify.py` and `inspect.py`, 27 tests. Two temptations
+closed, each producing an error that **looks like a fact**.
+
+**Trusting the extension.** Wrong for correctness — a file renamed once by a
+well-meaning human is mislabelled forever — and wrong for safety (§30): the
+filename is external input, so routing by extension routes by what an attacker
+chooses. The extension is recorded as a claim, the signature is the evidence,
+and a disagreement is *reported* rather than silently resolved either way.
+Verified on real files produced by Pillow, and on the WebM the engine itself
+encoded in M01. `webm` and `matroska` share a signature and are separated by
+document type; `mp4` and `mov` share `ftyp` and are separated by brand.
+
+**Filling missing fields with defaults.** `duration = 0.0` and `fps = 25` read
+exactly like measurements, and the edit planner cannot tell the difference — it
+would cut at second 12 of a file whose duration nobody read. So a field is
+measured (with the tool named) or unknown (with the reason and the capability
+that would supply it), never in between. `require_for_editing()` refuses rather
+than computing on an absence.
+
+Defect found by a test: the generic fallback loop **overwrote** the specific
+reason, so a corrupt image reported "the capability would supply it" — which is
+both wrong (`image_analysis` is available) and sends the operator looking in the
+wrong place. The fallback now fills, it does not overwrite.
+
+Also fixed: `tests/media/test_ingestion.py` collided with
+`tests/darra_j/test_ingestion.py` — same basename, no `__init__.py`, so pytest
+failed at collection in the full run while passing when run alone. Renamed to
+`test_media_ingestion.py`.
+
+---
+
+**Next**: VOLET M04 — analysis, scenes, structured representation. Then stop.
