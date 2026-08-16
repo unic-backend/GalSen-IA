@@ -179,4 +179,58 @@ export const api = {
   notifications: {
     statistiques: () => appeler("/notification/stats"),
   },
+
+  /**
+   * Le moteur média (§29).
+   *
+   * Aucune de ces fonctions n'invente d'état : `capacites()` rend ce que la
+   * machine peut faire, mesuré, et le studio affiche ce refus tel quel plutôt
+   * que de dessiner une timeline sur un média qu'il n'a pas.
+   */
+  media: {
+    /** Capacités mesurées, outils exécutables, frontière et aptitude. */
+    capacites: () => appeler("/media/capabilities"),
+
+    /** Ouvre une production versionnée. */
+    creerProjet: (objectif) =>
+      appeler("/media/projects", {
+        methode: "POST",
+        corps: { objective: objectif },
+      }),
+
+    /** Le manifeste complet : toutes les versions, pas seulement la courante. */
+    projet: (identifiant) => appeler(`/media/projects/${identifiant}`),
+
+    /**
+     * Transforme une demande en langage naturel en plan structuré.
+     *
+     * Rend `CLARIFICATION_REQUIRED` avec ses questions quand la demande ne dit
+     * pas tout : c'est une réponse, pas un échec.
+     */
+    plan: (identifiant, demande) =>
+      appeler(`/media/projects/${identifiant}/plan`, {
+        methode: "POST",
+        corps: { request: demande },
+      }),
+
+    /** Dépose un rendu dans la file. Répond 202 : accepté, pas produit. */
+    rendre: (identifiant, nom, unites = null) =>
+      appeler(`/media/projects/${identifiant}/render`, {
+        methode: "POST",
+        corps:
+          unites === null
+            ? { output_name: nom }
+            : { output_name: nom, total_units: unites },
+      }),
+
+    /** L'état d'un rendu, avancement compté compris. */
+    travail: (identifiant) => appeler(`/media/jobs/${identifiant}`),
+
+    /** Annule un rendu. Terminal. */
+    annuler: (identifiant, raison = "") =>
+      appeler(`/media/jobs/${identifiant}/cancel`, {
+        methode: "POST",
+        corps: { reason: raison },
+      }),
+  },
 };

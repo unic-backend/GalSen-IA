@@ -12,6 +12,42 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-16 — Universal media & video intelligence engine (`src/media/`)
+
+A media engine built as **adapters with capability probes**, because the machine
+it runs on has no `ffprobe`, no full `ffmpeg`, no GPU and no speech model — and
+none of that is a reason to fake a result.
+
+- **The state is computed, not written**: `readiness.py` walks the seventeen
+  stages of the production chain and answers `ENGINE READY — MEDIA RUNTIME
+  DEPENDENCIES PENDING, 1 STAGE(S) NOT IMPLEMENTED (VOICE)` — 10 `READY`,
+  6 `BLOCKED`, 1 `ABSENT`. `ABSENT` is kept distinct from `BLOCKED`: one names
+  something to write, the other something to install.
+- **A capability is measured by interrogating the tool.** A `which ffmpeg`
+  boolean would have been wrong in both directions here; `image2` is not
+  `image2pipe`, and encoding PNG is not decoding PNG. Both distinctions were
+  found by running an encode, and `frame_encode` is `AVAILABLE` because a real
+  WebM was written.
+- **No model supplies a timestamp**: a `Selection` carries a quote and a reason
+  and has no time field. Cuts land on measured word boundaries, and the render
+  is re-transcribed and compared afterwards — with no re-transcription the
+  verdict is `NOT_VERIFIED`.
+- Three QC outcomes rather than two (`PASS`, `FAIL`, `NOT_CHECKED`); reframing
+  repositions instead of cropping and measures what the crop would have lost;
+  progress is counted and `None` when the total is unknown; a benchmark whose
+  capability is absent reports `NOT_MEASURED`, never `0`.
+- **Two tool declarations**, `media` and `media_generation`: only the second
+  carries an external effect, so only the second requires a human. Eight
+  `/media` routes and a Media Studio at `/ui/studio.html` that displays measured
+  state rather than a decorative timeline.
+- **WanGP is an adapter and nothing was vendored** (licence not inspected, no
+  GPU): `generate()` always raises rather than return a placeholder.
+- Published numbers re-measured after the repository's own guards caught the
+  drift: 22 → 24 declared tools, 123 → 131 routes. No test was weakened.
+- Full report → `docs/media/final-report.md`. 483 tests in the package; suite at
+  5369 passed, 8 skipped.
+
+
 ### Added — 2026-08-15 — Darra J, educational intelligence engine (`src/darra_j/`)
 
 The curriculum is an **institutional source of truth**. GalSen IA does not define

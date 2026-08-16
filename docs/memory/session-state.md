@@ -12,34 +12,35 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 
 **Date** : 2026-08-16
 
-**En cours** : **Universal Media & Video Intelligence Engine** (directive
-propriétaire, 42 sections) — **29 phases sur 32**, M01 à M18 terminés.
-Plan et constats par volet → `docs/media/phase-plan.md`.
+**En cours** : rien. **Le moteur média universel est terminé — 20 VOLETs,
+32 phases sur 32.** Rapport final → `docs/media/final-report.md`.
 
 **Terminé dans cette session**
-- **M15-M16** : adaptation multi-format (les positions sont relatives et
-  **reposées**, le coût du recadrage centré refusé par §22 est *mesuré* à côté)
-  et file de rendu (avancement **compté**, `None` quand le total est inconnu,
-  annulation terminale, `RunStatus` réutilisé).
-- **M17** : les seize outils de §24 avec `consumes`/`produces`, donc un
-  enchaînement impossible refusé **avant** tout encodage ; deux déclarations au
-  registre (`media` local et sans témoin, `media_generation` externe et
-  approuvé). §25 : une demande non dite reste `UNSPECIFIED` et devient une
-  **question** — aucune chaîne tant qu'une question est ouverte.
-- **M18** : huit routes `/media`, et une frontière qui **donne la racine média**
-  au résolveur existant au lieu de réécrire la règle de traversée.
+- **`src/media/`** : 26 modules, 21 fichiers de tests, **483 tests**. Capacités
+  sondées, ingestion, scènes, transcription, montage déterministe, récit, motion
+  design, fournisseurs + WanGP, audio, sous-titres, ressources, compétences,
+  contrôle qualité, multi-format, file d'attente, outils d'agent, langage
+  naturel, API, frontière de sécurité, mesures, aptitude, studio.
+- **L'état est calculé** : `ENGINE READY — MEDIA RUNTIME DEPENDENCIES PENDING,
+  1 STAGE(S) NOT IMPLEMENTED (VOICE)` — 10 `READY`, 6 `BLOCKED`, 1 `ABSENT`.
+- **Aucune synthèse vocale n'existe dans ce dépôt** : trouvé en parcourant la
+  chaîne. Rapporté `ABSENT`, jamais rangé parmi les dépendances manquantes.
 - **Chiffres publiés re-mesurés, jamais assouplis** : 22 → 24 outils déclarés,
-  123 → 131 routes, après que les gardes du dépôt ont attrapé la dérive.
-- Suite : **5323 tests**, 8 ignorés, `ruff` propre. HEAD = `f56ad6c`.
+  123 → 131 routes. Quatre gardes du dépôt ont attrapé le travail ; toutes
+  honorées.
+- Suite : **5369 tests**, 8 ignorés, `ruff` propre.
 
 **Prochaine étape**
-**VOLET M19** (2 phases) : tests, mesures et rapport d'aptitude — puis **M20**
-(1 phase, conditionnel à `src/web/`). Ensuite le rapport final en 13 points (§42).
+Aucune en attente. Le prochain gain le plus élevé ne dépend pas de ce dépôt :
+installer un vrai `ffmpeg` et `ffprobe` fait passer **cinq étapes** de `BLOCKED`
+à `READY` sans une ligne de code — c'est l'intérêt des adaptateurs à sondes.
+Ensuite : un adaptateur de synthèse vocale (la seule étape que rien n'implémente).
 
 **Bloqué / à surveiller**
-- **`ffmpeg`, `ffprobe`, `torch`, GPU et `whisper` absents** de cet
-  environnement (mesuré). Le moteur média est donc en adaptateurs à sondes :
-  une capacité absente rapporte son état, jamais un résultat plausible.
+- **`ffmpeg` complet, `ffprobe`, `torch`, GPU et `whisper` absents** de cet
+  environnement (mesuré). `frame_encode` et `image_analysis` sont disponibles.
+- **Licence de WanGP non inspectée** : c'est une lecture, pas de l'ingénierie,
+  et elle bloque la génération plus fermement que l'absence de GPU.
 - **Aucun curriculum `TIER_A` publié** — seule condition pour que Darra J quitte
   `ARCHITECTURE READY`. N'appartient pas à ce dépôt.
 - **Mandataire réseau** : 9 domaines `.sn`, Banque mondiale, UNESCO, FAO, OMS

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GalSen IA — Media Studio</title>
+    <meta
+      name="description"
+      content="Studio de production média GalSen IA : projets, scènes, aperçu, timeline et rendus, sur l'état réel de la machine."
+    />
+    <!-- Icône embarquée : évite une requête supplémentaire, et un 404 dans la
+         console à chaque chargement. -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b6e4f'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='white' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/ui/css/dashboard.css" />
+    <link rel="stylesheet" href="/ui/css/studio.css" />
+  </head>
+  <body class="studio">
+    <!-- HAUT : rendu, export, version, capacités (§34) -->
+    <header class="studio-haut">
+      <h1>
+        Media Studio
+        <small>GalSen IA</small>
+      </h1>
+
+      <div class="barre-cle">
+        <label for="cle-api" class="discret">Clé API</label>
+        <input
+          id="cle-api"
+          type="password"
+          autocomplete="off"
+          placeholder="X-API-Key"
+          aria-label="Clé API"
+        />
+        <button id="enregistrer-cle" type="button">Appliquer</button>
+        <a href="/ui/" class="lien-retour">Tableau de bord</a>
+      </div>
+
+      <div class="studio-actions">
+        <button id="lancer-rendu" type="button" disabled>Rendre</button>
+        <button id="annuler-rendu" type="button" class="secondaire" disabled>
+          Annuler
+        </button>
+        <span id="etat-aptitude" class="etat etat--attention">état non chargé</span>
+      </div>
+    </header>
+
+    <noscript>
+      <p class="message message--info">
+        Ce studio a besoin de JavaScript. Sans lui, aucune donnée n'est chargée —
+        et une page qui afficherait des panneaux vides se lirait comme une
+        production sans contenu.
+      </p>
+    </noscript>
+
+    <div class="studio-grille">
+      <!-- GAUCHE : projets, scènes, ressources -->
+      <aside class="studio-gauche" aria-labelledby="titre-projets">
+        <section>
+          <h2 id="titre-projets">Production</h2>
+          <form id="formulaire-projet">
+            <label for="objectif-projet" class="discret">Objectif</label>
+            <textarea
+              id="objectif-projet"
+              rows="2"
+              placeholder="Ex. : documentaire de 2 minutes sur la vallée du fleuve"
+            ></textarea>
+            <button type="submit">Ouvrir la production</button>
+          </form>
+          <div id="panneau-projet" class="panneau" aria-live="polite"></div>
+        </section>
+
+        <section>
+          <h2>Étapes de la chaîne</h2>
+          <p class="discret">
+            Les dix-sept étapes de la production, avec leur état <strong>mesuré</strong>
+            sur cette machine.
+          </p>
+          <div id="panneau-etapes" class="panneau" aria-live="polite"></div>
+        </section>
+      </aside>
+
+      <!-- CENTRE : aperçu -->
+      <main class="studio-centre" aria-labelledby="titre-apercu">
+        <h2 id="titre-apercu">Aperçu</h2>
+        <div id="panneau-apercu" class="apercu" aria-live="polite"></div>
+
+        <section>
+          <h2>Demande</h2>
+          <p class="discret">
+            Décrivez la production en une phrase. Ce qui n'est pas dit devient
+            une question — aucun plan n'est proposé tant qu'une question reste
+            ouverte.
+          </p>
+          <form id="formulaire-plan">
+            <label for="demande" class="discret">Votre demande</label>
+            <textarea
+              id="demande"
+              rows="2"
+              placeholder="Ex. : transforme cette interview en documentaire vertical de 90 secondes"
+            ></textarea>
+            <button type="submit">Construire le plan</button>
+          </form>
+          <div id="panneau-plan" class="panneau" aria-live="polite"></div>
+        </section>
+      </main>
+
+      <!-- DROITE : propriétés et contrôles -->
+      <aside class="studio-droite" aria-labelledby="titre-proprietes">
+        <section>
+          <h2 id="titre-proprietes">Capacités de la machine</h2>
+          <div id="panneau-capacites" class="panneau" aria-live="polite"></div>
+        </section>
+
+        <section>
+          <h2>Rendu</h2>
+          <label for="nom-sortie" class="discret">Nom du fichier</label>
+          <input id="nom-sortie" type="text" value="master" />
+          <div id="panneau-travail" class="panneau" aria-live="polite"></div>
+        </section>
+      </aside>
+
+      <!-- BAS : timeline -->
+      <footer class="studio-bas" aria-labelledby="titre-timeline">
+        <h2 id="titre-timeline">Timeline</h2>
+        <div id="panneau-timeline" class="panneau" aria-live="polite"></div>
+      </footer>
+    </div>
+
+    <script type="module" src="/ui/js/studio.js"></script>
+  </body>
+</html>

@@ -4,7 +4,8 @@ Programme: **GALSEN AI — UNIVERSAL MEDIA & VIDEO INTELLIGENCE ENGINE**
 (owner directive, 42 sections). Baseline `1300a99`, 4864 tests, `ruff` clean.
 
 **Cadence**: two volets per turn, as agreed for the previous programmes.
-Nothing is executed until the plan is confirmed.
+**Status: complete — 20 volets, 32 phases.** Final report →
+`docs/media/final-report.md`.
 
 ---
 
@@ -65,25 +66,25 @@ M01  Integration map & capability probes (§39, §27)     → 1 phase   ✅
 M02  Project core, manifest, versions, memory (§18,§38) → 2 phases  ✅
 M03  Ingestion & media probe adapters (§3)              → 2 phases  ✅
 M04  Analysis, scenes, structured representation (§4)   → 2 phases  ✅
-M05  Transcription & word alignment (§12, reuse V32)    → 1 phase
-M06  Deterministic timeline & auto-editing (§5)         → 2 phases
-M07  Story intelligence & scene planner (§6, §7)        → 2 phases
-M08  Motion design & render backends (§8, §9)           → 2 phases
+M05  Transcription & word alignment (§12, reuse V32)    → 1 phase  ✅
+M06  Deterministic timeline & auto-editing (§5)         → 2 phases  ✅
+M07  Story intelligence & scene planner (§6, §7)        → 2 phases  ✅
+M08  Motion design & render backends (§8, §9)           → 2 phases  ✅
 M09  Video providers + WanGP adapter (§10,§11,§35,§36)  → 2 phases  ✅
-M10  Audio, sound design, music (§12, §13, §14)         → 2 phases
-M11  Subtitle intelligence (§15)                        → 1 phase
-M12  Asset registry, licence, provenance (§16, §31)     → 1 phase
-M13  Media skills & style memory (§17, §19)             → 1 phase
-M14  Quality control & final render verification (§20)  → 2 phases
-M15  Multi-format & multilingual adaptation (§22, §23)  → 1 phase
-M16  Job queue, progress, cancellation, resume (§28)    → 1 phase
-M17  Agentic media tools & natural language (§24, §25)  → 2 phases
-M18  API surface & security boundary (§29, §30)         → 2 phases
-M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
-M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
+M10  Audio, sound design, music (§12, §13, §14)         → 2 phases  ✅
+M11  Subtitle intelligence (§15)                        → 1 phase  ✅
+M12  Asset registry, licence, provenance (§16, §31)     → 1 phase  ✅
+M13  Media skills & style memory (§17, §19)             → 1 phase  ✅
+M14  Quality control & final render verification (§20)  → 2 phases  ✅
+M15  Multi-format & multilingual adaptation (§22, §23)  → 1 phase  ✅
+M16  Job queue, progress, cancellation, resume (§28)    → 1 phase  ✅
+M17  Agentic media tools & natural language (§24, §25)  → 2 phases  ✅
+M18  API surface & security boundary (§29, §30)         → 2 phases  ✅
+M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases  ✅
+M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase  ✅
 ```
 
-**Total: 32 phases.** Completed: 23.
+**Total: 32 phases. Completed: 32 — the programme is finished.**
 
 ---
 
@@ -693,5 +694,47 @@ like coverage.
 
 ---
 
-**Next**: VOLET M20 — Media Studio UI (1 phase, conditional on `src/web/`),
-then the final report in the thirteen points of §42.
+---
+
+## What M20 built
+
+`src/web/static/studio.html`, `css/studio.css`, `js/studio.js`, 13 tests.
+
+**A studio is the easiest thing in this programme to fake.** A black frame with
+a play button, a timeline of coloured blocks, a progress bar that climbs — all
+of it draws in an hour and needs no engine at all, which is exactly the problem.
+A person looking at those elements concludes the platform does what they show.
+
+So every zone is driven by what the server measured. The preview names the
+missing capabilities instead of exposing an empty player. The timeline stays
+explicitly trackless while scene detection is blocked, and says why —
+decorative blocks read as detected shots, and nobody can tell they are
+decorative. A render with an unknown total shows "inconnu", never `0 %`, which
+would read as started. An incomplete request shows its **questions**, because
+`CLARIFICATION_REQUIRED` is an answer, not an error.
+
+The existing architecture supported it without a new pattern (§34's condition):
+static files under `/ui`, `api-client.js` as the only module that knows a route,
+and a CSP allowing nothing but `self`. The three source guarantees of
+`tests/test_web_ui.py` — no remote dependency, no direct `fetch`, no `innerHTML`
+— now run on **every** page rather than one, because a guarantee checked on a
+single page stops being one the day a second page appears.
+
+**It was rendered, not assumed.** Headless Chromium
+(`/opt/pw-browsers/chromium_headless_shell-1194`) loaded the page against a live
+server and the dumped DOM carried the real state:
+
+```
+ENGINE READY — MEDIA RUNTIME DEPENDENCIES PENDING, 1 STAGE(S) NOT IMPLEMENTED (VOICE)
+aperçu   : « Capacités absentes de cette machine : gpu_compute, media_probe,
+            transcription, video_decode, video_encode. »
+timeline : « Aucune piste : rien n'a été mesuré. SCENES : video_decode ·
+            EDITING : transcription. »
+```
+
+---
+
+## Programme complete
+
+**20 volets, 32 phases on 32.** Final report in the thirteen points of §42 →
+`docs/media/final-report.md`.

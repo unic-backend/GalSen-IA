@@ -74,7 +74,7 @@ engines **plus nine subsystems probed after the registry** (volets 47–64, prob
 `src/integration/degradation.py`), **17 agents**, **24 declared tools** (13 runnable
 unattended), **131 API routes**, 23 ADRs (ADR-020 is `proposed`; ADR-021 and ADR-022 accepted) — see
 `docs/architecture/overview.md`, kept synchronized with the measured state.
-**4864 tests pass**, 8 skipped.
+**5369 tests pass**, 8 skipped.
 
 Unattended work is real: a routine can fire a workflow through the one orchestrator, and
 **an approval is never granted by the absence of someone to refuse it**. One job is
@@ -152,6 +152,39 @@ Rules worth knowing before touching `src/darra_j/`:
   publishing and learner reads out of every platform role, admin included.
 - `INSUFFICIENT_EVIDENCE` is **off the mastery scale**, never a low level, and a
   rate over zero cases is `NOT_MEASURABLE`, never 100 %.
+
+## Media engine — `src/media/`, and its studio
+
+Twenty volets, 32 phases, 26 modules, 483 tests. Full report →
+`docs/media/final-report.md`. Eight `/media` routes and a Media Studio at
+`/ui/studio.html`.
+
+**The state is computed, never written**: `src/media/readiness.py` walks the
+seventeen stages of the production chain and answers `ENGINE READY — MEDIA
+RUNTIME DEPENDENCIES PENDING, 1 STAGE(S) NOT IMPLEMENTED (VOICE)` — 10 `READY`,
+6 `BLOCKED`, 1 `ABSENT`. **Speech synthesis does not exist here** and is
+reported `ABSENT`, not as a missing dependency: no installation produces it.
+
+Rules worth knowing before touching `src/media/`:
+
+- **A capability is measured by interrogating the tool**, never by checking a
+  binary exists. This machine's `ffmpeg` is built `--disable-everything` and
+  answers `-version` like a full one; `frame_encode` is nonetheless `AVAILABLE`
+  and was verified **by writing a real WebM**.
+- An unavailable capability **reports its state**; it never returns a plausible
+  result. No default duration, no invented transcript, no `0` for a benchmark
+  that did not run.
+- **A `Selection` has no time field.** A model says what to keep; the measured
+  word timings decide where the cut lands. After a render the result is
+  re-transcribed and compared — no re-transcription means `NOT_VERIFIED`.
+- Reframing **repositions**, it never crops, and the cost of the crop it refuses
+  is measured beside it. A language version copies the master timing exactly.
+- Three QC outcomes, never two: `PASS`, `FAIL`, `NOT_CHECKED`.
+  `PRODUCTION_SUCCESS` needs everything applicable passed **and** nothing
+  unchecked.
+- Progress is `done / total` of a counted unit; an unknown total is `None`.
+- `media` and `media_generation` are **two** tool declarations: the second
+  carries the external effect, so it requires a human.
 
 ## Cerveau Local (nouveau)
 Le projet a maintenant un **Cerveau local** qui connecte les engines GalSen IA à Ollama.
