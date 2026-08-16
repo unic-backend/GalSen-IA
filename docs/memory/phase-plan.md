@@ -13,8 +13,8 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 **Programme en cours** : **Universal Media & Video Intelligence Engine — M01 à M20**
 (20 volets, directive du propriétaire, 42 sections).
 **Phases**         : **32**. Plan complet et audit → `docs/media/phase-plan.md`.
-**Phase courante** : **M10.1 — en attente de confirmation** (audio et sound design).
-**Terminées**      : M01 à M09 — 16 phases sur 32.
+**Phase courante** : **M11.1 — en attente de confirmation** (sous-titres).
+**Terminées**      : M01 à M10 — 18 phases sur 32.
 **Cadence**        : **deux volets par tour**, comme pour les programmes précédents.
 
 **Contraintes mesurées avant de planifier** : `ffmpeg`/`ffprobe`, `torch`, GPU et

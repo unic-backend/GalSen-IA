@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 16.
+**Total: 32 phases.** Completed: 18.
 
 ---
 
@@ -422,6 +422,39 @@ in the engine changes — which is what "isolated behind an adapter" was for.
 
 ---
 
-**Next**: VOLET M10 — audio, sound design and music (2 phases). `audio_decode`
-is UNAVAILABLE here, so this volet builds the timing discipline and reports what
-it cannot measure. Then stop.
+## What M10 built
+
+`src/media/audio/sound_design.py` and `music.py`, 29 tests.
+
+**"Do not randomly place sounds" (§12)** — and "randomly" is generous. What
+actually happens is worse and looks better: a system places a riser "at the
+reveal" by asking a model where it is, gets a confident 4.2 s, and drops the
+sound there. It lands half a second before the cut every time, and the edit
+sounds vaguely wrong in a way nobody can name in a review. So every cue carries
+`derived_from` — the event that caused it and where that event's time came
+from — and an event with no declared source is refused outright. An event no
+sound family serves stays **silent and named**, because proposing a neighbouring
+family is an editing decision.
+
+Ducking is the one part of a mix genuinely computable without decoding audio: it
+needs the speech regions, which come from M05's measured word timings. Windows
+that touch are merged, since leaving them apart makes the music rise between two
+words — audible as pumping.
+
+**§14's ranking sentence is "never claim unknown copyright status", and it
+outranks every analysis field.** Getting BPM wrong makes a video feel off;
+getting this wrong produces a takedown, an invoice, or a client who cannot
+broadcast what they paid for. So `UNKNOWN` **blocks use** rather than warning,
+and "cleared" without a named licence is refused — writing it that way is what
+ensures nobody looks again.
+
+`audio_decode` is UNAVAILABLE here, so BPM, energy and vocal presence are `None`
+with a reason and never 120. Section-to-scene sync still works, because it needs
+only M04's measured scene boundaries; **beat** alignment is refused without a
+measured BPM, since a supposed tempo puts every cut slightly off — audible
+without being nameable.
+
+---
+
+**Next**: VOLET M11 — subtitle intelligence (1 phase), then M12 — asset registry,
+licence and provenance (1 phase). Then stop.
