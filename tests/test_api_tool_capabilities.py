@@ -89,7 +89,7 @@ def test_tous_les_outils_listes_portent_leur_capacite(moteur):
     ]
 
     assert manquants == []
-    assert len(moteur.list_tools()) == 22
+    assert len(moteur.list_tools()) == 24
 
 
 def test_le_moteur_repond_aux_trois_questions_des_couches_suivantes(moteur):
@@ -153,7 +153,7 @@ def test_le_rapport_publie_sa_propre_couverture(client, cles, moteur_branche):
 
     assert reponse.status_code == 200
     corps = reponse.json()
-    assert corps["tools"] == 22
+    assert corps["tools"] == 24
     assert corps["undeclared"] == []
     assert corps["coverage"] == 1.0
     assert "email" in corps["by_scope"]["user_private"]

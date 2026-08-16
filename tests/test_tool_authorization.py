@@ -46,7 +46,7 @@ from src.tool.capabilities import (  # noqa: E402
 
 @pytest.fixture(scope="module")
 def registre():
-    """Le registre réel des 22 outils, chargé une fois."""
+    """Le registre réel des 24 outils, chargé une fois."""
     return load_capabilities()
 
 
@@ -105,7 +105,7 @@ def test_l_administrateur_ne_saute_aucun_portillon(outil, registre):
 
 def test_aucun_role_n_obtient_un_outil_sous_portillon_sans_approbation(registre):
     """
-    L'invariant, vérifié sur les quatre rôles et les 22 outils, pas sur un
+    L'invariant, vérifié sur les quatre rôles et les 24 outils, pas sur un
     exemple choisi.
     """
     fuites = []
@@ -234,7 +234,7 @@ def test_un_role_sans_permission_d_execution_ne_peut_rien(registre):
 
     assert rangement["allowed"] == []
     assert rangement["requires_approval"] == []
-    assert len(rangement["refused"]) == 22
+    assert len(rangement["refused"]) == 24
 
 
 # ----------------------------------------------------------------------
@@ -248,11 +248,11 @@ def test_la_matrice_est_calculee_pas_recopiee():
     """
     rapport = authorization_report()
 
-    assert rapport["tools"] == 22
+    assert rapport["tools"] == 24
     assert set(rapport["roles"]) == set(PLAFONDS)
     for role, detail in rapport["roles"].items():
         total = sum(len(ids) for ids in detail["tools"].values())
-        assert total == 22, f"{role} : {total} outils rangés sur 22"
+        assert total == 24, f"{role} : {total} outils rangés sur 24"
 
 
 def test_le_plafond_se_resserre_du_plus_large_au_plus_etroit():
@@ -266,7 +266,7 @@ def test_le_plafond_se_resserre_du_plus_large_au_plus_etroit():
         for role, detail in rapport["roles"].items()
     }
 
-    assert ouverts["admin"] == 22
+    assert ouverts["admin"] == 24
     assert ouverts["admin"] >= ouverts["operator"] > ouverts["readonly"]
     assert ouverts["admin"] >= ouverts["user"] > ouverts["readonly"]
 

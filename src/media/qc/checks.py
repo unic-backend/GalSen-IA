@@ -381,6 +381,36 @@ def verdict(checks: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
+def repairable(checks: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Ce qu'une réparation a le droit de toucher : les défauts **constatés**.
+
+    Args:
+        checks: Les contrôles menés sur le rendu.
+
+    Returns:
+        Les contrôles en échec, ceux qui n'ont pas pu tourner, et l'état
+        d'ensemble.
+
+        La distinction est celle que §26 rend nécessaire : un contrôle
+        `NOT_CHECKED` n'est pas un défaut. Réparer sur cette base changerait un
+        fichier que personne n'a jugé mauvais — et une chaîne d'auto-réparation
+        qui fait cela tourne indéfiniment sur des problèmes qu'elle invente.
+    """
+    echecs = [c for c in checks if c.get("outcome") == ECHOUE]
+    non_verifies = [c for c in checks if c.get("outcome") == NON_VERIFIE]
+    return {
+        "status": "REPAIRABLE" if echecs else "NOTHING_TO_REPAIR",
+        "failures": echecs,
+        "not_checked": non_verifies,
+        "note": (
+            "Seuls les défauts **constatés** sont réparables. Un contrôle qui "
+            "n'a pas pu tourner n'est pas un défaut : le corriger changerait "
+            "un fichier que personne n'a jugé mauvais."
+        ),
+    }
+
+
 def qc_report() -> Dict[str, Any]:
     """
     Ce que le contrôle qualité garantit, et ce qu'il refuse.

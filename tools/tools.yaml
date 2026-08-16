@@ -367,3 +367,39 @@ tools:
       requires_approval: false
       unattended: true
     config: {}
+
+  # Le moteur média local (§24). Il lit les médias de quelqu'un et écrit des
+  # fichiers **sur cette machine** — c'est la forme que `memory` a déjà :
+  # donnée privée, effet local, exécutable sans témoin. Une capacité absente
+  # (ffmpeg, GPU) rend `NOT_CONFIGURED` en la nommant, jamais un résultat
+  # plausible : une durée par défaut laisserait la chaîne continuer sur du faux.
+  - id: media
+    enabled: true
+    category: ai
+    module: "tools.media.tool"
+    class: "MediaTool"
+    capability:
+      effects: [read, write]
+      data_scope: user_private
+      requires_approval: false
+      unattended: true
+    config:
+      tool_id: media
+
+  # La génération est une déclaration **séparée**, parce que l'acte est
+  # différent : elle envoie les rushes de quelqu'un à un fournisseur, donc elle
+  # fait sortir la donnée de la machine. Donnée privée plus effet externe est la
+  # forme d'un chemin d'exfiltration, et elle demande un humain.
+  - id: media_generation
+    enabled: true
+    category: ai
+    module: "tools.media.tool"
+    class: "MediaGenerationTool"
+    capability:
+      effects: [read, write, external]
+      data_scope: user_private
+      requires_approval: true
+      unattended: false
+      reason: "Envoyer les médias de quelqu'un à un fournisseur génératif fait sortir sa donnée de la machine."
+    config:
+      tool_id: media_generation

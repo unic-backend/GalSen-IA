@@ -10,7 +10,7 @@ Ce que ces tests gardent, dans l'ordre d'importance :
    limite à trancher à l'exécution.
 3. **Donnée privée plus sortie de la machine ne tourne jamais seul.** C'est la
    définition d'un chemin d'exfiltration.
-4. **Les 22 outils du registre réel sont couverts**, et la couverture est
+4. **Les 24 outils du registre réel sont couverts**, et la couverture est
    mesurée, pas supposée.
 """
 
@@ -211,14 +211,14 @@ def test_la_portee_declaree_est_accordee():
 # 4. Le registre réel
 # ----------------------------------------------------------------------
 
-def test_les_vingt_deux_outils_declarent_leur_capacite():
+def test_tous_les_outils_du_registre_declarent_leur_capacite():
     """
     Mesure, pas promesse. La couverture est publiée : un outil oublié
     apparaîtrait ici plutôt que de passer pour sûr.
     """
     rapport = capability_report()
 
-    assert rapport["tools"] == 22
+    assert rapport["tools"] == 24
     assert rapport["undeclared"] == []
     assert rapport["coverage"] == 1.0
 
@@ -249,7 +249,7 @@ def test_les_outils_qui_agissent_largement_exigent_une_approbation(outil):
 
 def test_aucun_outil_executable_seul_ne_sort_avec_de_la_donnee_privee():
     """
-    L'invariant du registre réel, vérifié sur les 22 outils et non sur un
+    L'invariant du registre réel, vérifié sur les 24 outils et non sur un
     exemple choisi.
     """
     registre = load_capabilities()
