@@ -24,8 +24,8 @@ C07  PHASE 4   CreativeEngine + CreativeRepresentation (§5)      → 3 phases  
 C08  PHASE 5   VoiceSceneEngine + original audio (§21, §22, §26) → 3 phases  ✅
 C09  PHASE 6   EntityEngine, CharacterMemory, WorldState/Memory  → 3 phases  ✅
 C10  PHASE 7   DirectorEngine + ShotPlanner (§18, §19)           → 2 phases  ✅
-C11  PHASE 8   IdentityVerification + Drift + Continuity (§48–51)→ 3 phases
-C12  PHASE 9   Crowd / background engine (§20)                   → 1 phase
+C11  PHASE 8   IdentityVerification + Drift + Continuity (§48–51)→ 3 phases  ✅
+C12  PHASE 9   Crowd / background engine (§20)                   → 1 phase   ✅
 C13  PHASE 10  Multilingual voice layer, code-switching (§24–26) → 2 phases
 C14  PHASE 11  Language Intelligence + knowledge base (§27–33)   → 3 phases
 C15  PHASE 12  ModelRouter, capability matching (§36, §43)       → 2 phases
@@ -34,7 +34,7 @@ C17  PHASE 14  API, golden tests, hardening, MVP slice (§62–66,70)→ 3 phase
 C18  PHASE 15  Future model research + final report (§73, §76)   → 1 phase
 ```
 
-**Total: 38 phases.** Completed: **26**.
+**Total: 38 phases.** Completed: **30**.
 
 *(Nineteen labels, seventeen volets after C00 and C18 — the §71 phases that
 split into two volets keep their directive number in the `PHASE` column so the
