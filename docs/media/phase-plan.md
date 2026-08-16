@@ -523,5 +523,49 @@ absence of control.
 
 ---
 
-**Next**: VOLET M15 — multi-format and multilingual adaptation (1 phase), then
-M16 — the job queue (1 phase). Then stop.
+---
+
+## What M15 and M16 built
+
+`src/media/adapt/formats.py` and `src/media/queue/jobs.py`, 34 tests.
+
+**§22 ends on an instruction rather than a list: *do not simply crop*.** A centre
+crop is one line, produces a file of exactly the right shape, and removes
+whatever sat near the edges — in practice the logo, the lower third, and the
+speaker's head when they are off-centre. Every dimensional check passes. So
+placements are held in **relative coordinates** and repositioned inside the
+target's safe area, and `centre_crop_survivors()` measures what the forbidden
+one-liner *would* have lost. That second half is what makes the refusal
+checkable instead of merely stated: the test asserts the logo survives reframing
+and would not have survived the crop. An element too large for the safe area is
+**reported, never shrunk** — reducing a logo changes a brand identity, and doing
+it silently makes that change nobody's decision.
+
+**§23's symmetrical temptation is quieter.** A translated line runs long, so the
+cue is stretched to fit; it drifts from the picture it captions and every later
+cue inherits the drift. Timing is copied **exactly**; a translation that will not
+fit is flagged, because shortening a sentence is a translator's decision and
+stretching a window is a decision nobody made. An untranslated cue stays
+untranslated and is **named**: falling back to the source language hands the
+Arabic viewer a French line with no way to tell whether that was intended.
+
+**§28's first lie is progress.** Queues compute a percentage from elapsed time
+against an estimate; it reaches 90 % and stays there, and what the user is
+watching is an animation, not a measurement. Progress here is `done / total` of a
+**counted** unit, and an unknown total reports `None` — not 0, and certainly not
+90. Attempts are bounded and every one is kept with its error, because a job that
+succeeded on attempt three is not a job that succeeded, and the difference is
+what tells an operator something is wrong upstream. Cancellation is terminal.
+None of that is a new vocabulary: `RunStatus` from
+`src/router/workflow_checkpoint.py` already made `CANCELLED` terminal and
+`RUNNING`/`FAILED` resumable, so this module reuses it — a second vocabulary for
+the same idea drifts, and this repository has already paid for that four times.
+Resource reservation is **declared, not enforced**: nothing here can stop another
+process from taking a GPU, but an operator can see two jobs claiming the same
+12 GB before both fail.
+
+---
+
+**Next**: VOLET M17 — agentic media tools and natural language (2 phases), then
+M18 — API surface and security boundary (2 phases), M19 — tests, benchmarks and
+the readiness report (2 phases), M20 — Media Studio UI (1 phase, conditional).
