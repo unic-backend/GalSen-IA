@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 8.
+**Total: 32 phases.** Completed: 10.
 
 ---
 
@@ -266,7 +266,42 @@ out loud, never treated as silence.
 
 ---
 
-**Next**: VOLET M06 — deterministic timeline and auto-editing (2 phases). It is
-the pivot of the whole engine: the model decides what stays, this layer decides
-where the cut lands, and the result is re-transcribed and compared against the
-intended script. Then stop.
+## What M06 built — the pivot
+
+`src/media/timeline/edit_plan.py` and `verify.py`, 28 tests.
+
+**The interface has no shape in which a timestamp can be returned.** Every
+implementation agrees with §1 and then breaks it in the same place: by defining
+a response where the model returns `{"start": 4.2, "end": 9.8}`. Once that field
+exists the rule is a comment — the model fills it fluently and nobody downstream
+can tell an invented 4.2 from a measured one. A `Selection` carries a **quote
+and a reason**, and nothing else. Same closure `pedagogy.explain()` uses in
+Darra J.
+
+Locating the quote is then exact. A near-match would keep words the model did
+not choose while reporting success; a quote appearing twice is `AMBIGUOUS` and
+refused, because picking the first occurrence silently keeps a different take
+than the one that was reviewed — the "bad take selection" failure §5 asks to
+detect, manufactured by the editor itself. A quote appearing nowhere means the
+model cited a sentence never said, which is worth surfacing rather than
+approximating away.
+
+**Render success is not production success.** Everything upstream can be correct
+and still produce a cut that removes the word "pas": the encoder reports
+success, the file plays, the sentence says the opposite. Only re-reading the
+words catches it. So `verify_render()` returns `NOT_VERIFIED` — never a pass —
+when no re-transcription exists, and the comparison is mechanical: asking a
+model whether two transcripts mean the same thing would replace a measurement
+with an opinion produced by the same kind of system that made the error. What
+the comparison cannot see (identical mishearing, prosody, picture) is named
+rather than omitted.
+
+Defect found while reviewing: `min_silence` was threaded through the boundary
+computation and **decided nothing**. It now flags edges whose neighbouring
+silence is too short — the cut stays between two words but close enough to clip
+a consonant. Catching that before the render is worth a whole render; the
+after-the-fact detection (`boundary_losses`) costs one.
+
+---
+
+**Next**: VOLET M07 — story intelligence and scene planner (2 phases). Then stop.
