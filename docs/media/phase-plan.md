@@ -62,7 +62,7 @@ The honest end state, in the same shape Darra J reached:
 
 ```
 M01  Integration map & capability probes (§39, §27)     → 1 phase   ✅
-M02  Project core, manifest, versions, memory (§18,§38) → 2 phases
+M02  Project core, manifest, versions, memory (§18,§38) → 2 phases  ✅
 M03  Ingestion & media probe adapters (§3)              → 2 phases
 M04  Analysis, scenes, structured representation (§4)   → 2 phases
 M05  Transcription & word alignment (§12, reuse V32)    → 1 phase
@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 1.
+**Total: 32 phases.** Completed: 3.
 
 ---
 
@@ -137,4 +137,33 @@ counter-test was extended so that tolerance cannot become permanent.
 
 ---
 
-**Next**: VOLET M02 — project core, manifest and versions. Then stop.
+## What M02 built
+
+`src/media/core/project.py` and `store.py`, 50 tests. §18's rule — *never
+destroy previous versions* — is structural rather than a convention:
+
+- **No delete method exists**, on the project or on either store. Not guarded:
+  absent. A guarded delete is eventually called with the right argument.
+- **A version is frozen**; a new state is an appended version derived from the
+  previous one. A status change replaces the entry and leaves `content_hash()`
+  identical — a change of state is not a change of work.
+- **Identity and content are separate hashes**, and `created_at` stays out of
+  the content hash. Darra J paid for that conflation once.
+- **An artifact declares its origin.** A sourced artifact without source and
+  licence is `provenance_complete: False` — incomplete, never "probably fine".
+- **A correction is evidence, not a rule** (§17): recorded with its author,
+  never promoted on its own.
+
+Persistence reuses ADR-005 and adds no second switch. A round trip is lossless
+or it fails: versions, statuses, artifacts, licences, corrections and content
+hashes all survive, and a record with zero versions is refused rather than
+repaired — fabricating one would hide the loss.
+
+A fourth existing guard fired: `test_persistence_deployment.py` greps for the
+literal backend-variable read and found it in this module's **docstring**, where
+it was quoting the historical mistake. The guard's bluntness is what makes it
+reliable, so the prose was rewritten rather than the test weakened.
+
+---
+
+**Next**: VOLET M03 — ingestion and media probe adapters. Then stop.
