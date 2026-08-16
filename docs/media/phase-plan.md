@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 7.
+**Total: 32 phases.** Completed: 8.
 
 ---
 
@@ -232,5 +232,41 @@ because merging a model's description and a detector's output into one
 
 ---
 
-**Next**: VOLET M05 — transcription and word alignment, reusing `src/multimodal/`
-(VOLET 32). Then stop.
+## What M05 built
+
+`src/media/transcription/words.py`, 16 tests. One shortcut closed, and it is the
+most tempting in the whole engine.
+
+A transcriber returns segments — *"il faut comparer deux fractions", 4.10 s →
+6.30 s* — whose words are known but whose individual times are not. One line of
+arithmetic spreads 2.2 seconds across five words and the result gets called word
+timings. It even looks right on a waveform.
+
+It is wrong exactly where it matters. Speech is not uniform: a speaker pauses,
+stresses, hesitates. An interpolated boundary lands **inside** a word about as
+often as between two, so a cut snapped to it removes half a syllable — audible
+immediately to a listener, invisible to an engineer reading timestamps that look
+measured.
+
+So word timings are extracted only when the transcriber supplied them.
+Interpolation remains available as an explicit opt-in, marked `ESTIMATED`, and
+`safe_cut_points()` refuses it anyway — a single estimated word among measured
+ones is enough to refuse, because that mixture is the dangerous case: it looks
+mostly measured.
+
+`snap_to_word_boundary()` is directive §1 made executable: the model says
+roughly where, this module decides where the cut can actually land, moving it
+into the nearest silence and reporting which word it would have crossed. With no
+safe point it refuses rather than falling back on the requested instant — the
+fallback would make exactly the cut the function exists to prevent.
+
+Transcription itself is not reimplemented: `src/multimodal/` (VOLET 32) owns it,
+and its rule is inherited — an audio file that cannot be transcribed is refused
+out loud, never treated as silence.
+
+---
+
+**Next**: VOLET M06 — deterministic timeline and auto-editing (2 phases). It is
+the pivot of the whole engine: the model decides what stays, this layer decides
+where the cut lands, and the result is re-transcribed and compared against the
+intended script. Then stop.
