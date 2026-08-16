@@ -12,6 +12,33 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-15 — Darra J, educational intelligence engine (`src/darra_j/`)
+
+The curriculum is an **institutional source of truth**. GalSen IA does not define
+it, and neither does the model: the platform receives it, versions it, retrieves
+it and explains it, without ever rewriting it.
+
+- **State reached, and it is the one the directive asks for**:
+  `ARCHITECTURE READY — OFFICIAL CURRICULUM DATA PENDING`. No Senegalese
+  curriculum has been integrated — none was available, and none was written from
+  model memory. `readiness()` measures the register; no flag reaches "ready to
+  serve" without a published `TIER_A` version, and a register holding only
+  fixtures reports zero official versions.
+- **The central guarantee is mechanical**: with no canonical record the model is
+  **not called** (`firewall.py`), and the evaluation lab measures that on an
+  instrumented generator rather than assuming it.
+- **Six education roles** join `src/api/rbac.py`, with `PERMISSIONS_HORS_PLATEFORME`
+  subtracting what belongs to someone outside the platform — publishing a
+  curriculum, and reading a child's work. Authorisation for learner data is a
+  conjunction of permission **and** declared link; there is no permission for an
+  unlinked learner because none was created.
+- **Fixed in existing code**: the alias table kept only the folded form of a
+  term, so `translate()` — which exists to *show* a term — returned `mbey` for
+  `mbéy`. `ë ñ ŋ` are CLAD letters, never accents. The table now keeps `written`
+  for display and `terms` for search.
+- Full report → `docs/darra-j/final-report.md`. 377 tests in the package; suite
+  at 4864 passed, 8 skipped.
+
 ### Added — 2026-08-15 — Harnais d'auto-réparation (`src/agent/`, `docs/agent/`)
 
 Un agent d'ingénierie **contrôlé** : il inspecte, diagnostique, prépare un

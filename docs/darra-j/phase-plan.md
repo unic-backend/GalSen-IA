@@ -4,8 +4,8 @@ Programme : **DARRA J — moteur d'intelligence éducative nationale**
 (directive du propriétaire, 20 VOLETs).
 Base gelée : `1a586bc`, 4480 tests, `ruff` propre.
 
-**État** : VOLETs 1 à 17 terminés.
-**Suivant** : VOLET 18 — échelle et résilience.
+**État** : **les 20 VOLETs sont terminés** — 28 phases sur 28.
+**Rapport final** : `docs/darra-j/final-report.md`.
 
 ---
 
@@ -43,12 +43,12 @@ V14  Graphe éducatif                                  → 2 phases  ✅
 V15  Modèle de maîtrise                               → 1 phase   ✅
 V16  Couche multilingue éducative                     → 1 phase   ✅
 V17  Laboratoire d'évaluation                         → 2 phases  ✅
-V18  Échelle et résilience                            → 1 phase
-V19  Auditabilité institutionnelle                    → 1 phase
-V20  Aptitude à la production                         → 1 phase
+V18  Échelle et résilience                            → 1 phase   ✅
+V19  Auditabilité institutionnelle                    → 1 phase   ✅
+V20  Aptitude à la production                         → 1 phase   ✅
 ```
 
-**Total : 28 phases.** Terminées : 25.
+**Total : 28 phases.** Terminées : **28**.
 
 ---
 
@@ -209,6 +209,31 @@ appelé), la justesse des refus, la couverture de provenance, la cohérence entr
 rôles et la fuite de note. Un taux sans cas rend `NOT_MEASURABLE`, jamais 100 % :
 une suite vide qui affiche un score parfait fabrique de la confiance à partir
 d'une absence. Ce qui n'est pas mesurable est **nommé avec sa raison**.
+
+---
+
+## Ce que les VOLETs 18, 19 et 20 ont trouvé
+
+**Deux clés devinées au lieu d'être lues.** La sonde de résilience lisait
+`registry_report()["published"]` — clé qui n'existe pas : le `.get(..., 0)`
+aurait rendu 0 en silence pour toujours. La piste d'audit cherchait `from`/`to`
+dans le journal du registre, qui écrit `de`/`vers` : la recherche n'aurait
+jamais rien trouvé, et **chaque** piste aurait déclaré silencieusement qu'aucun
+décideur n'avait été consigné — exactement le fait qu'un auditeur vient
+vérifier. Les deux ont été trouvés en lisant le code appelé plutôt qu'en
+supposant sa forme.
+
+**Une règle du registre redécouverte par un test.** L'essai de concurrence
+échouait sur `RegistryRefused : on n'ajoute pas une unité à un curriculum en
+vigueur`. Ce n'était pas un défaut de verrou : c'était le registre qui tenait sa
+règle. Le test vise désormais une version en préparation, et mesure donc le
+verrou au lieu du refus.
+
+**L'aptitude à la production est mesurée, pas déclarée.** Un registre ne
+contenant que des fixtures rapporte zéro version officielle — la marque
+`NON_OFFICIAL_TEST_DATA` existe précisément pour que cette fonction puisse les
+distinguer, et un rapport vert sur un système vide se lit comme un feu vert de
+déploiement.
 
 ---
 

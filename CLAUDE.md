@@ -69,12 +69,12 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - ALWAYS update `docs/memory/completed-work.md` and `CHANGELOG.md` after meaningful progress.
 
 ## Current Status
-*Measured 2026-08-15.* Foundation and core engines are done (ADR-001, ADR-002). Fourteen
+*Measured 2026-08-16.* Foundation and core engines are done (ADR-001, ADR-002). Fourteen
 engines **plus nine subsystems probed after the registry** (volets 47–64, probed by
 `src/integration/degradation.py`), **17 agents**, **22 declared tools** (12 runnable
 unattended), **123 API routes**, 23 ADRs (ADR-020 is `proposed`; ADR-021 and ADR-022 accepted) — see
 `docs/architecture/overview.md`, kept synchronized with the measured state.
-**4480 tests pass**, 8 skipped.
+**4864 tests pass**, 8 skipped.
 
 Unattended work is real: a routine can fire a workflow through the one orchestrator, and
 **an approval is never granted by the absence of someone to refuse it**. One job is
@@ -123,6 +123,35 @@ generation and semantic retrieval; **the nine Senegalese institutional domains a
 by this environment's proxy** (`CONNECT → 403`, measured — not a site refusal), so
 history, culture, agriculture, health, education and law hold nothing; the `v0.1.0` tag
 has never been pushed and is the single red test in CI.
+
+## Darra J — educational intelligence (ADR-021 discipline, `src/darra_j/`)
+
+Twenty volets, 28 phases, 21 modules, 377 tests. Full report →
+`docs/darra-j/final-report.md`.
+
+**The state is `ARCHITECTURE READY — OFFICIAL CURRICULUM DATA PENDING`**, and
+`readiness()` measures the register to say it — no flag reaches "ready to serve"
+without a `TIER_A` published version, and a register holding only fixtures
+reports zero official versions. **No Senegalese curriculum has been integrated:**
+none was available, and none was written from model memory.
+
+Rules worth knowing before touching `src/darra_j/`:
+
+- **No canonical record → the model is not called** (`firewall.py`). Not
+  labelled, not discouraged: not called. The evaluation lab measures it on an
+  instrumented generator.
+- Resolution is by **coordinates**, never similarity; incomplete coordinates
+  answer `CLARIFICATION_REQUIRED`.
+- Official fields are returned **verbatim and untranslated**. The question
+  travels through the alias table; the record never does.
+- Publishing requires a **named decider** who is not the platform
+  (`is_platform_identity`), and a replaced version becomes `SUPERSEDED`.
+- Learner data needs **permission *and* a declared link** (`access.py`,
+  `privacy.py`). No permission exists for an unlinked learner. Six education
+  roles live in `src/api/rbac.py`; `PERMISSIONS_HORS_PLATEFORME` keeps
+  publishing and learner reads out of every platform role, admin included.
+- `INSUFFICIENT_EVIDENCE` is **off the mastery scale**, never a low level, and a
+  rate over zero cases is `NOT_MEASURABLE`, never 100 %.
 
 ## Cerveau Local (nouveau)
 Le projet a maintenant un **Cerveau local** qui connecte les engines GalSen IA à Ollama.
