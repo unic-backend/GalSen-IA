@@ -14,8 +14,8 @@ Historique des VOLETs 01 à 36 → `docs/memory/archive/phase-plan-volets-01-36.
 (directive propriétaire V4, 81 sections).
 **Phases**         : **38**. Plan complet → `docs/creative/phase-plan.md`.
 Audit du dépôt (PHASE 0) → `docs/creative/repository-audit.md`.
-**Phase courante** : **C09.1 — en attente de confirmation** (EntityEngine, WorldState).
-**Terminées**      : C00 à C08 — 21 phases sur 38. Recherche →
+**Phase courante** : **C11.1 — en attente de confirmation** (identité, dérive, continuité).
+**Terminées**      : C00 à C10 — 26 phases sur 38. Recherche →
 `docs/creative/provider-research.md`, faisabilité → `docs/creative/feasibility.md`,
 schémas → `docs/creative/schemas.md`, ADR-024 à ADR-027 (carte →
 `docs/creative/adr-map.md`).
