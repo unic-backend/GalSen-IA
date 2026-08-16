@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 10.
+**Total: 32 phases.** Completed: 12.
 
 ---
 
@@ -304,4 +304,44 @@ after-the-fact detection (`boundary_losses`) costs one.
 
 ---
 
-**Next**: VOLET M07 — story intelligence and scene planner (2 phases). Then stop.
+## What M07 built
+
+`src/media/story/structures.py` and `planner.py`, 32 tests.
+
+**§6 lists a structure and then says not to force it.** That second sentence is
+the volet, because the list — hook, context, argument, evidence, CTA — is a
+**marketing** structure. Applied to a documentary it produces an advert with
+archive footage; applied to a lesson, a sales pitch about photosynthesis. The
+engine would not misbehave: it would do exactly what it was built to do, to
+material that never asked for it.
+
+So structures are declared per domain — documentary, education, news, interview,
+sports analysis, scientific, marketing, social — and an undeclared domain gets
+**no structure at all**. Falling back to the marketing shape is the named error
+arrived at through a sensible-looking default. A call to action is a marketing
+device, not a narrative universal, and is refused everywhere else: a documentary
+that ends by asking viewers to subscribe has become an advert. Two roles are
+domain-specific and load-bearing: `attribution` in news (information without a
+source is not broadcastable) and `limitation` in scientific (a result without
+its limits is an assertion, not science).
+
+A role is filled with material that exists. An empty role is **named**, because
+"this documentary has no evidence section" is a fact the director needs, and
+generating a plausible one is how a machine starts writing the argument instead
+of arranging it.
+
+**The planner keeps two duration fields that never merge.** A `target_duration`
+is a request, a `measured_duration` is a fact, and a scene planned at 8 s
+holding 14 s of speech will overrun or cut someone off mid-sentence — reported
+before the render, since noticing at render time costs a render.
+
+And §7's "visual design should communicate ideas instead of repeating spoken
+words" is treated as checkable rather than as taste: `check_redundancy()`
+measures how much of the on-screen text is already in the voice. That failure is
+invisible in a plan and obvious in a finished video.
+
+---
+
+**Next**: VOLET M08 — motion design and render backends (2 phases). `frame_encode`
+is the one capability measured AVAILABLE on this machine, so this volet produces
+real video. Then stop.
