@@ -69,7 +69,7 @@ M05  Transcription & word alignment (§12, reuse V32)    → 1 phase
 M06  Deterministic timeline & auto-editing (§5)         → 2 phases
 M07  Story intelligence & scene planner (§6, §7)        → 2 phases
 M08  Motion design & render backends (§8, §9)           → 2 phases
-M09  Video providers + WanGP adapter (§10,§11,§35,§36)  → 2 phases
+M09  Video providers + WanGP adapter (§10,§11,§35,§36)  → 2 phases  ✅
 M10  Audio, sound design, music (§12, §13, §14)         → 2 phases
 M11  Subtitle intelligence (§15)                        → 1 phase
 M12  Asset registry, licence, provenance (§16, §31)     → 1 phase
@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 14.
+**Total: 32 phases.** Completed: 16.
 
 ---
 
@@ -381,4 +381,47 @@ its reason rather than implied.
 
 ---
 
-**Next**: VOLET M09 — video providers and the WanGP adapter (2 phases). Then stop.
+## What M09 built
+
+`src/media/providers/base.py` and `wangp.py`, 22 tests.
+
+**The failure closed is the helpful selector.** Asked for 1080p and finding only
+720p, it returns the 720p one — reasonably, and silently. The caller gets
+something other than what they asked for with no way to notice. So
+`select_provider()` returns a refusal listing why *each* provider was excluded,
+and never a nearest match: a downgrade is a decision, and decisions belong to
+whoever is making the film.
+
+Three declarations are nullable and `None` never means zero: `min_vram_gb=None`
+is "no GPU needed", not 0 GB; an unknown `cost_per_second` is **excluded** from
+a cheapest-first ranking rather than sorted first, which is how a bill arrives;
+an unmeasured latency is excluded from fastest-first, because inventing one
+turns a queue estimate into a promise (§33). Required VRAM is compared against
+*measured* VRAM, and unmeasurable means unavailable rather than "possibly fine".
+
+### WanGP integration status — measured, not chosen
+
+**`ADAPTER_ONLY`.** §11's own contingency clause is what applies, for two
+independent reasons:
+
+- **The licence could not be inspected.** §36 requires reading it before
+  integrating. This environment's proxy refuses GitHub repositories outside the
+  session scope — `api.github.com` answers *"GitHub access to this repository is
+  not enabled for this session"*. So the licence is `UNKNOWN`, and that blocks
+  on its own: vendoring code whose terms nobody read is a legal decision taken
+  by a machine.
+- **Nothing could run.** `gpu_compute` is UNAVAILABLE — no torch, no CUDA.
+
+The repository is **not** copied into `src/` (a test asserts it). The listed
+capabilities are what the public documentation describes, carried as
+`capabilities_verified: False` — expectations, not measurements. `generate()`
+refuses rather than writing a placeholder: a black slate encodes without error,
+passes duration checks, and fails only in front of a viewer. When a GPU and a
+reviewed licence exist, this one file gains an implementation and nothing else
+in the engine changes — which is what "isolated behind an adapter" was for.
+
+---
+
+**Next**: VOLET M10 — audio, sound design and music (2 phases). `audio_decode`
+is UNAVAILABLE here, so this volet builds the timing discipline and reports what
+it cannot measure. Then stop.
