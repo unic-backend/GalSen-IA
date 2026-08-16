@@ -64,7 +64,7 @@ The honest end state, in the same shape Darra J reached:
 M01  Integration map & capability probes (§39, §27)     → 1 phase   ✅
 M02  Project core, manifest, versions, memory (§18,§38) → 2 phases  ✅
 M03  Ingestion & media probe adapters (§3)              → 2 phases  ✅
-M04  Analysis, scenes, structured representation (§4)   → 2 phases
+M04  Analysis, scenes, structured representation (§4)   → 2 phases  ✅
 M05  Transcription & word alignment (§12, reuse V32)    → 1 phase
 M06  Deterministic timeline & auto-editing (§5)         → 2 phases
 M07  Story intelligence & scene planner (§6, §7)        → 2 phases
@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 5.
+**Total: 32 phases.** Completed: 7.
 
 ---
 
@@ -199,4 +199,38 @@ failed at collection in the full run while passing when run alone. Renamed to
 
 ---
 
-**Next**: VOLET M04 — analysis, scenes, structured representation. Then stop.
+## What M04 built
+
+`src/media/analysis/scenes.py` and `scene_model.py`, 25 tests. This is §1 at its
+sharpest and §4 at its most dangerous.
+
+**Boundaries are measured, not proposed.** A model asked where the cuts are
+answers with timestamps immediately and fluently, and they are invented. The
+detector computes Bhattacharyya histogram distance between consecutive frames —
+verified on real frames: within-shot distance ~0.01, cut distance 1.00, clean
+separation. The declared threshold and the raw distances come back with every
+result, so a disagreement is checkable rather than a matter of opinion.
+
+**A boundary stays a frame index until an FPS is measured.** With no `ffprobe`
+here there is none, so emitting `t = 2.4 s` from an assumed 25 fps would be a
+fabricated timestamp wearing a measurement's clothes — and a cut placed on it
+lands mid-word. Times appear only when someone measured the frame rate.
+
+**`importance_score` is the field that invites a lie.** Every implementation
+reaches for `0.5`, or asks a model for a float, and a number appears that reads
+like a measurement. The auto-editor then sorts by it and drops the bottom; a
+director asks why their best take was cut, and the honest answer is that a
+default value sorted it last. So importance is composed of named measured
+signals or it is `None` with the reason. A signal that was not measured
+**contributes nothing** rather than contributing zero — and the score is
+renormalised over the signals present, so missing measurements are reported
+rather than punished.
+
+Every scene field declares its origin (`MEASURED` / `AI_DERIVED` / `ABSENT`),
+because merging a model's description and a detector's output into one
+"analysis" blob destroys that distinction permanently.
+
+---
+
+**Next**: VOLET M05 — transcription and word alignment, reusing `src/multimodal/`
+(VOLET 32). Then stop.
