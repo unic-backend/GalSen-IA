@@ -83,7 +83,7 @@ M19  Tests, benchmarks, readiness report (§32,§33,§40)  → 2 phases
 M20  Media Studio UI (§34, conditional on `src/web/`)   → 1 phase
 ```
 
-**Total: 32 phases.** Completed: 18.
+**Total: 32 phases.** Completed: 20.
 
 ---
 
@@ -456,5 +456,41 @@ without being nameable.
 
 ---
 
-**Next**: VOLET M11 — subtitle intelligence (1 phase), then M12 — asset registry,
-licence and provenance (1 phase). Then stop.
+## What M11 and M12 built
+
+`src/media/subtitles/cues.py` and `src/media/assets/registry.py`, 33 tests.
+
+**§15 names Wolof and Arabic, and each brings a constraint this repository
+already knows.** `ë`, `ñ` and `ŋ` are letters of the CLAD standard, not accented
+variants — Darra J paid for exactly this when the alias table kept only the
+folded form and a display function returned `mbey` for `mbéy`. A subtitle is
+display by definition, so folding stays on the matching side. Arabic runs
+right-to-left, and direction is **declared per language** rather than sniffed
+per string: a sentence mixing Arabic with a Latin proper noun flips on a
+heuristic and holds on a declaration, and the declaration is what a translator
+can argue with.
+
+Cues are built from **measured** word timings, never cross a scene boundary — a
+caption surviving a cut belongs to the shot it no longer covers — and a cue
+exceeding the declared reading speed is **flagged, never extended**: stretching
+it desynchronises it from the speech it captions, trading a visible problem for
+an invisible one.
+
+**§16's first sentence sounds like a style note and is not.** A generated logo
+is nearly right — proportions drift, the colour is a shade off — so it passes
+review, ships, and reaches the one person who knows that mark by heart, while
+the brand's own file sat in the registry the whole time. So `resolve()` returns
+`may_generate: False` for a protected kind whether or not the registry holds
+one: if it does, use it; if it does not, ask the brand. A registered logo whose
+rights are unknown does not unlock generation either — generating one would not
+fix the rights problem, it would create a second.
+
+Nothing enters without a source (§31): a sourced asset missing source, licence
+or hash is *incomplete*, never usable. An `AI_GENERATED` origin is permanent,
+not a label to clean up before delivery — the day someone asks whether a frame
+was generated, the answer must come from the record.
+
+---
+
+**Next**: VOLET M13 — media skills and style memory (1 phase), then M14 — quality
+control and final render verification (2 phases). Then stop.
