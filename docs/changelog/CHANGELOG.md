@@ -12,6 +12,44 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-18 — ADR-029's remaining debt: lockout, password reset, breach disclosure
+
+ADR-029 chose option C and listed, in its own *Consequences*, what remained
+owed. A debt written into an ADR and never settled eventually reads as a
+decision. `src/auth/protection.py` settles it, plus two routes and a lockout
+wired into `/auth/login`.
+
+**One rule runs through all three: none of them may reveal which accounts
+exist.**
+
+- **Lockout** counts a failure whether the address exists or not. Counting only
+  real accounts would make the lock an existence oracle — more reliable than an
+  error message, because it survives reading the code. Addresses are stored as
+  digests. A locked login answers `429` with `Retry-After`, not `401`: the
+  account is not refused, it is held
+- **Password reset** answers identically for a known and an unknown address, and
+  the token never appears in the response. Single-use, time-bounded, and
+  consumed *before* the new password is validated — a token replayable after a
+  policy rejection would be a second password that never expires
+- **Breach disclosure** computes what must be said and to whom, then reports
+  `NOT_SENT` while no delivery channel is configured. `READY` never means "the
+  people were told"; only something that actually sends can say that
+
+**A real defect was found while writing the tests**: the reset route read
+`getattr(user, "user_id", None)` where the field is `id`, so it returned `None`
+for every real account and never issued a token — while answering exactly as if
+it had. Invisible from the response *by construction*, since the rule is to
+answer the same in both cases. That is the price of the rule, and it is paid by
+a test that inspects the service's state. That test now exists.
+
+`UserManager.set_password()` added: deliberately more permissive than
+`change_password` (the person no longer knows the old one), and refusing an
+OAuth-only account, where setting a password would open a second way in that its
+owner never asked for.
+
+API routes: 140 → **142**.
+
+
 ### Added — 2026-08-18 — Universal Creative Intelligence (volets C13–C18, programme complete)
 
 Nineteen volets, **43 phases**, all completed. Full report →

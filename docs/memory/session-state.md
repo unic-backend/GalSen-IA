@@ -88,6 +88,14 @@ j'ai publié 144 routes en comptant `/docs`, `/redoc`, `/openapi.json` et la
 redirection OAuth (le vrai chiffre est **140**, `test_published_numbers.py` l'a
 refusé) ; et j'avais écrit les totaux de la suite **avant la fin du run**.
 
+**Puis la dette d'ADR-029 soldée** (`src/auth/protection.py`) : verrouillage
+après échecs répétés, réinitialisation par jeton à usage unique, dossier de
+notification de fuite. Règle commune : **aucun des trois ne doit révéler quels
+comptes existent**. Un vrai défaut trouvé en écrivant les tests — la route de
+réinitialisation lisait `user_id` alors que le champ s'appelle `id`, donc elle
+n'émettait **jamais** de jeton tout en répondant comme si. Routes 140 → **142**.
+PR #27 ouverte (C13–C18) ; CI : 1 échec, `v0.1.0`, la seule connue.
+
 **Prochaine étape** : rien dans ce programme. Ce qui débloque la suite
 n'appartient pas au dépôt — un GPU et un fournisseur dont la licence des poids a
 été lue, une route vers `huggingface.co`, une persistance pour
