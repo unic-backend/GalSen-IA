@@ -12,6 +12,45 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-18 — Universal Creative Intelligence (volets C13–C18, programme complete)
+
+Nineteen volets, **43 phases**, all completed. Full report →
+`docs/creative/final-report.md`, written to the twenty-five points of §76.
+`src/creative/`: 29 modules, 9 611 lines; `tests/creative/`: 370 tests.
+
+**The orchestration layer is built and verified; nothing generates.** Those are
+two statements and the directive spends §1 insisting they stay apart. The
+platform can structure an intent, name an entity, hold a world, plan shots,
+route by capability, preserve a speaker's recording, refuse a consent it does
+not have, and say what it cannot measure. It cannot produce a video, a voice, or
+an identity score.
+
+Measured rather than recalled:
+
+- **0 providers cleared commercially** — 8 weight licences `UNKNOWN`, because
+  `huggingface.co` has no route from this container. Licence is a routing input,
+  so `route()` returns `NO_PROVIDER` for a commercial request
+- **7 identity dimensions, 7 `NOT_MEASURABLE`, 0 carrying a value**
+- **VRAM `NOT_MEASURED`, not `0`** — zero licenses a conclusion, unknown forbids
+  one
+- **Vertical slice: 7 of 13 stages actually happen**, `produced_video` False,
+  and `final_video` stays in the total — dropping it would make the chain look
+  complete
+- **25 golden scenarios: 19 `VERIFIED`, 6 `BLOCKED`**, in 365 ms with no
+  network and no model. A `BLOCKED` is an assertion that a missing capability is
+  *reported*, not a skipped test
+- **Both audio-video pipelines blocked, on different stages, neither
+  recommended** — §43 forbids assuming one is superior
+
+Two of the repository's guards caught mistakes of mine, and both are recorded in
+the report: the published route count (144 counted framework-generated routes;
+the real figure is **140**), and suite totals written into a draft before the run
+finished.
+
+Full suite: **6 126 passed, 11 skipped, 3 deselected, 1 failed** — the `v0.1.0`
+tag, pre-existing and unrelated.
+
+
 ### Added — 2026-08-18 — Multilingual layer and language knowledge (volets C13–C14)
 
 Two volets of the Universal Creative Intelligence programme (directive V4,

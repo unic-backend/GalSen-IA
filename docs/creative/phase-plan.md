@@ -34,7 +34,8 @@ C17  PHASE 14  API, golden tests, hardening, MVP slice (§62–66,70)→ 3 phase
 C18  PHASE 15  Future model research + final report (§73, §76)   → 1 phase
 ```
 
-**Total: 43 phases.** Completed: **42**. Restante : 1 (C18 — rapport final).
+**Total: 43 phases.** Completed: **43 — le programme est terminé.**
+Rapport final → `docs/creative/final-report.md`.
 
 *(Le total annonçait 38 depuis PHASE 0 : une erreur d'addition, corrigée le
 2026-08-18 en recomptant la colonne. Les phases par volet, elles, n'ont pas

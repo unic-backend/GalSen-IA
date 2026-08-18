@@ -58,7 +58,7 @@ n'existe que si une fonction réelle la sert ; les 11 autres préfixes proposés
 sont rendus par `/creative/surface` — soit la route existante qui les sert déjà,
 soit ce qui manque. `/creative/readiness` **calcule** l'état à l'appel :
 `ORCHESTRATION READY — GENERATION BLOCKED (NO GPU, NO PROVIDER CLEARED)`.
-Routes publiées : 136 → **144**, re-mesurées.
+Routes publiées : 136 → **140** (comptées sur `APIRoute` ; mes 144 comptaient les routes générées par le cadre — garde `test_published_numbers.py`).
 
 **Puis phase 17.2** (§62–§64) : `src/creative/golden.py` — les 25 scénarios
 exécutés contre le code vivant. **Deux verdicts, jamais trois** : `VERIFIED`
@@ -75,8 +75,24 @@ lieu**, 2 `BLOCKED`, 2 `NOT_MEASURABLE`, 2 `NOT_REACHED`. `produced_video` est
 chaîne complète. Toute l'orchestration (6 premières étapes) aboutit ; c'est la
 génération qui manque.
 
-**Prochaine étape** : **C18 — rapport final (§73, §76)**, 1 phase. **Ce sera la
-dernière : 42 faites sur 43.**
+**Puis C18 — le programme est terminé : 43 phases sur 43.** Rapport final →
+`docs/creative/final-report.md`, les 25 points de §76.
+
+**Ce que le rapport dit en une phrase** : la couche d'orchestration est
+construite et vérifiée, **rien ne génère**. 7 étapes sur 13 de la tranche
+verticale ont lieu ; 0 fournisseur dégagé commercialement (8 licences de poids
+`UNKNOWN`) ; 7 dimensions d'identité, 7 `NOT_MEASURABLE` ; VRAM `NOT_MEASURED`.
+
+**Deux fautes à moi attrapées par les gardes du dépôt**, écrites dans le rapport :
+j'ai publié 144 routes en comptant `/docs`, `/redoc`, `/openapi.json` et la
+redirection OAuth (le vrai chiffre est **140**, `test_published_numbers.py` l'a
+refusé) ; et j'avais écrit les totaux de la suite **avant la fin du run**.
+
+**Prochaine étape** : rien dans ce programme. Ce qui débloque la suite
+n'appartient pas au dépôt — un GPU et un fournisseur dont la licence des poids a
+été lue, une route vers `huggingface.co`, une persistance pour
+`ReferenceMemory`, une capacité de détection de visages, et
+`git push origin v0.1.0`.
 
 **Bloqué** : rien côté code. Sur cette machine : pas de GPU, pas de `torch`,
 `huggingface.co` injoignable → génération, diarisation, ASR et lip-sync restent
