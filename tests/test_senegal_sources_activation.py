@@ -63,14 +63,35 @@ def test_un_blocage_d_environnement_n_est_pas_impute_au_site():
     """
     La distinction qui décide de l'action : changer de machine, ou changer de
     source. Les confondre fait chercher au mauvais endroit.
+
+    La sonde a **trois** issues, pas deux, et c'est délibéré : joignable,
+    bloquée par le mandataire, ou `UNKNOWN` quand l'échec réseau n'est
+    imputable à personne. Ce test n'en admettait que deux et échouait donc en
+    CI, où `ansd.sn` ne répond pas et où l'erreur ne porte pas la signature du
+    mandataire — la sonde répondait correctement `UNKNOWN` et le test appelait
+    cela un défaut.
+
+    Chaque issue est désormais vérifiée pour ce qu'elle doit garantir. Le
+    résultat ne dépend plus de la machine ni de l'état du site : ce qui est
+    contrôlé, c'est qu'aucune des trois n'invente une permission.
     """
     verdict = probe("https://ansd.sn")
 
-    assert verdict["state"] in (BLOQUE_ENVIRONNEMENT, JOIGNABLE)
+    assert verdict["state"] in (BLOQUE_ENVIRONNEMENT, JOIGNABLE, "UNKNOWN")
+
     if verdict["state"] == BLOQUE_ENVIRONNEMENT:
         assert "pas du site" in verdict["note"]
         assert verdict["robots_txt"] == "UNKNOWN", "Un robots.txt inventé"
         assert verdict["path_allowed"] == "UNKNOWN"
+    elif verdict["state"] == "UNKNOWN":
+        # Détaillé et rendu déterministe par le test suivant : cette branche-ci
+        # ne s'exécute que sur une machine où le réseau échoue autrement, donc
+        # elle ne peut pas porter la garantie à elle seule.
+        assert verdict["robots_txt"] == "UNKNOWN", "Un robots.txt inventé"
+        assert verdict["path_allowed"] == "UNKNOWN", "Une permission inventée"
+    else:
+        # Joignable : la mesure a eu lieu, donc elle doit porter un contenu.
+        assert verdict["robots_present"] != "UNKNOWN"
 
 
 def test_une_source_joignable_rend_le_verdict_de_son_robots():
@@ -110,6 +131,33 @@ def test_aucune_source_du_registre_n_est_activee():
     from src.knowledge_engine.source_registry import acquirable_sources
 
     assert acquirable_sources() == []
+
+
+def test_un_echec_reseau_inattribuable_n_accuse_personne(monkeypatch):
+    """La troisième issue de la sonde, exercée sans dépendre du réseau.
+
+    Elle ne survient ni sur la machine de développement — où le mandataire se
+    signale — ni forcément en CI. Une garantie qui ne s'exécute que sur
+    certaines machines n'en est pas une : l'échec est donc provoqué ici, avec un
+    message qui ne porte **aucune** des signatures du mandataire.
+
+    Ce qui est vérifié : un échec inattribuable le dit, et n'accorde au passage
+    ni `robots.txt` ni permission. Conclure « le site refuse » enverrait changer
+    de source alors que rien ne l'a mesuré.
+    """
+    import scripts.activate_senegal_sources as activation
+
+    def echec_neutre(*_args, **_kwargs):
+        raise OSError("connection reset by peer")
+
+    monkeypatch.setattr(activation, "fetch_robots", echec_neutre)
+    verdict = activation.probe("https://exemple.test")
+
+    assert verdict["state"] == "UNKNOWN"
+    assert "non attribué" in verdict["note"]
+    assert verdict["robots_txt"] == "UNKNOWN"
+    assert verdict["path_allowed"] == "UNKNOWN"
+    assert verdict["robots_present"] == "UNKNOWN"
 
 
 # ----------------------------------------------------------------------

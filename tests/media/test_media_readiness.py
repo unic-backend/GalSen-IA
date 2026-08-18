@@ -75,12 +75,34 @@ def test_une_etape_sans_dependance_est_prete_ici():
     assert sous_titres["missing"] == []
 
 
-def test_le_motion_design_est_pret_sur_cette_machine():
-    # `frame_encode` est mesuré disponible ici : c'est le seul chemin de la
-    # directive qui rend et encode réellement sur cette machine.
+def test_le_motion_design_suit_ses_dependances_mesurees():
+    """L'état d'une étape doit découler de ses sondes, sur **n'importe quelle** machine.
+
+    Ce test affirmait `state == READY`, parce que `frame_encode` est mesuré
+    disponible sur la machine de développement. Il échouait donc en CI, où le
+    même code répond `BLOCKED` — et il échouait pour une raison qui n'était pas
+    un défaut : le runner n'a pas de quoi encoder.
+
+    Un test qui fixe le résultat d'une mesure ne mesure plus rien ; il mesure la
+    machine. Celui-ci vérifie l'**invariant** : une étape est prête exactement
+    quand rien ne lui manque, et bloquée en nommant ce qui manque. C'est vrai
+    ici, c'est vrai en CI, et c'est faux si le calcul de disponibilité se
+    désaccorde de ses sondes — ce que l'ancienne forme ne pouvait pas voir.
+    """
     motion = [e for e in readiness()["stages"]
               if e["stage"] == "MOTION_DESIGN"][0]
-    assert motion["state"] == PRET
+
+    if motion["missing"]:
+        assert motion["state"] == BLOQUE, (
+            f"Des dépendances manquent ({motion['missing']}) mais l'étape se "
+            f"dit {motion['state']}."
+        )
+        assert motion["reason"], "Une étape bloquée doit dire par quoi."
+    else:
+        assert motion["state"] == PRET, (
+            f"Rien ne manque, mais l'étape se dit {motion['state']} : "
+            f"{motion['reason']}"
+        )
 
 
 # --------------------------------------------------------------------------

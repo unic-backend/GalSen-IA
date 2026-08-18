@@ -20,7 +20,11 @@ Puis les **8 échecs préexistants** ont été traités : 7 corrigés à la sour
 l'agent testeur qui rapportait une suite en échec comme réussie), 1 laissé rouge —
 `v0.1.0` doit être poussée, ce qui est une décision de mainteneur.
 
-Vérifié : **5761 tests passent**, 11 ignorés, 1 échec. `ruff` propre.
+Puis les deux derniers échecs **visibles seulement en CI** ont été corrigés (deux tests
+qui figeaient le résultat d'une mesure au lieu de vérifier l'invariant).
+
+Vérifié : **5762 tests passent**, 11 ignorés, 1 échec — l'étiquette `v0.1.0`, seule.
+`ruff` propre. CI de la PR #25 : 6 échecs sur la base → 1 attendu après ce commit.
 
 **Prochaine étape** : fusionner cette branche, puis les deux gestes qui débloquent le reste —
 `ollama serve` (génération + recherche sémantique) et un `ffmpeg` réel (cinq étapes média).
