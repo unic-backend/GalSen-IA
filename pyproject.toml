@@ -63,6 +63,11 @@ extend-immutable-calls = [
     "fastapi.Query",
     "fastapi.Path",
     "fastapi.Header",
+    # `Security(...)` déclare un schéma d'authentification, exactement comme
+    # `Depends(...)` déclare une dépendance. Le motif est celui de FastAPI ;
+    # sans cette entrée, la dépendance hybride JWT/clé API serait signalée à
+    # tort (ADR-029).
+    "fastapi.Security",
     # Fabriques de dépendances du projet, appelées à l'import par construction :
     # `Depends(require_permission(Permission.MEMORY_WRITE))` est la déclaration
     # de permission d'une route, pas un argument par défaut muable.

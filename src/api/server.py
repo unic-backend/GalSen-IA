@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security.api_key import APIKeyHeader
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
@@ -75,6 +76,8 @@ from src.config import log_environment_problems
 from src.analytics import build_report as build_analytics_report
 from src.integration.engine_registry import get_shared_registry
 from src.coding_engine.types import CodingStatus, CodingTask
+from src.auth.jwt_handler import JWTHandler, SecretAbsent
+from src.auth.user_manager import UserManager
 
 # Import de la posture de sécurité HTTP (VOLET 02 ch. 08)
 from src.api.security_headers import (
@@ -89,6 +92,7 @@ from src.api.versioning import DeprecationHeadersMiddleware, version_report
 # Import du RBAC
 from src.api.rbac import (
     ANONYMOUS_SUBJECT,
+    Role,
     RBACManager,
     Permission,
     RBACContext,
@@ -2654,9 +2658,214 @@ async def reject_request(request_id: str, decision: ApprovalDecisionRequest):
 
 
 # Endpoints RBAC
+# ======================================================================
+# Authentification multi-utilisateur — JWT et OAuth (ADR-029, option C)
+# ======================================================================
+#
+# ADR-029 a tranché : la plateforme a des comptes, avec mots de passe. Ce que
+# cette décision fait acquérir, et qu'ADR-010 refusait jusqu'ici, c'est un
+# **magasin d'identifiants** — donc la responsabilité qui va avec.
+#
+# Deux garanties tiennent cette responsabilité, et elles sont dans le code plutôt
+# que dans une consigne :
+#
+# 1. **Aucun secret par défaut.** `JWTHandler` refuse de se construire sans
+#    `GALSEN_JWT_SECRET` d'au moins 32 caractères. La version d'origine en
+#    portait un, écrit dans le dépôt, et se contentait d'avertir : un
+#    déploiement distrait signait alors ses jetons avec une valeur publique.
+# 2. **Un jeton présenté fait autorité.** S'il est invalide ou expiré, l'appel
+#    est refusé. Retomber sur la clé API masquerait une session expirée, et une
+#    clé d'administrateur combinée à un jeton périmé rendrait les droits
+#    d'administrateur.
+#
+# La construction est **paresseuse et tolérante** : sans secret, l'API démarre
+# quand même et ces routes répondent 503 avec le geste qui répare — le
+# comportement que la plateforme applique partout ailleurs à une capacité non
+# configurée.
+
+bearer_scheme = HTTPBearer(auto_error=False)
+
+_jwt_handler: Optional[JWTHandler] = None
+_user_manager: Optional[UserManager] = None
+
+
+def get_jwt_handler() -> JWTHandler:
+    """
+    Retourne le gestionnaire de jetons, construit au premier besoin.
+
+    Raises:
+        HTTPException 503: Secret absent ou trop court. Le message porte la
+            commande qui en produit un.
+    """
+    global _jwt_handler
+    if _jwt_handler is None:
+        try:
+            _jwt_handler = JWTHandler()
+        except SecretAbsent as erreur:
+            raise HTTPException(status_code=503, detail=str(erreur))
+    return _jwt_handler
+
+
+def get_user_manager() -> UserManager:
+    """Retourne le gestionnaire de comptes, construit au premier besoin."""
+    global _user_manager
+    if _user_manager is None:
+        _user_manager = UserManager()
+    return _user_manager
+
+
+def require_auth_hybrid(
+    request: Request,
+    api_key: str = Security(api_key_header),
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(bearer_scheme),
+) -> RBACContext:
+    """
+    Authentifie par jeton JWT, ou à défaut par clé API.
+
+    Args:
+        request: Requête en cours, pour identifier la source.
+        api_key: Clé API transmise dans `X-API-Key`.
+        credentials: Jeton `Authorization: Bearer`, s'il y en a un.
+
+    Returns:
+        Le contexte RBAC, portant la méthode employée.
+
+    Raises:
+        HTTPException 401: Jeton invalide, ou aucune méthode valide fournie.
+    """
+    if credentials and credentials.credentials:
+        try:
+            charge = get_jwt_handler().verify_access_token(credentials.credentials)
+        except HTTPException:
+            raise
+        except Exception as erreur:
+            logger.warning("Vérification JWT en échec : %s", erreur)
+            raise HTTPException(status_code=401, detail="Jeton JWT invalide ou expiré.")
+
+        identifiant = charge.get("sub", "")
+        try:
+            role = Role(charge.get("role", "user"))
+        except ValueError:
+            # Un rôle inconnu ne devient pas `user` par indulgence : il devient
+            # `readonly`, le plus restreint. Une élévation silencieuse serait
+            # exactement ce qu'un jeton forgé chercherait.
+            role = Role.READONLY
+        return RBACContext(
+            key_fingerprint=f"jwt:{identifiant[:8]}",
+            role=role,
+            subject=identifiant or ANONYMOUS_SUBJECT,
+            auth_method="jwt",
+            user_id=identifiant,
+        )
+
+    return require_auth(request, api_key)
+
+
+class LoginRequest(BaseModel):
+    """Requête de connexion par courriel et mot de passe."""
+
+    email: str = Field(..., description="Adresse de courriel")
+    password: str = Field(..., description="Mot de passe en clair")
+
+
+class RegisterRequest(BaseModel):
+    """Requête d'inscription."""
+
+    email: str = Field(..., description="Adresse de courriel")
+    name: str = Field(..., description="Nom complet")
+    password: str = Field(..., description="Mot de passe, 8 caractères au moins")
+
+
+class RefreshRequest(BaseModel):
+    """Requête de renouvellement de jeton."""
+
+    refresh_token: str = Field(..., description="Jeton de rafraîchissement")
+
+
+class TokenResponse(BaseModel):
+    """Paire de jetons émise à la connexion."""
+
+    access_token: str = Field(..., description="Jeton d'accès")
+    refresh_token: str = Field(..., description="Jeton de rafraîchissement")
+    token_type: str = Field("bearer", description="Type de jeton")
+    expires_in: int = Field(..., description="Durée de validité, en secondes")
+
+
+def _paire_de_jetons(utilisateur) -> TokenResponse:
+    """Émet une paire de jetons pour un compte."""
+    handler = get_jwt_handler()
+    return TokenResponse(
+        access_token=handler.create_access_token(
+            user_id=utilisateur.id, role=utilisateur.role, name=utilisateur.name
+        ),
+        refresh_token=handler.create_refresh_token(user_id=utilisateur.id),
+        token_type="bearer",
+        expires_in=handler.access_expiry,
+    )
+
+
+@app.post("/auth/register", tags=["auth"], response_model=TokenResponse, status_code=201,
+          dependencies=[Depends(rate_limit_dependency)])
+async def auth_register(request: RegisterRequest):
+    """Crée un compte et retourne ses jetons."""
+    if len(request.password) < 8:
+        raise HTTPException(
+            status_code=422, detail="Le mot de passe doit faire au moins 8 caractères."
+        )
+    try:
+        utilisateur = get_user_manager().create_user(
+            email=request.email, password=request.password,
+            name=request.name, role="user",
+        )
+    except ValueError as erreur:
+        # Couvre le compte déjà pris **et** le mot de passe dépassant la limite
+        # de bcrypt : deux saisies à corriger, jamais une panne du serveur.
+        raise HTTPException(status_code=409, detail=str(erreur))
+    return _paire_de_jetons(utilisateur)
+
+
+@app.post("/auth/login", tags=["auth"], response_model=TokenResponse,
+          dependencies=[Depends(rate_limit_dependency)])
+async def auth_login(request: LoginRequest):
+    """Connecte un compte et retourne ses jetons."""
+    utilisateur = get_user_manager().authenticate_user(request.email, request.password)
+    if utilisateur is None:
+        # Un seul message pour « compte inconnu » et « mot de passe faux » :
+        # les distinguer dirait à un attaquant quelles adresses existent.
+        raise HTTPException(status_code=401, detail="Courriel ou mot de passe invalide.")
+    if not getattr(utilisateur, "is_active", True):
+        raise HTTPException(status_code=403, detail="Ce compte est désactivé.")
+    return _paire_de_jetons(utilisateur)
+
+
+@app.post("/auth/refresh", tags=["auth"], response_model=TokenResponse,
+          dependencies=[Depends(rate_limit_dependency)])
+async def auth_refresh(request: RefreshRequest):
+    """Renouvelle un jeton d'accès à partir d'un jeton de rafraîchissement."""
+    try:
+        charge = get_jwt_handler().verify_refresh_token(request.refresh_token)
+    except HTTPException:
+        raise
+    except Exception as erreur:
+        raise HTTPException(status_code=401, detail=str(erreur))
+
+    identifiant = charge.get("sub", "")
+    if not identifiant:
+        raise HTTPException(status_code=401, detail="Jeton de rafraîchissement sans sujet.")
+
+    # Le rôle est relu au magasin, jamais repris du jeton : une rétrogradation
+    # décidée entre-temps doit prendre effet au renouvellement suivant.
+    utilisateur = get_user_manager().get_user(identifiant)
+    if utilisateur is None:
+        raise HTTPException(status_code=401, detail="Ce compte n'existe plus.")
+    if not getattr(utilisateur, "is_active", True):
+        raise HTTPException(status_code=403, detail="Ce compte est désactivé.")
+    return _paire_de_jetons(utilisateur)
+
+
 @app.get("/auth/me", tags=["auth"],
-          dependencies=[Depends(rate_limit_dependency), Depends(require_auth)])
-async def auth_me(ctx: RBACContext = Depends(require_auth)):
+          dependencies=[Depends(rate_limit_dependency)])
+async def auth_me(ctx: RBACContext = Depends(require_auth_hybrid)):
     """Retourne les informations d'authentification et le rôle de l'utilisateur.
 
     Utile pour qu'un client vérifie son rôle et ses permissions sans effectuer
@@ -2665,6 +2874,10 @@ async def auth_me(ctx: RBACContext = Depends(require_auth)):
     return {
         "authenticated": True,
         "role": ctx.role.value,
+        # Par quel chemin l'appelant est entré : un client qui ne sait pas s'il
+        # est authentifié par jeton ou par clé ne sait pas quoi renouveler.
+        "auth_method": ctx.auth_method,
+        "user_id": ctx.user_id,
         "permissions": sorted(p.value for p in ctx.permissions),
     }
 

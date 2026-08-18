@@ -64,3 +64,13 @@ pytesseract==0.3.13
 # Importé tardivement par `src/services/cloud/store_s3.py` : sans lui, seuls les
 # magasins mémoire et disque du service cloud fonctionnent.
 boto3==1.43.68
+
+# === Authentification multi-utilisateur (branche `claude/auth-jwt-oauth-rebased`) ===
+# Ces trois paquets ne servent qu'à `src/auth/`, qui n'est **pas** activé : la
+# décision « la plateforme a-t-elle des utilisateurs ? » est ouverte (P0), et
+# ADR-010 refuse pour l'instant un magasin de mots de passe. Ils sont déclarés
+# parce que le code qui les importe est présent ; les retirer ferait échouer le
+# garde-fou des dépendances, qui a raison de le demander.
+PyJWT==2.10.1
+bcrypt==5.0.0
+requests==2.32.5

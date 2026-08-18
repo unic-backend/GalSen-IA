@@ -12,6 +12,47 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-18 — Multi-user authentication (ADR-029, option C)
+
+The project owner chose option C of ADR-029: **the platform has accounts, with
+passwords**. ADR-010's "no credential store" position is amended, not silently
+contradicted — its own trigger said it would be revisited when self-service
+signup existed.
+
+- `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh` are mounted.
+  `GET /auth/me` now accepts a Bearer token **or** an API key and reports which
+  one served. Every pre-existing route authenticates exactly as before
+- **A presented Bearer token is authoritative.** Invalid or expired means
+  refused — never a silent fall back to `X-API-Key`, which would let an expired
+  user token plus an admin key grant admin access
+- A refresh **re-reads the role from the store**, never from the token, so a
+  demotion takes effect at the next renewal. Login answers the same thing for an
+  unknown account and a wrong password, so it does not enumerate addresses
+- The three entry points are necessarily public — you cannot authenticate to
+  obtain your first credential — and are declared so in `ROUTES_PUBLIQUES` with
+  what protects them instead. **Registration is open**: on a reachable instance
+  anyone gets a `user` account. That is what option C's "full self-service"
+  means; restricting it is a separate decision
+
+### Fixed — 2026-08-18 — three defects in the authentication layer before mounting it
+
+Found by reading the code before wiring it, not after.
+
+- **A default signing secret was written in the repository** and the code only
+  logged a warning. A deployment that forgot `GALSEN_JWT_SECRET` signed its
+  tokens with a public value: anyone who read the source could forge an admin
+  token. There is now **no default** — absent or shorter than 32 characters, no
+  token is issued and the routes answer 503 with the command that generates one.
+  A counter-test fails if the removed value ever returns
+- **The secret was read once at import.** An operator loading a `.env` after
+  importing the application got an unexplained 503 with the variable correctly
+  set. It is read at construction now
+- **No password length check.** bcrypt stops at 72 **bytes**; versions before 4
+  truncated silently, so two passphrases sharing their first 72 bytes
+  authenticated each other. bcrypt 5 raises instead, which surfaced as a 500.
+  The limit is now checked explicitly and answers 409 — an accented character
+  counts as two bytes, which counting characters would have missed
+
 ### Added — 2026-08-17 — Coding Engine, edit blocks and OpenGAP interop
 
 Ported from a second development line that had branched off `main` before the

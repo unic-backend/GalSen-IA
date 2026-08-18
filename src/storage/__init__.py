@@ -15,6 +15,7 @@ from .sqlite_notification_store import SQLiteNotificationStore
 from .sqlite_calendar_store import SQLiteCalendarStore
 from .sqlite_email_store import SQLiteEmailStore
 from .sqlite_file_store import SQLiteFileStore
+from .sqlite_user_store import SQLiteUserStore, User
 from .paths import default_sqlite_path
 
 __all__ = [
@@ -26,5 +27,7 @@ __all__ = [
     "SQLiteCalendarStore",
     "SQLiteEmailStore",
     "SQLiteFileStore",
+    "SQLiteUserStore",
+    "User",
     "default_sqlite_path",
 ]

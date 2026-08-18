@@ -25,7 +25,25 @@ from src.api.server import app  # noqa: E402  (après la clé de test)
 # sans clé : un orchestrateur qui redémarre un conteneur ne s'authentifie pas,
 # et une sonde de vivacité protégée par une clé expirée fait redémarrer une
 # application parfaitement saine.
-ROUTES_PUBLIQUES = {"/", "/health", "/ready", "/live"}
+ROUTES_PUBLIQUES = {
+    "/", "/health", "/ready", "/live",
+    # Les trois portes d'entrée de l'authentification par compte (ADR-029).
+    # Elles ne peuvent pas exiger d'authentification : on ne s'authentifie pas
+    # pour obtenir son premier identifiant. Ce qui les protège à la place :
+    #
+    # - le limiteur de taux, présent sur les trois — c'est lui qui rend une
+    #   attaque par force brute coûteuse, et son absence ici serait la faute ;
+    # - `/auth/register` crée un compte au rôle `user`, jamais davantage : une
+    #   élévation demande une décision d'administrateur ;
+    # - `/auth/login` répond la même chose pour un compte inconnu et pour un
+    #   mot de passe faux, donc n'énumère pas les adresses connues.
+    #
+    # **Conséquence assumée d'ADR-029, option C** : l'inscription est ouverte.
+    # Sur une instance joignable depuis Internet, n'importe qui obtient un
+    # compte `user`. C'est ce que « full self-service » veut dire ; restreindre
+    # l'inscription serait une décision distincte, à prendre explicitement.
+    "/auth/register", "/auth/login", "/auth/refresh",
+}
 
 # `/` est servie par une redirection statique, sans travail derrière : la
 # compter dans le budget de l'appelant n'apporte rien.
@@ -80,8 +98,26 @@ def test_toute_route_passe_par_le_limiteur(route):
 
 
 def test_la_liste_des_routes_publiques_ne_derive_pas():
-    """Une exception qui grandit sans qu'on la relise cesse d'être une exception."""
+    """Une exception qui grandit sans qu'on la relise cesse d'être une exception.
+
+    Le contrôle porte sur l'**ensemble exact**, plus seulement sur son cardinal :
+    avec un simple compte, retirer une route publique et en ajouter une autre
+    passait inaperçu. Chaque entrée doit être écrite ici comme dans
+    `ROUTES_PUBLIQUES`, ce qui oblige à relire les deux ensemble.
+    """
     chemins = {route.path for route in _routes()}
     inconnues = ROUTES_PUBLIQUES - chemins
     assert not inconnues, f"ROUTES_PUBLIQUES nomme des routes qui n'existent plus : {inconnues}"
-    assert len(ROUTES_PUBLIQUES) == 4
+
+    attendues = {
+        # Sondes et redirection racine.
+        "/", "/health", "/ready", "/live",
+        # Portes d'entrée de l'authentification par compte (ADR-029) : on ne
+        # s'authentifie pas pour obtenir son premier identifiant.
+        "/auth/register", "/auth/login", "/auth/refresh",
+    }
+    assert ROUTES_PUBLIQUES == attendues, (
+        "La liste des routes publiques a changé. Chaque entrée doit porter la "
+        "raison pour laquelle elle ne peut pas exiger d'authentification, et ce "
+        "que le limiteur de débit protège à la place."
+    )
