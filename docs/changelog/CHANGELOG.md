@@ -12,6 +12,48 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-18 — Multilingual layer and language knowledge (volets C13–C14)
+
+Two volets of the Universal Creative Intelligence programme (directive V4,
+§24–§33), implementing ADR-027. Plan and progress → `docs/creative/phase-plan.md`.
+
+- **A language is now data, not code.** `corpus/creative/languages.yaml` declares
+  19 languages with their ISO register, script and writing direction;
+  `src/creative/language/registry.py` loads it and refuses a file it cannot
+  trust — duplicate code, invented direction, or a validation language named
+  and then missing. Adding Bambara is a row, which is what §24 and §64 ask for
+- **Fixed: two of the directive's own golden tests could not be expressed.** The
+  voice layer validated a segment's language against the subtitle engine's four
+  languages (`fr`, `en`, `wo`, `ar`), so a Serer or Lingala recording — golden
+  tests 5 and 6 of §63 — was *refused*. It now validates against the registry
+- **Declared is not supported**, and the matrix keeps five separate columns to
+  say so: nameable, documentable, subtitleable, understood, speakable. Measured
+  today: 19 nameable, 14 documentable, 4 subtitleable, **0 understood, 0
+  speakable**. Of the 15 validation languages of §24, four are fully carried
+- **Code-switching is structural** (§25): language belongs to a segment, spans
+  and switch points are derived, and there is deliberately no "dominant
+  language" — computing one would invite using it. Switching *inside* a segment
+  is reported `UNKNOWN` with its reason: detecting it needs word alignment,
+  therefore transcription, which is unavailable here
+- **`AudioSegment` carries dialect, region and pronunciation.** A dialect
+  without a language is refused
+- **The validation ladder is an invariant, not a guideline** (§28, ADR-027):
+  frequency raises an observation to `CORROBORATED` and no further — no count,
+  however large, produces `VALIDATED`. That needs a named human; `OFFICIAL`
+  needs an external authority and a reference someone can re-read, and the
+  platform is refused as its own authority
+- **The private/global boundary has exactly one gate.** `publish()` requires a
+  named consenter and a written consent, both recorded in the entry's history.
+  Nothing promotes across it automatically — not frequency, not validation
+- **Competing meanings coexist** (§32). A user's correction creates a new
+  observation and leaves the original intact: overwriting would make the last
+  person to speak the authority on the language
+- **Nothing is trained on conversations**, and `training_status()` makes that
+  checkable rather than promised — it names §31's seven conditions, all
+  `NOT_MET`, and states what separates knowledge acquisition from training
+
+62 tests added (`tests/creative/test_language_layer.py`).
+
 ### Added — 2026-08-18 — Multi-user authentication (ADR-029, option C)
 
 The project owner chose option C of ADR-029: **the platform has accounts, with

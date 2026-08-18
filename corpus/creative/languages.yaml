@@ -1,0 +1,208 @@
+# Languages the creative layer can name — registry data (directive V4, §24, §64).
+#
+# THIS FILE EXISTS SO THAT ADDING A LANGUAGE IS NOT A CODE CHANGE.
+#
+# §24 asks for "language-neutral abstractions" and §64 says "do not create
+# separate architecture per language". A registry hard-coded in Python fails
+# both the moment someone needs Bambara: the language becomes a commit, a
+# review and a release instead of a row.
+#
+# WHAT A ROW MEANS, AND WHAT IT DOES NOT
+#
+# A row here means the platform can *name* a language: label a segment, refuse
+# a typo, route a subtitle, keep a recording tagged with the language it is
+# actually in. It says NOTHING about understanding it, transcribing it or
+# speaking it. Those are measured per capability by
+# `src/creative/language/registry.py::language_matrix`, and today almost all of
+# them are unavailable on this machine.
+#
+# The confusion between "declared" and "supported" is the cheapest lie an AI
+# platform can tell — fifteen rows in a YAML file and a landing page announcing
+# fifteen languages. `src/knowledge_engine/languages.py` was written to stop
+# exactly that, and this file inherits the rule rather than restating it.
+#
+# FIELDS
+#   code       : the identifier used everywhere else. ISO 639-1 where one
+#                exists, ISO 639-3 otherwise. Mixing the two registers is the
+#                register's incompleteness, not a mistake here.
+#   register   : which ISO list `code` comes from.
+#   name       : the English name, for logs and reports.
+#   script     : the writing system. UNKNOWN when not established here.
+#   direction  : ltr | rtl. Never guessed — a wrong direction renders a
+#                language backwards on screen.
+#   orthography: the standard that governs spelling, when one is named in this
+#                repository. Absent means no standard is claimed.
+#   note       : anything a reader needs in order not to misread the row.
+#
+# Anything not established from a source this repository can point at is
+# UNKNOWN. A registry that guesses is worse than a short one.
+
+languages:
+
+  # --- Senegal's languages -------------------------------------------------
+  # These are the platform's origin, not its boundary (§4, §24).
+
+  - code: wo
+    register: iso-639-1
+    name: wolof
+    script: latin
+    direction: ltr
+    orthography: CLAD
+    note: >-
+      `ë`, `ñ` and `ŋ` are letters of the CLAD standard (Senegalese decree
+      2005-992), not accented variants. Folding them writes wrong Wolof on
+      screen — `src/wolof/clad.py` enforces this and holds 2 105 sentences.
+
+  - code: srr
+    register: iso-639-3
+    name: serer
+    script: latin
+    direction: ltr
+    note: >-
+      No ISO 639-1 code exists for Serer. That is the register being
+      incomplete, not the language being minor — golden test 5 (§63) is a
+      Serer recording.
+
+  - code: ff
+    register: iso-639-1
+    name: fulah
+    script: latin
+    direction: ltr
+    note: >-
+      Covers Pulaar and Fulfulde, which §24 names separately. ISO 639-1 does
+      not distinguish them; the distinction belongs in `dialect`, which is a
+      per-segment field, not a registry row.
+
+  - code: dyo
+    register: iso-639-3
+    name: jola-fonyi
+    script: latin
+    direction: ltr
+    note: >-
+      The variety of Diola with its own ISO code. "Diola" names a group of
+      related languages; naming the group as one row would flatten it.
+
+  # --- Other African languages named as validation scenarios (§24, §64) ----
+
+  - code: bm
+    register: iso-639-1
+    name: bambara
+    script: latin
+    direction: ltr
+
+  - code: ln
+    register: iso-639-1
+    name: lingala
+    script: latin
+    direction: ltr
+    note: Golden test 6 (§63) is a Lingala recording.
+
+  - code: ha
+    register: iso-639-1
+    name: hausa
+    script: latin
+    direction: ltr
+    note: >-
+      Also written in Ajami (Arabic script). Only the Latin orthography is
+      declared here because it is the only one this repository handles; the
+      other is not absent from the language, only from the platform.
+
+  - code: sw
+    register: iso-639-1
+    name: swahili
+    script: latin
+    direction: ltr
+
+  - code: yo
+    register: iso-639-1
+    name: yoruba
+    script: latin
+    direction: ltr
+    note: >-
+      Tone marks are meaning-bearing. Stripping them is the same class of
+      error as folding Wolof `ñ`; no normalisation here removes them.
+
+  - code: ig
+    register: iso-639-1
+    name: igbo
+    script: latin
+    direction: ltr
+
+  - code: zu
+    register: iso-639-1
+    name: zulu
+    script: latin
+    direction: ltr
+
+  - code: af
+    register: iso-639-1
+    name: afrikaans
+    script: latin
+    direction: ltr
+
+  - code: am
+    register: iso-639-1
+    name: amharic
+    script: ethiopic
+    direction: ltr
+
+  # --- Languages of wider circulation --------------------------------------
+
+  - code: fr
+    register: iso-639-1
+    name: french
+    script: latin
+    direction: ltr
+
+  - code: en
+    register: iso-639-1
+    name: english
+    script: latin
+    direction: ltr
+
+  - code: ar
+    register: iso-639-1
+    name: arabic
+    script: arabic
+    direction: rtl
+    note: >-
+      The only right-to-left language declared here. `src/media/subtitles/`
+      already carries the direction for this reason.
+
+  - code: es
+    register: iso-639-1
+    name: spanish
+    script: latin
+    direction: ltr
+
+  - code: pt
+    register: iso-639-1
+    name: portuguese
+    script: latin
+    direction: ltr
+
+  - code: de
+    register: iso-639-1
+    name: german
+    script: latin
+    direction: ltr
+
+# The validation set of §24 and §64. Naming it here rather than in Python makes
+# the coverage check data too: a language added above and forgotten below is a
+# gap the report will show.
+validation_languages:
+  - wo
+  - srr
+  - ff
+  - bm
+  - dyo
+  - ln
+  - ha
+  - sw
+  - yo
+  - ig
+  - ar
+  - fr
+  - en
+  - es
+  - pt

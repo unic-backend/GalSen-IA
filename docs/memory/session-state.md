@@ -9,77 +9,51 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 ---
 
 ## Dernière session
+**2026-08-18 — VOLET créatif repris : C13 et C14 livrés (35 phases sur 38).**
+Programme en cours : **Universal Creative Intelligence, directive V4** →
+`docs/creative/phase-plan.md`. Il était à l'arrêt après C12, non par blocage
+mais par fin de quota du compte précédent.
+
+C13 (§24–§26) : registre de langues **en données** (`corpus/creative/languages.yaml`,
+19 langues), alternance codique par segment. Défaut corrigé : la couche vocale
+validait contre les 4 langues des sous-titres — sérère et lingala, qui sont les
+tests d'or 5 et 6 de §63, étaient **refusés**.
+C14 (§27–§33) : échelle observation → validation, base de connaissance avec
+frontière privé/global, boucle d'acquisition. La fréquence plafonne à
+`CORROBORATED` ; `VALIDATED` exige un humain nommé, `OFFICIAL` une autorité
+extérieure. Aucun entraînement sur les conversations, et c'est vérifiable.
+
+**Prochaine étape** : **C15 — ModelRouter, appariement par capacités (§36, §43)**,
+2 phases. Puis C16 (GPU/jobs/cache), C17 (API + tests d'or + MVP), C18 (rapport).
+
+**Bloqué** : rien côté code. Sur cette machine : pas de GPU, pas de `torch`,
+`huggingface.co` injoignable → génération, diarisation, ASR et lip-sync restent
+`BLOCKED`, 8 licences de poids `UNKNOWN` (`docs/creative/feasibility.md`).
+Et `git push origin v0.1.0`, seul échec de CI, qui appartient au mainteneur.
+
+---
+
+### Sessions précédentes
 **2026-08-18 — ADR-029 tranchée (option C) : la plateforme a des comptes, avec mots de passe.**
 Routes `/auth/register|login|refresh` montées, `/auth/me` accepte jeton **ou** clé.
 Trois défauts corrigés avant montage, dont un **secret de signature en dur dans le dépôt**
 qui laissait forger un jeton d'administrateur. ADR-010 amendée, pas contredite.
+Fusionnée dans `main` par la PR #26.
 
-Vérifié : **5908 tests passent**, 1 échec — l'étiquette `v0.1.0`, qui attend un mainteneur.
-
-**Prochaine étape** : ce qu'ADR-029 doit encore livrer — réinitialisation de mot de passe,
-verrouillage après échecs répétés, notification de fuite. Et `GALSEN_STORAGE_BACKEND=sqlite`
-pour que les comptes survivent à un redémarrage.
-
----
-
-### Sessions précédentes
 **2026-08-17 — Coding Engine et interopérabilité portés depuis la seconde ligne de développement.**
 `src/coding_engine/` (OpenHands, Aider, SWE-agent derrière une abstraction native, ADR-028),
 `src/code_edit/` (blocs d'édition) et `src/interop/` (OpenGAP, ADR-023). Aucun code des
 projets externes recopié, aucune dépendance ajoutée, exécution passée par `src/sandbox`.
-Branche : `claude/coding-engine-on-phases`, issue de `claude/galsen-ia-phases-ukwz7p`,
-qui n'a **pas** été modifiée.
+Fusionnée dans `main` par la PR #25.
 
-Puis les **8 échecs préexistants** ont été traités : 7 corrigés à la source (dont
-l'agent testeur qui rapportait une suite en échec comme réussie), 1 laissé rouge —
-`v0.1.0` doit être poussée, ce qui est une décision de mainteneur.
+**2026-08-16 — Le moteur média universel est terminé** — 20 VOLETs, 32 phases sur 32.
+Rapport final → `docs/media/final-report.md`. `src/media/` : 26 modules, 483 tests.
+État calculé : 10 `READY`, 6 `BLOCKED`, 1 `ABSENT` (aucune synthèse vocale n'existe
+dans ce dépôt — trouvé en parcourant la chaîne, jamais rangé parmi les dépendances
+manquantes).
 
-Puis les deux derniers échecs **visibles seulement en CI** ont été corrigés (deux tests
-qui figeaient le résultat d'une mesure au lieu de vérifier l'invariant).
-
-Vérifié : **5762 tests passent**, 11 ignorés, 1 échec — l'étiquette `v0.1.0`, seule.
-`ruff` propre. CI de la PR #25 : 6 échecs sur la base → 1 attendu après ce commit.
-
-**Prochaine étape** : fusionner cette branche, puis les deux gestes qui débloquent le reste —
-`ollama serve` (génération + recherche sémantique) et un `ffmpeg` réel (cinq étapes média).
-
----
-
-### Sessions précédentes
-**Date** : 2026-08-16
-
-**En cours** : rien. **Le moteur média universel est terminé — 20 VOLETs,
-32 phases sur 32.** Rapport final → `docs/media/final-report.md`.
-
-**Terminé dans cette session**
-- **`src/media/`** : 26 modules, 21 fichiers de tests, **483 tests**. Capacités
-  sondées, ingestion, scènes, transcription, montage déterministe, récit, motion
-  design, fournisseurs + WanGP, audio, sous-titres, ressources, compétences,
-  contrôle qualité, multi-format, file d'attente, outils d'agent, langage
-  naturel, API, frontière de sécurité, mesures, aptitude, studio.
-- **L'état est calculé** : `ENGINE READY — MEDIA RUNTIME DEPENDENCIES PENDING,
-  1 STAGE(S) NOT IMPLEMENTED (VOICE)` — 10 `READY`, 6 `BLOCKED`, 1 `ABSENT`.
-- **Aucune synthèse vocale n'existe dans ce dépôt** : trouvé en parcourant la
-  chaîne. Rapporté `ABSENT`, jamais rangé parmi les dépendances manquantes.
-- **Chiffres publiés re-mesurés, jamais assouplis** : 22 → 24 outils déclarés,
-  123 → 131 routes. Quatre gardes du dépôt ont attrapé le travail ; toutes
-  honorées.
-- Suite : **5369 tests**, 8 ignorés, `ruff` propre.
-
-**Prochaine étape**
-Aucune en attente. Le prochain gain le plus élevé ne dépend pas de ce dépôt :
-installer un vrai `ffmpeg` et `ffprobe` fait passer **cinq étapes** de `BLOCKED`
-à `READY` sans une ligne de code — c'est l'intérêt des adaptateurs à sondes.
-Ensuite : un adaptateur de synthèse vocale (la seule étape que rien n'implémente).
-
-**Bloqué / à surveiller**
-- **`ffmpeg` complet, `ffprobe`, `torch`, GPU et `whisper` absents** de cet
-  environnement (mesuré). `frame_encode` et `image_analysis` sont disponibles.
-- **Licence de WanGP non inspectée** : c'est une lecture, pas de l'ingénierie,
-  et elle bloque la génération plus fermement que l'absence de GPU.
-- **Aucun curriculum `TIER_A` publié** — seule condition pour que Darra J quitte
-  `ARCHITECTURE READY`. N'appartient pas à ce dépôt.
-- **Mandataire réseau** : 9 domaines `.sn`, Banque mondiale, UNESCO, FAO, OMS
-  répondent `CONNECT → 403`. Mesuré, non contourné.
-- **C1** : `ollama serve` — génération et récupération sémantique non mesurées.
-- **`git push origin v0.1.0`** : seul échec de CI restant.
+**Bloqué / à surveiller (hérité)**
+- `ffmpeg` complet, `ffprobe`, `torch`, GPU et `whisper` absents de cet environnement.
+- Licence de WanGP non inspectée.
+- Mandataire réseau : 9 domaines `.sn`, Banque mondiale, UNESCO, FAO, OMS → `CONNECT 403`.
+- `ollama serve` : génération et récupération sémantique non mesurées.

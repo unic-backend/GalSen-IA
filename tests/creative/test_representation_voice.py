@@ -190,9 +190,27 @@ def test_une_transcription_non_mesuree_est_refusee():
 
 
 def test_une_langue_non_declaree_est_refusee():
+    """Un code que le registre ne porte pas reste refusé.
+
+    Ce test utilisait `es` jusqu'à C13. L'espagnol est désormais **déclaré**
+    (`corpus/creative/languages.yaml`, §24), et le fixer ici ferait échouer le
+    test pour la raison inverse de celle qu'il vérifie. L'assertion n'est pas
+    affaiblie : un code inconnu est toujours refusé, avec le même message.
+    """
     with pytest.raises(VoiceSceneRefused) as erreur:
-        _segment(language="es")
+        _segment(language="zz")
     assert "l'envers" in str(erreur.value)
+
+
+def test_les_langues_des_tests_d_or_sont_exprimables():
+    """Sérère et lingala sont les tests d'or 5 et 6 de §63.
+
+    Avant C13 la couche vocale validait contre les quatre langues du moteur de
+    sous-titres, et ces deux enregistrements étaient **refusés** — les
+    scénarios que la directive demande de valider n'étaient pas exprimables.
+    """
+    assert _segment(language="srr").language == "srr"
+    assert _segment(language="ln").language == "ln"
 
 
 def test_l_etat_d_une_langue_depend_de_sa_confiance():
