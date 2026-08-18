@@ -1016,3 +1016,11 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - Aucune association tâche → modèle en dur (§36 la nomme comme le défaut à éviter), aucun repli sur le fournisseur voisin, et les licences ne sont **pas** relues : `evaluate()` les applique déjà, les redoubler créerait la seconde vérité que §2 interdit — tenu par un test.
 - Un garde de C04 a attrapé ma propre fixture de test : `commercial=ALLOWED` sans source vérifiée est refusé, parce qu'une licence de dépôt permissive n'est pas une permission d'usage des poids (§40). Corrigée, pas contournée.
 - Vérifié : `python -m pytest tests/creative -q` → **247 passent** (222 avant, +25). `ruff` propre.
+
+### 2026-08-18 (VOLET créatif, phase 15.2 — les deux architectures audio-vidéo, §43 — C15 terminé)
+- **§43 demande d'évaluer les deux et interdit d'en supposer une supérieure.** `src/creative/pipelines.py` planifie A (vidéo + audio + synchronisation labiale) et B (génération audio-vidéo native), et `compare_pipelines()` rend `recommended: None`. Installer un défaut ici créerait une préférence que plus personne ne rediscuterait.
+- **L'asymétrie qu'on oublie, et qui décide** : l'étape audio de A est satisfaite **sans aucun fournisseur** quand l'enregistrement de la personne est conservé (§22) — il n'y a rien à générer, donc rien à router. C'est la seule étape de toute la chaîne qu'une absence de travail satisfait. La traiter comme une étape à fournisseur obligatoire déclarerait A bloquée là où elle ne l'est pas, et pousserait vers B précisément dans le cas où B — qui régénère la voix — est le mauvais choix.
+- **`BLOCKED` nomme la première étape qui bute**, jamais un état global : savoir que A bute sur la génération vidéo et B sur la génération audio-vidéo n'est pas la même information, et la seconde ne se déduit pas de la première.
+- **Mesuré sur les 9 fournisseurs réellement déclarés** (`corpus/creative/providers.yaml`) : les deux architectures `BLOCKED`, chacune sur une étape différente. Aucune réalisable, aucune recommandée.
+- Un départage n'a lieu que sur une dimension mesurée, additionnée le long des étapes, et **seulement si toutes les étapes des deux architectures la portent** — sinon sommer ce qui existe ferait gagner l'architecture la moins documentée.
+- Vérifié : `python -m pytest tests/creative -q` → **266 passent** (247 avant, +19). `ruff` propre.

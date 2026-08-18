@@ -30,8 +30,14 @@ portent le chiffre**, sinon `UNRANKED`. Et `UNKNOWN` n'est pas `UNMET`.
 
 **Cadence : une phase par tour** depuis le 2026-08-18 (budget de contexte).
 
-**Prochaine étape** : **phase 15.2** — pipelines A et B de §43 (vidéo + lip-sync
-contre génération audio-vidéo native), choisis par capacité mesurée.
+**Puis phase 15.2** (§43) : `src/creative/pipelines.py` — les deux architectures
+planifiées, **aucune recommandée**. L'étape audio de A est satisfaite *sans
+fournisseur* quand l'enregistrement est gardé ; la traiter autrement pousserait
+vers B là où B est le mauvais choix. Mesuré sur les 9 fournisseurs déclarés :
+les deux `BLOCKED`, sur des étapes différentes. **C15 est terminé.**
+
+**Prochaine étape** : **C16 — orchestration GPU, files et cache (§52–§54)**,
+2 phases. Puis C17 (API + tests d'or + MVP, 3 phases) et C18 (rapport final).
 
 **Bloqué** : rien côté code. Sur cette machine : pas de GPU, pas de `torch`,
 `huggingface.co` injoignable → génération, diarisation, ASR et lip-sync restent
