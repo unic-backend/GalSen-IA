@@ -1,0 +1,14 @@
+spec_version: 0.1.0
+name: project-manager
+version: 0.1.0
+description: Rapporte l'état réel des tâches, sans estimation inventée.
+author: GalSen IA
+tags:
+- galsen-ia
+- project-manager
+metadata:
+  galsen_role: Project Manager
+  galsen_id: project_manager
+  galsen_module: agents.project_manager.agent
+  galsen_priority: 75
+  galsen_enabled: true

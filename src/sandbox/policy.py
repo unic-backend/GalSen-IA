@@ -73,6 +73,15 @@ class SandboxPolicy:
             processeur : un programme qui dort n'en consomme pas.
         output_bytes: Sortie capturée au-delà de laquelle on tronque.
         environment: Variables transmises ; le reste est retiré.
+        extra_environment: Variables **ajoutées explicitement** par l'appelant,
+            sous forme de couples (nom, valeur). La liste blanche décide ce qui
+            est hérité ; ceci décide ce qui est fourni. Un programme lancé sous
+            bac à sable a souvent besoin d'une configuration que le processus
+            parent ne porte pas — l'adresse d'un serveur de modèles, par
+            exemple. La faire passer par `os.environ` reviendrait à la poser sur
+            la plateforme entière ; la passer en ligne de commande la rendrait
+            visible de toute la machine. Les **valeurs** ne sont jamais
+            sérialisées par `to_dict()`, seulement les noms.
     """
 
     cpu_seconds: int = 5
@@ -82,6 +91,7 @@ class SandboxPolicy:
     wall_seconds: int = 15
     output_bytes: int = 64 * 1024
     environment: Tuple[str, ...] = ENVIRONNEMENT_TRANSMIS
+    extra_environment: Tuple[Tuple[str, str], ...] = ()
 
     def env(self) -> Dict[str, str]:
         """
@@ -97,6 +107,9 @@ class SandboxPolicy:
         # Sans `PATH`, un interpréteur lancé par son nom serait introuvable ;
         # le donner vide serait plus surprenant que de le donner minimal.
         transmis.setdefault("PATH", "/usr/local/bin:/usr/bin:/bin")
+        # Les ajouts explicites viennent après l'héritage : l'appelant qui
+        # fournit une valeur veut la sienne, pas celle du parent.
+        transmis.update({nom: valeur for nom, valeur in self.extra_environment})
         return transmis
 
     def to_dict(self) -> Dict[str, object]:
@@ -109,6 +122,9 @@ class SandboxPolicy:
             "wall_seconds": self.wall_seconds,
             "output_bytes": self.output_bytes,
             "environment_passed": list(self.environment),
+            # Les noms, jamais les valeurs : cette description entre dans les
+            # rapports de posture, et une clé fournie ici y apparaîtrait.
+            "environment_provided": [nom for nom, _ in self.extra_environment],
             "not_guaranteed": list(NON_GARANTI),
         }
 

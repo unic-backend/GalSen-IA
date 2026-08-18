@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: coder
+version: 0.1.0
+description: Écrit le code.
+author: GalSen IA
+tags:
+- galsen-ia
+- software-engineer
+metadata:
+  galsen_role: Software Engineer
+  galsen_module: agents.coder.agent
+  galsen_priority: 90
+  galsen_enabled: true

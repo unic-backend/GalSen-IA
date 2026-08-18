@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: opportunity
+version: 0.1.0
+description: Rassemble des signaux sourcés ; refuse de conclure sans source.
+author: GalSen IA
+tags:
+- galsen-ia
+- opportunity-analyst
+metadata:
+  galsen_role: Opportunity Analyst
+  galsen_module: agents.opportunity.agent
+  galsen_priority: 55
+  galsen_enabled: true

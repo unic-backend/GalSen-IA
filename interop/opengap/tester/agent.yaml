@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: tester
+version: 0.1.0
+description: Teste les fonctionnalités.
+author: GalSen IA
+tags:
+- galsen-ia
+- qa-tester
+metadata:
+  galsen_role: QA Tester
+  galsen_module: agents.tester.agent
+  galsen_priority: 85
+  galsen_enabled: true

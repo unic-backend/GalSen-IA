@@ -74,6 +74,7 @@ from src.version import __version__
 from src.config import log_environment_problems
 from src.analytics import build_report as build_analytics_report
 from src.integration.engine_registry import get_shared_registry
+from src.coding_engine.types import CodingStatus, CodingTask
 
 # Import de la posture de sécurité HTTP (VOLET 02 ch. 08)
 from src.api.security_headers import (
@@ -3836,6 +3837,95 @@ async def media_cancel_job(
                 "Reprendre plus tard : quelqu'un a décidé d'arrêter, et une "
                 "file qui redémarre en douce l'a contredit.",
             ]}
+
+
+# ----------------------------------------------------------------------
+# Coding Engine (ADR-028)
+# ----------------------------------------------------------------------
+
+class CodingTaskRequest(BaseModel):
+    """Demande de travail logiciel adressée au Coding Engine."""
+
+    instruction: str = Field(..., description="Ce qui est demandé, en clair")
+    workspace: str = Field(..., description="Dossier de travail ; rien ne sera touché dehors")
+    files: List[str] = Field(default_factory=list, description="Fichiers désignés")
+    engine_id: Optional[str] = Field(None, description="Moteur imposé ; sinon routage automatique")
+    timeout_seconds: int = Field(900, ge=1, le=3600, description="Borne d'exécution")
+    dry_run: bool = Field(False, description="Vérifie sans écrire, quand le moteur le permet")
+    allow_network: bool = Field(False, description="Autorise le moteur à sortir sur le réseau")
+    allow_push: bool = Field(False, description="Publication distante déjà voulue par l'appelant")
+    approval_request_id: Optional[str] = Field(
+        None, description="Approbation déjà obtenue pour cette tâche"
+    )
+    test_command: Optional[str] = Field(None, description="Commande de tests à lancer")
+
+
+@app.get("/coding/engines", tags=["coding"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.TOOL_EXECUTE))])
+async def coding_engines():
+    """État des moteurs de codage : lesquels peuvent travailler, et sinon pourquoi."""
+    moteur = get_shared_registry().try_get("coding")
+    if moteur is None:
+        raise HTTPException(status_code=503, detail="Moteur de codage indisponible")
+    return moteur.status()
+
+
+@app.post("/coding/task", tags=["coding"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def coding_task(
+    request: CodingTaskRequest,
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
+    """
+    Confie une tâche à un moteur de codage.
+
+    Les codes HTTP suivent le statut du moteur plutôt qu'un 200 uniforme : une
+    indisponibilité rendue en 200 ferait passer une absence de travail pour un
+    résultat.
+    """
+    if not request.instruction.strip():
+        raise HTTPException(status_code=422, detail="L'instruction ne peut pas être vide")
+
+    moteur = get_shared_registry().try_get("coding")
+    if moteur is None:
+        raise HTTPException(status_code=503, detail="Moteur de codage indisponible")
+
+    metadonnees: Dict[str, Any] = {}
+    if request.approval_request_id:
+        metadonnees["approval_request_id"] = request.approval_request_id
+    if request.test_command:
+        metadonnees["test_command"] = request.test_command
+
+    tache = CodingTask(
+        instruction=request.instruction,
+        workspace=request.workspace,
+        files=request.files,
+        engine_id=request.engine_id,
+        timeout_seconds=request.timeout_seconds,
+        dry_run=request.dry_run,
+        allow_network=request.allow_network,
+        allow_push=request.allow_push,
+        request_id=str(uuid.uuid4()),
+        # L'exécution est imputée au sujet authentifié, jamais à un identifiant
+        # fourni dans le corps de la requête.
+        user_id=ctx.subject,
+        metadata=metadonnees,
+    )
+    resultat = moteur.execute(tache)
+    charge = resultat.to_dict()
+
+    codes = {
+        CodingStatus.UNAVAILABLE: 503,
+        CodingStatus.REJECTED: 403,
+        CodingStatus.REQUIRES_APPROVAL: 202,
+        CodingStatus.TIMEOUT: 504,
+        CodingStatus.FAILURE: 422,
+    }
+    code = codes.get(resultat.status, 200)
+    if code == 200:
+        return charge
+    raise HTTPException(status_code=code, detail=charge)
 
 
 # L'interface web est servie sous `/ui` (ADR-008), montée plus haut. Un second

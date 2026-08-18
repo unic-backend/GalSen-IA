@@ -12,6 +12,46 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-17 — Coding Engine, edit blocks and OpenGAP interop
+
+Ported from a second development line that had branched off `main` before the
+media and creative programmes. What that line built on top of an outdated base
+was reconciled rather than merged wholesale: two of its packages were **dropped**
+because this line already did the same thing better.
+
+- **Coding Engine** (`src/coding_engine/`, ADR-028) — OpenHands, Aider and
+  SWE-agent behind an interface the platform owns. None is a dependency, no code
+  is vendored, `requirements.txt` is unchanged, and each installs in its own
+  virtualenv (`scripts/install_coding_engines.sh`). The platform runs with zero,
+  one, two or three available; a missing engine reports how to fix it
+  - routing is by **capability**, never by name: the router contains no engine
+    name, and a fourth engine is routed by registering it
+  - the model always comes from the Model Engine; an adapter given none reports
+    unavailable instead of picking one. A test enumerates forbidden imports,
+    hosts and key variables to keep it that way
+  - execution goes through **`src/sandbox`**, not a second subprocess loop —
+    kernel limits and group cleanup are the platform's, with a coding-sized
+    policy. Approvals use the Approval Engine, runs are audited as `coding`, and
+    a task needing approval is **refused** when the gate is unavailable
+  - `GET /coding/engines`, `POST /coding/task`; status follows the outcome
+    (503/403/202/504/422), never a uniform 200
+- **Edit blocks** (`src/code_edit/`) — the model names the exact text to replace
+  and the platform applies it: nothing outside the given root, exactly one match
+  or refuse, all-or-nothing, no silent overwrite
+- **OpenGAP interop** (`src/interop/`, ADR-023) — the 17 registry agents
+  published in an open format. The **specification** is implemented; the upstream
+  TypeScript code is not vendored, so the platform survives its deletion
+
+### Changed — 2026-08-17
+
+- `SandboxPolicy` gains `extra_environment`: variables supplied explicitly to a
+  sandboxed program, rather than through `os.environ` (which would put them on
+  the whole platform) or a command line (visible machine-wide). `to_dict()`
+  serialises the **names** only
+- The OpenGAP export converts `snake_case` registry ids to kebab-case, which the
+  format requires, and keeps the original in `metadata.galsen_id`. An id that
+  yields nothing conformant is **refused**, not replaced by an invention
+
 ### Added — 2026-08-16 — Universal media & video intelligence engine (`src/media/`)
 
 A media engine built as **adapters with capability probes**, because the machine

@@ -9,7 +9,22 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 ---
 
 ## Dernière session
+**2026-08-17 — Coding Engine et interopérabilité portés depuis la seconde ligne de développement.**
+`src/coding_engine/` (OpenHands, Aider, SWE-agent derrière une abstraction native, ADR-028),
+`src/code_edit/` (blocs d'édition) et `src/interop/` (OpenGAP, ADR-023). Aucun code des
+projets externes recopié, aucune dépendance ajoutée, exécution passée par `src/sandbox`.
+Branche : `claude/coding-engine-on-phases`, issue de `claude/galsen-ia-phases-ukwz7p`,
+qui n'a **pas** été modifiée.
 
+Vérifié : 5755 tests passent. Les 8 échecs restants préexistaient sur la branche source —
+mesurés avant le portage, non touchés.
+
+**Prochaine étape** : fusionner cette branche, puis les deux gestes qui débloquent le reste —
+`ollama serve` (génération + recherche sémantique) et un `ffmpeg` réel (cinq étapes média).
+
+---
+
+### Sessions précédentes
 **Date** : 2026-08-16
 
 **En cours** : rien. **Le moteur média universel est terminé — 20 VOLETs,

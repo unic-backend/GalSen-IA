@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: monitor
+version: 0.1.0
+description: Surveille les performances et les erreurs.
+author: GalSen IA
+tags:
+- galsen-ia
+- monitoring-agent
+metadata:
+  galsen_role: Monitoring Agent
+  galsen_module: agents.monitor.agent
+  galsen_priority: 80
+  galsen_enabled: true

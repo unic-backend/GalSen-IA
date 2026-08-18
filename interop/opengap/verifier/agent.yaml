@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: verifier
+version: 0.1.0
+description: Confronte les affirmations aux passages ; ne réécrit jamais la réponse.
+author: GalSen IA
+tags:
+- galsen-ia
+- fact-verification
+metadata:
+  galsen_role: Fact Verification
+  galsen_module: agents.verifier.agent
+  galsen_priority: 80
+  galsen_enabled: true

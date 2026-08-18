@@ -3,12 +3,12 @@
 ## Current Status
 *Measured 2026-08-16. Every number below was counted, not remembered.*
 
-The platform runs. Fourteen engines and services are registered in `EngineRegistry`, and
+The platform runs. Fifteen engines and services are registered in `EngineRegistry`, and
 **nine more subsystems** built after it (volets 47–64) are probed separately — see
 *Subsystems and degradation* below. All of it is reachable through a REST API
-(`src/api/server.py`, **131 routes** behind API-key authentication and RBAC) and covered
+(`src/api/server.py`, **133 routes** behind API-key authentication and RBAC) and covered
 by their own test suites — **274 test files, 5 369 tests passing**, 8 skipped.
-17 agents, 24 declared tools (13 of which may run unattended), 27 ADRs.
+17 agents, 24 declared tools (13 of which may run unattended), 29 ADRs.
 Persistence exists and now covers the audit and approval engines too: every engine
 holding state selects a SQLite store through `GALSEN_STORAGE_BACKEND` (ADR-005), which
 defaults to `in-memory`.
@@ -56,6 +56,7 @@ can be replaced without touching the callers.
 | Vision Intelligence Engine | `src/vision_intelligence_engine/` | `VisionManagerImpl` | Analyses images without OCR or generation |
 | Audit Engine | `src/audit_engine/` | `AuditManagerImpl` | Structured trace of what agents and engines did |
 | Approval Engine | `src/approval_engine/` | `ApprovalManagerImpl` | Human decision gate for sensitive actions (ADR-006) |
+| Coding Engine | `src/coding_engine/` | `CodingEngineManager` | Repository-level software engineering through OpenHands, Aider and SWE-agent (ADR-028) |
 | Notification Service | `src/services/notification/` | `NotificationManagerImpl` | Sends and lists platform notifications |
 | Search Service | `src/services/search/` | `SearchManagerImpl` | Unified search merging several sources by relevance |
 | File Service | `src/services/file/` | `FileManagerImpl` | Uploads, lists and validates files |
@@ -347,6 +348,40 @@ to `answer_country()`, which expects a country name. Details →
 - Optimize for low cost and maintainability
 - Make the system understandable by Claude Code over many years
 - Keep clear separation between documentation, configuration and code
+
+## Coding Engine (ADR-028)
+`src/coding_engine/` drives three external open-source engines behind an
+interface the platform owns: **Aider** (Apache-2.0, targeted edits, subprocess),
+**SWE-agent** (MIT, issue resolution, subprocess, needs Docker) and
+**OpenHands** (MIT, autonomous implementation, HTTP to its agent server
+container).
+
+None of them is a dependency and none of their code is vendored — `requirements.txt`
+is unchanged. Each is installed in its own virtualenv
+(`scripts/install_coding_engines.sh`) after installing `aider-chat` into the
+platform environment downgraded numpy and broke the Vision Engine. The platform
+runs with zero, one, two or three of them available; a missing engine reports how
+to fix it and the router never selects it.
+
+Execution goes through **`src/sandbox`**, not through a second subprocess loop:
+kernel limits, group cleanup, and the environment whitelist are the platform's,
+with a coding-sized policy in `src/coding_engine/execution.py`. Approvals use the
+Approval Engine (ADR-006) and every run is recorded under the `coding` audit
+event type. A task needing approval is **refused** when the Approval Engine is
+unavailable — a missing gate is not an open gate.
+
+Guide: `docs/architecture/coding-engine.md`.
+
+## Interoperability (ADR-023)
+`src/interop/opengap.py` publishes the 17 registry agents in the OpenGAP format
+(`interop/opengap/<agent>/{agent.yaml,SOUL.md}`), readable by any tool that
+implements it. The **specification** is implemented, the upstream TypeScript code
+is not vendored; `third_party/opengap/` carries the MIT licence and the field
+reference, so the platform survives the upstream repository being deleted.
+
+`src/code_edit/edit_blocks.py` applies model-proposed changes deterministically —
+the model names the exact text to replace, the platform applies it, nothing
+outside the given root is written, and a batch is all-or-nothing.
 
 ## Architecture Decision Records (ADRs)
 All important technical decisions must be recorded in:

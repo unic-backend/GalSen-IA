@@ -93,3 +93,11 @@ quote-style = "preserve"
 # de la même façon en local et en CI.
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+# Les tests `live` s'adressent à des programmes ou services extérieurs réels
+# (moteurs de codage installés, serveur d'agent joignable). Ils sont exclus par
+# défaut : la suite ordinaire doit rester déterministe et ne jamais dépendre
+# d'une installation locale. Pour les lancer : `pytest -m live`.
+markers = [
+    "live: exige un programme ou un service extérieur réel (exclu par défaut)",
+]
+addopts = '-m "not live"' 

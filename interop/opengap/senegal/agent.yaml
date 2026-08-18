@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: senegal
+version: 0.1.0
+description: Préfère les sources nationales ; refuse plutôt que de répondre mondial.
+author: GalSen IA
+tags:
+- galsen-ia
+- senegal-intelligence
+metadata:
+  galsen_role: Senegal Intelligence
+  galsen_module: agents.senegal.agent
+  galsen_priority: 70
+  galsen_enabled: true

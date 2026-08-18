@@ -1,0 +1,14 @@
+spec_version: 0.1.0
+name: knowledge-architect
+version: 0.1.0
+description: Propose une entrée de manifeste en DRAFT ; ne l'applique jamais.
+author: GalSen IA
+tags:
+- galsen-ia
+- knowledge-architect
+metadata:
+  galsen_role: Knowledge Architect
+  galsen_id: knowledge_architect
+  galsen_module: agents.knowledge_architect.agent
+  galsen_priority: 60
+  galsen_enabled: true

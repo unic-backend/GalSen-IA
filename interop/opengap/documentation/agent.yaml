@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: documentation
+version: 0.1.0
+description: Met à jour la documentation.
+author: GalSen IA
+tags:
+- galsen-ia
+- documentation-agent
+metadata:
+  galsen_role: Documentation Agent
+  galsen_module: agents.documentation.agent
+  galsen_priority: 70
+  galsen_enabled: true
