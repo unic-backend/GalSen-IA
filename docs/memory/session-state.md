@@ -60,9 +60,16 @@ soit ce qui manque. `/creative/readiness` **calcule** l'état à l'appel :
 `ORCHESTRATION READY — GENERATION BLOCKED (NO GPU, NO PROVIDER CLEARED)`.
 Routes publiées : 136 → **144**, re-mesurées.
 
-**Prochaine étape** : **phase 17.2** — les 25 tests d'or de §63 et les langues
-de §64, en spécifications déterministes qui ne dépendent d'aucun modèle vivant
-(§62 l'exige nommément). 40 faites sur 43.
+**Puis phase 17.2** (§62–§64) : `src/creative/golden.py` — les 25 scénarios
+exécutés contre le code vivant. **Deux verdicts, jamais trois** : `VERIFIED`
+(19) et `BLOCKED` (6 : 1, 3, 9, 10, 15, 18). Un `BLOCKED` **est** une assertion
+— « la capacité manque et la plateforme le rapporte au lieu d'inventer » —, pas
+un test sauté. Le jeu complet tourne en < 1 s, sans modèle ni réseau (§62).
+§64 : les 15 langues de validation sont toutes nommables, **0 comprise, 0
+parlée**, et aucune architecture par langue.
+
+**Prochaine étape** : **phase 17.3** — la tranche verticale MVP (§65, §66) :
+un flux de bout en bout qui dit honnêtement où il s'arrête. 41 faites sur 43.
 
 **Bloqué** : rien côté code. Sur cette machine : pas de GPU, pas de `torch`,
 `huggingface.co` injoignable → génération, diarisation, ASR et lip-sync restent

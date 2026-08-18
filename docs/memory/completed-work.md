@@ -1052,3 +1052,13 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - Les imports lourds sont **locaux aux fonctions** : `api_surface` est importé par le serveur au démarrage, et sonder le GPU à l'import ferait payer la mesure à chaque démarrage, y compris quand personne n'appelle la route. Un test lit la source pour le vérifier.
 - Chiffre publié re-mesuré : **136 → 144 routes** (`CLAUDE.md`, `docs/architecture/overview.md`).
 - Vérifié : `python -m pytest tests/creative tests/test_gateway_surface.py -q` → **615 passent** (dont 333 créatifs, +23). `ruff` propre.
+
+### 2026-08-18 (VOLET créatif, phase 17.2 — les 25 scénarios d'or, §62–§64)
+- **La tentation, et ce qui a été fait à la place.** §63 énumère 25 scénarios ; la façon confortable de les « satisfaire » est d'écrire 25 tests qui affirment un résultat — *la vidéo est cohérente*, *l'identité est préservée*. Aucun ne pourrait s'exécuter, et les écrire en figeant une valeur plausible est la faute que ce dépôt a déjà payée quatre fois. Chaque scénario porte donc **l'invariant qu'il protège**, éprouvé contre le code vivant.
+- **Deux verdicts, jamais trois.** `VERIFIED` (19) : l'invariant est vérifié maintenant. `BLOCKED` (6 — scénarios 1, 3, 9, 10, 15, 18) : la capacité manque **et la plateforme le rapporte au lieu d'inventer**. Un `BLOCKED` est une assertion, pas un test sauté — « ignoré » n'existe pas ici, parce qu'un scénario ignoré ne défend rien, et gonflerait la couverture.
+- **Les scénarios 5 et 6 sont exécutables grâce à C13** : sérère et lingala étaient *refusés* par la couche vocale avant le registre. Les trois scénarios de langue (4, 5, 6) vérifient la même chose : chemin `PRESERVE_ORIGINAL`, et une demande de synthèse qui répond `NOT_AVAILABLE` au lieu d'une voix approximative.
+- **§62 tenu et mesuré** : le jeu complet s'exécute en **moins d'une seconde**, sans téléchargement, sans réseau, sans modèle. Un test échoue au-delà de 10 s — un scénario qui attendrait un service externe ne finirait pas, et la consigne l'interdit nommément.
+- **Le rapport refuse de se lire comme une chaîne qui marche** : « 25 scénarios, 0 échec » pourrait passer pour « ça génère ». La note dit explicitement qu'aucune vidéo n'est produite et que la chaîne attend un GPU ; un test vérifie que cette phrase y est.
+- **§64** : les 15 langues de validation sont **toutes nommables**, `0` comprise, `0` parlée, et aucune architecture par langue — ce qui le prouve est qu'aucune n'apparaît dans le code.
+- Une assertion tautologique (`... or True`) écrite au premier jet a été retirée : elle ne défendait rien.
+- Vérifié : `python -m pytest tests/creative -q` → **352 passent** (333 avant, +19). `ruff` propre.
