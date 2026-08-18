@@ -4146,6 +4146,57 @@ async def coding_task(
 # concurrentes pour la même plateforme, c'est une de trop à maintenir et à
 # documenter. `/ui` est la décision retenue ; `src/frontend/` a été retiré.
 
+# ---------------------------------------------------------------------------
+# Couche créative (§70). Quatre routes, pas quinze : une route n'existe ici que
+# si une fonction réelle la sert. Les onze autres préfixes que la directive
+# propose sont rendus par `/creative/surface`, avec soit la route existante qui
+# les sert déjà, soit ce qui manque pour qu'ils existent. Monter des préfixes
+# qui répondraient un objet vide donnerait une API qui a l'air complète — et un
+# appelant construirait dessus.
+# ---------------------------------------------------------------------------
+
+
+@app.get("/creative/readiness", tags=["creative"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def creative_readiness():
+    """État calculé de la couche créative : ce qu'elle peut faire, maintenant."""
+    from src.creative.api_surface import readiness
+    return readiness()
+
+
+@app.get("/creative/surface", tags=["creative"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def creative_surface():
+    """Le sort de chaque préfixe proposé par la directive, avec sa raison."""
+    from src.creative.api_surface import surface_map
+    return {"prefixes": surface_map()}
+
+
+@app.get("/creative/languages", tags=["creative"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def creative_languages():
+    """Langues nommables, et les cinq capacités mesurées séparément."""
+    from src.creative.language.registry import coverage_report, language_matrix
+    return {"matrix": language_matrix(), "coverage": coverage_report()}
+
+
+@app.get("/creative/pipelines", tags=["creative"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def creative_pipelines():
+    """Les deux architectures de la directive, et l'étape où chacune bute."""
+    from src.creative.pipelines import compare_pipelines
+    from src.creative.providers import ProviderRegistry, adapt_declared
+    from src.creative.research import load_research
+
+    registre = ProviderRegistry()
+    for fournisseur in adapt_declared(load_research().get("candidates") or []):
+        registre.register(fournisseur)
+    return compare_pipelines(registre)
+
 # Point d'entrée pour exécuter le serveur directement (pour le développement)
 if __name__ == "__main__":
     import uvicorn

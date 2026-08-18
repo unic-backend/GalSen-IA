@@ -53,8 +53,16 @@ révocation d'ADR-025 ne peut atteindre aucune vidéo. `src/creative/cache.py` :
 toute lecture rend la fraîcheur avec la valeur, il n'existe **pas** de méthode
 rendant la valeur seule, et rien n'expire au temps.
 
-**Prochaine étape** : **C17 — API, tests d'or, MVP (§62–§66, §70)**, 3 phases.
-Puis C18, le rapport final (1 phase). 39 faites sur 43.
+**Puis phase 17.1** (§70, §72) : **4 routes `/creative`, pas 15.** Une route
+n'existe que si une fonction réelle la sert ; les 11 autres préfixes proposés
+sont rendus par `/creative/surface` — soit la route existante qui les sert déjà,
+soit ce qui manque. `/creative/readiness` **calcule** l'état à l'appel :
+`ORCHESTRATION READY — GENERATION BLOCKED (NO GPU, NO PROVIDER CLEARED)`.
+Routes publiées : 136 → **144**, re-mesurées.
+
+**Prochaine étape** : **phase 17.2** — les 25 tests d'or de §63 et les langues
+de §64, en spécifications déterministes qui ne dépendent d'aucun modèle vivant
+(§62 l'exige nommément). 40 faites sur 43.
 
 **Bloqué** : rien côté code. Sur cette machine : pas de GPU, pas de `torch`,
 `huggingface.co` injoignable → génération, diarisation, ASR et lip-sync restent
