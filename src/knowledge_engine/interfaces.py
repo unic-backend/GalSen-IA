@@ -4,8 +4,7 @@ Interfaces pour le moteur de connaissances GalSen IA.
 
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Tuple, Iterable
-from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority
-import datetime
+from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority, KnowledgeStatus
 
 
 class KnowledgeStore(ABC):
@@ -44,6 +43,22 @@ class KnowledgeStore(ABC):
     @abstractmethod
     def cleanup_old_versions(self, keep_latest: int = 1) -> int:
         """Nettoie les anciennes versions, en gardant seulement les plus récentes."""
+        pass
+
+    @abstractmethod
+    def record_access(self, knowledge_id: str) -> int:
+        """Compte une consultation et retourne le nouveau total.
+
+        Une méthode dédiée plutôt qu'un `update()` : consulter une connaissance
+        n'en produit pas une nouvelle version, et `update()` refuse à juste
+        titre une écriture dont la version n'a pas avancé. Le compteur passait
+        par là et ne s'incrémentait donc jamais ailleurs que par le partage de
+        référence du magasin en mémoire — c'est-à-dire nulle part sur SQLite.
+
+        Returns:
+            Le nombre de consultations après incrément, ou 0 si la connaissance
+            n'existe pas.
+        """
         pass
 
 
@@ -217,13 +232,18 @@ class KnowledgeManager(ABC):
         pass
 
     @abstractmethod
-    def search_knowledge(self, query: str, limit: int = 10) -> List[KnowledgeItem]:
-        """Recherche des connaissances par texte."""
+    def search_knowledge(self, query: str, limit: int = 10,
+                         role: Optional[str] = None) -> List[KnowledgeItem]:
+        """Recherche des connaissances par texte.
+
+        `role` filtre par sensibilité (chapitre 07) : sans rôle, seules les
+        connaissances publiques sont retournées.
+        """
         pass
 
     @abstractmethod
     def search_knowledge_with_scores(
-        self, query: str, limit: int = 10
+        self, query: str, limit: int = 10, role: Optional[str] = None
     ) -> List[Tuple[KnowledgeItem, float]]:
         """
         Recherche des connaissances en conservant leur score de pertinence.
@@ -239,14 +259,22 @@ class KnowledgeManager(ABC):
         pass
 
     @abstractmethod
-    def retrieve_for_prompt(self, prompt: str, max_items: int = 5) -> List[KnowledgeItem]:
-        """Récupère des connaissances pertinentes pour enrichir un prompt (RAG)."""
+    def retrieve_for_prompt(self, prompt: str, max_items: int = 5,
+                            statuses: Optional[Iterable[KnowledgeStatus]] = None,
+                            role: Optional[str] = None) -> List[KnowledgeItem]:
+        """Récupère des connaissances pertinentes pour enrichir un prompt (RAG).
+
+        `statuses` restreint les statuts acceptés ; par défaut, les connaissances
+        retirées de l'usage (archivées, dépréciées) sont écartées.
+        """
         pass
 
     @abstractmethod
     def retrieve_reliable(self, prompt: str, max_items: int = 5,
                           min_priority: Optional[KnowledgePriority] = None,
-                          min_confidence: float = 0.5) -> Dict[str, Any]:
+                          min_confidence: float = 0.5,
+                          statuses: Optional[Iterable[KnowledgeStatus]] = None,
+                          role: Optional[str] = None) -> Dict[str, Any]:
         """Récupère uniquement des connaissances fiables.
 
         Si aucune connaissance ne satisfait les seuils de priorité et de

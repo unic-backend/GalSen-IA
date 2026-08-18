@@ -2,15 +2,34 @@
 Indexeur de connaissances pour recherche plein texte rapide.
 """
 
+import logging
 import re
-from typing import Dict, Set, List, Optional
+from typing import Dict, Set, List
+from src.text_normalization import (
+    LANGUE_PAR_DEFAUT,
+    normalize_token,
+    token_variants,
+    tokenize,
+)
 from .types import KnowledgeItem
 from .interfaces import KnowledgeIndexer, KnowledgeStore
 import threading
 
 
+# Mots d'une requête, avant normalisation. Même découpage que
+# `text_normalization`, appliqué ici pour produire les deux formes.
+_MOT_REQUETE = re.compile(r"\w+", re.UNICODE)
+
+
 class InMemoryKnowledgeIndexer(KnowledgeIndexer):
     """Indexeur en mémoire utilisant un index inversé simple."""
+
+    # Nombre maximal de documents lus lors d'une reconstruction complète.
+    # La limite existait déjà, dispersée et muette : au-delà, les documents
+    # excédentaires n'étaient jamais indexés et devenaient introuvables sans
+    # qu'aucun signal ne l'indique. Elle est désormais nommée, partagée avec la
+    # vérification d'intégrité, et son atteinte est rapportée.
+    MAX_INDEXABLE_DOCUMENTS = 100000
 
     def __init__(self, store: KnowledgeStore):
         """
@@ -44,15 +63,53 @@ class InMemoryKnowledgeIndexer(KnowledgeIndexer):
         """Met à jour l'index pour une connaissance modifiée."""
         self.update(knowledge)
 
-    def _tokenize(self, text: str) -> List[str]:
-        """Tokenise un texte en mots en minuscules."""
-        words = self._word_re.findall(text.lower())
-        # Filtrer les mots très courants (stop words simples) - optionnel
-        stop_words = {'le', 'la', 'les', 'un', 'une', 'des', 'de', 'du', 'et', 'ou', 'à', 'a',
-                      'ce', 'cet', 'cette', 'ces', 'en', 'au', 'aux', 'avec', 'sans', 'sur',
-                      'sous', 'pour', 'par', 'pas', 'mais', 'ou', 'où', 'qui', 'que',
-                      'quoi', 'dont', 'où', 'lorsque', 'quand', 'comment', 'pourquoi'}
-        return [w for w in words if w not in stop_words and len(w) > 1]
+    # Mots vides écartés de l'index. Écrits avec leurs accents : ils sont
+    # normalisés comme le reste, donc « où » et « ou » se rejoignent.
+    STOP_WORDS = frozenset({
+        'le', 'la', 'les', 'un', 'une', 'des', 'de', 'du', 'et', 'ou', 'à', 'a',
+        'ce', 'cet', 'cette', 'ces', 'en', 'au', 'aux', 'avec', 'sans', 'sur',
+        'sous', 'pour', 'par', 'pas', 'mais', 'où', 'qui', 'que',
+        'quoi', 'dont', 'lorsque', 'quand', 'comment', 'pourquoi',
+    })
+
+    def _tokenize(self, text: str, language: str = LANGUE_PAR_DEFAUT) -> List[str]:
+        """
+        Découpe un texte en mots comparables, selon la langue du document.
+
+        La normalisation s'applique **des deux côtés** — indexation et requête —
+        et c'est ce qui la rend sûre : « pluviometrie » retrouve
+        « pluviométrie », « arachide » retrouve « arachides ».
+
+        Depuis L3 (VOLET 36, ch. B), la règle du pluriel `-s` ne s'applique
+        qu'aux langues qui la connaissent : un texte wolof n'est plus amputé.
+        La symétrie est tenue par `_query_terms`, qui interroge l'index avec les
+        deux formes — sans quoi une requête française manquerait un terme wolof
+        indexé entier.
+        """
+        return tokenize(text, self.STOP_WORDS, language=language)
+
+    @staticmethod
+    def _langue_de(knowledge: KnowledgeItem) -> str:
+        """Retourne le code de langue déclaré d'une connaissance."""
+        langue = getattr(knowledge, "language", None)
+        return str(getattr(langue, "value", langue) or LANGUE_PAR_DEFAUT)
+
+    def _query_terms(self, query: str) -> List[List[str]]:
+        """
+        Rend, pour chaque mot de la requête, ses formes possibles.
+
+        Une requête n'a pas de langue déclarée et rien ne sait l'inférer
+        (VOLET 36, ch. B) : chercher les deux formes ajoute des correspondances
+        et n'en retire aucune.
+        """
+        vides = {normalize_token(mot) for mot in self.STOP_WORDS}
+        groupes = []
+        for mot in _MOT_REQUETE.findall(query):
+            formes = [forme for forme in token_variants(mot)
+                      if forme not in vides and len(forme) > 1]
+            if formes:
+                groupes.append(formes)
+        return groupes
 
     def _add_to_index(self, doc_id: str, terms: List[str]) -> None:
         """Ajoute un document à l'index pour les termes donnés."""
@@ -80,10 +137,19 @@ class InMemoryKnowledgeIndexer(KnowledgeIndexer):
             self._doc_terms.clear()
             # Utilise l'interface publique du stockage pour fonctionner aussi
             # avec un stockage SQLite (ADR-005), pas seulement en mémoire.
-            for knowledge in self._store.list_items(limit=10000):
+            documents = self._store.list_items(limit=self.MAX_INDEXABLE_DOCUMENTS)
+            for knowledge in documents:
                 text = knowledge.content
-                terms = self._tokenize(text)
+                terms = self._tokenize(text, self._langue_de(knowledge))
                 self._add_to_index(knowledge.id, terms)
+            if len(documents) >= self.MAX_INDEXABLE_DOCUMENTS:
+                # Au-delà, la recherche est incomplète : le taire reviendrait à
+                # rendre « aucun résultat » pour des documents bien présents.
+                logging.getLogger(__name__).warning(
+                    "Index tronqué à %d documents : le magasin en contient davantage, "
+                    "les suivants sont introuvables par la recherche.",
+                    self.MAX_INDEXABLE_DOCUMENTS,
+                )
 
     def add(self, knowledge: KnowledgeItem) -> None:
         """Ajoute une connaissance à l'index."""
@@ -92,7 +158,7 @@ class InMemoryKnowledgeIndexer(KnowledgeIndexer):
             # Si déjà présent, retirer d'abord
             if doc_id in self._doc_terms:
                 self._remove_from_index(doc_id)
-            terms = self._tokenize(knowledge.content)
+            terms = self._tokenize(knowledge.content, self._langue_de(knowledge))
             self._add_to_index(doc_id, terms)
 
     def update(self, knowledge: KnowledgeItem) -> None:
@@ -111,15 +177,17 @@ class InMemoryKnowledgeIndexer(KnowledgeIndexer):
         Le score est la proportion de termes de la requête présents dans le document.
         """
         with self._lock:
-            query_terms = self._tokenize(query)
-            if not query_terms:
+            query_groups = self._query_terms(query)
+            if not query_groups:
                 return []
+            query_terms = [formes[0] for formes in query_groups]
 
             # Pour chaque terme, obtenir l'ensemble des documents contenant ce terme
             result_sets: List[set] = []
-            for term in query_terms:
-                if term in self._index:
-                    result_sets.append(self._index[term])
+            for formes in query_groups:
+                trouves = {doc for forme in formes for doc in self._index.get(forme, set())}
+                if trouves:
+                    result_sets.append(trouves)
                 else:
                     # Si un terme n'est pas trouvé, aucun document ne peut contenir tous les termes (AND)
                     # Nous pouvons changer pour OR, mais pour la pertinence nous faisons AND puis scoring
@@ -140,7 +208,8 @@ class InMemoryKnowledgeIndexer(KnowledgeIndexer):
             scores: dict[str, int] = {}
             for doc_id in candidate_ids:
                 doc_terms = self._doc_terms.get(doc_id, set())
-                common = len([t for t in query_terms if t in doc_terms])
+                common = len([formes for formes in query_groups
+                              if any(forme in doc_terms for forme in formes)])
                 if common > 0:
                     scores[doc_id] = common
 
@@ -164,6 +233,50 @@ class InMemoryKnowledgeIndexer(KnowledgeIndexer):
         with self._lock:
             self._index.clear()
             self._doc_terms.clear()
+
+    def check_integrity(self) -> dict:
+        """
+        Compare l'index au magasin qu'il indexe (VOLET 14, chapitre 05).
+
+        Le chapitre exige de « vérifier l'intégrité de l'index ». Un index qui
+        diverge du magasin ne se voit pas : la recherche rend simplement moins,
+        ou pointe vers des documents disparus.
+
+        Returns:
+            Un dictionnaire portant `consistent` (booléen), les identifiants
+            présents dans le magasin mais absents de l'index (`missing`), ceux
+            présents dans l'index sans exister dans le magasin (`orphaned`), et
+            les documents dont les termes ne correspondent plus à leur contenu
+            (`stale`). Les listes sont bornées : au-delà de 50 identifiants, le
+            compte suffit à décider d'une reconstruction.
+        """
+        with self._lock:
+            documents = {k.id: k for k in self._store.list_items(limit=self.MAX_INDEXABLE_DOCUMENTS)}
+            tronque = self._store.count() > self.MAX_INDEXABLE_DOCUMENTS
+            indexes = set(self._doc_terms)
+
+            manquants = sorted(set(documents) - indexes)
+            orphelins = sorted(indexes - set(documents))
+
+            perimes = []
+            for doc_id in sorted(indexes & set(documents)):
+                attendu = set(self._tokenize(documents[doc_id].content,
+                                             self._langue_de(documents[doc_id])))
+                if attendu != self._doc_terms.get(doc_id, set()):
+                    perimes.append(doc_id)
+
+            return {
+                "consistent": not (manquants or orphelins or perimes or tronque),
+                "truncated": tronque,
+                "indexed_documents": len(indexes),
+                "stored_documents": self._store.count(),
+                "missing": manquants[:50],
+                "missing_count": len(manquants),
+                "orphaned": orphelins[:50],
+                "orphaned_count": len(orphelins),
+                "stale": perimes[:50],
+                "stale_count": len(perimes),
+            }
 
     def get_stats(self) -> dict:
         """Retourne des statistiques sur l'index."""

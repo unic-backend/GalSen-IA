@@ -1,12 +1,22 @@
 # GalSen IA — Architecture Overview
 
 ## Current Status
-The platform runs. Fourteen engines and services are registered in `EngineRegistry`, reachable through a
-REST API (`src/api/server.py`, 60 routes behind API-key authentication and RBAC) and
-covered by their own test suites. Persistence exists: memory, model, knowledge and the
-notification, calendar, email, cloud and file services select a SQLite store through
-`GALSEN_STORAGE_BACKEND` (ADR-005); the audit and approval engines are still in-memory
-only.
+*Measured 2026-08-16. Every number below was counted, not remembered.*
+
+The platform runs. Fifteen engines and services are registered in `EngineRegistry`, and
+**nine more subsystems** built after it (volets 47–64) are probed separately — see
+*Subsystems and degradation* below. All of it is reachable through a REST API
+(`src/api/server.py`, **133 routes** behind API-key authentication and RBAC) and covered
+by their own test suites — **274 test files, 5 369 tests passing**, 8 skipped.
+17 agents, 24 declared tools (13 of which may run unattended), 29 ADRs.
+Persistence exists and now covers the audit and approval engines too: every engine
+holding state selects a SQLite store through `GALSEN_STORAGE_BACKEND` (ADR-005), which
+defaults to `in-memory`.
+
+The knowledge architecture is the part that grew most (VOLETs 35 and 36). It is
+described in its own section below, and its rule is one sentence: **nothing enters or
+leaves without saying where it comes from, and what cannot be measured is named rather
+than guessed.**
 
 A buildless web dashboard is served at `/ui` (ADR-008): the *Conseil agricole* page —
 the platform's first real feature — plus platform health, external connectors and API
@@ -46,6 +56,7 @@ can be replaced without touching the callers.
 | Vision Intelligence Engine | `src/vision_intelligence_engine/` | `VisionManagerImpl` | Analyses images without OCR or generation |
 | Audit Engine | `src/audit_engine/` | `AuditManagerImpl` | Structured trace of what agents and engines did |
 | Approval Engine | `src/approval_engine/` | `ApprovalManagerImpl` | Human decision gate for sensitive actions (ADR-006) |
+| Coding Engine | `src/coding_engine/` | `CodingEngineManager` | Repository-level software engineering through OpenHands, Aider and SWE-agent (ADR-028) |
 | Notification Service | `src/services/notification/` | `NotificationManagerImpl` | Sends and lists platform notifications |
 | Search Service | `src/services/search/` | `SearchManagerImpl` | Unified search merging several sources by relevance |
 | File Service | `src/services/file/` | `FileManagerImpl` | Uploads, lists and validates files |
@@ -199,7 +210,7 @@ Empty text with a status is the honest answer. A plausible sentence nobody
 generated cannot be detected downstream, and is worse than no answer.
 
 ## Agents
-The nine agents in `agents/` each call real engines. None of them fabricates a
+The seventeen agents in `agents/` each call real engines. None of them fabricates a
 result: what an agent cannot establish, it reports as a gap.
 
 | Agent | What it actually does | Engines used |
@@ -213,6 +224,13 @@ result: what an agent cannot establish, it reports as a gap.
 | `documentation` | Compares the memory files against what exists in `src/` | document, tool, knowledge, memory |
 | `deployment` | Checks repository state, required artifacts and the tester verdict | tool, memory, knowledge |
 | `monitor` | Reports engine availability, log errors and pipeline health | all six |
+| `organizer` | Proposes a file tidy-up; **moves nothing** without an approved request | tool, storage |
+| `project_manager` | Reports task state from what agents actually returned — no estimates, no percentages | memory |
+| `opportunity` | Surfaces sourced signals; `insufficient_evidence` rather than an invented analysis | knowledge, tool, memory |
+| `verifier` | Confronts claims with retrieved passages; `cannot_verify` with no passage, and never rewrites the answer | knowledge |
+| `senegal` | Prefers national sources and **refuses** a national subject with no national source | knowledge |
+| `knowledge_architect` | Proposes a manifest entry as `DRAFT`; never applies it | knowledge |
+| `data_engineer` | Describes a statistical series; **refuses** one without declared units, period and source | — |
 
 Agents that would change something outside the process (deploying, pushing,
 writing documentation) report what should be done instead of doing it. Those
@@ -223,8 +241,10 @@ and detects nested execution through an inherited environment variable. Without
 both guards it would run the orchestrator that is running it, endlessly.
 
 ## Tools
-`tools/tools.yaml` declares 18 tools; five are implemented. The rest are declared
-for the roadmap and fail to load with an explicit message.
+`tools/tools.yaml` declares 22 tools, 21 of them enabled, and **every declared tool
+imports** — a test asserts it, because a catalogue entry that cannot be loaded is a
+capability announced without proof. `docker` is the single disabled one: from the
+production container it would need the host's Docker socket, which is root on the host.
 
 | Tool | State | Safety constraint |
 |------|-------|-------------------|
@@ -234,7 +254,93 @@ for the roadmap and fail to load with an explicit message.
 | `github` | Implemented | Read-only. Token read from `GITHUB_TOKEN` at call time, never stored. |
 | `web_search` | Implemented | Short timeout so an offline network does not stall the pipeline. |
 | `model` | Implemented | Exposes the Model Engine. Generation returns a status, never fabricated text. |
-| 12 others | Declared only | Loading fails with `Could not load class`. |
+| `screen`, `gui` | Implemented | Seeing and acting are two tools: an agent can be given eyes without a hand. The hand goes through the approval gate. |
+| `browser`, `api`, `pdf`, `ocr`, `rag`, … | Implemented | Everything they bring back is wrapped as **data with its origin** (`src/security/trust.py`); nine entry paths, all covered. |
+| `docker` | Disabled | Would need the host's Docker socket. Re-enabling it is a written decision, not a flag. |
+
+## Knowledge architecture (VOLETs 35 and 36)
+
+The knowledge engine is no longer "a base and a search". It carries the rules that
+decide **what may be said, from what, and with what admitted uncertainty**. Every
+module below refuses rather than guesses, and each names what it cannot measure.
+
+| Concern | Module | The rule it holds |
+|---|---|---|
+| Two axes | `scope.py` | Where knowledge holds (`global` / `country:sn`) and what it is about. Law, administration and languages **never** fall back to global |
+| Who has authority | `source_registry.py`, `corpus/sources/senegal.yaml` | Reliability comes from a declared registry, not from the document claiming it. Denied URLs are refused **with their reason**; an authority category needs a registered domain |
+| Retrieval | `scoped_retrieval.py` | A policy over the existing retriever, never a second one. Local first; a national subject with no local source gets **no answer** |
+| The answer's honesty | `scoped_retrieval.scope_notice` | The answer says which sources built it — an answer about Senegal built from none says so |
+| Languages | `languages.py`, `text_normalization.py` | `wo`, `ff`, `srr` are declarable. Labelling is not understanding: nine capabilities are reported per language, and what was never measured says `unknown`, not `no` |
+| Factual measurement | `factual_evaluation.py` | Unsupported claims counted, cited sources checked, contradiction distinguished from absence. The evaluator never asks the model whether it was right |
+| Entities | `entities.py`, `storage/sqlite_entity_store.py` | Nothing enters without a source — entities *and* relations, which carry their own provenance and validity dates. No graph database; the trigger that would justify one is written and measured |
+| What is missing | `gaps.py` | A gap is a subject × scope pair **real questions** hit without an answer |
+| Finding sources | `source_discovery.py` | Candidates come from the registry and nowhere else. Proposing is not deciding |
+| Disagreement | `contradictions.py` | Reported, never resolved. No winner is named; the most recent source is not automatically right |
+| Collection | `collection.py` | Registry + `robots.txt` applied + licence + human approval. **Nothing is downloaded here** |
+| Health | `health_policy.py` | A higher source floor, a safety notice on every answer, and no dosage, diagnosis or prescription — a refusal in code, applied after generation |
+| External text | `security/trust.py` | The nine entry paths announce their content as **data with its origin**. Data never becomes an instruction |
+| Deferred capabilities | `deferred_triggers.py` | Vector database, graph database, queues, automated acquisition: deferred **with their triggers measured at every proactive scan**, silent until one is crossed |
+
+Two habits run through all of it and are worth keeping when extending:
+
+- **`unknown` is not `no`.** A measurement nobody made closes no question.
+- **A report shows its gaps.** `unavailable`, `not_detected`, `blocked_on`,
+  `entities_without_source` — a report that only showed what works would reassure
+  wrongly, which is worse than showing nothing.
+
+## Unattended work (VOLETs 47–67)
+
+A routine is work the platform does with nobody watching, and everything expensive is
+checked when it is **declared**, not when it fires at three in the morning. Declaring is
+not enabling. A routine belongs to someone or to the platform, never to nobody.
+
+Since VOLET 64 a routine can fire a **workflow** through the one orchestrator — the same
+plan, checkpoints, execution history and `REQUEST` audit event as a person's request. A
+second execution path without those guarantees would have been the parallel
+implementation the directive forbids. What differs is not the machinery but what can be
+decided: **an approval is never granted by the absence of someone to refuse it**. A run
+that stops on `requires_approval` is reported `suspended` with its `run_id`, and a human
+resumes it.
+
+Cost follows the same reasoning. The budget used to count **turns**; a turn stopped
+being a unit of cost the day it could run a whole workflow, so work is capped separately
+in agents executed — counted after execution, because a workflow's cost is not known
+before it has run.
+
+`GET /orchestrator/paths` publishes both entry paths and what the unattended one cannot
+decide.
+
+## Subsystems and degradation (VOLET 65)
+
+`EngineRegistry` isolates its fourteen engines: one that cannot be built is recorded and
+never propagates. The nine subsystems built afterwards — routines, checkpoints, delivery
+channels, world knowledge, routing, plugins, memory layers, source registry,
+orchestration — are probed (the sandbox is measured inside the plugin probe) by `src/integration/degradation.py`, each in isolation. A
+probe that raises is reported `UNAVAILABLE`, never propagated.
+
+**Degraded is not down.** A subsystem that says what it is missing works as designed: it
+does not flip the global status and does not cost readiness. Each state carries *what
+still works without it*, because "degraded" alone does not say whether to act tonight or
+on Monday. Probing all nine costs ~70 ms against a 50 ms supervision target, so
+`/health` takes it on request (`?subsystems=true`); the full report lives on
+`GET /system/degradation` and requires a key.
+
+## Following one job (VOLET 66)
+
+A routine turn carries a `correlation_id`, set before its guards run, and the workflow it
+fires takes that identifier as its `request_id` — hence the `request_id` of its audit
+events. `GET /observability/trail/{id}` assembles what each store knows about that one
+job, calling the audit trace that has existed since VOLET 19 rather than writing a second
+reader. An empty source and an unreadable one are never merged, and nothing is correlated
+by time.
+
+## Demonstration (VOLET 69)
+
+`python scripts/demonstration.py` runs the real chain end to end and reports what
+happened — including the steps that cannot run here, with the reason, verified at run
+time. It caught a real defect on its first run: the routing was handing whole questions
+to `answer_country()`, which expects a country name. Details →
+`docs/demonstration/README.md`.
 
 ## Design Principles
 - Start simple and grow gradually
@@ -243,6 +349,40 @@ for the roadmap and fail to load with an explicit message.
 - Make the system understandable by Claude Code over many years
 - Keep clear separation between documentation, configuration and code
 
+## Coding Engine (ADR-028)
+`src/coding_engine/` drives three external open-source engines behind an
+interface the platform owns: **Aider** (Apache-2.0, targeted edits, subprocess),
+**SWE-agent** (MIT, issue resolution, subprocess, needs Docker) and
+**OpenHands** (MIT, autonomous implementation, HTTP to its agent server
+container).
+
+None of them is a dependency and none of their code is vendored — `requirements.txt`
+is unchanged. Each is installed in its own virtualenv
+(`scripts/install_coding_engines.sh`) after installing `aider-chat` into the
+platform environment downgraded numpy and broke the Vision Engine. The platform
+runs with zero, one, two or three of them available; a missing engine reports how
+to fix it and the router never selects it.
+
+Execution goes through **`src/sandbox`**, not through a second subprocess loop:
+kernel limits, group cleanup, and the environment whitelist are the platform's,
+with a coding-sized policy in `src/coding_engine/execution.py`. Approvals use the
+Approval Engine (ADR-006) and every run is recorded under the `coding` audit
+event type. A task needing approval is **refused** when the Approval Engine is
+unavailable — a missing gate is not an open gate.
+
+Guide: `docs/architecture/coding-engine.md`.
+
+## Interoperability (ADR-023)
+`src/interop/opengap.py` publishes the 17 registry agents in the OpenGAP format
+(`interop/opengap/<agent>/{agent.yaml,SOUL.md}`), readable by any tool that
+implements it. The **specification** is implemented, the upstream TypeScript code
+is not vendored; `third_party/opengap/` carries the MIT licence and the field
+reference, so the platform survives the upstream repository being deleted.
+
+`src/code_edit/edit_blocks.py` applies model-proposed changes deterministically —
+the model names the exact text to replace, the platform applies it, nothing
+outside the given root is written, and a batch is all-or-nothing.
+
 ## Architecture Decision Records (ADRs)
 All important technical decisions must be recorded in:
 `docs/architecture/decisions/`
@@ -250,8 +390,19 @@ All important technical decisions must be recorded in:
 Each decision will have its own file (example: `001-choose-tech-stack.md`).
 
 ## Next Architecture Steps
-1. Decide how provider credentials are supplied (ADR required). The provider
-   architecture is in place; keys are the only thing standing between the
-   platform and working text generation on hosted models.
-2. Decide on the persistent storage backend for the engines (ADR required)
+*Both former items are decided: storage is ADR-005, sovereignty and the framed derogation
+are ADR-014 and ADR-018. What follows is what is genuinely open, and none of it is a
+decision — it is work waiting on someone or something outside this repository.*
+
+1. **C1 — a local model that answers.** `ollama serve` with a context of 8 192 or more.
+   It gates generation, semantic retrieval, and L4 of the language plan.
+2. **Real Senegalese institutional documents.** *Updated 2026-08-14.* The gated
+   acquisition path is built (ADR-021, `src/acquisition/`) and a Senegalese knowledge
+   layer exists — 14 regions, 45 departments and 212 sector objects, all derived from
+   acquired sources with full provenance. What is still missing is the **institutional**
+   corpus: the nine `.sn` domains in the registry are refused by this environment's proxy
+   (`CONNECT → 403`, measured by `scripts/activate_senegal_sources.py`), and that is an
+   environment policy, not a site refusal. Six of sixteen domains are populated; history,
+   culture, agriculture, health, education and law hold nothing, and say so.
+3. **The `v0.1.0` tag** has never been pushed; it is the single red test in CI.
 3. Expose the engines through an API layer

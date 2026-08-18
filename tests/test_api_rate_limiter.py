@@ -14,7 +14,7 @@ Couvre :
 import os
 import sys
 import time
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 from fastapi import FastAPI, Depends
@@ -28,7 +28,6 @@ from src.api.rate_limiter import (
     APIRateLimiter,
     InMemoryRateLimiter,
     RateLimitConfig,
-    RateLimitInfo,
     get_rate_limiter,
     set_valid_api_key_digests,
     rate_limit_dependency,

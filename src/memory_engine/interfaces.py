@@ -5,8 +5,8 @@ Defines abstract base classes that specify the contracts for memory engine compo
 """
 
 import abc
-from typing import Any, Dict, List, Optional, Tuple, Union
-from .types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
+from typing import Any, Dict, List, Optional, Tuple
+from .types import MemoryItem, MemoryType, MemoryStatus
 
 
 class MemoryStore(abc.ABC):

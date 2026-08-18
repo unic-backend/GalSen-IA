@@ -2,7 +2,7 @@
 Image preprocessing components for the Vision Intelligence Engine.
 """
 
-from typing import Dict, Any, Optional, Tuple
+from typing import Optional, Tuple
 from .interfaces import ImagePreprocessor
 from .types import ImageItem
 import logging
@@ -27,8 +27,9 @@ class SimpleImagePreprocessor(ImagePreprocessor):
             normalize: If True, normalize pixel values to [0, 1] float32.
         """
         try:
-            from PIL import Image
-            import numpy as np
+            # Importés pour éprouver leur disponibilité, pas pour être utilisés ici.
+            from PIL import Image  # noqa: F401
+            import numpy as np  # noqa: F401
             self.PIL_AVAILABLE = True
             self.np_AVAILABLE = True
         except ImportError:
@@ -53,7 +54,6 @@ class SimpleImagePreprocessor(ImagePreprocessor):
         normalize = kwargs.get("normalize", self.normalize)
 
         # Load image from bytes
-        from io import BytesIO
         try:
             img = Image.open(BytesIO(image_item.data))
         except Exception as e:

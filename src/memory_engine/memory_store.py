@@ -7,8 +7,8 @@ Abstract base class for memory storage and an in-memory implementation.
 import abc
 import threading
 import time
-from typing import Any, Dict, List, Optional
-from .types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
+from typing import Dict, List, Optional
+from .types import MemoryItem, MemoryType, MemoryStatus
 
 
 class BaseMemoryStore(abc.ABC):

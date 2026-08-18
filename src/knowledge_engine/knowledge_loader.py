@@ -2,11 +2,10 @@
 Chargeur de connaissances pour divers formats de fichiers et sources.
 """
 
-from typing import List, Any
+from typing import List
 from .types import KnowledgeItem, KnowledgeSource, ContentType, Language
 from .interfaces import KnowledgeLoader
 import os
-import mimetypes
 import json
 import csv
 import html

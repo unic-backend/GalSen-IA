@@ -9,6 +9,9 @@ import datetime
 import hashlib
 
 
+from ..tool.capabilities import DataScope  # noqa: E402  (portée déclarée, VOLET 40)
+from .scope import KnowledgeSubject  # noqa: E402  (axes du VOLET 35)
+
 class KnowledgeType(Enum):
     """Types de connaissances."""
     FACT = "fact"
@@ -31,7 +34,16 @@ class ContentType(Enum):
 
 
 class Language(Enum):
-    """Langues supportées."""
+    """Langues qu'un document peut déclarer.
+
+    « Supportée » veut dire **étiquetable, stockable, filtrable et retrouvable
+    lexicalement** dans cette langue — pas comprise. Ce que la plateforme sait
+    réellement faire par langue est mesuré par `language_support()`
+    (`src/knowledge_engine/languages.py`), capacité par capacité.
+
+    `WO` (wolof) et `FF` (pulaar) sont des codes ISO 639-1 ; le sérère n'en a
+    pas, `SRR` est son code ISO 639-3.
+    """
     FR = "fr"
     EN = "en"
     ES = "es"
@@ -43,6 +55,68 @@ class Language(Enum):
     ZU = "zu"
     AF = "af"
     AM = "am"
+    # Langues nationales du Sénégal (VOLET 36, ch. B). Sans elles, un document
+    # wolof ne pouvait entrer qu'étiqueté dans une langue qui n'est pas la sienne.
+    WO = "wo"
+    FF = "ff"
+    SRR = "srr"
+
+
+class KnowledgeDomain(Enum):
+    """Domaines de connaissance définis par le VOLET 05 (chapitres 01 et 02).
+
+    Le chapitre 02 exige que la connaissance soit organisée avant d'être
+    consommée : le domaine est le premier niveau de cette organisation, au-dessus
+    des catégories libres. Il est fermé volontairement — un domaine que personne
+    ne peut nommer ne peut pas non plus recevoir un propriétaire ni un cycle de
+    revue (chapitre 06).
+
+    UNSPECIFIED est la valeur par défaut : elle dit « pas encore classé », et ne
+    doit jamais être confondue avec un classement réel.
+    """
+    BUSINESS = "business"
+    TECHNICAL = "technical"
+    OPERATIONAL = "operational"
+    LEGAL = "legal"
+    AI = "ai"
+    USER_DOCUMENTATION = "user_documentation"
+    PROJECT_DOCUMENTATION = "project_documentation"
+    UNSPECIFIED = "unspecified"
+
+
+class KnowledgeSensitivity(Enum):
+    """Sensibilité d'une connaissance (VOLET 05, chapitre 02 — classification).
+
+    Répond à « qu'est-ce qui doit être protégé », pas à « qui y a droit » : la
+    correspondance entre sensibilité et rôles appartient au chapitre 07.
+    PUBLIC est la valeur par défaut — une connaissance dont personne n'a déclaré
+    la sensibilité ne doit pas être traitée comme protégée par accident.
+    """
+    PUBLIC = "public"
+    INTERNAL = "internal"
+    CONFIDENTIAL = "confidential"
+    RESTRICTED = "restricted"
+
+
+class KnowledgeStatus(Enum):
+    """Statut d'une connaissance dans son cycle de vie (VOLET 05, chapitres 02 et 04).
+
+    Un seul axe pour les deux chapitres, qui nomment la même progression avec des
+    mots différents : le chapitre 02 liste Draft, Reviewed, Approved, Archived ;
+    le chapitre 04 liste Draft, Under Review, Verified, Approved, Deprecated.
+    REVIEWED porte ce que le chapitre 04 appelle « Verified ». Deux énumérations
+    pour une même progression seraient la duplication que le chapitre 02 interdit.
+
+    ARCHIVED et DEPRECATED ne sont pas synonymes : une connaissance archivée est
+    retirée de l'usage courant mais reste vraie, une connaissance dépréciée ne
+    doit plus être utilisée comme référence.
+    """
+    DRAFT = "draft"
+    UNDER_REVIEW = "under_review"
+    REVIEWED = "reviewed"
+    APPROVED = "approved"
+    ARCHIVED = "archived"
+    DEPRECATED = "deprecated"
 
 
 class ConfidenceLevel(Enum):
@@ -121,6 +195,15 @@ class KnowledgeSource:
     url: Optional[str] = None  # URL de la source si applicable
     citation: Optional[str] = None  # citation complète de la source
     retrieved_at: Optional[datetime.datetime] = None  # date de récupération
+    # La portée déclarée de l'origine, au vocabulaire de `src/tool/capabilities.py`.
+    # La base de connaissance est un magasin **partagé** : une source privée n'y
+    # entre pas (VOLET 40). Le défaut est `public` parce que c'est la vérité des
+    # sources existantes — fichiers du dépôt, agents, acquisition — et parce
+    # qu'un connecteur ne choisit pas cette valeur : elle est **dérivée** de sa
+    # capacité déclarée, jamais écrite à la main par un appelant.
+    data_scope: DataScope = DataScope.PUBLIC
+    # À qui appartient la donnée, quand la portée est `user_private`.
+    subject: Optional[str] = None
 
 
 @dataclass
@@ -131,6 +214,16 @@ class KnowledgeItem:
     knowledge_type: KnowledgeType = KnowledgeType.FACT
     content_type: ContentType = ContentType.TEXT
     language: Language = Language.FR
+    domain: KnowledgeDomain = KnowledgeDomain.UNSPECIFIED
+    # Les deux axes du VOLET 35, indépendants de `domain` : celui-ci classe la
+    # documentation **de la plateforme**, ceux-là classent la connaissance **du
+    # monde**. `scope` dit d'où elle vaut, `subject` de quoi elle parle.
+    # Le défaut est « mondial, non classé » : une connaissance sans portée
+    # déclarée n'est pas sénégalaise par accident.
+    scope: str = "global"
+    subject: KnowledgeSubject = KnowledgeSubject.UNSPECIFIED
+    sensitivity: KnowledgeSensitivity = KnowledgeSensitivity.PUBLIC
+    status: KnowledgeStatus = KnowledgeStatus.DRAFT
     tags: List[str] = field(default_factory=list)
     categories: List[str] = field(default_factory=list)
     source: KnowledgeSource = field(default_factory=lambda: KnowledgeSource(id="unknown", type="unknown", location="unknown"))
@@ -167,6 +260,13 @@ class KnowledgeItem:
             knowledge_type=self.knowledge_type,
             content_type=self.content_type,
             language=self.language,
+            domain=self.domain,
+            scope=self.scope,
+            subject=self.subject,
+            sensitivity=self.sensitivity,
+            # Un contenu réécrit n'est plus celui qui avait été revu : il repart en
+            # brouillon et devra repasser par le cycle du chapitre 03.
+            status=KnowledgeStatus.DRAFT,
             tags=self.tags.copy(),
             categories=self.categories.copy(),
             source=source or self.source,

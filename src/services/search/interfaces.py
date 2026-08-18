@@ -8,7 +8,7 @@ et `SearchManager` (orchestrateur multi-source). Tout moteur de recherche
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import List
 
 from .types import SearchQuery, SearchResultItem, SearchResponse, SearchSource
 
@@ -45,6 +45,16 @@ class SearchManager(ABC):
     @abstractmethod
     def register_provider(self, provider: SearchProvider) -> None:
         """Enregistre un fournisseur de recherche."""
+
+    @abstractmethod
+    def registered_sources(self) -> List[SearchSource]:
+        """
+        Retourne les sources réellement branchées.
+
+        Une liste vide signifie que le service ne peut rien trouver : sans cette
+        distinction, une recherche sans fournisseur rend « aucun résultat », ce
+        qui se lit comme une base vide au lieu d'un composant absent.
+        """
 
     @abstractmethod
     def search(self, query: SearchQuery) -> SearchResponse:

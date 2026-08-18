@@ -14,11 +14,12 @@ from .interfaces import FileManager, FileStore
 from .store import InMemoryFileStore
 from .types import (
     DEFAULT_MAX_FILE_SIZE,
-    FileCategory,
     FileItem,
+    FileSummary,
     FileUploadResult,
     get_category_for_content_type,
 )
+from src.storage.paths import storage_backend
 
 logger = logging.getLogger(__name__)
 
@@ -26,15 +27,48 @@ logger = logging.getLogger(__name__)
 class FileManagerImpl(FileManager):
     """Façade du service de fichiers, toujours disponible en mémoire."""
 
+    # ADR-016 fait du service de fichiers le seul chemin d'écriture de la
+    # plateforme ; il porte donc les quatre magasins, dont les deux qui
+    # n'existaient que sous le service `cloud`.
+    BACKEND_ENV = "GALSEN_FILE_BACKEND"
+    BACKENDS = ("in-memory", "sqlite", "filesystem", "s3")
+
     def __init__(self, store: Optional[FileStore] = None) -> None:
-        if store is not None:
-            self._store = store
-        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
-            from src.storage.sqlite_file_store import SQLiteFileStore
-            self._store = SQLiteFileStore()
-        else:
-            self._store = InMemoryFileStore()
         self._logger = logging.getLogger(f"{__name__}.FileManagerImpl")
+        self._store = store if store is not None else self._construire_magasin()
+
+    def _construire_magasin(self) -> FileStore:
+        """
+        Construit le magasin demandé par la configuration.
+
+        `GALSEN_FILE_BACKEND` prime sur `GALSEN_STORAGE_BACKEND` : `filesystem`
+        et `s3` n'ont de sens que pour des fichiers, et les imposer aux autres
+        services par la variable générale serait faux.
+
+        Une valeur inconnue **n'est pas devinée** : elle est signalée et le
+        magasin par défaut s'applique, comme partout ailleurs dans la
+        configuration de la plateforme.
+        """
+        demande = os.getenv(self.BACKEND_ENV, "").strip().lower()
+        if demande and demande not in self.BACKENDS:
+            self._logger.error(
+                "%s='%s' inconnu (valeurs acceptées : %s) — magasin par défaut appliqué",
+                self.BACKEND_ENV, demande, ", ".join(self.BACKENDS),
+            )
+            demande = ""
+        if not demande:
+            demande = storage_backend()
+
+        if demande == "sqlite":
+            from src.storage.sqlite_file_store import SQLiteFileStore
+            return SQLiteFileStore()
+        if demande == "filesystem":
+            from .store_fs import FileSystemFileStore
+            return FileSystemFileStore()
+        if demande == "s3":
+            from .store_s3 import S3FileStore
+            return S3FileStore()
+        return InMemoryFileStore()
 
     def _validate_file(
         self,
@@ -108,8 +142,8 @@ class FileManagerImpl(FileManager):
         category: Optional[str] = None,
         content_type: Optional[str] = None,
         uploaded_by: Optional[str] = None,
-    ) -> List[FileItem]:
-        """Retourne les fichiers filtrés."""
+    ) -> List[FileSummary]:
+        """Retourne les fichiers filtrés, **sans leur contenu** (ADR-016)."""
         try:
             return self._store.list_files(
                 limit=limit,

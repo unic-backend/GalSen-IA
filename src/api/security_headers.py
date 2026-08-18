@@ -21,6 +21,7 @@ from typing import List
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+from src.api.trusted_proxies import forwarded_proto
 
 logger = logging.getLogger(__name__)
 
@@ -100,10 +101,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         Derrière un répartiteur de charge, le schéma vu par l'application est
         `http` : c'est l'en-tête `X-Forwarded-Proto` qui porte l'information.
+
+        Comme pour l'adresse du client, l'en-tête n'est cru que d'un proxy
+        déclaré : sans cela, un appelant peut faire poser un en-tête HSTS sur
+        une réponse qui n'a jamais été chiffrée.
         """
-        if request.url.scheme == "https":
-            return True
-        return request.headers.get("x-forwarded-proto", "").lower() == "https"
+        return forwarded_proto(request) == "https"
 
 
 def allowed_origins() -> List[str]:

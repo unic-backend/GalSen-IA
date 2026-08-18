@@ -8,6 +8,13 @@ ou les services externes.
 Référence : VOLET 02, Chapitres 03 (Backend), 09 (Integration).
 """
 
+from .channels import (
+    ChannelRegistry,
+    ChannelState,
+    DeliveryChannel,
+    load_channels,
+)
+from .events import ROLE_EXPLOITATION, PlatformNotifier
 from .interfaces import NotificationManager, NotificationStore
 from .manager import NotificationManagerImpl
 from .store import InMemoryNotificationStore
@@ -20,6 +27,9 @@ from .types import (
 )
 
 __all__ = [
+    "ChannelRegistry",
+    "ChannelState",
+    "DeliveryChannel",
     "InMemoryNotificationStore",
     "Notification",
     "NotificationManager",
@@ -28,5 +38,8 @@ __all__ = [
     "NotificationStats",
     "NotificationStore",
     "NotificationType",
+    "PlatformNotifier",
+    "ROLE_EXPLOITATION",
+    "load_channels",
     "generate_notification_id",
 ]

@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: planner
+version: 0.1.0
+description: Découpe les objectifs en tâches.
+author: GalSen IA
+tags:
+- galsen-ia
+- planning-agent
+metadata:
+  galsen_role: Planning Agent
+  galsen_module: agents.planner.agent
+  galsen_priority: 95
+  galsen_enabled: true

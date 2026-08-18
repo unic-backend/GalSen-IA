@@ -23,10 +23,9 @@ from abc import ABC, abstractmethod
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
-from email.utils import formataddr, formatdate
+from email.utils import formatdate
 from typing import Dict, List, Optional, Tuple
 
-from .types import EmailMessage, EmailSendResult
 
 logger = logging.getLogger(__name__)
 
@@ -242,10 +241,18 @@ class ConsoleTransport(EmailTransport):
 
 class NoopTransport(EmailTransport):
     """
-    Transport email qui ne fait rien.
+    Transport utilisé quand aucun transport e-mail n'est configuré.
 
-    Utilisé par défaut : l'email est stocké mais pas envoyé réellement.
-    Comportement historiquement équivalent à l'ancien EmailManagerImpl.
+    Il n'envoie rien, et **le dit**. Il retournait auparavant un succès, si bien
+    que `send_email()` répondait « Email envoyé à 1 destinataire(s) » et
+    enregistrait le message avec le statut `sent` alors qu'aucun serveur n'avait
+    été contacté. Un appelant ne pouvait pas distinguer un envoi réel d'un envoi
+    imaginaire — le mode d'échec que `.claude/rules/verification.md` interdit :
+    une capacité inachevée rapporte son état, elle ne rend jamais une réponse
+    plausible.
+
+    Le message reste stocké : ce qu'un utilisateur a rédigé ne doit pas
+    disparaître parce que l'infrastructure manque.
     """
 
     def send(
@@ -259,9 +266,16 @@ class NoopTransport(EmailTransport):
         bcc: Optional[List[str]] = None,
         attachments: Optional[List[Dict]] = None,
     ) -> Tuple[bool, str]:
-        """Ne fait rien (comportement historique)."""
-        logger.debug("NoopTransport : email '%s' ignoré (aucun transport configuré)", subject)
-        return True, ""
+        """N'envoie rien et rapporte pourquoi."""
+        logger.warning(
+            "Aucun transport e-mail configuré : « %s » n'a pas été envoyé à %d destinataire(s).",
+            subject, len(recipients),
+        )
+        return False, (
+            "Aucun transport e-mail configuré : le message est enregistré mais n'a "
+            "été envoyé à personne. Renseignez GALSEN_SMTP_HOST et les variables "
+            "SMTP associées décrites dans .env.example pour un envoi réel."
+        )
 
 
 def _html_to_plain(html: str) -> str:

@@ -1,6 +1,10 @@
 """
 Tests unitaires pour la persistance SQLite des stores de services
-(Notification, Calendar, Email, Cloud, File).
+(Notification, Calendar, Email, File).
+
+Le magasin SQLite du service cloud a été retiré avec les quatre magasins
+cloud (ADR-016) : ce service ne stocke plus rien, il traduit les routes
+dépréciées `/cloud/*` vers le service de fichiers.
 
 Couvre pour chaque store :
 - Opérations CRUD : save, get, delete
@@ -22,22 +26,18 @@ Et le branchement des managers (GALSEN_STORAGE_BACKEND) :
 import os
 import sys
 import threading
-import tempfile
 
-import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.storage.sqlite_notification_store import SQLiteNotificationStore
 from src.storage.sqlite_calendar_store import SQLiteCalendarStore
 from src.storage.sqlite_email_store import SQLiteEmailStore
-from src.storage.sqlite_cloud_store import SQLiteCloudStore
 from src.storage.sqlite_file_store import SQLiteFileStore
 
 from src.services.notification.types import Notification, NotificationType, NotificationPriority
-from src.services.calendar.types import CalendarEvent, EventStatus, EventVisibility
+from src.services.calendar.types import CalendarEvent, EventStatus
 from src.services.email.types import EmailMessage, EmailAttachment, EmailStatus
-from src.services.cloud.types import CloudFileItem, CloudProvider, CloudFileCategory
 from src.services.file.types import FileItem, FileCategory
 
 
@@ -217,8 +217,10 @@ class TestSQLiteNotificationStore:
                 errors.append(exc)
 
         threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
-        for t in threads: t.start()
-        for t in threads: t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
         assert errors == []
         assert store.count() == 50
@@ -347,8 +349,10 @@ class TestSQLiteCalendarStore:
                 errors.append(exc)
 
         threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
-        for t in threads: t.start()
-        for t in threads: t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
         assert errors == []
         assert store.count() == 50
@@ -502,148 +506,10 @@ class TestSQLiteEmailStore:
                 errors.append(exc)
 
         threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
-        for t in threads: t.start()
-        for t in threads: t.join()
-
-        assert errors == []
-        assert store.count() == 50
-
-
-# ==============================================================================
-# SQLiteCloudStore
-# ==============================================================================
-
-class TestSQLiteCloudStore:
-
-    def _make_cloud_item(self, **kwargs) -> CloudFileItem:
-        defaults = dict(
-            name="test.pdf",
-            content_type="application/pdf",
-            size=1024,
-            provider=CloudProvider.LOCAL,
-            category=CloudFileCategory.DOCUMENT,
-        )
-        defaults.update(kwargs)
-        if "id" not in kwargs:
-            defaults["id"] = f"cloud_{id(kwargs)}"
-        return CloudFileItem(**defaults)
-
-    def test_save_and_get(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        item = self._make_cloud_item()
-        data = b"Binary content here"
-        store.save(item, data)
-        retrieved = store.get(item.id)
-        assert retrieved is not None
-        assert retrieved.name == "test.pdf"
-        assert retrieved.category is CloudFileCategory.DOCUMENT
-
-    def test_get_data(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        item = self._make_cloud_item()
-        data = b"binary data to verify"
-        store.save(item, data)
-        assert store.get_data(item.id) == data
-
-    def test_get_data_missing_returns_none(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        assert store.get_data("inconnu") is None
-
-    def test_get_missing_returns_none(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        assert store.get("inconnu") is None
-
-    def test_list_files(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        store.save(self._make_cloud_item(id="a", provider=CloudProvider.LOCAL), b"a")
-        store.save(self._make_cloud_item(id="b", provider=CloudProvider.S3), b"b")
-        store.save(self._make_cloud_item(id="c", category=CloudFileCategory.IMAGE), b"c")
-
-        assert len(store.list_files()) == 3
-        assert len(store.list_files(provider="s3")) == 1
-        assert len(store.list_files(category="image")) == 1
-
-    def test_list_files_limit(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        for i in range(5):
-            store.save(self._make_cloud_item(id=f"f{i}"), b"d")
-        assert len(store.list_files(limit=2)) == 2
-
-    def test_delete(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        item = self._make_cloud_item()
-        store.save(item, b"data")
-        assert store.delete(item.id) is True
-        assert store.get(item.id) is None
-        assert store.get_data(item.id) is None
-        assert store.delete(item.id) is False
-
-    def test_update_metadata(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        item = self._make_cloud_item()
-        store.save(item, b"data")
-        assert store.update_metadata(item.id, {"project": "GalSen"}) is True
-        retrieved = store.get(item.id)
-        assert retrieved.metadata["project"] == "GalSen"
-
-    def test_update_metadata_missing_returns_false(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        assert store.update_metadata("inconnu", {"x": "y"}) is False
-
-    def test_stats(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        store.save(self._make_cloud_item(id="a", size=1000), b"a" * 1000)
-        store.save(self._make_cloud_item(id="b", size=2000), b"b" * 2000)
-        s = store.stats()
-        assert s["total"] == 2
-        assert s["total_size"] == 3000
-
-    def test_total_size(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        assert store.total_size() == 0
-        store.save(self._make_cloud_item(id="a", size=500), b"a" * 500)
-        assert store.total_size() == 500
-
-    def test_clear(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        store.save(self._make_cloud_item(id="a"), b"d")
-        assert store.clear() == 1
-        assert store.count() == 0
-
-    def test_count(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        assert store.count() == 0
-        store.save(self._make_cloud_item(id="a"), b"d")
-        assert store.count() == 1
-
-    def test_persistence_across_reopen(self, tmp_path):
-        db_path = str(tmp_path / "persist.sqlite")
-        store = SQLiteCloudStore(db_path=db_path)
-        store.save(self._make_cloud_item(id="persist", name="survived.pdf"), b"persist data")
-        reopened = SQLiteCloudStore(db_path=db_path)
-        assert reopened.get("persist").name == "survived.pdf"
-        assert reopened.get_data("persist") == b"persist data"
-
-    def test_memory_mode(self):
-        store = SQLiteCloudStore(db_path=":memory:")
-        store.save(self._make_cloud_item(id="mem"), b"mem data")
-        assert store.get("mem").name == "test.pdf"
-        assert store.get_data("mem") == b"mem data"
-
-    def test_concurrent_saves(self, tmp_path):
-        store = SQLiteCloudStore(db_path=str(tmp_path / "cloud.sqlite"))
-        errors = []
-
-        def worker(index):
-            try:
-                for j in range(10):
-                    store.save(self._make_cloud_item(id=f"t{index}-{j}"), b"d")
-            except Exception as exc:
-                errors.append(exc)
-
-        threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
-        for t in threads: t.start()
-        for t in threads: t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
         assert errors == []
         assert store.count() == 50
@@ -801,8 +667,10 @@ class TestSQLiteFileStore:
                 errors.append(exc)
 
         threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
-        for t in threads: t.start()
-        for t in threads: t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
         assert errors == []
         assert store.count() == 50
@@ -865,18 +733,17 @@ class TestServiceBackendSelection:
         manager = EmailManagerImpl()
         assert isinstance(manager._store, InMemoryEmailStore)
 
-    def test_cloud_manager_uses_sqlite_when_env_set(self, tmp_path, monkeypatch):
+    def test_cloud_manager_suit_le_service_de_fichiers(self, tmp_path, monkeypatch):
+        """
+        Le service cloud n'a plus de magasin (ADR-016) : il délègue, donc son
+        stockage est celui du service de fichiers et suit la même configuration.
+        """
+        monkeypatch.setenv("GALSEN_DATA_DIR", str(tmp_path))
         monkeypatch.setenv("GALSEN_STORAGE_BACKEND", "sqlite")
         from src.services.cloud.manager import CloudManagerImpl
         manager = CloudManagerImpl()
-        assert isinstance(manager._store, SQLiteCloudStore)
-
-    def test_cloud_manager_defaults_in_memory(self, monkeypatch):
-        monkeypatch.delenv("GALSEN_STORAGE_BACKEND", raising=False)
-        from src.services.cloud.manager import CloudManagerImpl
-        from src.services.cloud.store import InMemoryCloudStore
-        manager = CloudManagerImpl()
-        assert isinstance(manager._store, InMemoryCloudStore)
+        assert not hasattr(manager, "_store")
+        assert isinstance(manager._files._store, SQLiteFileStore)
 
     def test_file_manager_uses_sqlite_when_env_set(self, tmp_path, monkeypatch):
         monkeypatch.setenv("GALSEN_STORAGE_BACKEND", "sqlite")

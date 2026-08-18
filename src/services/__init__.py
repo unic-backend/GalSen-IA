@@ -29,9 +29,7 @@ from .cloud import (
     CloudManager,
     CloudManagerImpl,
     CloudProvider,
-    CloudStore,
     CloudSyncResult,
-    InMemoryCloudStore as InMemoryCloudStoreImpl,
     generate_cloud_file_id,
 )
 from .email import (
@@ -49,6 +47,7 @@ from .file import (
     DEFAULT_MAX_FILE_SIZE,
     FileCategory,
     FileItem,
+    FileSummary,
     FileManager,
     FileManagerImpl,
     FileStore,
@@ -83,9 +82,7 @@ __all__ = [
     "CloudManager",
     "CloudManagerImpl",
     "CloudProvider",
-    "CloudStore",
     "CloudSyncResult",
-    "InMemoryCloudStoreImpl",
     "generate_cloud_file_id",
     # Calendar
     "CalendarEvent",
@@ -128,6 +125,7 @@ __all__ = [
     "DEFAULT_MAX_FILE_SIZE",
     "FileCategory",
     "FileItem",
+    "FileSummary",
     "FileManager",
     "FileManagerImpl",
     "FileStore",

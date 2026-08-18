@@ -24,10 +24,11 @@ import os
 import threading
 import time
 
-from fastapi import Depends, HTTPException, Request, Security
+from fastapi import HTTPException, Request, Security
 from fastapi.security.api_key import APIKeyHeader
 
 from src.api.rbac import hash_api_key, key_fingerprint
+from src.api.trusted_proxies import client_ip
 
 # ---------------------------------------------------------------------------
 # Modèles de données
@@ -311,7 +312,11 @@ def _env_float(name: str, default: float) -> float:
 def _get_client_ip(request: Request) -> str:
     """Extrait l'adresse IP du client depuis la requête.
 
-    Gère les proxys inverses en vérifiant les en-têtes standards.
+    `X-Forwarded-For` était lu sans condition : n'importe quel appelant pouvait
+    l'envoyer, changer d'adresse à chaque requête, et obtenir ainsi un quota
+    illimité tout en restant invisible du détecteur de menaces. L'en-tête n'est
+    désormais cru que d'un proxy déclaré dans `GALSEN_TRUSTED_PROXIES`
+    (`src/api/trusted_proxies.py`).
 
     Args:
         request: La requête FastAPI.
@@ -319,18 +324,7 @@ def _get_client_ip(request: Request) -> str:
     Returns:
         L'adresse IP du client sous forme de chaîne.
     """
-    # Vérifier les en-têtes de proxy pour l'IP réelle
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        # Prendre la première IP de la liste (celle du client d'origine)
-        return forwarded.split(",")[0].strip()
-
-    # Fallback sur l'IP directe
-    if request.client and request.client.host:
-        return request.client.host
-
-    # Dernier recours
-    return "unknown"
+    return client_ip(request)
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,33 @@
+# Delivery channels for notifications (VOLET 50, phase 50.2).
+#
+# Declarative on purpose: adding a channel must not require touching the code.
+# Nothing here holds a secret — `requires` names the environment variables a
+# channel needs, and the platform only ever checks whether they are set.
+#
+# `shared: true` means the destination is read by more people than the person a
+# notification is addressed to. Such a channel carries **platform** events only;
+# a notification belonging to someone never leaves through it (VOLET 40).
+
+channels:
+
+  in_app:
+    description: "La boîte de la plateforme : le magasin de notifications déjà en place."
+    kind: internal
+    shared: false
+    requires: []
+
+  email:
+    description: "Courriel adressé au destinataire de la notification."
+    kind: external
+    shared: false
+    requires:
+      - GALSEN_SMTP_HOST
+      - GALSEN_SMTP_USER
+      - GALSEN_SMTP_PASSWORD
+
+  webhook:
+    description: "Point d'entrée d'exploitation (salon d'équipe, supervision)."
+    kind: external
+    shared: true
+    requires:
+      - GALSEN_NOTIFICATION_WEBHOOK_URL

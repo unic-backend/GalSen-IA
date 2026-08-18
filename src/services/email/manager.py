@@ -10,13 +10,13 @@ n'est fourni, utilise `NoopTransport` (stockage mémoire uniquement).
 """
 
 import logging
-import os
 from typing import Any, Dict, List, Optional
 
 from .interfaces import EmailManager, EmailStore
 from .store import InMemoryEmailStore
 from .transport import EmailTransport, NoopTransport
 from .types import EmailMessage, EmailSendResult, EmailStatus
+from src.storage.paths import sqlite_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class EmailManagerImpl(EmailManager):
     ) -> None:
         if store is not None:
             self._store = store
-        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
+        elif sqlite_enabled():
             from src.storage.sqlite_email_store import SQLiteEmailStore
             self._store = SQLiteEmailStore()
         else:
@@ -72,10 +72,10 @@ class EmailManagerImpl(EmailManager):
                 bcc=bcc,
                 attachments=None,
             )
-            if not transport_ok:
-                return EmailSendResult(False, transport_msg)
-
-            # Sauvegarder dans le store
+            # Le message est enregistré dans tous les cas : ce qu'un utilisateur a
+            # rédigé ne doit pas disparaître parce que l'infrastructure manque. Le
+            # statut dit ce qui s'est réellement passé — `sent` seulement quand un
+            # transport a accepté le message (VOLET 12, ch. 02, étape 5).
             message = EmailMessage(
                 subject=subject.strip(),
                 body=body,
@@ -84,11 +84,21 @@ class EmailManagerImpl(EmailManager):
                 cc=cc or [],
                 bcc=bcc or [],
                 is_html=is_html,
-                status=EmailStatus.SENT,
+                status=EmailStatus.SENT if transport_ok else EmailStatus.FAILED,
                 metadata=metadata or {},
             )
-            message.mark_sent()
+            if transport_ok:
+                message.mark_sent()
             email_id = self._store.save(message)
+
+            if not transport_ok:
+                return EmailSendResult(
+                    False,
+                    transport_msg,
+                    email_id=email_id,
+                    details={"subject": subject, "recipients": recipients, "cc": cc or [],
+                             "stored": True, "delivered": False},
+                )
             return EmailSendResult(
                 True,
                 f"Email envoyé à {len(recipients)} destinataire(s).",

@@ -69,14 +69,123 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - ALWAYS update `docs/memory/completed-work.md` and `CHANGELOG.md` after meaningful progress.
 
 ## Current Status
-Foundation phase is complete (ADR-001 Python, ADR-002 technology stack).
-The project is now building its **core engines** in `src/` — see `docs/architecture/overview.md`
-for the list, the shared conventions and what remains.
+*Measured 2026-08-17.* Foundation and core engines are done (ADR-001, ADR-002). Fifteen
+engines **plus nine subsystems probed after the registry** (volets 47–64, probed by
+`src/integration/degradation.py`), **17 agents**, **24 declared tools** (13 runnable
+unattended), **133 API routes**, 29 ADRs (ADR-020 is `proposed`; ADR-024 to ADR-027 open the creative programme;
+ADR-023 and ADR-028 add the interop and coding layers) — see
+`docs/architecture/overview.md`, kept synchronized with the measured state.
+**5369 tests pass**, 8 skipped.
 
-Persistence is decided and implemented (ADR-005, SQLite): memory, model and knowledge
-select their store through `GALSEN_STORAGE_BACKEND` (`in-memory` by default, `sqlite` to
-persist) and `GALSEN_DATA_DIR`. The audit and approval engines and the three backend
-services are still in-memory only — extending them reuses `src/storage/`, no new ADR.
+Unattended work is real: a routine can fire a workflow through the one orchestrator, and
+**an approval is never granted by the absence of someone to refuse it**. One job is
+followable end to end (`/observability/trail/{id}`), and
+`python scripts/demonstration.py` runs the whole chain and reports what actually
+happened — 5 steps `OK`, 2 `NOT_CONFIGURED`, 0 failed.
+
+Persistence is decided and implemented (ADR-005, SQLite): every engine holding state —
+audit and approval included — selects its store through `GALSEN_STORAGE_BACKEND`
+(`in-memory` by default, `sqlite` to persist) and `GALSEN_DATA_DIR`.
+
+**The knowledge architecture is where the design lives now** (VOLETs 35 and 36, see the
+overview's *Knowledge architecture* section). Its rules are worth knowing before touching
+`src/knowledge_engine/`:
+
+- Two axes on every item: **scope** (where it holds) and **subject** (what it is about).
+  Law, administration and languages **never** fall back to global knowledge.
+- Reliability comes from `corpus/sources/senegal.yaml`, not from the document claiming it.
+- Nothing enters without a source; entities *and* relations carry their own provenance.
+- External text is **data with an origin**, never an instruction (`src/security/trust.py`).
+- `unknown` is not `no`, and every report shows its own gaps.
+
+## Acquisition and Senegalese knowledge (ADR-021)
+
+A gated acquisition path now exists end to end (`src/acquisition/`,
+`docs/architecture/senegal-knowledge-acquisition.md`): registry → discovery → decision →
+**batch human approval** → polite fetch → trust boundary → ten quality checks → a `DRAFT`
+manifest proposal. It ingests nothing on its own, and **no source is enabled**, so it can
+reach nothing today. That is the rule working, not a failure.
+
+Three knowledge layers are built and measured:
+
+| Layer | State |
+|---|---|
+| Wolof (`src/wolof/`, `src/services/wolof/`) | **2105 sentences**, CLAD orthography, ë/ñ/ŋ preserved |
+| Senegalese administration (`src/services/senegal/`) | **14 regions, 45 departments** derived from geoBoundaries — never written from memory |
+| Sector knowledge | **8 datasets, 212 objects, 271 chunks, 100 % with provenance** |
+
+**6 of 16 domains are populated.** The other ten carry the reason they are empty; the
+retrieval answers `UNKNOWN` for them rather than the least-bad fragment. Queries work in
+French, Wolof and English (`corpus/languages/aliases.yaml`, 16 concepts, 115 terms) at
+0.1–0.5 ms.
+
+Open, and depending on someone outside this repository: **C1** (`ollama serve`) gates
+generation and semantic retrieval; **the nine Senegalese institutional domains are refused
+by this environment's proxy** (`CONNECT → 403`, measured — not a site refusal), so
+history, culture, agriculture, health, education and law hold nothing; the `v0.1.0` tag
+has never been pushed and is the single red test in CI.
+
+## Darra J — educational intelligence (ADR-021 discipline, `src/darra_j/`)
+
+Twenty volets, 28 phases, 21 modules, 377 tests. Full report →
+`docs/darra-j/final-report.md`.
+
+**The state is `ARCHITECTURE READY — OFFICIAL CURRICULUM DATA PENDING`**, and
+`readiness()` measures the register to say it — no flag reaches "ready to serve"
+without a `TIER_A` published version, and a register holding only fixtures
+reports zero official versions. **No Senegalese curriculum has been integrated:**
+none was available, and none was written from model memory.
+
+Rules worth knowing before touching `src/darra_j/`:
+
+- **No canonical record → the model is not called** (`firewall.py`). Not
+  labelled, not discouraged: not called. The evaluation lab measures it on an
+  instrumented generator.
+- Resolution is by **coordinates**, never similarity; incomplete coordinates
+  answer `CLARIFICATION_REQUIRED`.
+- Official fields are returned **verbatim and untranslated**. The question
+  travels through the alias table; the record never does.
+- Publishing requires a **named decider** who is not the platform
+  (`is_platform_identity`), and a replaced version becomes `SUPERSEDED`.
+- Learner data needs **permission *and* a declared link** (`access.py`,
+  `privacy.py`). No permission exists for an unlinked learner. Six education
+  roles live in `src/api/rbac.py`; `PERMISSIONS_HORS_PLATEFORME` keeps
+  publishing and learner reads out of every platform role, admin included.
+- `INSUFFICIENT_EVIDENCE` is **off the mastery scale**, never a low level, and a
+  rate over zero cases is `NOT_MEASURABLE`, never 100 %.
+
+## Media engine — `src/media/`, and its studio
+
+Twenty volets, 32 phases, 26 modules, 483 tests. Full report →
+`docs/media/final-report.md`. Eight `/media` routes and a Media Studio at
+`/ui/studio.html`.
+
+**The state is computed, never written**: `src/media/readiness.py` walks the
+seventeen stages of the production chain and answers `ENGINE READY — MEDIA
+RUNTIME DEPENDENCIES PENDING, 1 STAGE(S) NOT IMPLEMENTED (VOICE)` — 10 `READY`,
+6 `BLOCKED`, 1 `ABSENT`. **Speech synthesis does not exist here** and is
+reported `ABSENT`, not as a missing dependency: no installation produces it.
+
+Rules worth knowing before touching `src/media/`:
+
+- **A capability is measured by interrogating the tool**, never by checking a
+  binary exists. This machine's `ffmpeg` is built `--disable-everything` and
+  answers `-version` like a full one; `frame_encode` is nonetheless `AVAILABLE`
+  and was verified **by writing a real WebM**.
+- An unavailable capability **reports its state**; it never returns a plausible
+  result. No default duration, no invented transcript, no `0` for a benchmark
+  that did not run.
+- **A `Selection` has no time field.** A model says what to keep; the measured
+  word timings decide where the cut lands. After a render the result is
+  re-transcribed and compared — no re-transcription means `NOT_VERIFIED`.
+- Reframing **repositions**, it never crops, and the cost of the crop it refuses
+  is measured beside it. A language version copies the master timing exactly.
+- Three QC outcomes, never two: `PASS`, `FAIL`, `NOT_CHECKED`.
+  `PRODUCTION_SUCCESS` needs everything applicable passed **and** nothing
+  unchecked.
+- Progress is `done / total` of a counted unit; an unknown total is `None`.
+- `media` and `media_generation` are **two** tool declarations: the second
+  carries the external effect, so it requires a human.
 
 ## Cerveau Local (nouveau)
 Le projet a maintenant un **Cerveau local** qui connecte les engines GalSen IA à Ollama.

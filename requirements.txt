@@ -1,39 +1,66 @@
-# Dépendances obligatoires
-fastapi>=0.110.0
-pydantic>=2.0.0
-uvicorn>=0.27.0
-PyYAML>=6.0
+# Dépendances d'exécution de GalSen IA.
+#
+# Les versions sont **figées**. Une publication doit pouvoir se reconstruire à
+# l'identique : avec `>=`, la même étiquette git produisait deux images
+# différentes à six mois d'écart, et le jour où l'une casse on ne sait plus
+# laquelle a changé. Ces versions sont celles contre lesquelles la suite de
+# tests de la v0.1.0 est passée.
+#
+# Monter une version est une décision, pas un effet de bord : on la change, on
+# relance la suite, on l'inscrit au journal. Les outils de test ne sont **pas**
+# ici — voir `requirements-dev.txt` — pour que l'image de production ne les
+# embarque pas.
 
-# === Vision & Image Processing (PIL, OpenCV) ===
-# Vision Intelligence Engine, OCR Tool
-# Pillow est importé en lazy — son absence désactive les fonctionnalités vision/OCR
-Pillow>=10.0.0
+# === Cœur applicatif ===
+fastapi==0.141.1
+pydantic==2.13.4
+uvicorn==0.52.1
+PyYAML==6.0.3
+# Déclarée explicitement bien que fastapi l'installe : le code l'importe
+# directement (`starlette.middleware`, `starlette.requests`, `starlette.responses`).
+# Compter sur la dépendance d'un autre paquet, c'est accepter qu'une version de
+# fastapi puisse la changer sous nos pieds.
+starlette==1.6.0
+
+# === Vision & traitement d'image (PIL, OpenCV) ===
+# Vision Intelligence Engine, outil OCR.
+# Pillow est importé tardivement — son absence désactive vision et OCR.
+Pillow==12.3.0
 # opencv est importé au niveau module par le Vision Intelligence Engine
 # (object_detector, contour_object_detector, quality_analyzer, image_classifier) :
 # sans lui le moteur `vision` est indisponible dans l'EngineRegistry.
 # Variante headless : aucune dépendance à un serveur graphique (le code n'affiche rien).
-opencv-python-headless>=4.8.0
+opencv-python-headless==5.0.0.93
 
-# === Machine Learning (numpy, scipy) ===
-# Knowledge Engine (ranking), Vision Engine
-numpy>=1.24.0
+# === Calcul numérique ===
+# Knowledge Engine (classement), Vision Engine.
+numpy==2.4.6
 
 # === Sécurité ===
-# Chiffrement au repos des bases SQLite (VOLET 02 ch. 08).
-# Sans clé configurée le chiffrement reste inactif, mais la bibliothèque est
-# requise dès qu'on l'active.
-cryptography>=42.0.0
+# Chiffrement au repos des bases SQLite (VOLET 02 ch. 08). Sans clé configurée
+# le chiffrement reste inactif, mais la bibliothèque est requise dès qu'on l'active.
+cryptography==50.0.0
 
-# === Testing ===
-pytest>=7.0.0
-pytest-asyncio>=0.21.0
-pytest-cov>=4.0.0
-# Requis par starlette.testclient.TestClient (tests API : health, rate limiter, RBAC, auth).
-# starlette attend httpx2 : avec l'ancien httpx il fonctionne mais avertit à chaque import.
-httpx2>=2.9.0
+# === Lecture de documents ===
+# Ces formats sont ceux dont le corpus sénégalais est fait : guides d'instituts
+# de recherche, circulaires ministérielles, tableaux de rendement. Sans eux,
+# l'ingestion refuse exactement les fichiers pour lesquels elle a été écrite
+# (VOLET 28). Cinq paquets purement Python, quelques centaines de kilo-octets
+# chacun : le rapport valeur/poids n'est comparable à rien d'autre ici.
+pypdf==6.15.0
+python-docx==1.2.0
+openpyxl==3.1.5
+python-pptx==1.0.2
+markdown==3.10.3
 
-# === Stockage objet (optionnel) ===
+# === OCR ===
+# `pytesseract` n'est qu'une enveloppe : c'est le binaire `tesseract-ocr` que le
+# Dockerfile installe, avec ses données françaises. Beaucoup de documents
+# officiels de la région sont des numérisations ; sans OCR, l'ingestion les
+# accepte et n'en tire rien.
+pytesseract==0.3.13
+
+# === Stockage objet (optionnel à l'exécution) ===
 # Importé tardivement par `src/services/cloud/store_s3.py` : sans lui, seuls les
 # magasins mémoire et disque du service cloud fonctionnent.
-boto3>=1.34.0
-
+boto3==1.43.68

@@ -33,18 +33,32 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Sans cela, le checkout ne récupère ni l'historique ni les étiquettes,
+          # et `test_release_check.py` cherche `v0.1.0` dans une liste vide : il
+          # échouait en rapportant « l'étiquette manque » alors qu'il mesurait un
+          # clone incomplet. Un contrôle de publication doit voir les
+          # publications.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: requirements-dev.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Lint
+        # Placé **avant** la suite : ruff s'exécute en une seconde et attrape ce
+        # qu'un test ne voit qu'en passant par la ligne fautive — la mise en
+        # place a trouvé trois `NameError` vivants sur des chemins que la suite
+        # n'empruntait pas. Configuration et périmètre → `pyproject.toml`.
+        run: ruff check .
 
       - name: Check that the API imports the way the Dockerfile starts it
         # Le Dockerfile lance `uvicorn src.api.server:app` : cet import doit

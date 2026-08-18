@@ -31,7 +31,10 @@ class PDFLoader(BaseDocumentLoader):
             raise FileNotFoundError(f"Fichier non trouvé: {source}")
 
         try:
-            import PyPDF2
+            try:
+                import pypdf as PyPDF2  # successeur maintenu de PyPDF2
+            except ImportError:
+                import PyPDF2
         except ImportError:
             logger.error("PyPDF2 est requis pour charger les fichiers PDF. Installez-le avec: pip install PyPDF2")
             raise ImportError("PyPDF2 est requis pour charger les fichiers PDF. Installez-le avec: pip install PyPDF2")

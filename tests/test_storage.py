@@ -94,42 +94,42 @@ class TestBaseRepository:
     def test_base_repository_definit_save(self):
         """BaseRepository expose la méthode save."""
         assert hasattr(BaseRepository, "save")
-        assert callable(getattr(BaseRepository, "save"))
+        assert callable(BaseRepository.save)
 
     def test_base_repository_definit_get(self):
         """BaseRepository expose la méthode get."""
         assert hasattr(BaseRepository, "get")
-        assert callable(getattr(BaseRepository, "get"))
+        assert callable(BaseRepository.get)
 
     def test_base_repository_definit_update(self):
         """BaseRepository expose la méthode update."""
         assert hasattr(BaseRepository, "update")
-        assert callable(getattr(BaseRepository, "update"))
+        assert callable(BaseRepository.update)
 
     def test_base_repository_definit_delete(self):
         """BaseRepository expose la méthode delete."""
         assert hasattr(BaseRepository, "delete")
-        assert callable(getattr(BaseRepository, "delete"))
+        assert callable(BaseRepository.delete)
 
     def test_base_repository_definit_list_items(self):
         """BaseRepository expose la méthode list_items."""
         assert hasattr(BaseRepository, "list_items")
-        assert callable(getattr(BaseRepository, "list_items"))
+        assert callable(BaseRepository.list_items)
 
     def test_base_repository_definit_clear(self):
         """BaseRepository expose la méthode clear."""
         assert hasattr(BaseRepository, "clear")
-        assert callable(getattr(BaseRepository, "clear"))
+        assert callable(BaseRepository.clear)
 
     def test_base_repository_definit_count(self):
         """BaseRepository expose la méthode count."""
         assert hasattr(BaseRepository, "count")
-        assert callable(getattr(BaseRepository, "count"))
+        assert callable(BaseRepository.count)
 
     def test_base_repository_definit_exists(self):
         """BaseRepository expose la méthode exists."""
         assert hasattr(BaseRepository, "exists")
-        assert callable(getattr(BaseRepository, "exists"))
+        assert callable(BaseRepository.exists)
 
 
 # ---------------------------------------------------------------------------

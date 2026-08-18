@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: security
+version: 0.1.0
+description: Analyse les risques de sécurité.
+author: GalSen IA
+tags:
+- galsen-ia
+- security-agent
+metadata:
+  galsen_role: Security Agent
+  galsen_module: agents.security.agent
+  galsen_priority: 90
+  galsen_enabled: true

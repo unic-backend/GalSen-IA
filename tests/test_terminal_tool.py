@@ -10,7 +10,6 @@ Les commandes réellement lancées se limitent à `python -c` et `echo` : rien
 n'est installé, rien n'est supprimé.
 """
 
-import os
 import sys
 
 import pytest

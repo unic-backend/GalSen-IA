@@ -6,7 +6,7 @@ Fournit une interface pour effectuer des opérations sur le système de mémoire
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import asdict
 
 from src.tool.base import BaseTool

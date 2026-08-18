@@ -4,7 +4,7 @@ Types for the Vision Intelligence Engine.
 
 from enum import Enum
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 import datetime
 
 

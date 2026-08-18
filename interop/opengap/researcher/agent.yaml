@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: researcher
+version: 0.1.0
+description: Recherche des informations fiables.
+author: GalSen IA
+tags:
+- galsen-ia
+- research-agent
+metadata:
+  galsen_role: Research Agent
+  galsen_module: agents.researcher.agent
+  galsen_priority: 90
+  galsen_enabled: true

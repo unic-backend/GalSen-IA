@@ -1,6 +1,40 @@
 version: "1.0"
 
 tools:
+  # Lit l'écran par l'arbre d'accessibilité du système ; il n'agit pas — agir est
+  # le chapitre 06 du VOLET 34. Sur un serveur sans session graphique — le cas de
+  # l'image de production — il refuse en nommant la raison plutôt que de rendre
+  # une liste vide, qui se lirait « l'écran est vide ».
+  - id: screen
+    enabled: true
+    category: system
+    module: "tools.screen.tool"
+    class: "ScreenTool"
+    capability:
+      effects: [read]
+      data_scope: system
+      requires_approval: false
+      unattended: false
+      reason: "L'écran peut afficher n'importe quelle donnée privée ; nul ne peut le savoir à l'avance."
+    config: {}
+
+  # Propose un geste, n'en exécute aucun sans décision humaine. La cible est un
+  # élément identifié — rôle, libellé, bornes — jamais un couple de coordonnées :
+  # « cliquer en (412, 380) » n'est pas approuvable par un humain (ADR-017 §4).
+  # Sans moteur d'approbation, l'outil ferme au lieu de dégrader.
+  - id: gui
+    enabled: true
+    category: system
+    module: "tools.gui.tool"
+    class: "GUITool"
+    capability:
+      effects: [write]
+      data_scope: system
+      requires_approval: true
+      unattended: false
+      reason: "Un geste sur l'interface est un acte, et ADR-017 le soumet à une décision humaine."
+    config: {}
+
   # Access is confined to the project root. Writing is disabled: agents report
   # what should change instead of changing it. Set allow_write to true only when
   # autonomous edits are actually wanted.
@@ -9,6 +43,40 @@ tools:
     category: system
     module: "tools.filesystem.tool"
     class: "FileSystemTool"
+    capability:
+      effects: [read, write]
+      data_scope: system
+      requires_approval: false
+      unattended: false
+      reason: "Une écriture sur le disque n'est pas annulable ici ; elle demande un témoin."
+      # L'outil peut écrire ; ces six opérations, non. Ce sont les seules que
+      # les agents appellent (mesuré le 2026-08-14 sur les 16 agents), et
+      # `allow_write: false` les borne une deuxième fois.
+      pre_approved:
+        - operation: read
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Lire un fichier du dépôt ne modifie rien et reste sous la racine du projet."
+        - operation: search
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Chercher des fichiers ne modifie rien."
+        - operation: list
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Lister un répertoire ne modifie rien."
+        - operation: stat
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Lire les métadonnées d'un fichier ne modifie rien."
+        - operation: exists
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Tester la présence d'un fichier ne modifie rien."
+        - operation: tail
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Lire la fin d'un journal ne modifie rien."
     config:
       allow_write: false
       max_read_bytes: 5242880
@@ -21,6 +89,22 @@ tools:
     category: system
     module: "tools.terminal.tool"
     class: "TerminalTool"
+    capability:
+      effects: [read, write]
+      data_scope: system
+      requires_approval: true
+      unattended: false
+      reason: "Une commande peut faire tout ce que l'utilisateur peut faire."
+      # `python` exécute n'importe quoi — d'où l'approbation sur l'outil. Mais
+      # `python -m pytest` exécute la suite de tests, et rien d'autre : c'est
+      # la raison d'être de l'agent testeur, qui tourne sans humain. C'est la
+      # **borne** qui est approuvée, jamais l'outil entier. Affaiblir la
+      # déclaration ci-dessus aurait ouvert `python -c` du même coup.
+      pre_approved:
+        - operation: "python -m pytest"
+          approved_by: "propriétaire du projet"
+          approved_on: "2026-08-14"
+          rationale: "Exécuter la suite de tests est la raison d'être de l'agent testeur ; la commande ne prend pas de code en argument."
     config:
       allowed_commands:
         - python
@@ -38,6 +122,11 @@ tools:
     category: development
     module: "tools.git.tool"
     class: "GitTool"
+    capability:
+      effects: [read]
+      data_scope: system
+      requires_approval: false
+      unattended: true
     config:
       allow_write: false
       protected_branches:
@@ -51,6 +140,11 @@ tools:
     category: development
     module: "tools.github.tool"
     class: "GitHubTool"
+    capability:
+      effects: [read, external]
+      data_scope: public
+      requires_approval: false
+      unattended: true
     config:
       timeout: 15
 
@@ -61,6 +155,11 @@ tools:
     category: internet
     module: "tools.web_search.tool"
     class: "WebSearchTool"
+    capability:
+      effects: [read, external]
+      data_scope: public
+      requires_approval: false
+      unattended: true
     config:
       timeout: 5
       max_retries: 1
@@ -71,6 +170,12 @@ tools:
     category: internet
     module: "tools.browser.tool"
     class: "BrowserTool"
+    capability:
+      effects: [read, external]
+      data_scope: public
+      requires_approval: false
+      unattended: false
+      reason: "Un navigateur exécute le code des pages visitées ; son résultat dépend d'un tiers."
     config: {}
 
   - id: api
@@ -78,6 +183,12 @@ tools:
     category: integration
     module: "tools.api.tool"
     class: "APITool"
+    capability:
+      effects: [read, write, external]
+      data_scope: public
+      requires_approval: true
+      unattended: false
+      reason: "L'appel est arbitraire : le registre ne peut pas savoir ce qu'il déclenche."
     config: {}
 
   - id: database
@@ -85,6 +196,12 @@ tools:
     category: storage
     module: "tools.database.tool"
     class: "DatabaseTool"
+    capability:
+      effects: [read, write]
+      data_scope: system
+      requires_approval: false
+      unattended: false
+      reason: "Une écriture en base n'est pas annulable ici."
     config: {}
 
   # Exposes the Model Engine through the Tool Engine. Generation returns a
@@ -95,6 +212,15 @@ tools:
     category: ai
     module: "tools.model.tool"
     class: "ModelTool"
+    capability:
+      # `system` a d'abord été écrit ici, et le plafond des rôles l'a montré
+      # faux : il refusait la génération à tout utilisateur. L'outil ne lit ni
+      # la configuration ni les identifiants — il passe une invite à un modèle
+      # local et rend son texte. Sa portée est celle de ce qu'on lui donne.
+      effects: [read]
+      data_scope: public
+      requires_approval: false
+      unattended: true
     config:
       max_tokens: 1024
       temperature: 0.7
@@ -104,6 +230,11 @@ tools:
     category: ai
     module: "tools.memory.tool"
     class: "MemoryTool"
+    capability:
+      effects: [read, write]
+      data_scope: user_private
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: rag
@@ -111,6 +242,11 @@ tools:
     category: ai
     module: "tools.rag.tool"
     class: "RAGTool"
+    capability:
+      effects: [read]
+      data_scope: public
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: embeddings
@@ -118,6 +254,11 @@ tools:
     category: ai
     module: "tools.embeddings.tool"
     class: "EmbeddingsTool"
+    capability:
+      effects: [read]
+      data_scope: public
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: ocr
@@ -125,6 +266,11 @@ tools:
     category: documents
     module: "tools.ocr.tool"
     class: "OCRTool"
+    capability:
+      effects: [read]
+      data_scope: user_private
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: pdf
@@ -132,6 +278,11 @@ tools:
     category: documents
     module: "tools.pdf.tool"
     class: "PDFTool"
+    capability:
+      effects: [read]
+      data_scope: user_private
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: email
@@ -139,6 +290,12 @@ tools:
     category: communication
     module: "tools.email.tool"
     class: "EmailTool"
+    capability:
+      effects: [read, write, external]
+      data_scope: user_private
+      requires_approval: true
+      unattended: false
+      reason: "Un courriel parti ne revient pas, et il emporte de la donnée privée hors de la machine."
     config: {}
 
   - id: calendar
@@ -146,13 +303,33 @@ tools:
     category: communication
     module: "tools.calendar.tool"
     class: "CalendarTool"
+    capability:
+      effects: [read, write, external]
+      data_scope: user_private
+      requires_approval: true
+      unattended: false
+      reason: "Un agenda partagé publie une donnée privée auprès de tiers invités."
     config: {}
 
+  # Désactivé pour une raison de sécurité, pas par manque de dépendance.
+  # L'outil sait `run_container`, `stop_container` et `remove_container`. Depuis
+  # l'intérieur du conteneur de production, cela suppose de monter
+  # /var/run/docker.sock — c'est-à-dire de donner à un agent l'équivalent de
+  # root sur la machine hôte : il lui suffirait de lancer un conteneur
+  # privilégié montant `/`. Aucune tâche de la plateforme ne demande cela.
+  # Le réactiver est une décision d'exploitation, à prendre en connaissance de
+  # cause et hors de l'image de production.
   - id: docker
-    enabled: true
+    enabled: false
     category: deployment
     module: "tools.docker.tool"
     class: "DockerTool"
+    capability:
+      effects: [write]
+      data_scope: system
+      requires_approval: true
+      unattended: false
+      reason: "Un conteneur lancé sans témoin survit à la session qui l'a lancé."
     config: {}
 
   - id: logging
@@ -160,6 +337,11 @@ tools:
     category: monitoring
     module: "tools.logging.tool"
     class: "LoggingTool"
+    capability:
+      effects: [write]
+      data_scope: system
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: metrics
@@ -167,6 +349,11 @@ tools:
     category: monitoring
     module: "tools.metrics.tool"
     class: "MetricsTool"
+    capability:
+      effects: [read]
+      data_scope: system
+      requires_approval: false
+      unattended: true
     config: {}
 
   - id: agri_advice
@@ -174,4 +361,45 @@ tools:
     category: ai
     module: "tools.agri_advice.tool"
     class: "AgriAdviceTool"
+    capability:
+      effects: [read]
+      data_scope: public
+      requires_approval: false
+      unattended: true
     config: {}
+
+  # Le moteur média local (§24). Il lit les médias de quelqu'un et écrit des
+  # fichiers **sur cette machine** — c'est la forme que `memory` a déjà :
+  # donnée privée, effet local, exécutable sans témoin. Une capacité absente
+  # (ffmpeg, GPU) rend `NOT_CONFIGURED` en la nommant, jamais un résultat
+  # plausible : une durée par défaut laisserait la chaîne continuer sur du faux.
+  - id: media
+    enabled: true
+    category: ai
+    module: "tools.media.tool"
+    class: "MediaTool"
+    capability:
+      effects: [read, write]
+      data_scope: user_private
+      requires_approval: false
+      unattended: true
+    config:
+      tool_id: media
+
+  # La génération est une déclaration **séparée**, parce que l'acte est
+  # différent : elle envoie les rushes de quelqu'un à un fournisseur, donc elle
+  # fait sortir la donnée de la machine. Donnée privée plus effet externe est la
+  # forme d'un chemin d'exfiltration, et elle demande un humain.
+  - id: media_generation
+    enabled: true
+    category: ai
+    module: "tools.media.tool"
+    class: "MediaGenerationTool"
+    capability:
+      effects: [read, write, external]
+      data_scope: user_private
+      requires_approval: true
+      unattended: false
+      reason: "Envoyer les médias de quelqu'un à un fournisseur génératif fait sortir sa donnée de la machine."
+    config:
+      tool_id: media_generation

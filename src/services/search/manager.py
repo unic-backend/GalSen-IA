@@ -8,7 +8,7 @@ Les résultats sont fusionnés et triés par pertinence.
 
 import logging
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List
 
 from .interfaces import SearchManager, SearchProvider
 from .types import (
@@ -20,6 +20,17 @@ from .types import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+#: Pourquoi une source connue n'a pas de fournisseur. Une raison écrite vaut
+#: mieux qu'une absence silencieuse : elle dit s'il manque du code ou s'il
+#: manque la chose elle-même.
+RAISONS_D_ABSENCE = {
+    SearchSource.VISION: (
+        "Le moteur visuel analyse une image et n'en produit aucun texte indexé : "
+        "il n'y a rien à chercher. Ce n'est pas un fournisseur qui manque."
+    ),
+}
 
 
 class SearchManagerImpl(SearchManager):
@@ -46,15 +57,29 @@ class SearchManagerImpl(SearchManager):
                 "Échec de l'enregistrement du fournisseur : %s", error
             )
 
+    def registered_sources(self) -> List[SearchSource]:
+        """Retourne les sources réellement branchées, dans l'ordre d'enregistrement."""
+        return list(self._providers)
+
     def _get_score_weight(self, source: SearchSource) -> float:
-        """Retourne le poids de score pour une source donnée."""
-        weights = {
-            SearchSource.KNOWLEDGE: 1.0,
-            SearchSource.MEMORY: 0.9,
-            SearchSource.DOCUMENT: 0.85,
-            SearchSource.VISION: 0.8,
-        }
-        return weights.get(source, 0.8)
+        """
+        Retourne le poids de score d'une source. **Toutes valent 1.0.**
+
+        Les poids étaient 1.0 / 0.9 / 0.85 / 0.8 et ne venaient d'aucune mesure.
+        Ils étaient inertes tant qu'une seule source était branchée ; brancher
+        la mémoire les rendait vivants, et ils auraient réordonné des résultats
+        sans que personne puisse dire pourquoi.
+
+        La raison de fond est plus forte que l'absence de mesure : les scores de
+        deux sources ne sont pas comparables. Le moteur de connaissances rend
+        une proportion de termes de la requête présents dans le document, la
+        mémoire une similarité de Jaccard entre deux ensembles de mots. Pondérer
+        des grandeurs qui ne se comparent pas produit un classement d'apparence.
+
+        Tant qu'aucune mesure ne justifie une préférence, aucune n'est appliquée,
+        et la réponse dit que le classement inter-sources n'est pas fondé.
+        """
+        return 1.0
 
     def _sort_results(
         self, results: List[SearchResultItem], sort: SearchSort
@@ -111,13 +136,28 @@ class SearchManagerImpl(SearchManager):
             sort=SearchSort.RELEVANCE,
             min_score=None,
             filters=query.filters,
+            # Le rôle doit survivre à la reconstruction : l'oublier ici rendrait
+            # toute recherche anonyme aux yeux des fournisseurs. Le sujet aussi,
+            # et pour une raison plus grave : un fournisseur de mémoire qui ne
+            # le reçoit pas ne peut plus distinguer les souvenirs de personne.
+            role=query.role,
+            subject=query.subject,
         )
 
     def search(self, query: SearchQuery) -> SearchResponse:
-        """Exécute une recherche sur toutes les sources disponibles."""
+        """
+        Exécute une recherche sur toutes les sources disponibles.
+
+        Une source sans fournisseur est **rapportée** et non ignorée : sans
+        cela, `sources_used` laisse croire qu'on a interrogé les quatre sources
+        et qu'aucune n'avait de réponse, alors que l'une n'a jamais été
+        interrogée.
+        """
         start_time = time.time()
         all_results: List[SearchResultItem] = []
         sources_used: List[str] = []
+        sources_absentes: Dict[str, str] = {}
+        methods: Dict[str, Any] = {}
 
         # Déterminer les sources à interroger
         target_sources = query.sources or list(SearchSource)
@@ -125,12 +165,21 @@ class SearchManagerImpl(SearchManager):
         for source in target_sources:
             provider = self._providers.get(source)
             if provider is None:
+                sources_absentes[source.value] = RAISONS_D_ABSENCE.get(
+                    source,
+                    "Aucun fournisseur enregistré pour cette source.",
+                )
                 continue
             try:
                 provider_query = self._build_provider_query(query, source)
                 results = provider.search(provider_query)
                 all_results.extend(results)
                 sources_used.append(source.value)
+                # Rapporté par source : deux sources peuvent avoir classé
+                # différemment, et une méthode globale serait fausse pour l'une.
+                methode = getattr(provider, "last_method", None)
+                if methode:
+                    methods[source.value] = methode
             except Exception as error:
                 self._logger.warning(
                     "Échec de la recherche sur la source %s : %s",
@@ -147,12 +196,27 @@ class SearchManagerImpl(SearchManager):
 
         execution_time = (time.time() - start_time) * 1000
 
+        # Ce qui a été **retenu** par les filtres de propriété, consolidé
+        # (phase 54.3). Une source qui filtre en silence se lit comme une source
+        # qui n'a rien trouvé ; chaque fournisseur le comptait déjà, personne ne
+        # l'additionnait.
+        retenus = {
+            nom: methode["withheld"]
+            for nom, methode in methods.items()
+            if isinstance(methode, dict) and methode.get("withheld")
+        }
+        if retenus:
+            methods["withheld_total"] = sum(retenus.values())
+            methods["withheld_by_source"] = retenus
+
         return SearchResponse(
             results=paginated,
             total=total,
             query=query.query,
             execution_time_ms=execution_time,
             sources_used=sources_used,
+            sources_unavailable=sources_absentes,
+            methods=methods,
         )
 
     def search_single_source(

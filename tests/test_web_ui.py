@@ -56,7 +56,10 @@ class TestFichiersServis:
         [
             ("/ui/js/api-client.js", "javascript"),
             ("/ui/js/dashboard.js", "javascript"),
+            ("/ui/js/studio.js", "javascript"),
             ("/ui/css/dashboard.css", "css"),
+            ("/ui/css/studio.css", "css"),
+            ("/ui/studio.html", "html"),
         ],
     )
     def test_les_ressources_sont_servies(self, client, chemin, type_attendu):
@@ -148,10 +151,15 @@ class TestSourcesLivrees:
 
     def test_les_fichiers_existent(self):
         """Les fichiers annoncés par l'ADR-008 doivent être présents."""
-        for relatif in ("index.html", "js/api-client.js", "js/dashboard.js", "css/dashboard.css"):
+        for relatif in (
+            "index.html", "js/api-client.js", "js/dashboard.js",
+            "css/dashboard.css", "studio.html", "js/studio.js",
+            "css/studio.css",
+        ):
             assert os.path.isfile(os.path.join(STATIC_DIRECTORY, relatif)), relatif
 
-    def test_aucune_dependance_distante(self):
+    @pytest.mark.parametrize("page", ["index.html", "studio.html"])
+    def test_aucune_dependance_distante(self, page):
         """Rien n'est chargé depuis un CDN : le premier affichage ne doit pas
         dépendre d'une connexion sortante.
 
@@ -159,22 +167,27 @@ class TestSourcesLivrees:
         téléchargement. L'espace de noms SVG (`xmlns`) est une URL qui n'est
         jamais requêtée : l'interdire reviendrait à confondre un identifiant
         avec une ressource.
+
+        Elle porte sur **chaque** page livrée : une garantie vérifiée sur une
+        seule page cesse d'en être une le jour où une deuxième est ajoutée.
         """
         import re
 
-        with open(os.path.join(STATIC_DIRECTORY, "index.html"), encoding="utf-8") as fichier:
-            page = fichier.read()
+        with open(os.path.join(STATIC_DIRECTORY, page), encoding="utf-8") as fichier:
+            contenu = fichier.read()
 
-        telechargements = re.findall(r'(?:src|href)\s*=\s*"(https?://[^"]+)"', page)
+        telechargements = re.findall(r'(?:src|href)\s*=\s*"(https?://[^"]+)"', contenu)
         assert telechargements == []
 
-    def test_seul_le_client_d_api_appelle_le_reseau(self):
+    @pytest.mark.parametrize("script", ["js/dashboard.js", "js/studio.js"])
+    def test_seul_le_client_d_api_appelle_le_reseau(self, script):
         """Aucune page ne doit appeler `fetch` directement (ADR-008)."""
-        with open(os.path.join(STATIC_DIRECTORY, "js/dashboard.js"), encoding="utf-8") as fichier:
-            tableau_de_bord = fichier.read()
-        assert "fetch(" not in tableau_de_bord
+        with open(os.path.join(STATIC_DIRECTORY, script), encoding="utf-8") as fichier:
+            source = fichier.read()
+        assert "fetch(" not in source
 
-    def test_le_rendu_n_interprete_pas_de_balisage(self):
+    @pytest.mark.parametrize("script", ["js/dashboard.js", "js/studio.js"])
+    def test_le_rendu_n_interprete_pas_de_balisage(self, script):
         """Une donnée d'API insérée en HTML ouvrirait une injection de balisage.
 
         C'est l'**écriture** dans `innerHTML` qui est interdite, pas le mot :
@@ -183,9 +196,9 @@ class TestSourcesLivrees:
         """
         import re
 
-        with open(os.path.join(STATIC_DIRECTORY, "js/dashboard.js"), encoding="utf-8") as fichier:
-            tableau_de_bord = fichier.read()
+        with open(os.path.join(STATIC_DIRECTORY, script), encoding="utf-8") as fichier:
+            source = fichier.read()
 
-        assert re.search(r"\.innerHTML\s*=", tableau_de_bord) is None
-        assert re.search(r"insertAdjacentHTML", tableau_de_bord) is None
-        assert "textContent" in tableau_de_bord
+        assert re.search(r"\.innerHTML\s*=", source) is None
+        assert re.search(r"insertAdjacentHTML", source) is None
+        assert "textContent" in source

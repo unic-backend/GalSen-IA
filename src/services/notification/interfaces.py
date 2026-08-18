@@ -20,8 +20,24 @@ class NotificationStore(ABC):
         """Enregistre une notification et retourne son identifiant."""
 
     @abstractmethod
+    def update(self, notification: Notification) -> bool:
+        """
+        Met à jour une notification existante ; retourne False si elle est absente.
+
+        Distincte de `save()`, qui crée : les deux magasins divergeaient sur ce
+        point — celui en mémoire refusait un identifiant existant, celui en
+        SQLite le remplaçait. Une intention explicite lève l'ambiguïté.
+        """
+
+    @abstractmethod
     def get(self, notification_id: str) -> Optional[Notification]:
-        """Retourne une notification par identifiant, ou None si absente."""
+        """
+        Retourne une notification par identifiant, ou None si absente.
+
+        Le décorateur manquait : un magasin qui aurait oublié cette méthode
+        héritait d'un corps vide et rendait `None` pour **toute** notification,
+        au lieu d'échouer à l'instanciation.
+        """
 
     @abstractmethod
     def list_notifications(

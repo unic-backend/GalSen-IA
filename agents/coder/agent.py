@@ -10,7 +10,6 @@ agent says so instead of returning invented code — a specification that is
 honest about its limits is usable; fabricated code is not.
 """
 
-import os
 import re
 from typing import Any, Dict, List
 
@@ -61,7 +60,11 @@ class CoderAgent(BaseAgent):
         target_modules = self._identify_target_modules(request)
         existing_files = self._list_module_files(context, target_modules)
         conventions = self._detect_conventions(context, existing_files)
-        plan = context.previous_result("planner")
+        # Les tâches que le planificateur a **assignées à cet agent**, et non la
+        # simple présence d'un plan : `plan_followed: bool(plan)` disait vrai sur
+        # l'existence du plan et faux sur son suivi. Personne ne lisait
+        # l'assignation, alors que le planificateur l'écrit depuis le début.
+        mes_taches = context.tasks_for()
 
         implementation = self._generate_implementation(context, request, target_modules, conventions)
 
@@ -71,7 +74,8 @@ class CoderAgent(BaseAgent):
             "existing_files": existing_files[:20],
             "file_count": len(existing_files),
             "conventions": conventions,
-            "plan_followed": bool(plan),
+            "assigned_tasks": [tache.get("id") for tache in mes_taches],
+            "plan_followed": bool(mes_taches),
             "implementation": implementation,
             "next_steps": self._next_steps(implementation),
         }

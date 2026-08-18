@@ -10,6 +10,7 @@ Référence : VOLET 02, Chapitres 03 (Backend), 07 (Data).
 
 from .interfaces import SearchManager, SearchProvider
 from .manager import SearchManagerImpl
+from .providers import KnowledgeSearchProvider
 from .types import (
     SearchQuery,
     SearchResponse,
@@ -23,6 +24,7 @@ __all__ = [
     "SearchManager",
     "SearchManagerImpl",
     "SearchProvider",
+    "KnowledgeSearchProvider",
     "SearchQuery",
     "SearchResponse",
     "SearchResultItem",

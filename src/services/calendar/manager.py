@@ -7,12 +7,12 @@ d'échec, un avertissement est journalisé et une valeur vide est retournée.
 """
 
 import logging
-import os
 from typing import Any, Dict, List, Optional
 
 from .interfaces import CalendarManager, CalendarStore
 from .store import InMemoryCalendarStore
 from .types import CalendarEvent, CalendarEventResult, EventStatus
+from src.storage.paths import sqlite_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class CalendarManagerImpl(CalendarManager):
     def __init__(self, store: Optional[CalendarStore] = None) -> None:
         if store is not None:
             self._store = store
-        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
+        elif sqlite_enabled():
             from src.storage.sqlite_calendar_store import SQLiteCalendarStore
             self._store = SQLiteCalendarStore()
         else:

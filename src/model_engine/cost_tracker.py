@@ -138,7 +138,29 @@ class InMemoryCostTracker(CostTracker):
         """
         with self._lock:
             total_cost = sum(data["total_cost"] for data in self._cost_data.values())
-            return total_cost    # Document variable: self._ (this is a parameter)
+            return total_cost
+
+    def cost_by_route(self) -> Dict[str, float]:
+        """
+        Retourne le coût ventilé par route de la politique de routage.
+
+        Le coût total répond à « combien avons-nous dépensé » ; celui-ci répond
+        à « pour quoi », qui est la seule des deux questions sur laquelle on
+        puisse agir. Une politique de routage qu'on ne peut pas mesurer ne peut
+        pas être améliorée : c'est le chapitre 02 du VOLET 30.
+
+        Returns:
+            Le coût par route (`route:code_generation`, ...), du plus cher au
+            moins cher. Vide tant que rien n'a été généré — un dictionnaire vide,
+            jamais des zéros qui se liraient comme une mesure.
+        """
+        cumul: Dict[str, float] = {}
+        with self._lock:
+            for donnees in self._cost_data.values():
+                for operation, cout in donnees["cost_breakdown"].items():
+                    if cout:
+                        cumul[operation] = cumul.get(operation, 0.0) + cout
+        return dict(sorted(cumul.items(), key=lambda entree: entree[1], reverse=True))
     def reset_costs(self, model_item: Optional[ModelItem] = None) -> None:
         """
         Réinitialise les statistiques de coûts.

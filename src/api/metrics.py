@@ -42,12 +42,26 @@ LATENCE = "http.latency.{methode}.{route}"
 AUTH_SUCCES = "auth.success"
 AUTH_ECHEC = "auth.failure"
 
+# Recherche (VOLET 14, ch. 02 étape 6 et ch. 06). Le manuel réclame deux fois un
+# module d'analytique et rien n'enregistrait la moindre requête. Ce qui est
+# compté est le *comportement* de la recherche, jamais son contenu : une requête
+# est ce qu'un utilisateur cherche, et le stocker changerait une mesure
+# d'exploitation en journal de ce que chacun veut savoir.
+RECHERCHE_TOTAL = "search.queries.total"
+RECHERCHE_VIDE = "search.queries.empty"
+RECHERCHE_LATENCE = "search.latency.{source}"
+
 # Chemin retenu quand aucune route ne correspond. Utiliser l'URL brute ferait
 # exploser le nombre de compteurs : un scan d'URL en créerait un par tentative.
 ROUTE_INCONNUE = "unmatched"
 
 _metriques: Optional[MetricsTool] = None
 _verrou = threading.Lock()
+
+# Début de la fenêtre de mesure. Le débit se déduit des compteurs ; les remettre
+# à zéro sans remettre l'origine donnerait un débit calculé sur une durée que
+# les compteurs ne couvrent plus.
+_debut_mesure = time.time()
 
 
 def get_shared_metrics() -> MetricsTool:
@@ -68,7 +82,9 @@ def get_shared_metrics() -> MetricsTool:
 
 def reset_metrics() -> None:
     """Vide les compteurs. Réservé aux tests, qui doivent partir d'un état connu."""
+    global _debut_mesure
     get_shared_metrics().execute("reset")
+    _debut_mesure = time.time()
 
 
 def _nom_de_route(request: Request) -> str:
@@ -143,6 +159,31 @@ def record_authentication(reussie: bool) -> None:
         logger.warning("Métrique d'authentification non enregistrée : %s", erreur)
 
 
+def record_search(sources: Any, results_count: int, duration_ms: float) -> None:
+    """
+    Compte une recherche : son volume, sa latence, et si elle n'a rien rendu.
+
+    Args:
+        sources: sources réellement interrogées (noms ou énumérations)
+        results_count: nombre de résultats rendus
+        duration_ms: durée mesurée de la recherche
+
+    Le taux de recherches vides est la métrique de qualité que le chapitre 09
+    demande et la seule qui se mesure sans jury humain : elle dit combien de fois
+    la plateforme n'a rien su répondre. La requête elle-même n'est jamais écrite.
+    """
+    try:
+        collecteur = get_shared_metrics()
+        collecteur.execute("increment", RECHERCHE_TOTAL)
+        if results_count == 0:
+            collecteur.execute("increment", RECHERCHE_VIDE)
+        noms = [getattr(s, "value", s) for s in (sources or ["none"])]
+        for nom in noms:
+            collecteur.execute("record_histogram", RECHERCHE_LATENCE.format(source=nom), duration_ms)
+    except Exception as erreur:
+        logger.warning("Métrique de recherche non enregistrée : %s", erreur)
+
+
 def metrics_snapshot() -> Dict[str, Any]:
     """
     Retourne l'état des compteurs, avec le taux d'erreur déjà calculé.
@@ -155,6 +196,7 @@ def metrics_snapshot() -> Dict[str, Any]:
         et la portée de la mesure.
     """
     donnees = get_shared_metrics().execute("get_metrics")
+    disponibilite = max(time.time() - _debut_mesure, 0.0)
     compteurs = donnees.get("counters", {})
 
     total = compteurs.get(TOTAL, 0)
@@ -168,8 +210,17 @@ def metrics_snapshot() -> Dict[str, Any]:
     echecs = compteurs.get(AUTH_ECHEC, 0)
     tentatives = succes + echecs
 
+    recherches = compteurs.get(RECHERCHE_TOTAL, 0)
+    vides = compteurs.get(RECHERCHE_VIDE, 0)
+
     return {
         "requests_total": total,
+        # Ce que la recherche a fait, sans dire ce qui a été cherché.
+        "search": {
+            "queries": recherches,
+            "empty": vides,
+            "empty_rate": round(vides / recherches, 4) if recherches else None,
+        },
         # Le chapitre 06 du VOLET_16 demande « taux de succès » et « taux
         # d'échec » : le second se déduit du premier, une seule valeur suffit.
         "auth": {
@@ -181,8 +232,27 @@ def metrics_snapshot() -> Dict[str, Any]:
         # Arrondi à quatre décimales : au-delà, le chiffre suggère une précision
         # que quelques centaines de requêtes ne portent pas.
         "error_rate": round(erreurs / total, 4) if total else 0.0,
+        # Débit, réclamé par le chapitre 06 du VOLET 15. Moyenne depuis le
+        # démarrage, pas débit instantané : la distinction compte, une pointe de
+        # trafic d'il y a deux heures n'est plus visible ici.
+        "uptime_seconds": round(disponibilite, 3),
+        "throughput_rps": round(total / disponibilite, 4) if disponibilite > 0 else None,
         "counters": compteurs,
         "latency_ms": donnees.get("histograms", {}),
+        # Deux métriques clés du chapitre 06 que ce processus ne peut pas
+        # produire. Les nommer vaut mieux que de rendre un chiffre plausible.
+        "unavailable": {
+            "availability": (
+                "non mesurable de l'intérieur : une instance arrêtée ne rapporte "
+                "rien, et une disponibilité auto-déclarée vaut toujours 100 %. "
+                "Elle demande une sonde externe qui interroge /live et conserve "
+                "l'historique"
+            ),
+            "resource_utilization": (
+                "CPU et mémoire demanderaient une dépendance supplémentaire "
+                "(psutil), absente de l'environnement"
+            ),
+        },
         "scope": "instance",
         "detail": (
             "Compteurs tenus en mémoire du processus : un redémarrage les remet "

@@ -4,9 +4,8 @@ Modèles Pydantic pour le SDK client GalSen IA.
 Tous les modèles retournés par le client sont définis ici.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
-from datetime import datetime
 
 
 # =============================================================================

@@ -6,7 +6,7 @@ Handles retry logic for failed agents based on workflow configuration.
 
 import logging
 import time
-from typing import Dict, Any, Callable, Optional
+from typing import Dict, Any, Callable
 
 
 class RetryManager:

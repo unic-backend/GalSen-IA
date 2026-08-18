@@ -14,13 +14,15 @@ import threading
 import datetime
 from typing import Any, Dict, List, Optional
 
+from src.knowledge_engine.scope import KnowledgeSubject
 from src.knowledge_engine.types import (
     KnowledgeItem, KnowledgeSource, KnowledgeType, ContentType,
-    Language, SourceCategory, KnowledgePriority,
+    Language, SourceCategory, KnowledgePriority, KnowledgeDomain,
+    KnowledgeSensitivity, KnowledgeStatus,
 )
 from src.knowledge_engine.interfaces import KnowledgeStore
 from src.storage.encryption import decrypt, encrypt
-from .paths import default_sqlite_path
+from .paths import default_sqlite_path, prepare_connection, secure_database_file
 
 
 class SQLiteKnowledgeStore(KnowledgeStore):
@@ -29,7 +31,9 @@ class SQLiteKnowledgeStore(KnowledgeStore):
     # Colonnes de la table "knowledge_items" (l'ordre définit aussi le SELECT).
     _COLUMNS = (
         "id", "content", "summary", "knowledge_type", "content_type",
-        "language", "tags", "categories", "source_id", "source_type",
+        "language", "domain", "scope", "subject", "sensitivity", "status",
+        "tags", "categories",
+        "source_id", "source_type",
         "source_location", "source_accessed_at", "source_hash",
         "source_category", "source_title", "source_author", "source_url",
         "source_citation", "source_retrieved_at", "confidence", "version",
@@ -54,6 +58,9 @@ class SQLiteKnowledgeStore(KnowledgeStore):
         self._persistent_conn: Optional[sqlite3.Connection] = None
 
         self._initialize_db()
+        # Une base porte des mémoires, des connaissances et des e-mails ;
+        # elle était créée en 0644, donc lisible par tout compte de la machine.
+        secure_database_file(self.db_path)
         if self.db_path == ":memory:":
             # Base partagée : la connexion persistante garde la base en vie.
             self._persistent_conn = self._get_connection()
@@ -71,9 +78,7 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             conn = sqlite3.connect("file::memory:?cache=shared", uri=True)
         else:
             conn = sqlite3.connect(self.db_path)
-        conn.execute("PRAGMA foreign_keys = ON")
-        # Évite les erreurs "database is locked" lors de l'accès concurrent.
-        conn.execute("PRAGMA busy_timeout = 5000")
+        prepare_connection(conn)
         return conn
 
     def _initialize_db(self) -> None:
@@ -85,10 +90,22 @@ class SQLiteKnowledgeStore(KnowledgeStore):
         )
         with self._get_connection() as conn:
             conn.execute(f"CREATE TABLE IF NOT EXISTS knowledge_items ({columns})")
+            self._add_missing_columns(conn)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_kn_type ON knowledge_items (knowledge_type)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_kn_language ON knowledge_items (language)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_kn_priority ON knowledge_items (priority)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_kn_updated ON knowledge_items (updated_at)")
+
+    def _add_missing_columns(self, conn: sqlite3.Connection) -> None:
+        """Ajoute les colonnes absentes d'une base créée par une version antérieure.
+
+        Migration additive uniquement : aucune colonne n'est renommée ni supprimée,
+        les lignes existantes reçoivent NULL et sont relues comme « non classé ».
+        """
+        present = {row[1] for row in conn.execute("PRAGMA table_info(knowledge_items)")}
+        for col in self._COLUMNS:
+            if col not in present:
+                conn.execute(f"ALTER TABLE knowledge_items ADD COLUMN {col} {self._sql_type(col)}")
 
     @staticmethod
     def _sql_type(col: str) -> str:
@@ -128,6 +145,11 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             "knowledge_type": knowledge.knowledge_type.value,
             "content_type": knowledge.content_type.value,
             "language": knowledge.language.value,
+            "domain": knowledge.domain.value,
+            "scope": str(knowledge.scope),
+            "subject": knowledge.subject.value,
+            "sensitivity": knowledge.sensitivity.value,
+            "status": knowledge.status.value,
             "tags": json.dumps(knowledge.tags),
             "categories": json.dumps(knowledge.categories),
             "confidence": knowledge.confidence,
@@ -163,6 +185,17 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             knowledge_type=KnowledgeType(data["knowledge_type"]),
             content_type=ContentType(data["content_type"]),
             language=Language(data["language"]),
+            # Une base écrite avant l'ajout du domaine renvoie NULL : non classé.
+            domain=KnowledgeDomain(data["domain"]) if data.get("domain") else KnowledgeDomain.UNSPECIFIED,
+            # Une base écrite avant le VOLET 35 renvoie NULL sur les deux axes.
+            # Le défaut est « mondial, non classé » : relire une connaissance
+            # d'avant la migration ne doit pas la rendre sénégalaise par accident,
+            # ni lui inventer un sujet.
+            scope=data.get("scope") or "global",
+            subject=(KnowledgeSubject(data["subject"]) if data.get("subject")
+                     else KnowledgeSubject.UNSPECIFIED),
+            sensitivity=KnowledgeSensitivity(data["sensitivity"]) if data.get("sensitivity") else KnowledgeSensitivity.PUBLIC,
+            status=KnowledgeStatus(data["status"]) if data.get("status") else KnowledgeStatus.DRAFT,
             tags=json.loads(data["tags"] or "[]"),
             categories=json.loads(data["categories"] or "[]"),
             source=source,
@@ -224,6 +257,65 @@ class SQLiteKnowledgeStore(KnowledgeStore):
                 cursor = conn.execute(sql, data)
             return cursor.rowcount > 0
 
+    def record_access(self, knowledge_id: str) -> int:
+        """Compte une consultation et retourne le nouveau total.
+
+        Écrit le compteur dans les métadonnées sans toucher à la version : une
+        consultation n'est pas une nouvelle version de la connaissance.
+        """
+        with self._lock:
+            existing = self.get(knowledge_id)
+            if existing is None:
+                return 0
+            total = int(existing.metadata.get("access_count", 0)) + 1
+            existing.metadata["access_count"] = total
+            with self._get_connection() as conn:
+                conn.execute(
+                    "UPDATE knowledge_items SET metadata = ? WHERE id = ?",
+                    (json.dumps(existing.metadata, ensure_ascii=False), knowledge_id),
+                )
+            return total
+
+    def record_accesses(self, knowledge_ids) -> int:
+        """
+        Compte plusieurs consultations en **une seule transaction**.
+
+        `record_access()` lit la ligne, la réécrit, et le gestionnaire relisait
+        ensuite pour rafraîchir son cache : trois accès par résultat. Sur une
+        recherche qui rend dix résultats — et la recherche sémantique balaie
+        désormais toute la base — cela faisait trente accès disque pour un
+        signal de popularité.
+
+        Args:
+            knowledge_ids: Identifiants consultés, avec répétitions possibles.
+
+        Returns:
+            Le nombre de connaissances effectivement mises à jour.
+        """
+        from collections import Counter
+
+        comptes = Counter(knowledge_ids)
+        if not comptes:
+            return 0
+
+        with self._lock, self._get_connection() as conn:
+            lignes = conn.execute(
+                f"SELECT id, metadata FROM knowledge_items WHERE id IN "
+                f"({','.join('?' * len(comptes))})",
+                tuple(comptes),
+            ).fetchall()
+
+            mises_a_jour = []
+            for identifiant, metadata in lignes:
+                donnees = json.loads(metadata) if metadata else {}
+                donnees["access_count"] = int(donnees.get("access_count", 0)) + comptes[identifiant]
+                mises_a_jour.append((json.dumps(donnees, ensure_ascii=False), identifiant))
+
+            conn.executemany(
+                "UPDATE knowledge_items SET metadata = ? WHERE id = ?", mises_a_jour
+            )
+        return len(mises_a_jour)
+
     def delete(self, knowledge_id: str) -> bool:
         """Supprime une connaissance."""
         with self._lock:
@@ -258,6 +350,21 @@ class SQLiteKnowledgeStore(KnowledgeStore):
                             break
                     elif key == "language":
                         if knowledge.language.value != value:
+                            match = False
+                            break
+                    elif key == "domain":
+                        wanted = value.value if hasattr(value, "value") else value
+                        if knowledge.domain.value != wanted:
+                            match = False
+                            break
+                    elif key == "sensitivity":
+                        wanted = value.value if hasattr(value, "value") else value
+                        if knowledge.sensitivity.value != wanted:
+                            match = False
+                            break
+                    elif key == "status":
+                        wanted = value.value if hasattr(value, "value") else value
+                        if knowledge.status.value != wanted:
                             match = False
                             break
                     elif key == "tags":
@@ -332,8 +439,19 @@ class SQLiteKnowledgeStore(KnowledgeStore):
             return results
 
     def count(self, **filters) -> int:
-        """Compte les connaissances correspondant aux filtres."""
-        return len(self.list_items(limit=10000, **filters))
+        """
+        Compte les connaissances correspondant aux filtres.
+
+        Sans filtre, le compte vient de SQL et ne parcourt rien. Avec filtres, il
+        réplique le filtrage de `list_items` sans plafond : un compte tronqué à
+        10 000, comme c'était le cas, se lit comme un magasin plus petit qu'il
+        n'est.
+        """
+        if not filters:
+            with self._lock:
+                with self._get_connection() as conn:
+                    return conn.execute("SELECT COUNT(*) FROM knowledge_items").fetchone()[0]
+        return len(self.list_items(limit=self.count(), **filters))
 
     def cleanup_old_versions(self, keep_latest: int = 1) -> int:
         """

@@ -78,6 +78,74 @@ def is_content_type_allowed(
     return content_type in allowed_types
 
 
+def _metadonnees_en_dict(fichier: Any) -> Dict[str, Any]:
+    """
+    Sérialise les métadonnées communes à un fichier et à son résumé.
+
+    Une seule écriture pour les deux types : deux sérialisations d'un même
+    contrat qui divergent est le défaut que ce dépôt a déjà trouvé plusieurs
+    fois, et ici les deux alimentent la même route.
+    """
+    created_iso = datetime.fromtimestamp(fichier.created_at, tz=timezone.utc).isoformat()
+    updated_iso = datetime.fromtimestamp(fichier.updated_at, tz=timezone.utc).isoformat()
+
+    resultat: Dict[str, Any] = {
+        "id": fichier.id,
+        "name": fichier.name,
+        "content_type": fichier.content_type,
+        "size": fichier.size,
+        "category": fichier.category.value,
+        "created_at": created_iso,
+        "updated_at": updated_iso,
+    }
+    for cle, valeur in (
+        ("description", fichier.description),
+        ("uploaded_by", fichier.uploaded_by),
+        ("source", fichier.source),
+    ):
+        if valeur is not None:
+            resultat[cle] = valeur
+    if fichier.tags:
+        resultat["tags"] = fichier.tags
+    return resultat
+
+
+@dataclass
+class FileSummary:
+    """
+    Un fichier **sans son contenu** (ADR-016).
+
+    C'est ce qu'une liste rend. `FileItem` porte ses octets, si bien que lister
+    les fichiers les chargeait tous : mesuré sur ce dépôt, 30 fichiers de 2 Mo
+    faisaient lire 60 Mo pour une réponse qui les jette
+    (`to_dict(include_data=False)`).
+
+    Un `FileItem` dont `data` serait vide aurait été plus simple, et faux : un
+    `bytes` vide qui veut dire « non chargé » ne se distingue pas d'un `bytes`
+    vide qui veut dire « ce fichier est vide ». Le type dit ce qu'il contient.
+    """
+
+    name: str
+    content_type: str
+    size: int
+    category: FileCategory = FileCategory.OTHER
+    description: Optional[str] = None
+    tags: Dict[str, str] = field(default_factory=dict)
+    uploaded_by: Optional[str] = None
+    source: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    id: str = field(default_factory=generate_file_id)
+    created_at: float = field(default_factory=time.time)
+    updated_at: float = field(default_factory=time.time)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Sérialise le résumé, exactement comme `FileItem.to_dict()` sans contenu."""
+        resultat = _metadonnees_en_dict(self)
+        if self.metadata:
+            resultat["metadata"] = self.metadata
+        return resultat
+
+
 @dataclass
 class FileItem:
     """
@@ -111,33 +179,29 @@ class FileItem:
         """
         import base64
 
-        created_iso = datetime.fromtimestamp(self.created_at, tz=timezone.utc).isoformat()
-        updated_iso = datetime.fromtimestamp(self.updated_at, tz=timezone.utc).isoformat()
-
-        result: Dict[str, Any] = {
-            "id": self.id,
-            "name": self.name,
-            "content_type": self.content_type,
-            "size": self.size,
-            "category": self.category.value,
-            "created_at": created_iso,
-            "updated_at": updated_iso,
-        }
-        optional_fields = {
-            "description": self.description,
-            "uploaded_by": self.uploaded_by,
-            "source": self.source,
-        }
-        for key, value in optional_fields.items():
-            if value is not None:
-                result[key] = value
-        if self.tags:
-            result["tags"] = self.tags
+        result = _metadonnees_en_dict(self)
         if include_data:
             result["data"] = base64.b64encode(self.data).decode("utf-8")
         elif self.metadata:
             result["metadata"] = self.metadata
         return result
+
+    def summary(self) -> "FileSummary":
+        """Retourne le même fichier sans son contenu (ADR-016)."""
+        return FileSummary(
+            name=self.name,
+            content_type=self.content_type,
+            size=self.size,
+            category=self.category,
+            description=self.description,
+            tags=dict(self.tags),
+            uploaded_by=self.uploaded_by,
+            source=self.source,
+            metadata=dict(self.metadata),
+            id=self.id,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+        )
 
     @classmethod
     def from_mapping(cls, data: Dict[str, Any]) -> "FileItem":

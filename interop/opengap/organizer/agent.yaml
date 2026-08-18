@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: organizer
+version: 0.1.0
+description: Propose un rangement des fichiers ; n'exécute qu'approuvé.
+author: GalSen IA
+tags:
+- galsen-ia
+- file-organizer
+metadata:
+  galsen_role: File Organizer
+  galsen_module: agents.organizer.agent
+  galsen_priority: 60
+  galsen_enabled: true

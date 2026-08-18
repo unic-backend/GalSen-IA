@@ -43,7 +43,6 @@ ENGINES_DISPO = {}
 # (leurs __init__.py sont vides, il faut importer les classes internes)
 try:
     from memory_engine.memory_manager import MemoryManager
-    from memory_engine.interfaces import MemoryManager as MemoryManagerInterface
     ENGINES_DISPO["memory"] = MemoryManager()
     print("  [CERVEAN] Memory Engine charge")
 except Exception as e:
@@ -212,7 +211,7 @@ if not tentative_fastapi:
             """Retourne l'état de santé du serveur et de ses dépendances."""
             ollama_ok = False
             try:
-                with urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=5) as r:
+                with urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=5):
                     ollama_ok = True
             except Exception:
                 pass
@@ -296,7 +295,7 @@ if not tentative_fastapi:
             return {"statut": "historique vide"}
 
         tentative_fastapi = True
-        print(f"[CERVEAN] Interface FastAPI initialisee")
+        print("[CERVEAN] Interface FastAPI initialisee")
 
     except ImportError as e:
         print(f"[CERVEAN] FastAPI non disponible ({e}) — mode CLI uniquement")

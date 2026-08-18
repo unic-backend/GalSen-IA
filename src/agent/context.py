@@ -18,7 +18,15 @@ from typing import Any, Dict, List, Optional
 
 from ..approval_engine.types import ApprovalRequest
 from ..audit_engine.types import AuditEvent, AuditEventType, AuditStatus, generate_request_id
-from ..integration.engine_registry import EngineRegistry, EngineUnavailableError, get_shared_registry
+from ..integration.engine_registry import EngineRegistry, get_shared_registry
+from ..security.isolation import IsolationError, Visibility, check_store, owner_for
+from ..security.redaction import NOMS_SENSIBLES
+from ..tool.capabilities import DataScope, may_run_unattended
+from .blackboard import Blackboard
+
+# Profondeur maximale de délégation d'agent à agent. Trois niveaux suffisent à un
+# travail composé ; au-delà, on a une boucle plutôt qu'une décomposition.
+MAX_DELEGATION_DEPTH = 3
 
 
 class AgentContext:
@@ -46,6 +54,8 @@ class AgentContext:
         previous_results: Optional[List[Dict[str, Any]]] = None,
         options: Optional[Dict[str, Any]] = None,
         request_id: Optional[str] = None,
+        blackboard: Optional["Blackboard"] = None,
+        delegation_depth: int = 0,
     ):
         """
         Initialise le contexte.
@@ -59,6 +69,11 @@ class AgentContext:
             previous_results: Résultats des agents déjà exécutés dans cette requête
             options: Options libres transmises par l'orchestrateur
             request_id: Identifiant de la requête, généré si absent
+            blackboard: État de travail partagé (VOLET 29) ; créé si absent et
+                **partagé tel quel** par les contextes dérivés — une copie ferait
+                deux vérités.
+            delegation_depth: Profondeur de délégation atteinte. Sert à borner
+                les appels d'agent à agent, qui sinon peuvent boucler.
         """
         self.request = request
         self.agent_id = agent_id
@@ -69,6 +84,13 @@ class AgentContext:
         self.options = options or {}
         self.request_id = request_id or generate_request_id()
         self.started_at = time.time()
+        self.blackboard = blackboard if blackboard is not None else Blackboard()
+        self.delegation_depth = delegation_depth
+
+        # Style de travail du sujet (VOLET 34, ch. 12), dérivé une seule fois
+        # par contexte : le dériver à chaque génération lirait la base à chaque
+        # invite pour un résultat identique.
+        self._style_hints: Optional[str] = None
 
         self._logger = logging.getLogger(f"{__name__}.{agent_id}")
 
@@ -118,7 +140,133 @@ class AgentContext:
             previous_results=self.previous_results,
             options=self.options,
             request_id=self.request_id,
+            # Même tableau noir, pas une copie : deux instances feraient deux
+            # états de travail, et l'agent dérivé ne verrait pas ce que son
+            # prédécesseur vient de déposer.
+            blackboard=self.blackboard,
+            delegation_depth=self.delegation_depth,
         )
+
+    # ------------------------------------------------------------------
+    # Plan du planificateur
+    # ------------------------------------------------------------------
+    def tasks(self) -> List[Dict[str, Any]]:
+        """
+        Retourne les tâches décidées par le planificateur pour cette requête.
+
+        Returns:
+            La liste des tâches, vide si le planificateur n'a pas tourné.
+        """
+        plan = self.previous_result("planner") or {}
+        resultat = plan.get("result") if isinstance(plan.get("result"), dict) else plan
+        taches = resultat.get("tasks") if isinstance(resultat, dict) else None
+        return taches if isinstance(taches, list) else []
+
+    def tasks_for(self, agent_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Retourne les tâches assignées à un agent.
+
+        Le planificateur assigne chaque tâche à un agent depuis longtemps, et
+        **personne ne lisait cette assignation**. `coder` se contentait de
+        vérifier qu'un plan existait, puis rapportait `plan_followed: true` —
+        une affirmation vraie sur l'existence du plan et fausse sur son suivi.
+
+        Args:
+            agent_id: Agent concerné ; celui de ce contexte par défaut.
+
+        Returns:
+            Les tâches qui lui reviennent, dans l'ordre du plan.
+        """
+        cible = agent_id or self.agent_id
+        return [
+            tache for tache in self.tasks()
+            if tache.get("assigned_agent") == cible
+            or cible in (tache.get("assigned_agents") or [])
+        ]
+
+    # ------------------------------------------------------------------
+    # État de travail partagé et délégation
+    # ------------------------------------------------------------------
+    def post(self, topic: str, value: Any, to: Optional[str] = None) -> None:
+        """
+        Dépose une observation sur le tableau noir partagé (VOLET 29).
+
+        Args:
+            topic: Sujet de l'observation.
+            value: Contenu.
+            to: Agent destinataire, si elle en vise un.
+        """
+        self.blackboard.post(topic, value, author=self.agent_id, to=to)
+
+    def read_notes(self, topic: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Lit les observations qui concernent cet agent.
+
+        Args:
+            topic: Sujet recherché ; tous si None.
+
+        Returns:
+            Les notes adressées à cet agent ou à personne, sérialisées.
+        """
+        return [note.to_dict() for note in self.blackboard.read(topic, pour=self.agent_id)]
+
+    def delegate(self, agent_id: str, task: Any = None) -> Dict[str, Any]:
+        """
+        Confie un travail à un autre agent, dans la même requête.
+
+        C'est la capacité qui manquait : un agent pouvait lire ce que les
+        précédents avaient produit, mais pas demander quelque chose à un autre.
+
+        Deux garde-fous, et ils ne sont pas décoratifs : des agents qui
+        s'appellent librement forment des cycles, et un cycle sans borne
+        consomme toute la requête sans jamais rendre de réponse.
+
+        - **Profondeur bornée** (`MAX_DELEGATION_DEPTH`).
+        - **Pas d'auto-délégation**, ni retour vers un agent déjà dans la chaîne.
+
+        Args:
+            agent_id: Agent sollicité.
+            task: Travail confié ; la requête courante par défaut.
+
+        Returns:
+            Le résultat de l'agent, ou un statut expliquant le refus. Un refus
+            est une donnée : l'agent appelant doit pouvoir continuer sans.
+        """
+        if agent_id == self.agent_id:
+            return {"status": "refused", "reason": "self_delegation",
+                    "detail": f"« {agent_id} » ne peut pas se déléguer à lui-même."}
+
+        chaine = self.options.get("delegation_chain", [])
+        if agent_id in chaine:
+            return {"status": "refused", "reason": "cycle",
+                    "detail": f"« {agent_id} » est déjà dans la chaîne {chaine} : cycle refusé."}
+
+        if self.delegation_depth >= MAX_DELEGATION_DEPTH:
+            return {"status": "refused", "reason": "depth_exceeded",
+                    "detail": f"Profondeur de délégation maximale atteinte ({MAX_DELEGATION_DEPTH})."}
+
+        from src.router.agent_dispatcher import AgentDispatcher
+
+        sous_contexte = self.derive(agent_id)
+        sous_contexte.delegation_depth = self.delegation_depth + 1
+        sous_contexte.options = {
+            **self.options,
+            "delegation_chain": [*chaine, self.agent_id],
+            "delegated_by": self.agent_id,
+        }
+
+        try:
+            resultat = AgentDispatcher().dispatch_by_id(
+                agent_id, task if task is not None else self.request, sous_contexte
+            )
+        except Exception as erreur:
+            # Une délégation qui échoue ne doit pas emporter l'agent appelant :
+            # il doit pouvoir rapporter qu'il n'a pas obtenu l'aide demandée.
+            self._logger.warning("Délégation à « %s » impossible : %s", agent_id, erreur)
+            return {"status": "error", "agent": agent_id, "error": str(erreur)}
+
+        self.post("delegation", {"agent": agent_id, "status": resultat.get("status")})
+        return resultat
 
     # ------------------------------------------------------------------
     # Moteur de mémoire
@@ -128,30 +276,61 @@ class AgentContext:
         content: Any,
         memory_type: str = "agent_shared",
         tags: Optional[List[str]] = None,
+        data_scope: Optional["DataScope"] = None,
+        subject: Optional[str] = None,
     ) -> Optional[str]:
         """
         Enregistre une information en mémoire.
+
+        **Le défaut de cette méthode est `agent_shared`**, c'est-à-dire un
+        magasin lu par tous les agents. C'était le dernier chemin par lequel le
+        courriel de quelqu'un pouvait devenir commun : un agent qui a lu une
+        boîte et appelle `remember(corps)` y déposait un contenu privé, avec un
+        `user_id` valant `None` — donc rendu par une recherche sans filtre.
+
+        Depuis le VOLET 46, une donnée privée doit dire à qui elle est, et elle
+        ne va pas dans un type partagé.
 
         Args:
             content: Contenu à mémoriser
             memory_type: Type de mémoire (`short_term`, `long_term`, `agent_shared`, ...)
             tags: Étiquettes de catégorisation
+            data_scope: Portée déclarée de l'origine. `public` par défaut, ce
+                qui est la vérité des mémorisations existantes.
+            subject: Le propriétaire, obligatoire quand la portée est privée.
 
         Returns:
             L'identifiant de la mémoire créée, ou None si le moteur est absent
+
+        Raises:
+            IsolationError: Si un contenu privé vise un type partagé, ou n'a
+                pas de propriétaire nommé. Comme pour la connaissance, cette
+                erreur **traverse** le `except` général.
         """
         memory = self.registry.try_get("memory")
         if memory is None:
             self._logger.debug("Moteur de mémoire indisponible, mémorisation ignorée")
             return None
 
-        try:
-            from ..memory_engine.types import MemoryItem, MemoryType
+        from ..memory_engine.types import MemoryItem, MemoryType
 
+        type_choisi = self._to_memory_type(MemoryType, memory_type)
+        proprietaire = owner_for(data_scope or DataScope.PUBLIC, subject)
+
+        if proprietaire.is_private:
+            # Le type est vérifié **avant** l'écriture, et le propriétaire
+            # vient de la source, pas de `self.user_id` : celui-ci peut être
+            # `None`, ou être quelqu'un d'autre que le titulaire de la boîte.
+            check_store(
+                proprietaire,
+                Visibility.SHARED if type_choisi.shared else Visibility.PRIVATE,
+            )
+
+        try:
             item = MemoryItem(
                 content=content,
-                memory_type=self._to_memory_type(MemoryType, memory_type),
-                user_id=self.user_id,
+                memory_type=type_choisi,
+                user_id=proprietaire.subject or self.user_id,
                 session_id=self.session_id,
                 agent_id=self.agent_id,
                 tags=tags or [],
@@ -195,13 +374,16 @@ class AgentContext:
     # ------------------------------------------------------------------
     # Moteur de connaissances
     # ------------------------------------------------------------------
-    def search_knowledge(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+    def search_knowledge(self, query: str, limit: int = 5,
+                         role: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Interroge la base de connaissances.
 
         Args:
             query: Termes recherchés
             limit: Nombre maximum de connaissances retournées
+            role: Rôle de l'appelant (VOLET 05, chapitre 07). Sans rôle, un agent
+                ne lit que les connaissances publiques.
 
         Returns:
             Liste de connaissances pertinentes
@@ -217,7 +399,12 @@ class AgentContext:
             return []
 
         try:
-            items = knowledge.search_knowledge(query, limit=limit)
+            # `role` n'est transmis que s'il est demandé : un moteur de
+            # connaissances antérieur au chapitre 07 n'accepte pas ce paramètre,
+            # et un agent ne doit pas échouer parce qu'un composant est plus ancien
+            # que lui. Sans rôle, la lecture reste publique de toute façon.
+            items = (knowledge.search_knowledge(query, limit=limit, role=role) if role
+                     else knowledge.search_knowledge(query, limit=limit))
             self.record_audit(
                 AuditEventType.KNOWLEDGE,
                 "search_knowledge",
@@ -232,6 +419,17 @@ class AgentContext:
                     "content": item.content,
                     "confidence": item.confidence,
                     "tags": item.tags,
+                    # Un agent qui cite une connaissance doit pouvoir dire d'où
+                    # elle vient et si elle est approuvée (chapitre 08, étape 4).
+                    # None quand le moteur ne porte pas l'information : mieux vaut
+                    # « inconnu » qu'un domaine ou un statut supposé.
+                    "domain": getattr(getattr(item, "domain", None), "value", None),
+                    "status": getattr(getattr(item, "status", None), "value", None),
+                    # Les deux axes de l'ADR-019. Sans eux, un agent ne peut pas
+                    # savoir si ce qu'il lit vaut pour le pays de la question :
+                    # il servirait du droit d'ailleurs sans jamais le voir.
+                    "scope": getattr(item, "scope", None),
+                    "subject": getattr(getattr(item, "subject", None), "value", None),
                 }
                 for item in items
             ]
@@ -247,17 +445,32 @@ class AgentContext:
             return []
 
     def add_knowledge(self, content: str, tags: Optional[List[str]] = None,
-                      confidence: float = 0.5) -> Optional[str]:
+                      confidence: float = 0.5,
+                      data_scope: Optional["DataScope"] = None,
+                      subject: Optional[str] = None) -> Optional[str]:
         """
         Ajoute une connaissance à la base.
+
+        La base est un magasin **partagé** : une connaissance issue d'une source
+        privée n'y entre pas (VOLET 40). `data_scope` dit d'où vient le contenu ;
+        il se **dérive** de la capacité de l'outil ou du connecteur qui l'a
+        produit, il ne se choisit pas.
 
         Args:
             content: Contenu de la connaissance
             tags: Étiquettes de catégorisation
             confidence: Niveau de confiance entre 0.0 et 1.0
+            data_scope: Portée déclarée de l'origine. `public` par défaut, ce qui
+                est la vérité des sources d'agent existantes.
+            subject: Le propriétaire, quand la portée est `user_private`.
 
         Returns:
             L'identifiant de la connaissance créée, ou None si le moteur est absent
+
+        Raises:
+            IsolationError: Si la source est privée. Cette erreur **traverse**
+                le `except` général : un agent ne doit pas pouvoir lire « j'ai
+                fait fuiter une donnée » comme « le moteur a eu un hoquet ».
         """
         knowledge = self.registry.try_get("knowledge")
         if knowledge is None:
@@ -276,7 +489,11 @@ class AgentContext:
                 content=content,
                 tags=tags or [],
                 confidence=confidence,
-                source=KnowledgeSource(id=self.agent_id, type="agent", location=self.agent_id),
+                source=KnowledgeSource(
+                    id=self.agent_id, type="agent", location=self.agent_id,
+                    data_scope=data_scope or DataScope.PUBLIC,
+                    subject=subject,
+                ),
             )
             item_id = knowledge.add_knowledge(item)
             self.record_audit(
@@ -288,6 +505,19 @@ class AgentContext:
                 metadata={"knowledge_id": item_id, "content_preview": content[:200]},
             )
             return item_id
+        except IsolationError as fuite:
+            # Consignée puis **relancée**. La renvoyer comme un `None` la
+            # rendrait indiscernable d'un moteur indisponible, et un appelant
+            # qui réessaie plus tard croirait à un incident passager.
+            self._logger.error(f"Frontière d'isolation franchie : {fuite}")
+            self.record_audit(
+                AuditEventType.KNOWLEDGE,
+                "add_knowledge",
+                status=AuditStatus.FAILURE,
+                detail=f"Isolation : {fuite}",
+                metadata={"reason": "user_private_vers_magasin_partage"},
+            )
+            raise
         except Exception as error:
             self._logger.warning(f"Ajout de connaissance impossible: {error}")
             self.record_audit(
@@ -302,6 +532,61 @@ class AgentContext:
     # ------------------------------------------------------------------
     # Moteur documentaire
     # ------------------------------------------------------------------
+    def ask_knowledge(
+        self, question: str, scope: Optional[str] = None,
+        subject: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Pose une question aux couches de connaissance, et dit **laquelle** répond.
+
+        Ce que la vague IV a construit — 249 pays dérivés, les séries mesurées,
+        la profondeur sénégalaise — n'était atteignable que par HTTP. Un agent
+        qui cherchait la monnaie du Sénégal ne pouvait pas y accéder : la
+        capacité existait et **ne leur arrivait pas**.
+
+        Le routage est celui du VOLET 57, pas un second : un sujet national ne
+        quitte pas son pays, la profondeur passe avant la largeur, et rien
+        n'est fusionné.
+
+        Args:
+            question: La question posée.
+            scope: La portée demandée, si l'agent la connaît.
+            subject: Le sujet déclaré, s'il est connu.
+
+        Returns:
+            La réponse et la couche qui l'a donnée. `UNKNOWN` est une réponse.
+        """
+        from src.knowledge_engine.routing import ask as router_ask
+
+        try:
+            reponse = router_ask(question, scope=scope, subject=subject)
+        except ValueError as refus:
+            # Une portée mal écrite est une erreur d'appel, pas une panne : elle
+            # revient à l'agent au lieu de faire tomber son tour.
+            self.record_audit(
+                AuditEventType.KNOWLEDGE, "ask_knowledge",
+                status=AuditStatus.FAILURE,
+                metadata={"question": str(question)[:500], "reason": str(refus)},
+            )
+            return {"status": "UNKNOWN", "answered_by": "none", "reason": str(refus)}
+
+        self.record_audit(
+            AuditEventType.KNOWLEDGE, "ask_knowledge",
+            status=(
+                AuditStatus.SUCCESS if reponse["status"] == "FOUND"
+                else AuditStatus.UNAVAILABLE
+            ),
+            metadata={
+                "question": str(question)[:500],
+                # Quelle couche a parlé fait partie de la trace : sans cela, un
+                # désaccord entre couches serait invisible dans l'audit aussi.
+                "answered_by": reponse["answered_by"],
+                "layers": reponse["layers"],
+                "scope": reponse["scope"],
+            },
+        )
+        return reponse
+
     def load_document(self, path: str) -> Optional[Any]:
         """
         Charge un document depuis un fichier.
@@ -385,6 +670,15 @@ class AgentContext:
 
     # ------------------------------------------------------------------
     # Moteur d'outils
+    #
+    # Un agent tourne **sans personne devant**. La question posée ici n'est donc
+    # pas celle de `/tool/execute` — « ce rôle a-t-il le droit ? » — mais celle
+    # du moteur de routines : « cet appel peut-il avoir lieu sans témoin ? »
+    #
+    # Le trou ouvert par la phase 39.2 est fermé ici (phase 39.3) : un rôle
+    # `user` refusé sur `POST /tool/execute {"tool_id": "terminal"}` ne
+    # l'obtient plus par `POST /workflow/run`. Ce qui passe est **borné** :
+    # `python -m pytest` est pré-approuvé au registre, `python -c` ne l'est pas.
     # ------------------------------------------------------------------
     def use_tool(self, tool_id: str, *args, **kwargs) -> Dict[str, Any]:
         """
@@ -420,6 +714,28 @@ class AgentContext:
                 metadata={"arguments": self._serialize_args(args, kwargs)},
             )
             return {"status": "error", "tool": tool_id, "error": f"Outil '{tool_id}' désactivé ou inconnu"}
+
+        # Le portillon du chemin sans témoin. `args[0]` porte l'opération —
+        # `"read"`, ou la commande découpée — et c'est elle qui décide si
+        # l'appel tombe dans une borne pré-approuvée.
+        autorise, motif = may_run_unattended(
+            tool_id,
+            getattr(tool_engine, "capabilities", None),
+            arguments=args[0] if args else None,
+        )
+        if not autorise:
+            self.record_audit(
+                AuditEventType.TOOL,
+                f"tool:{tool_id}",
+                status=AuditStatus.SKIPPED,
+                detail=f"Exécution sans témoin refusée : {motif}",
+                metadata={"arguments": self._serialize_args(args, kwargs)},
+            )
+            return {
+                "status": "error",
+                "tool": tool_id,
+                "error": f"Exécution sans témoin refusée : {motif}",
+            }
 
         started = time.time()
         try:
@@ -466,6 +782,30 @@ class AgentContext:
     # ------------------------------------------------------------------
     # Moteur de modèles
     # ------------------------------------------------------------------
+    def style_hints(self) -> str:
+        """
+        Retourne les préférences observées du sujet, prêtes pour une invite.
+
+        Vide quand aucun sujet n'est identifié ou qu'aucune préférence n'atteint
+        son seuil d'observations (VOLET 34, ch. 12). Le style est dérivé **une
+        fois** par contexte et n'est jamais deviné : sans retours consentis, la
+        plateforme répond comme elle répond à tout le monde.
+        """
+        if self._style_hints is not None:
+            return self._style_hints
+
+        self._style_hints = ""
+        if not self.user_id:
+            return self._style_hints
+
+        try:
+            from src.training.working_style import derive
+
+            self._style_hints = derive(self.user_id).prompt_hints()
+        except Exception as error:  # noqa: BLE001 - un style indisponible n'empêche pas de répondre
+            self._logger.debug(f"Style de travail indisponible: {error}")
+        return self._style_hints
+
     def generate(self, prompt: str, task_requirements: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Demande une génération de texte au moteur de modèles.
@@ -491,6 +831,14 @@ class AgentContext:
             return {"status": "unavailable", "text": "", "reason": "Moteur de modèles indisponible"}
 
         requirements = task_requirements or {}
+        # Le style observé du sujet enrichit l'invite (VOLET 34, ch. 12). Sans
+        # préférence établie, `style_hints()` rend une chaîne vide et l'invite
+        # part inchangée : une consigne de style inventée produirait des
+        # réponses ajustées à une personne qui n'existe pas.
+        indications = self.style_hints()
+        if indications:
+            prompt = f"{indications}\n\n{prompt}"
+
         started = time.time()
         model_id: Optional[str] = None
         try:
@@ -516,7 +864,13 @@ class AgentContext:
                 status=AuditStatus.SUCCESS,
                 model_id=model_id,
                 execution_time_seconds=time.time() - started,
-                metadata={"prompt_preview": self._clip(prompt, 200), "output_length": len(text)},
+                metadata={
+                    "prompt_preview": self._clip(prompt, 200),
+                    "output_length": len(text),
+                    # Tracé : une réponse produite sous des préférences apprises
+                    # doit pouvoir être expliquée par elles.
+                    "style_applied": bool(indications),
+                },
             )
             return {"status": "success", "text": text, "model_id": model_id}
         except Exception as error:
@@ -867,8 +1221,11 @@ class AgentContext:
                 parts.append(f"{key}={AgentContext._clip(str(value), 200)}")
         return AgentContext._clip(", ".join(parts), 1000)
 
-    # Noms d'arguments jugés sensibles : leur valeur n'est jamais consignée
-    _SENSITIVE_ARG_NAMES = ("password", "token", "secret", "api_key", "apikey", "key", "authorization", "auth")
+    # Noms d'arguments jugés sensibles : leur valeur n'est jamais consignée.
+    # La liste vit dans `src/security/redaction.py` — elle existait ici, privée
+    # à cette classe, et la deuxième copie est l'endroit où deux listes
+    # commencent à diverger.
+    _SENSITIVE_ARG_NAMES = tuple(sorted(NOMS_SENSIBLES))
 
     # ------------------------------------------------------------------
     # Utilitaires internes

@@ -1,0 +1,17 @@
+# Recherche sémantique — installation délibérée (ADR-015).
+#
+# Ce fichier n'est **pas** installé par l'image de production. `sentence-transformers`
+# tire PyTorch : de ~200 Mo (roue CPU) à ~2,5 Go (CUDA). La plateforme fonctionne
+# sans lui — la récupération reste lexicale, et chaque réponse de recherche dit
+# quel chemin elle a pris plutôt que de laisser croire au sémantique.
+#
+#     pip install -r requirements-embeddings.txt
+#
+# Le modèle par défaut, `paraphrase-multilingual-MiniLM-L12-v2`, est multilingue
+# et couvre le français. Il est téléchargé au premier encodage, puis mis en cache
+# localement : après cela, aucun réseau n'est nécessaire pour encoder.
+# `GALSEN_EMBEDDING_MODEL` sert à en choisir un autre.
+
+-r requirements.txt
+
+sentence-transformers==5.7.0

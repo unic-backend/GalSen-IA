@@ -37,6 +37,7 @@ ENGINE_NAMES = (
     "cloud",
     "calendar",
     "email",
+    "coding",
 )
 
 
@@ -100,6 +101,7 @@ class EngineRegistry:
             "cloud": self._build_cloud_service,
             "calendar": self._build_calendar_service,
             "email": self._build_email_service,
+            "coding": self._build_coding_engine,
         }
 
     # ------------------------------------------------------------------
@@ -279,6 +281,11 @@ class EngineRegistry:
         return self.get("email")
 
     @property
+    def coding(self):
+        """Moteur de codage (CodingEngineManager) — ADR-028."""
+        return self.get("coding")
+
+    @property
     def project_root(self) -> str:
         """Racine du projet utilisée pour localiser les fichiers de configuration."""
         return self._project_root
@@ -356,14 +363,40 @@ class EngineRegistry:
         return FileManagerImpl()
 
     def _build_cloud_service(self):
-        """Construit le service cloud (pur en mémoire, toujours disponible)."""
+        """
+        Construit le service cloud, **sur le service de fichiers du registre**.
+
+        Depuis ADR-016 le service cloud ne stocke plus rien : il délègue. Lui
+        laisser construire son propre service de fichiers ferait deux magasins
+        sur un même répertoire, chacun avec son index en mémoire — un fichier
+        déposé par `/cloud/*` resterait invisible de `/file/*`, et
+        réciproquement. Mesuré avant cette correction.
+        """
         from ..services.cloud.manager import CloudManagerImpl
-        return CloudManagerImpl()
+        return CloudManagerImpl(files=self.get("file"))
 
     def _build_calendar_service(self):
         """Construit le service de calendrier (pur en mémoire, toujours disponible)."""
         from ..services.calendar.manager import CalendarManagerImpl
         return CalendarManagerImpl()
+
+    def _build_coding_engine(self):
+        """
+        Construit le moteur de codage (ADR-028).
+
+        Audit, approbation et modèles lui sont passés par `try_get` : il doit
+        pouvoir se construire même si l'un d'eux manque, et il refuse alors les
+        tâches qui en dépendent plutôt que de s'en passer en silence.
+
+        Les trois moteurs externes ne sont pas requis : leur absence est
+        rapportée par `status()`, elle n'empêche pas la construction.
+        """
+        from ..coding_engine.manager import CodingEngineManager
+        return CodingEngineManager(
+            audit_manager=self.try_get("audit"),
+            approval_manager=self.try_get("approval"),
+            model_manager=self.try_get("model"),
+        )
 
     def _build_email_service(self):
         """Construit le service email (pur en mémoire, toujours disponible)."""

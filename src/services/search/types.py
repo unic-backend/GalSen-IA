@@ -7,7 +7,6 @@ de provenance et générateur d'identifiants.
 Ce module n'a aucune dépendance externe.
 """
 
-import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -27,6 +26,9 @@ class SearchSource(str, Enum):
     MEMORY = "memory"
     DOCUMENT = "document"
     VISION = "vision"
+    #: La connaissance mondiale dérivée (VOLET 52). Publique et de plateforme :
+    #: elle n'appartient à personne, contrairement à la mémoire.
+    WORLD = "world"
 
 
 class SearchSort(str, Enum):
@@ -53,6 +55,16 @@ class SearchQuery:
     sort: SearchSort = SearchSort.RELEVANCE
     min_score: Optional[float] = None
     filters: Dict[str, Any] = field(default_factory=dict)
+    # Rôle de l'appelant, porté jusqu'aux fournisseurs : chercher n'autorise pas
+    # à lire. Sans rôle, un fournisseur ne rend que ce qui est public
+    # (VOLET 05 ch. 07, VOLET 14 ch. 07).
+    role: Optional[str] = None
+    # À qui appartient la recherche (ADR-010, critère de sortie C2). Le rôle dit
+    # ce que l'appelant a le droit de lire ; le sujet dit **de qui** sont les
+    # données. Les deux sont nécessaires : la mémoire est possédée, pas
+    # seulement classifiée, et une source de mémoire sans sujet rendrait les
+    # souvenirs de tout le monde à n'importe qui.
+    subject: Optional[str] = None
 
 
 @dataclass
@@ -117,6 +129,15 @@ class SearchResponse:
     search_id: str = field(default_factory=generate_search_id)
     execution_time_ms: float = 0.0
     sources_used: List[str] = field(default_factory=list)
+    # Les sources demandées qu'aucun fournisseur ne sert, **avec leur raison**.
+    # `sources_used` seul laisse croire qu'une source a été interrogée sans
+    # rien trouver, alors qu'elle n'a pas été interrogée du tout.
+    sources_unavailable: Dict[str, str] = field(default_factory=dict)
+    # Par quel chemin chaque source a classé ses résultats — sémantique ou
+    # lexical. Un appelant qui ne peut pas faire la différence finira par
+    # construire sur l'idée que la similarité est comprise, et se trompera
+    # exactement le jour où cela compte (ADR-015).
+    methods: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """Sérialise la réponse complète en dictionnaire."""
@@ -127,4 +148,19 @@ class SearchResponse:
             "search_id": self.search_id,
             "execution_time_ms": self.execution_time_ms,
             "sources_used": self.sources_used,
+            "sources_unavailable": self.sources_unavailable,
+            "methods": self.methods,
+            # Ce que le classement ne dit pas. Les scores de deux sources ne
+            # sont pas comparables — proportion de termes ici, similarité de
+            # Jaccard là — donc l'ordre entre résultats de sources différentes
+            # n'est pas fondé. Le taire laisserait croire à un classement qui
+            # n'existe pas.
+            "ranking": {
+                "cross_source_comparable": False,
+                "detail": (
+                    "Les scores proviennent de moteurs différents et ne sont pas "
+                    "comparables entre eux. À l'intérieur d'une même source, "
+                    "l'ordre est fondé ; entre sources, il ne l'est pas."
+                ),
+            },
         }

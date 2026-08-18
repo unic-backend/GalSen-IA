@@ -9,10 +9,11 @@ registre qui les inventorie.
 Aucun appel réseau n'est fait : les connecteurs de test sont écrits pour ça.
 """
 
-import os
 
 import pytest
 
+from src.connectors.contract import DataContract
+from src.tool.capabilities import DataScope, Effect
 from src.connectors import (
     Connector,
     ConnectorCheck,
@@ -41,6 +42,22 @@ class ConnecteurFactice(Connector):
     @property
     def kind(self) -> ConnectorKind:
         return self._kind
+
+    @property
+    def data_contract(self) -> DataContract:
+        """
+        Un double déclare son contrat, comme un vrai connecteur.
+
+        Sans cette déclaration le registre le refuserait — et il aurait raison :
+        « non déclaré » n'est pas « inoffensif », y compris pour un double.
+        """
+        return DataContract(
+            data_scope=DataScope.SYSTEM,
+            per_subject=False,
+            effects=frozenset({Effect.READ}),
+            retention="Rien.",
+            rationale="Connecteur de test, sans effet réel.",
+        )
 
     def describe(self) -> ConnectorDescription:
         return ConnectorDescription(
@@ -77,6 +94,22 @@ class ConnecteurCasse(Connector):
     @property
     def kind(self) -> ConnectorKind:
         return ConnectorKind.STORAGE
+
+    @property
+    def data_contract(self) -> DataContract:
+        """
+        Un double déclare son contrat, comme un vrai connecteur.
+
+        Sans cette déclaration le registre le refuserait — et il aurait raison :
+        « non déclaré » n'est pas « inoffensif », y compris pour un double.
+        """
+        return DataContract(
+            data_scope=DataScope.SYSTEM,
+            per_subject=False,
+            effects=frozenset({Effect.READ}),
+            retention="Rien.",
+            rationale="Connecteur de test, sans effet réel.",
+        )
 
     def describe(self) -> ConnectorDescription:
         return ConnectorDescription(

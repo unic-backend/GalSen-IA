@@ -1,4 +1,13 @@
 ## Done
+- [x] **ADR-021 — acquisition de connaissance sous portillon** (étapes 0 à 10) : ADR accepté, registre étendu, enregistrement candidat, récupérateur poli, portillon par lot, découverte profondeur 1, métadonnées, détection de langue, barrière de confiance (test A8), dix contrôles, proposition de manifeste, script de pilote. **Aucune source activée : le chemin existe et n'atteint rien, à dessein**
+- [x] **Wolof** — orthographe CLAD (27 lettres, décret n° 2005-992), corpus UD_Wolof-WTB de 2105 phrases acquis et normalisé, chargeur RAG, invite système, marqueurs de langue mesurés sur le corpus (0 faux positif sur 2105 phrases)
+- [x] **Moteur de connaissance sénégalais** — 14 régions et 45 départements dérivés de geoBoundaries (rattachement calculé, jamais déclaré), 8 jeux sectoriels acquis, 212 objets, 271 fragments, 100 % avec provenance, 6 domaines peuplés sur 16
+- [x] **RAG multilingue fr/wo/en** — 16 concepts, 115 termes ; l'expansion ajoute et ne retire jamais ; latence 0,1–0,5 ms
+- [x] **Divergences administratives représentées, jamais arbitrées** — 14 régions contre 10 dans la redistribution ISO ; 45 départements contre 46 annoncés → `UNKNOWN` ; « Keur Massar » cherché dans les 8 sources → `UNVERIFIED_CLAIM`
+- [x] VOLET 36 — GalSen Intelligence Foundation (8 chapitres : barrière de confiance sur les 9 chemins d'entrée, langues du Sénégal + rapport de capacités, évaluation factuelle mécanique, 4 agents, entités/relations avec provenance, axes d'intention, capacités différées mesurées) — verdict de clôture dans `docs/architecture/volet-36-plan.md` §14
+- [x] VOLET 35 — IA internationale à profondeur sénégalaise, **10 chapitres sur 12** (registre des sources, récupération par portée, la réponse dit d'où elle vient, manques mesurés, découverte sans décision, contradictions rapportées, collecte sous portillon, politique santé). Les chapitres 11 et 12 attendent de **vrais documents** et ne peuvent pas être faits sans eux
+- [x] Trois workflows pour rendre les agents du VOLET 36 joignables (`question`, `ingestion`, `series`)
+- [x] Troisième source de recherche branchée (`document`), avec la règle de propriété qui empêche la fuite révélée par le branchement
 - [x] VOLET 16 — Authentication & Identity (ADR-010 : une clé appartient à un sujet ; critère C2 atteint sur mémoire, fichiers et notifications ; /auth/whoami ; taux d'authentification dans /metrics)
 - [x] VOLET 04 — Roadmap (10 chapitres, 13 phases : roadmap réelle, critères de sortie, versionnage, release_check, backlog P0–P3, registre de dette, /metrics, gouvernance)
 - [x] Reconciliation of the two development lines (4 phases: merge, green suite, Conseil Agricole on /ui, memory + ADRs)

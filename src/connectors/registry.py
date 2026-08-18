@@ -14,7 +14,9 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
+from .contract import verify_contract
 from .interfaces import Connector, ConnectorRegistryContract
+from .safety import privileges_of, verify_privileges
 from .types import ConnectorCheck, ConnectorKind, ConnectorStatus
 
 logger = logging.getLogger(__name__)
@@ -43,6 +45,21 @@ class ConnectorRegistry(ConnectorRegistryContract):
         connector_id = connector.connector_id
         if not connector_id or not str(connector_id).strip():
             raise ValueError("Un connecteur doit avoir un identifiant non vide.")
+
+        # Le contrat de données est exigé **ici**, au seul endroit par lequel
+        # un connecteur devient atteignable. Le vérifier plus tard reviendrait
+        # à le vérifier après le premier appel (VOLET 41).
+        #
+        # L'attribut est lu brut, et non par `contract_of` : celui-ci rend
+        # `None` pour un contrat mal typé, et le message dirait alors « aucun
+        # contrat » à quelqu'un qui en a écrit un. Un diagnostic faux coûte
+        # plus cher qu'un diagnostic absent.
+        verify_contract(connector_id, getattr(connector, "data_contract", None))
+
+        # Les privilèges demandés sont vérifiés au même endroit et pour la même
+        # raison : une demande excessive doit être refusée **avant** qu'un écran
+        # de consentement ne soit montré à qui que ce soit (VOLET 42).
+        verify_privileges(connector_id, privileges_of(connector))
 
         with self._lock:
             existing = self._connectors.get(connector_id)

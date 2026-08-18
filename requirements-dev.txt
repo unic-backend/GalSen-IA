@@ -1,0 +1,29 @@
+# Outils de test et de développement.
+#
+# Séparés des dépendances d'exécution parce que l'image de production les
+# installait : pytest, ses greffons et le client HTTP de test se retrouvaient
+# dans le conteneur exposé au réseau. Du code qui ne sert jamais en production
+# reste du code à mettre à jour et à surveiller.
+#
+# Installation pour développer ou pour la CI :
+#
+#     pip install -r requirements-dev.txt
+#
+# Versions figées pour la même raison que les dépendances d'exécution : une
+# suite de tests qui change toute seule ne prouve plus rien de stable.
+
+-r requirements.txt
+
+pytest==9.1.1
+pytest-asyncio==1.4.0
+pytest-cov==7.1.0
+
+# Requis par `starlette.testclient.TestClient` (tests d'API : santé, limiteur de
+# taux, RBAC, authentification). starlette attend `httpx2` ; avec l'ancien
+# `httpx` il fonctionne mais avertit à chaque import.
+httpx2==2.10.0
+
+# Linter, configuré par `pyproject.toml`. Version figée pour la même raison que
+# le reste : un linter qui change tout seul fait échouer la CI sur un commit qui
+# n'a rien changé.
+ruff==0.15.8

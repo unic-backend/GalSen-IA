@@ -251,7 +251,10 @@ class TestDescription:
     def test_le_secret_n_est_pas_conserve_en_attribut(self, connecteur, configure):
         """Le connecteur relit l'environnement : rien ne subsiste dans son état."""
         configure.setenv(SMTPEmailConnector.PASSWORD_VARIABLE, "secret-tres-confidentiel")
-        connecteur.check.__self__  # l'objet est bien celui testé
+
+        # L'expression `connecteur.check.__self__` occupait cette ligne sans
+        # rien vérifier : elle était évaluée puis jetée. L'assertion vérifiée
+        # est celle qui suit.
         assert "secret-tres-confidentiel" not in str(vars(connecteur))
 
     def test_operations_annoncees(self, connecteur):

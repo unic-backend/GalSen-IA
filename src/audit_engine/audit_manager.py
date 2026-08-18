@@ -11,6 +11,8 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from src.storage.paths import sqlite_enabled
+
 from .audit_store import InMemoryAuditStore
 from .interfaces import AuditManager, AuditStore
 from .types import AuditEvent
@@ -29,7 +31,17 @@ class AuditManagerImpl(AuditManager):
             store: Stockage des événements (mémoire par défaut). Permet
                 de brancher un backend persistant sans modifier l'appelant.
         """
-        self._store = store or InMemoryAuditStore()
+        if store is not None:
+            self._store = store
+        elif sqlite_enabled():
+            # Import différé : `storage` importe les types d'audit.
+            from src.storage.sqlite_audit_store import SQLiteAuditStore
+            self._store = SQLiteAuditStore()
+        else:
+            # Un journal qui disparaît au redémarrage ne sert à rien le jour où
+            # on vient chercher ce qui s'est passé — et ce jour-là, le service a
+            # souvent redémarré. `GALSEN_STORAGE_BACKEND=sqlite` le persiste.
+            self._store = InMemoryAuditStore()
         self._logger = logger
 
     def record(self, event: AuditEvent) -> str:

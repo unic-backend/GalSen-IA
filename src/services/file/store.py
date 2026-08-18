@@ -11,7 +11,7 @@ import threading
 from typing import Any, Dict, List, Optional
 
 from .interfaces import FileStore
-from .types import FileItem
+from .types import FileItem, FileSummary
 
 logger = logging.getLogger(__name__)
 
@@ -75,14 +75,22 @@ class InMemoryFileStore(FileStore):
         content_type: Optional[str] = None,
         uploaded_by: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
-    ) -> List[FileItem]:
-        """Retourne les fichiers filtrés, du plus récent au plus ancien."""
+    ) -> List[FileSummary]:
+        """
+        Retourne les fichiers filtrés, du plus récent au plus ancien, sans leur
+        contenu (ADR-016).
+
+        En mémoire, ne pas rendre les octets ne fait rien gagner — ils sont déjà
+        là. Le résumé est rendu quand même : les deux magasins doivent avoir le
+        même contrat, sinon le défaut réapparaît le jour où l'on change de
+        backend, c'est-à-dire au pire moment.
+        """
         with self._lock:
-            matched: List[FileItem] = []
+            matched: List[FileSummary] = []
             for file_id in reversed(self._order):
                 file = self._files[file_id]
                 if self._matches(file, category, content_type, uploaded_by, tags):
-                    matched.append(file)
+                    matched.append(file.summary())
             return matched[offset:offset + limit]
 
     def delete(self, file_id: str) -> bool:

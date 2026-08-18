@@ -27,8 +27,11 @@ services:
     container_name: galsen-ia-api
     restart: unless-stopped
 
-    ports:
-      - "${GALSEN_PORT:-8000}:8000"
+    # Aucun port publié : la seule voie d'entrée est Caddy, sur le réseau
+    # interne. Publier 8000 laisserait une route en clair contournant TLS,
+    # l'authentification du proxy et son journal d'accès.
+    expose:
+      - "8000"
 
     # Volumes pour la persistance des données et les logs
     volumes:
@@ -39,9 +42,21 @@ services:
     environment:
       # Stockage
       - GALSEN_STORAGE_BACKEND=${GALSEN_STORAGE_BACKEND:-sqlite}
+      - GALSEN_BACKUP_DIR=${GALSEN_BACKUP_DIR:-/app/data/backups}
 
       # Sécurité API
       - GALSEN_API_KEYS=${GALSEN_API_KEYS}
+
+      # Instance unique (ADR-013). Le service `api-dev` est sous profil pour la
+      # même raison : deux instances sur le même répertoire de données, c'est
+      # une clé révoquée sur l'une qui continue d'ouvrir l'autre.
+      - GALSEN_ALLOW_MULTI_INSTANCE=${GALSEN_ALLOW_MULTI_INSTANCE:-false}
+
+      # Proxys dont les en-têtes X-Forwarded-* sont acceptés. Le réseau bridge
+      # par défaut de Docker Compose ; sans cette déclaration, l'application
+      # ignore les en-têtes et compte toutes les requêtes comme venant de
+      # Caddy — la limite par adresse deviendrait globale.
+      - GALSEN_TRUSTED_PROXIES=${GALSEN_TRUSTED_PROXIES:-172.16.0.0/12}
 
       # Limiteur de taux
       - GALSEN_RATE_LIMIT_ENABLED=${GALSEN_RATE_LIMIT_ENABLED:-true}
@@ -82,7 +97,16 @@ services:
   # ---------------------------------------------------------------------------
   # Service de développement : API avec rechargement automatique
   # ---------------------------------------------------------------------------
+  # Ce service ne démarre **pas** avec `docker compose up` : il est sous profil.
+  # Il tournait auparavant à côté de `api`, avec `restart: unless-stopped` et un
+  # port publié — soit une deuxième instance de la plateforme, ce que ADR-009
+  # interdit (compteurs de débit et révocations de clés dédoublés), et un
+  # service avec rechargement automatique et sans limite de débit exposé sur
+  # l'hôte.
+  #
+  #   docker compose --profile dev up api-dev
   api-dev:
+    profiles: ["dev"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -131,6 +155,45 @@ services:
     networks:
       - galsen-network
 
+  # ---------------------------------------------------------------------------
+  # Terminaison TLS
+  # ---------------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: galsen-ia-caddy
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+      - "443:443"
+      # QUIC / HTTP3. Inutile de le publier si le pare-feu ne l'ouvre pas.
+      - "443:443/udp"
+
+    environment:
+      - GALSEN_DOMAIN=${GALSEN_DOMAIN:-localhost}
+      - GALSEN_TLS_EMAIL=${GALSEN_TLS_EMAIL:-}
+
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # `caddy_data` porte les certificats et les clés privées. **Sans ce
+      # volume, chaque redémarrage redemande un certificat** et heurte les
+      # limites de Let's Encrypt (cinq échecs par heure et par domaine).
+      - caddy_data:/data
+      - caddy_config:/config
+
+    depends_on:
+      api:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+    networks:
+      - galsen-network
+
 # ---------------------------------------------------------------------------
 # Volumes nommés (persistance entre les redémarrages)
 # ---------------------------------------------------------------------------
@@ -146,6 +209,12 @@ volumes:
     driver: local
   galsen_logs_dev:
     name: galsen_logs_dev
+    driver: local
+  caddy_data:
+    name: caddy_data
+    driver: local
+  caddy_config:
+    name: caddy_config
     driver: local
 
 # ---------------------------------------------------------------------------

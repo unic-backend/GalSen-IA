@@ -2,7 +2,7 @@
 Validateur de réponses pour le moteur de modèles GalSen IA.
 """
 
-from typing import Any, Optional, Dict, List
+from typing import Any, Optional, Dict
 from .types import ModelItem
 from .interfaces import ResponseValidator
 import re

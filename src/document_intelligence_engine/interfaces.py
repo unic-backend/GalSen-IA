@@ -3,9 +3,8 @@ Interfaces pour le moteur d'intelligence documentaire GalSen IA.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional, Tuple, AsyncGenerator
+from typing import List, Dict, Any, Optional
 from .types import DocumentItem, DocumentChunk, DocumentMetadata
-import time
 
 
 class DocumentStore(ABC):

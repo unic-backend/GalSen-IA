@@ -9,29 +9,63 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 ---
 
 ## Dernière session
+**2026-08-17 — Coding Engine et interopérabilité portés depuis la seconde ligne de développement.**
+`src/coding_engine/` (OpenHands, Aider, SWE-agent derrière une abstraction native, ADR-028),
+`src/code_edit/` (blocs d'édition) et `src/interop/` (OpenGAP, ADR-023). Aucun code des
+projets externes recopié, aucune dépendance ajoutée, exécution passée par `src/sandbox`.
+Branche : `claude/coding-engine-on-phases`, issue de `claude/galsen-ia-phases-ukwz7p`,
+qui n'a **pas** été modifiée.
 
-**Date** : 2026-08-09
+Puis les **8 échecs préexistants** ont été traités : 7 corrigés à la source (dont
+l'agent testeur qui rapportait une suite en échec comme réussie), 1 laissé rouge —
+`v0.1.0` doit être poussée, ce qui est une décision de mainteneur.
 
-**En cours** : rien. **VOLET 16 terminé** (10 chapitres, 12 phases).
+Puis les deux derniers échecs **visibles seulement en CI** ont été corrigés (deux tests
+qui figeaient le résultat d'une mesure au lieu de vérifier l'invariant).
+
+Vérifié : **5762 tests passent**, 11 ignorés, 1 échec — l'étiquette `v0.1.0`, seule.
+`ruff` propre. CI de la PR #25 : 6 échecs sur la base → 1 attendu après ce commit.
+
+**Prochaine étape** : fusionner cette branche, puis les deux gestes qui débloquent le reste —
+`ollama serve` (génération + recherche sémantique) et un `ffmpeg` réel (cinq étapes média).
+
+---
+
+### Sessions précédentes
+**Date** : 2026-08-16
+
+**En cours** : rien. **Le moteur média universel est terminé — 20 VOLETs,
+32 phases sur 32.** Rapport final → `docs/media/final-report.md`.
 
 **Terminé dans cette session**
-- **VOLET 02, VOLET 04 et VOLET 16 clos.**
-- **ADR-010** : une clé appartient à un sujet, sans magasin de secrets.
-- **Critère C2 atteint** sur les trois magasins — l'écriture prenait son
-  propriétaire dans le corps de la requête, la lecture ne filtrait rien.
-- **Preuve de C1** écrite : s'ignore sans fournisseur, s'exécute dès qu'il y en a un.
-- `GET /metrics` (trafic + taux d'authentification), `GET /auth/whoami`,
-  `scripts/release_check.py`, `src/version.py` source unique.
-- **C3 et C5 fermés** : workflow `revue` exécuté de bout en bout, journal borné.
-- Tests : **1524 passants**, 7 ignorés.
+- **`src/media/`** : 26 modules, 21 fichiers de tests, **483 tests**. Capacités
+  sondées, ingestion, scènes, transcription, montage déterministe, récit, motion
+  design, fournisseurs + WanGP, audio, sous-titres, ressources, compétences,
+  contrôle qualité, multi-format, file d'attente, outils d'agent, langage
+  naturel, API, frontière de sécurité, mesures, aptitude, studio.
+- **L'état est calculé** : `ENGINE READY — MEDIA RUNTIME DEPENDENCIES PENDING,
+  1 STAGE(S) NOT IMPLEMENTED (VOICE)` — 10 `READY`, 6 `BLOCKED`, 1 `ABSENT`.
+- **Aucune synthèse vocale n'existe dans ce dépôt** : trouvé en parcourant la
+  chaîne. Rapporté `ABSENT`, jamais rangé parmi les dépendances manquantes.
+- **Chiffres publiés re-mesurés, jamais assouplis** : 22 → 24 outils déclarés,
+  123 → 131 routes. Quatre gardes du dépôt ont attrapé le travail ; toutes
+  honorées.
+- Suite : **5369 tests**, 8 ignorés, `ruff` propre.
 
 **Prochaine étape**
-Choisir le prochain VOLET et publier son plan de phases. Critères de sortie de
-Phase 2 : **C2, C3, C5 et C6 atteints** ; restent C1 et C4, qui ne dépendent
-plus du code.
+Aucune en attente. Le prochain gain le plus élevé ne dépend pas de ce dépôt :
+installer un vrai `ffmpeg` et `ffprobe` fait passer **cinq étapes** de `BLOCKED`
+à `READY` sans une ligne de code — c'est l'intérêt des adaptateurs à sondes.
+Ensuite : un adaptateur de synthèse vocale (la seule étape que rien n'implémente).
 
 **Bloqué / à surveiller**
-- **C1 dépend de toi** : `ollama serve` avec un modèle de contexte ≥ 8192.
-- **C4 dépend de toi** : rien n'est déployé, personne n'a joint l'API par le réseau.
-- Rien ne vérifie une identité : celui qui écrit `GALSEN_API_KEYS` est cru sur parole.
-- Base de connaissances toujours vide ; log à 6,7 Mo sans rotation.
+- **`ffmpeg` complet, `ffprobe`, `torch`, GPU et `whisper` absents** de cet
+  environnement (mesuré). `frame_encode` et `image_analysis` sont disponibles.
+- **Licence de WanGP non inspectée** : c'est une lecture, pas de l'ingénierie,
+  et elle bloque la génération plus fermement que l'absence de GPU.
+- **Aucun curriculum `TIER_A` publié** — seule condition pour que Darra J quitte
+  `ARCHITECTURE READY`. N'appartient pas à ce dépôt.
+- **Mandataire réseau** : 9 domaines `.sn`, Banque mondiale, UNESCO, FAO, OMS
+  répondent `CONNECT → 403`. Mesuré, non contourné.
+- **C1** : `ollama serve` — génération et récupération sémantique non mesurées.
+- **`git push origin v0.1.0`** : seul échec de CI restant.

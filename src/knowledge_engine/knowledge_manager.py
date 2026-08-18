@@ -2,8 +2,14 @@
 Gestionnaire principal du moteur de connaissances GalSen IA.
 """
 
-from typing import List, Dict, Any, Optional, Tuple
-from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority
+from typing import Iterable, List, Dict, Any, Optional, Tuple
+from ..security.isolation import Visibility, check_store, owner_for
+from ..tool.capabilities import DataScope
+from .types import KnowledgeItem, KnowledgeSource, KnowledgePriority, KnowledgeStatus
+from .knowledge_lifecycle import check_transition, is_due_for_revalidation, is_retrievable
+from .knowledge_governance import governance_report
+from .knowledge_security import can_read
+from .knowledge_quality import quality_report
 from .interfaces import (
     KnowledgeStore, KnowledgeLoader, KnowledgeIndexer,
     KnowledgeRetriever, KnowledgeValidator, KnowledgeGraph,
@@ -17,9 +23,30 @@ from .knowledge_validator import KnowledgeValidatorImpl
 from .knowledge_graph import InMemoryKnowledgeGraph
 from .knowledge_cache import TTLCache
 from .knowledge_ranker import KnowledgeRankerImpl
+import copy
+import datetime
 import logging
 import threading
 import os
+from collections import Counter
+from src.storage.paths import sqlite_enabled
+
+# Nombre de connaissances distinctes accumulées avant écriture groupée. Assez
+# grand pour qu'une recherche entière tienne dans un seul lot, assez petit pour
+# qu'un arrêt brutal ne perde qu'un signal négligeable.
+SEUIL_ACCES = 50
+
+TRACK_ACCESS_VARIABLE = "GALSEN_KNOWLEDGE_TRACK_ACCESS"
+
+
+def track_access_enabled() -> bool:
+    """
+    Indique si les consultations sont comptées.
+
+    `false` rend le chemin de lecture réellement en lecture seule — ce que le
+    compteur empêchait, puisqu'il écrivait à chaque résultat de recherche.
+    """
+    return os.getenv(TRACK_ACCESS_VARIABLE, "").strip().lower() not in ("false", "0", "no")
 
 
 class KnowledgeManagerImpl(KnowledgeManager):
@@ -53,7 +80,7 @@ class KnowledgeManagerImpl(KnowledgeManager):
         # Composants avec valeurs par défaut
         if store is not None:
             self._store = store
-        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
+        elif sqlite_enabled():
             # Import différé pour éviter un import circulaire avec storage.
             from src.storage.sqlite_knowledge_store import SQLiteKnowledgeStore
             self._store = SQLiteKnowledgeStore()
@@ -73,15 +100,40 @@ class KnowledgeManagerImpl(KnowledgeManager):
         # Verrou pour les opérations qui nécessitent de la cohérence entre composants
         self._lock = threading.RLock()
 
+        # Consultations en attente d'écriture groupée. Verrou distinct du verrou
+        # principal : compter une consultation ne doit pas attendre une écriture.
+        self._acces_en_attente: Counter = Counter()
+        self._acces_lock = threading.RLock()
+
     # Méthodes de gestion des connaissances
     def add_knowledge(self, knowledge: KnowledgeItem) -> str:
         """
         Ajoute une connaissance à la base.
 
+        **La base de connaissance est un magasin partagé.** Une donnée
+        appartenant à une personne — un courriel, un fichier privé — n'y entre
+        pas : une fois entrée, aucun filtre postérieur ne l'en retire, et elle
+        deviendrait visible de tous ceux qui interrogent la base. La portée est
+        lue sur la source, pas demandée à l'appelant (VOLET 40).
+
         Returns:
             ID de la connaissance ajoutée
+
+        Raises:
+            IsolationError: Si la source est déclarée `user_private`.
+            ValueError: Si la connaissance ne passe pas la validation.
         """
         with self._lock:
+            source = getattr(knowledge, "source", None)
+            if source is not None:
+                check_store(
+                    owner_for(
+                        getattr(source, "data_scope", DataScope.PUBLIC),
+                        getattr(source, "subject", None),
+                    ),
+                    Visibility.SHARED,
+                )
+
             # Valider la connaissance
             is_valid, errors = self.validate_knowledge(knowledge)
             if not is_valid:
@@ -97,9 +149,6 @@ class KnowledgeManagerImpl(KnowledgeManager):
             # Sauvegarder dans le stockage
             kid = self._store.save(knowledge)
 
-            # Mettre à jour l'index
-            self._indexer.add(knowledge)
-
             # Ajouter au graphe (en tant que nœud isolé pour l'instant)
             self._graph.add_node(kid)
 
@@ -109,11 +158,80 @@ class KnowledgeManagerImpl(KnowledgeManager):
                 km.metadata.setdefault("access_count", 0)
                 self._store.update(km)  # incrémentera la version
 
-            # Si on veut mettre en cache l'élément récemment ajouté
-            self._cache.set(f"knowledge:{kid}", knowledge)
+            # Indexer et mettre en cache **ce que le magasin détient**, jamais ce
+            # qui lui a été soumis.
+            #
+            # `KnowledgeStore.save()` refuse une écriture quand une version au
+            # moins aussi récente existe sous le même identifiant, et il le fait
+            # en retournant cet identifiant : « créé », « inchangé » et
+            # « refusé » sont indiscernables pour l'appelant. Mettre en cache
+            # l'objet soumis faisait alors diverger trois vues d'une même
+            # connaissance — mesuré avant correction, `get_knowledge()` rendait
+            # « Le mil se sème en juillet. » pendant que le magasin et la
+            # recherche rendaient « ... en juin. ». Le chapitre 03 du VOLET 21
+            # range la validation d'intégrité et la cohérence parmi ses
+            # contrôles qualité ; un cache qui contredit son magasin les défait
+            # tous les deux.
+            stocke = km or knowledge
+            if km is not None and km.compute_content_hash() != knowledge.compute_content_hash():
+                self._logger.warning(
+                    "Connaissance non écrite : l'identifiant %s porte déjà une version "
+                    "au moins aussi récente. Le contenu soumis a été ignoré ; "
+                    "utilisez update_knowledge() pour corriger une connaissance existante.",
+                    kid,
+                )
+            self._indexer.add(stocke)
+            self._cache.set(f"knowledge:{kid}", stocke)
+            self._invalidate_query_cache()
 
             self._logger.debug(f"Knowledge added with ID: {kid}")
             return kid
+
+    # Préfixe des entrées de cache portant un résultat de recherche.
+    _QUERY_CACHE_PREFIX = "query:"
+
+    def _cached_search(self, cle: str, producteur) -> List[Tuple[KnowledgeItem, float]]:
+        """
+        Sert un résultat de recherche depuis le cache, ou le produit et le garde.
+
+        Répond à « Cache frequent queries » (chapitre 05, PERFORMANCE). Le
+        producteur n'est appelé qu'en cas d'absence : tout ce qu'il coûte — y
+        compris la lecture complète du magasin — n'est payé qu'une fois.
+        """
+        cached = self._cache.get(cle)
+        if cached is not None:
+            return list(cached)
+
+        resultats = [(k, s) for k, s in producteur() if k is not None]
+        self._cache.set(cle, list(resultats))
+        return resultats
+
+    def _search_index(self, query: str, limit: int) -> List[Tuple[KnowledgeItem, float]]:
+        """Interroge l'index. La clé porte la limite : deux limites ne partagent
+        pas un résultat tronqué."""
+        return self._cached_search(
+            f"{self._QUERY_CACHE_PREFIX}index:{limit}:{query}",
+            lambda: self._indexer.search(query, limit=limit),
+        )
+
+    def _retrieve_relevant(self, prompt: str, limit: int) -> List[Tuple[KnowledgeItem, float]]:
+        """Passe par le récupérateur injecté — remplaçable — avec le même cache."""
+        return self._cached_search(
+            f"{self._QUERY_CACHE_PREFIX}rag:{limit}:{prompt}",
+            lambda: self._retriever.retrieve_relevant(
+                prompt, self._store.list_items(limit=10000), limit=limit),
+        )
+
+    def _invalidate_query_cache(self) -> None:
+        """
+        Vide les résultats de recherche mis en cache.
+
+        Appelé à chaque écriture : un résultat périmé est pire qu'un cache vide,
+        il fait disparaître une connaissance qui vient d'être ajoutée.
+        """
+        for cle in self._cache.keys():
+            if cle.startswith(self._QUERY_CACHE_PREFIX):
+                self._cache.delete(cle)
 
     def get_store(self):
         """
@@ -134,19 +252,24 @@ class KnowledgeManagerImpl(KnowledgeManager):
         # Vérifier le cache d'abord
         cached = self._cache.get(f"knowledge:{knowledge_id}")
         if cached is not None:
-            # Incrémenter le compteur d'accès
             self._increment_access_count(knowledge_id)
+            # Le compteur est différé pour ne pas écrire à chaque résultat de
+            # recherche ; une lecture explicite, elle, doit laisser le total à
+            # jour derrière elle — sinon un appelant qui lit le magasin
+            # directement après verrait un compte en retard d'une consultation.
+            self.flush_access_counts()
             return cached
 
         # Sinon, lire depuis le stockage
         with self._lock:
             knowledge = self._store.get(knowledge_id)
             if knowledge:
-                # Mettre en cache
                 self._cache.set(f"knowledge:{knowledge_id}", knowledge)
-                # Incrémenter le compteur d'accès
                 self._increment_access_count(knowledge_id)
-            return knowledge
+        if knowledge:
+            # Hors du verrou principal : l'écriture groupée prend le sien.
+            self.flush_access_counts()
+        return knowledge
 
     def update_knowledge(self, knowledge: KnowledgeItem) -> bool:
         """
@@ -183,10 +306,114 @@ class KnowledgeManagerImpl(KnowledgeManager):
 
             # Mettre à jour le cache
             self._cache.set(f"knowledge:{knowledge.id}", knowledge)
+            self._invalidate_query_cache()
 
             # Incrémenter la version est déjà dans l'objet knowledge
             self._logger.debug(f"Knowledge updated: {knowledge.id}")
             return True
+
+    def set_status(self, knowledge_id: str, target: KnowledgeStatus,
+                   actor: str, reason: Optional[str] = None) -> Optional[KnowledgeItem]:
+        """
+        Fait passer une connaissance au statut demandé (VOLET 05, chapitre 03).
+
+        La transition est refusée si le cycle de vie ne la permet pas. Chaque
+        passage est enregistré dans `metadata["status_history"]` : le chapitre
+        exige de conserver l'historique de revue et de tracer les révisions.
+
+        Args:
+            knowledge_id: identifiant de la connaissance
+            target: statut visé
+            actor: qui opère la transition — jamais déduit, toujours fourni
+            reason: motif, obligatoire pour un retrait ou un archivage
+
+        Returns:
+            La connaissance dans son nouveau statut, ou None si elle n'existe pas.
+
+        Raises:
+            InvalidStatusTransition: si la transition n'est pas permise
+            ValueError: si l'acteur est vide, ou si un motif est requis et absent
+        """
+        if not actor or not actor.strip():
+            raise ValueError("L'acteur d'une transition de statut est obligatoire")
+
+        retraits = (KnowledgeStatus.ARCHIVED, KnowledgeStatus.DEPRECATED)
+        if target in retraits and not (reason and reason.strip()):
+            raise ValueError(f"Un motif est obligatoire pour passer en {target.value}")
+
+        with self._lock:
+            existing = self._store.get(knowledge_id)
+            if not existing:
+                return None
+
+            check_transition(existing.status, target)
+
+            # Une transition est une révision : nouvelle version, contenu inchangé.
+            nouveau = copy.deepcopy(existing)
+            nouveau.status = target
+            nouveau.version = existing.version + 1
+            nouveau.updated_at = datetime.datetime.now(datetime.timezone.utc)
+            nouveau.metadata.setdefault("status_history", []).append({
+                "from": existing.status.value,
+                "to": target.value,
+                "actor": actor,
+                "reason": reason,
+                "at": nouveau.updated_at.isoformat(),
+            })
+
+            if not self.update_knowledge(nouveau):
+                return None
+            self._logger.info(
+                f"Knowledge {knowledge_id}: {existing.status.value} -> {target.value} by {actor}"
+            )
+            return nouveau
+
+    def governance_report(self) -> Dict[str, Any]:
+        """
+        Rapporte l'état de la gouvernance des connaissances (chapitre 06).
+
+        Returns:
+            Par domaine utilisé : le nombre de connaissances, leur répartition
+            par statut et le propriétaire déclaré ; plus les domaines sans
+            propriétaire et le nombre de connaissances non classées.
+        """
+        with self._lock:
+            return governance_report(self._store)
+
+    def quality_report(self) -> Dict[str, Any]:
+        """
+        Rapporte les métriques de qualité mesurables (chapitre 09).
+
+        Returns:
+            Complétude, fraîcheur, taux de doublons et couverture de validation,
+            plus les métriques que la plateforme ne sait pas calculer et la
+            raison de chacune.
+        """
+        with self._lock:
+            return quality_report(self._store)
+
+    def list_due_for_revalidation(self, max_age_days: Optional[int] = None,
+                                  limit: int = 100) -> List[KnowledgeItem]:
+        """
+        Liste les connaissances approuvées dont l'approbation a vieilli.
+
+        Répond à l'étape 5 du processus de revue du chapitre 04 (« periodic
+        revalidation ») : sans cette liste, une connaissance approuvée une fois
+        reste approuvée indéfiniment.
+
+        Args:
+            max_age_days: âge maximal accepté ; par défaut, la valeur configurée
+                par `GALSEN_KNOWLEDGE_REVALIDATION_DAYS` (180 jours).
+            limit: nombre maximal de connaissances examinées
+
+        Returns:
+            Les connaissances à remettre en revue, des plus anciennes approbations
+            aux plus récentes.
+        """
+        with self._lock:
+            approuvees = self._store.list_items(limit=limit, status=KnowledgeStatus.APPROVED)
+            a_revoir = [k for k in approuvees if is_due_for_revalidation(k, max_age_days)]
+            return sorted(a_revoir, key=lambda k: k.updated_at)
 
     def delete_knowledge(self, knowledge_id: str) -> bool:
         """
@@ -213,30 +440,36 @@ class KnowledgeManagerImpl(KnowledgeManager):
 
             # Supprimer du cache
             self._cache.delete(f"knowledge:{knowledge_id}")
+            self._invalidate_query_cache()
 
             self._logger.debug(f"Knowledge deleted: {knowledge_id}")
             return True
 
-    def search_knowledge(self, query: str, limit: int = 10) -> List[KnowledgeItem]:
+    def search_knowledge(self, query: str, limit: int = 10,
+                         role: Optional[str] = None) -> List[KnowledgeItem]:
         """
         Recherche des connaissances par texte.
+
+        Args:
+            query: texte recherché
+            limit: nombre maximum de résultats
+            role: rôle de l'appelant. Sans rôle, seules les connaissances
+                publiques sont retournées (chapitre 07).
 
         Returns:
             Liste de connaissances pertinentes
         """
-        with self._lock:
-            results_with_scores = self._indexer.search(query, limit=limit)
-            # Récupérer les connaissances complètes (elles sont déjà dans le tuple)
-            results = []
-            for knowledge, score in results_with_scores:
-                if knowledge is not None:
-                    results.append(knowledge)
-                    # Incrémenter le compteur d'accès pour chaque résultat
-                    self._increment_access_count(knowledge.id)
-            return results
+        # Délègue au chemin unique. Cette méthode gardait sa **propre** boucle
+        # sur l'index lexical : elle est l'entrée la plus utilisée — c'est elle
+        # que mesure le jeu d'évaluation — et elle serait restée lexicale le
+        # jour où un encodeur est installé, pendant que `..._with_scores`
+        # passerait au sémantique. Deux entrées, deux comportements, aucun
+        # moyen de le voir.
+        return [knowledge for knowledge, _ in
+                self.search_knowledge_with_method(query, limit=limit, role=role)[0]]
 
     def search_knowledge_with_scores(
-        self, query: str, limit: int = 10
+        self, query: str, limit: int = 10, role: Optional[str] = None
     ) -> List[Tuple[KnowledgeItem, float]]:
         """
         Recherche des connaissances en conservant leur score de pertinence.
@@ -250,43 +483,124 @@ class KnowledgeManagerImpl(KnowledgeManager):
             Le score vient de l'indexeur : c'est la proportion des termes de la
             requête présents dans le document, jamais une valeur déduite du rang.
         """
-        with self._lock:
-            results: List[Tuple[KnowledgeItem, float]] = []
-            for knowledge, score in self._indexer.search(query, limit=limit):
-                if knowledge is None:
-                    continue
-                results.append((knowledge, score))
-                self._increment_access_count(knowledge.id)
-            return results
+        return self.search_knowledge_with_method(query, limit=limit, role=role)[0]
 
-    def retrieve_for_prompt(self, prompt: str, max_items: int = 5) -> List[KnowledgeItem]:
+    def search_knowledge_with_method(
+        self, query: str, limit: int = 10, role: Optional[str] = None
+    ) -> Tuple[List[Tuple[KnowledgeItem, float]], Dict[str, Any]]:
+        """
+        Recherche, en disant **par quel chemin** le classement a été obtenu.
+
+        Le classement lexical note par proportion de termes retrouvés : deux
+        textes qui disent la même chose avec d'autres mots ont un score nul.
+        Avec un encodeur (ADR-015), le classement passe par le sens ; sans
+        encodeur il reste lexical, et la différence est **rapportée** plutôt que
+        laissée à deviner.
+
+        Args:
+            query: Texte recherché.
+            limit: Nombre maximum de résultats.
+            role: Rôle de l'appelant, pour le contrôle d'accès (VOLET 05 ch. 07).
+
+        Returns:
+            Les couples (connaissance, score) et un rapport `{"method": ...}`.
+        """
+        from src.embeddings.registry import active_embedder
+        from src.embeddings.semantic_index import rank_or_fallback
+
+        with self._lock:
+            def lexical() -> List[Tuple[str, float]]:
+                """Classement historique : proportion des termes retrouvés."""
+                return [
+                    (knowledge.id, score)
+                    for knowledge, score in self._search_index(query, limit)
+                    if can_read(role, knowledge)
+                ]
+
+            encodeur = active_embedder()
+            if encodeur is None:
+                classes, rapport = lexical(), {
+                    "method": "lexical",
+                    "reason": "Aucun encodeur disponible : classement par termes communs (ADR-015).",
+                }
+            else:
+                # Les candidats sont **toutes** les connaissances lisibles, et
+                # non celles qu'un score lexical aurait retenues : c'est tout
+                # l'intérêt du chemin sémantique. Au-delà de ~100 000 éléments,
+                # ce balayage devra être pré-filtré — c'est le déclencheur écrit
+                # dans ADR-015 pour passer à une base vectorielle.
+                candidats = [
+                    (item.id, item.content)
+                    for item in self._store.list_items()
+                    if isinstance(item.content, str) and can_read(role, item)
+                ]
+                classes, rapport = rank_or_fallback(
+                    query, candidats, lexical, encodeur, "knowledge", limit=limit,
+                )
+
+            resultats: List[Tuple[KnowledgeItem, float]] = []
+            for identifiant, score in classes[:limit]:
+                knowledge = self._store.get(identifiant)
+                if knowledge is None or not can_read(role, knowledge):
+                    continue
+                resultats.append((knowledge, score))
+                self._increment_access_count(knowledge.id)
+            # Un seul lot pour toute la requête, au lieu d'une écriture par
+            # résultat : c'est tout l'objet du tampon.
+            self.flush_access_counts()
+            return resultats, rapport
+
+    def retrieve_for_prompt(self, prompt: str, max_items: int = 5,
+                            statuses: Optional[Iterable[KnowledgeStatus]] = None,
+                            role: Optional[str] = None) -> List[KnowledgeItem]:
         """
         Récupère des connaissances pertinentes pour enrichir un prompt (RAG).
+
+        Applique l'étape 5 du pipeline du chapitre 05 : ce qui a été retiré de
+        l'usage — archivé ou déprécié — ne nourrit pas un raisonnement, et ce que
+        l'appelant n'a pas le droit de lire ne lui est pas retourné.
+
+        Args:
+            prompt: la requête
+            max_items: nombre maximum de connaissances retournées
+            statuses: statuts explicitement acceptés (par exemple, approuvés
+                seulement). Par défaut, tout sauf les statuts retirés.
+            role: rôle de l'appelant (chapitre 07). Sans rôle, seules les
+                connaissances publiques sont retournées — le défaut d'un contrôle
+                d'accès est le refus.
 
         Returns:
             Liste de connaissances à inclure dans le contexte
         """
         with self._lock:
-            # Utiliser le récupérateur pour obtenir les connaissances pertinentes
-            # Nous passons toutes les connaissances du magasin comme contexte de recherche
-            all_knowledge = self._store.list_items(limit=10000)  # pourrait être optimisé
-            results = self._retriever.retrieve_relevant(prompt, all_knowledge, limit=max_items)
+            autorises = frozenset(statuses) if statuses is not None else None
+            # Élargir la recherche avant filtrage : sinon un résultat retiré
+            # consomme une place et la réponse rend moins que demandé.
+            results = self._retrieve_relevant(prompt, max_items * 3)
             # Extraire juste les connaissances (sans les scores)
-            knowledge_items = [item for item, _ in results]
+            knowledge_items = [
+                item for item, _ in results
+                if is_retrievable(item, autorises) and can_read(role, item)
+            ][:max_items]
             # Incrémenter les compteurs d'accès
             for kid in [k.id for k in knowledge_items]:
                 self._increment_access_count(kid)
+            self.flush_access_counts()
             return knowledge_items
 
     def retrieve_reliable(self, prompt: str, max_items: int = 5,
                           min_priority: Optional[KnowledgePriority] = None,
-                          min_confidence: float = 0.5) -> Dict[str, Any]:
+                          min_confidence: float = 0.5,
+                          statuses: Optional[Iterable[KnowledgeStatus]] = None,
+                          role: Optional[str] = None) -> Dict[str, Any]:
         """
         Récupère uniquement des connaissances fiables pour une requête.
 
         Applique la hiérarchie de fiabilité du chapitre 04 de la Constitution :
         seules les connaissances dont la priorité est suffisamment bonne
         (<= min_priority) et dont la confiance dépasse le seuil sont retournées.
+        Les connaissances retirées de l'usage sont écartées avant ce calcul ;
+        `statuses` permet d'exiger un statut précis, par exemple l'approbation.
 
         Returns:
             Dictionnaire contenant :
@@ -299,13 +613,17 @@ class KnowledgeManagerImpl(KnowledgeManager):
         with self._lock:
             threshold = min_priority if min_priority is not None else KnowledgePriority.P4
             threshold_value = threshold.value if hasattr(threshold, "value") else int(threshold)
-            all_knowledge = self._store.list_items(limit=10000)
-            results = self._retriever.retrieve_relevant(prompt, all_knowledge, limit=max_items * 3)
+            results = self._retrieve_relevant(prompt, max_items * 3)
 
+            autorises = frozenset(statuses) if statuses is not None else None
             reliable_items = []
             best_priority = 4
             best_confidence = 0.0
             for item, _ in results:
+                # Étape 5 du pipeline : ce qui est retiré de l'usage, ou que
+                # l'appelant n'a pas le droit de lire, ne sert pas.
+                if not is_retrievable(item, autorises) or not can_read(role, item):
+                    continue
                 priority_value = item.priority.value if hasattr(item.priority, "value") else int(item.priority)
                 if priority_value > threshold_value:
                     continue
@@ -340,12 +658,20 @@ class KnowledgeManagerImpl(KnowledgeManager):
                     "de générer une information trompeuse."
                 )
 
+            # Les sources voyagent avec la réponse (VOLET 28, ch. 03). Sans
+            # elles, une réponse enrichie par la base est indiscernable d'une
+            # réponse inventée par le modèle — et c'est précisément ce qui
+            # distingue une plateforme de connaissances d'un générateur de texte.
+            from .citations import build_citations, citation_coverage
+
             return {
                 "items": reliable_items,
                 "reliable": len(reliable_items) > 0,
                 "best_priority": KnowledgePriority(best_priority).name if reliable_items else None,
                 "best_confidence": best_confidence,
                 "reason": reason,
+                "sources": build_citations(reliable_items),
+                "citation_coverage": citation_coverage(reliable_items),
             }
 
     def get_related(self, knowledge_id: str) -> List[KnowledgeItem]:
@@ -502,15 +828,67 @@ class KnowledgeManagerImpl(KnowledgeManager):
             return self._ranker.rank_by_priority(knowledge_items)
 
     def _increment_access_count(self, knowledge_id: str) -> None:
-        """Incrémente le compteur d'accès pour une connaissance."""
+        """Compte une consultation de la connaissance.
+
+        Le compteur passait auparavant par `get()` puis `update()`, sans
+        incrémenter la version : `update()` refusait donc l'écriture, et le
+        compteur ne survivait que par le partage de référence du magasin en
+        mémoire — c'est-à-dire jamais sur SQLite, qui désérialise à chaque
+        lecture. C'est le seul signal d'usage que la plateforme recueille et il
+        alimente le critère `popularity` du classement (VOLET 23, ch. 01 et 03) :
+        perdu, ce critère valait toujours zéro.
+
+        `record_access()` écrit le compteur sans toucher à la version, une
+        consultation n'étant pas une nouvelle version de la connaissance.
+        """
+        if not track_access_enabled():
+            # Un déploiement en lecture seule ne peut pas écrire sur le chemin de
+            # lecture. Le signal de popularité est perdu, et c'est le prix
+            # annoncé de ce mode.
+            return
+        with self._acces_lock:
+            self._acces_en_attente[knowledge_id] += 1
+            trop = len(self._acces_en_attente) >= SEUIL_ACCES
+        if trop:
+            self.flush_access_counts()
+
+    def flush_access_counts(self) -> int:
+        """
+        Écrit les consultations accumulées, en une seule transaction.
+
+        Chaque résultat de recherche coûtait auparavant une lecture, une
+        écriture, puis une seconde lecture pour rafraîchir le cache. Sur une
+        recherche de dix résultats — et le chemin sémantique balaie toute la
+        base — cela faisait trente accès disque pour un signal de popularité.
+
+        Le compteur est **groupé et différé**, ce qui a une conséquence à
+        assumer : un arrêt brutal perd les consultations non écrites. Pour un
+        signal d'usage, c'est un prix acceptable ; pour l'audit, ce ne le serait
+        pas, et l'audit n'emprunte pas ce chemin.
+
+        Returns:
+            Le nombre de connaissances mises à jour.
+        """
+        with self._acces_lock:
+            if not self._acces_en_attente:
+                return 0
+            en_attente = list(self._acces_en_attente.elements())
+            self._acces_en_attente.clear()
+
         try:
-            knowledge = self._store.get(knowledge_id)
-            if knowledge:
-                count = knowledge.metadata.get("access_count", 0)
-                knowledge.metadata["access_count"] = count + 1
-                # Mettre à jour le stockage (cela incrémentera la version)
-                self._store.update(knowledge)
-                # Mettre à jour le cache
-                self._cache.set(f"knowledge:{knowledge_id}", knowledge)
-        except Exception as e:
-            self._logger.debug(f"Failed to increment access count for {knowledge_id}: {e}")
+            groupe = getattr(self._store, "record_accesses", None)
+            if groupe is not None:
+                touchees = groupe(en_attente)
+            else:
+                # Un magasin personnalisé peut ne connaître que l'unitaire.
+                touchees = sum(1 for identifiant in en_attente
+                               if self._store.record_access(identifiant))
+        except Exception as erreur:
+            self._logger.debug("Compteur de consultations non écrit : %s", erreur)
+            return 0
+
+        # Le cache est **invalidé**, pas rafraîchi : le rafraîchir demandait une
+        # relecture par élément, c'est-à-dire exactement le coût qu'on retire.
+        for identifiant in set(en_attente):
+            self._cache.delete(f"knowledge:{identifiant}")
+        return touchees

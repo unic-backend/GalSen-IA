@@ -3,8 +3,8 @@ Stockage en mémoire pour le moteur de modèles GalSen IA.
 """
 
 import threading
-from typing import List, Dict, Any, Optional
-from .types import ModelItem
+from typing import List, Dict, Optional
+from .types import ModelItem, ModelStatus
 from .interfaces import ModelStore
 import time
 

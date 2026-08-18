@@ -6,6 +6,8 @@ workflows:
 
   standard:
     description: "Workflow principal"
+    version: "1.0"
+    owner: "unic-backend"
 
     pipeline:
 
@@ -29,6 +31,20 @@ workflows:
 
       - monitor
 
+    # Sélection des agents par le planificateur (P1 du backlog, VOLET 22).
+    #
+    # `standard` est un pipeline de développement logiciel : sans cette option,
+    # « bonjour » faisait tourner les dix agents, dont `tester` qui exécute
+    # toute la suite pytest — 43,5 s sur 45,2 s mesurées. Le planificateur
+    # calculait déjà les agents nécessaires et sa décision était jetée.
+    #
+    # La sélection **restreint** ce pipeline, elle ne l'élargit jamais : cette
+    # liste reste l'autorité sur ce qui peut tourner. Retirer la ligne rétablit
+    # l'exécution complète.
+    execution:
+
+      agent_selection: planner
+
   # Deuxième workflow, et il existe pour une raison : un seul pipeline ne
   # démontre pas l'automatisation, il démontre le chargeur (critère C3).
   # « revue » relit un changement sans rien exécuter ni déployer — les deux
@@ -36,6 +52,8 @@ workflows:
   # tourne en quelques secondes, ce qui le rend testable de bout en bout.
   revue:
     description: "Relecture d'un changement : conventions, puis secrets et appels dangereux"
+    version: "1.0"
+    owner: "unic-backend"
 
     pipeline:
 
@@ -56,30 +74,149 @@ workflows:
 
         - security
 
-execution:
+  # Les trois agents personnels du VOLET 34 (ch. 11). Chacun a son propre
+  # pipeline plutôt qu'une place dans « standard » : ce dernier est un pipeline
+  # de développement logiciel, et y glisser un agent qui range des fichiers
+  # ferait tourner l'organisateur à chaque demande de code.
+  rangement:
+    description: "Propose un rangement des fichiers des racines déclarées ; rien n'est déplacé sans approbation"
+    version: "1.0"
+    owner: "unic-backend"
 
-  parallel_agents:
+    pipeline:
 
-    - researcher
+      - organizer
 
-    - security
+    execution:
 
-  sequential_agents:
+      parallel_agents: []
 
-    - planner
+      sequential_agents:
 
-    - coder
+        - organizer
 
-    - reviewer
+  suivi:
+    description: "Découpe la demande, puis rapporte l'état réel de chaque tâche"
+    version: "1.0"
+    owner: "unic-backend"
 
-    - tester
+    pipeline:
 
-    - deployment
+      - planner
 
-failure:
+      - project_manager
 
-  retry: true
+    # L'ordre est une dépendance, pas une préférence : sans le plan du
+    # planificateur, le chef de projet n'a rien à rapporter et le dit.
+    execution:
 
-  max_attempts: 3
+      parallel_agents: []
 
-  rollback: true
+      sequential_agents:
+
+        - planner
+
+        - project_manager
+
+  veille:
+    description: "Rassemble des signaux sourcés sur un sujet ; refuse de conclure sans source"
+    version: "1.0"
+    owner: "unic-backend"
+
+    pipeline:
+
+      - researcher
+
+      - opportunity
+
+    execution:
+
+      parallel_agents: []
+
+      sequential_agents:
+
+        - researcher
+
+        - opportunity
+
+  # Les quatre agents du VOLET 36. Ils étaient au registre sans qu'aucun
+  # workflow ne les cite : joignables en théorie, inatteignables en pratique —
+  # la sélection du planificateur **restreint** un pipeline, elle ne l'élargit
+  # jamais, donc les axes `risk` et `geographic_scope` recommandaient des agents
+  # qu'aucune exécution ne pouvait retenir.
+  question:
+    description: "Répond à une question de connaissance : sources du pays d'abord, puis vérification des affirmations"
+    version: "1.0"
+    owner: "unic-backend"
+
+    pipeline:
+
+      - planner
+
+      - researcher
+
+      - senegal
+
+      - verifier
+
+    # C'est ici que les deux axes qui agissent deviennent visibles (ch. F) :
+    # une question sénégalaise fait entrer `senegal`, un sujet à risque fait
+    # entrer `verifier`, et une question ordinaire n'en retient aucun des deux.
+    # `researcher` reste dans le pipeline pour que la recommandation ait
+    # toujours une intersection non vide — sans lui, une demande banale
+    # retomberait sur « pipeline entier », c'est-à-dire l'inverse du tri voulu.
+    #
+    # L'ordre est une dépendance : `verifier` confronte des affirmations à des
+    # passages, il lui faut donc ce que les agents précédents ont rendu.
+    execution:
+
+      agent_selection: planner
+
+      parallel_agents: []
+
+      sequential_agents:
+
+        - planner
+
+        - researcher
+
+        - senegal
+
+        - verifier
+
+  ingestion:
+    description: "Propose le classement d'un document pour un manifeste ; rien n'est écrit"
+    version: "1.0"
+    owner: "unic-backend"
+
+    pipeline:
+
+      - knowledge_architect
+
+    # Seul dans son pipeline, et pas dans « question » : classer un document
+    # n'a rien à voir avec répondre, et l'y glisser ferait tourner l'architecte
+    # à chaque question posée.
+    execution:
+
+      parallel_agents: []
+
+      sequential_agents:
+
+        - knowledge_architect
+
+  series:
+    description: "Décrit une série statistique déclarée ; refuse celle sans unité, période ni source"
+    version: "1.0"
+    owner: "unic-backend"
+
+    pipeline:
+
+      - data_engineer
+
+    execution:
+
+      parallel_agents: []
+
+      sequential_agents:
+
+        - data_engineer

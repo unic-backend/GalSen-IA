@@ -9,6 +9,8 @@ d'échec, un avertissement est journalisé et une valeur vide est retournée.
 import logging
 from typing import Any, Dict, List, Optional
 
+from src.storage.paths import sqlite_enabled
+
 from .approval_store import InMemoryApprovalStore
 from .interfaces import ApprovalManager, ApprovalStore
 from .types import ApprovalRequest
@@ -20,7 +22,16 @@ class ApprovalManagerImpl(ApprovalManager):
     """Façade du moteur d'approbation, toujours disponible en mémoire."""
 
     def __init__(self, store: Optional[ApprovalStore] = None) -> None:
-        self._store = store or InMemoryApprovalStore()
+        if store is not None:
+            self._store = store
+        elif sqlite_enabled():
+            from src.storage.sqlite_approval_store import SQLiteApprovalStore
+            self._store = SQLiteApprovalStore()
+        else:
+            # Une demande perdue au redémarrage, c'est une modification qui
+            # attend une décision que plus personne ne peut prendre — ou une
+            # décision déjà accordée qui disparaît (ADR-006, VOLET 31).
+            self._store = InMemoryApprovalStore()
         self._logger = logging.getLogger(f"{__name__}.ApprovalManagerImpl")
 
     def submit(self, request: ApprovalRequest) -> Optional[str]:

@@ -14,7 +14,6 @@ Le dernier test ouvre le fichier SQLite en binaire : c'est la seule preuve que
 le contenu n'y est pas en clair.
 """
 
-import os
 
 import pytest
 
@@ -196,6 +195,17 @@ class TestSurLaBaseReelle:
 
         # Les nouvelles écritures, elles, sont protégées
         store.save(MemoryItem(content="mémoire d'après"))
+
+        # Les bases tournent en mode WAL : une écriture récente vit dans le
+        # fichier `-wal` tant qu'aucun point de reprise ne l'a repliée dans la
+        # base. Lire les octets du seul fichier principal ne dit donc rien de ce
+        # qui vient d'être écrit — c'est aussi pourquoi une sauvegarde par copie
+        # de fichier est fausse, et pourquoi `scripts/backup.py` passe par
+        # `VACUUM INTO`.
+        import sqlite3
+        with sqlite3.connect(chemin) as connexion:
+            connexion.execute("PRAGMA wal_checkpoint(FULL)")
+
         with open(chemin, "rb") as fichier:
             octets = fichier.read()
         assert b"m\xc3\xa9moire d'apr\xc3\xa8s" not in octets

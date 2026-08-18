@@ -15,8 +15,8 @@ import time
 from typing import Any, Dict, List, Optional
 
 from src.services.file.interfaces import FileStore
-from src.services.file.types import FileItem, FileCategory
-from src.storage.paths import default_sqlite_path
+from src.services.file.types import FileCategory, FileItem, FileSummary
+from src.storage.paths import default_sqlite_path, prepare_connection, secure_database_file
 
 
 class SQLiteFileStore(FileStore):
@@ -28,6 +28,11 @@ class SQLiteFileStore(FileStore):
         "created_at", "updated_at",
     )
 
+    # Les mêmes colonnes sans le contenu (ADR-016). Lister faisait
+    # `SELECT * FROM files`, et `*` inclut le BLOB : 30 fichiers de 2 Mo
+    # faisaient lire 60 Mo pour une réponse qui jette les octets.
+    _SUMMARY_COLUMNS = tuple(colonne for colonne in _COLUMNS if colonne != "data")
+
     def __init__(self, db_path: Optional[str] = None) -> None:
         self.db_path = db_path or default_sqlite_path("service_files.sqlite")
         if self.db_path != ":memory:":
@@ -35,6 +40,9 @@ class SQLiteFileStore(FileStore):
         self._lock = threading.RLock()
         self._persistent_conn: Optional[sqlite3.Connection] = None
         self._initialize_db()
+        # Une base porte des mémoires, des connaissances et des e-mails ;
+        # elle était créée en 0644, donc lisible par tout compte de la machine.
+        secure_database_file(self.db_path)
         if self.db_path == ":memory:":
             self._persistent_conn = self._get_connection()
 
@@ -48,8 +56,7 @@ class SQLiteFileStore(FileStore):
         if self.db_path == ":memory:":
             return self._persistent_conn or sqlite3.connect("file::memory:?cache=shared", uri=True)
         conn = sqlite3.connect(self.db_path)
-        conn.execute("PRAGMA foreign_keys = ON")
-        conn.execute("PRAGMA busy_timeout = 5000")
+        prepare_connection(conn)
         return conn
 
     def _initialize_db(self) -> None:
@@ -116,6 +123,24 @@ class SQLiteFileStore(FileStore):
             updated_at=d["updated_at"],
         )
 
+    def _dict_to_summary(self, row: tuple) -> FileSummary:
+        """Convertit une ligne sans contenu en résumé de fichier."""
+        d = dict(zip(self._SUMMARY_COLUMNS, row))
+        return FileSummary(
+            id=d["id"],
+            name=d["name"],
+            content_type=d["content_type"],
+            size=d["size"],
+            category=FileCategory(d["category"]),
+            description=d.get("description"),
+            tags=json.loads(d["tags"]) if d.get("tags") else {},
+            uploaded_by=d.get("uploaded_by"),
+            source=d.get("source"),
+            metadata=json.loads(d["metadata"]) if d.get("metadata") else {},
+            created_at=d["created_at"],
+            updated_at=d["updated_at"],
+        )
+
     def save(self, file: FileItem) -> str:
         """Enregistre un fichier et retourne son identifiant."""
         with self._lock:
@@ -167,8 +192,13 @@ class SQLiteFileStore(FileStore):
         content_type: Optional[str] = None,
         uploaded_by: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
-    ) -> List[FileItem]:
-        """Retourne les fichiers filtrés, du plus récent au plus ancien."""
+    ) -> List[FileSummary]:
+        """
+        Retourne les fichiers filtrés, du plus récent au plus ancien, **sans
+        leur contenu** (ADR-016).
+
+        Le contenu se demande fichier par fichier, avec `get`.
+        """
         where_clauses: List[str] = []
         params: List[Any] = []
 
@@ -190,7 +220,7 @@ class SQLiteFileStore(FileStore):
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 query = f"""
-                    SELECT * FROM files
+                    SELECT {','.join(self._SUMMARY_COLUMNS)} FROM files
                     {where_sql}
                     ORDER BY created_at DESC
                     LIMIT ? OFFSET ?
@@ -198,11 +228,11 @@ class SQLiteFileStore(FileStore):
                 cursor.execute(query, [*params, limit, offset])
                 rows = cursor.fetchall()
 
-            items = [self._dict_to_item(row) for row in rows]
+            items = [self._dict_to_summary(row) for row in rows]
 
             # Post-filter pour les tags (clé-valeur JSON)
             if tags:
-                def matches_tags(file: FileItem) -> bool:
+                def matches_tags(file: FileSummary) -> bool:
                     return all(
                         file.tags.get(key) == value
                         for key, value in tags.items()

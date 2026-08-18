@@ -1,0 +1,14 @@
+spec_version: 0.1.0
+name: data-engineer
+version: 0.1.0
+description: Décrit une série structurée ; refuse celle sans unité ni période.
+author: GalSen IA
+tags:
+- galsen-ia
+- data-engineer
+metadata:
+  galsen_role: Data Engineer
+  galsen_id: data_engineer
+  galsen_module: agents.data_engineer.agent
+  galsen_priority: 50
+  galsen_enabled: true

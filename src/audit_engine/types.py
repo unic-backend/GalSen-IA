@@ -30,6 +30,10 @@ class AuditEventType(Enum):
     TOOL = "tool"
     GENERATION = "generation"
     KNOWLEDGE = "knowledge"
+    # Une exécution de moteur de codage modifie des fichiers et lance des
+    # commandes : la ranger sous `tool` la noierait parmi les lectures de
+    # fichiers, alors que c'est la catégorie qu'un audit relit en premier.
+    CODING = "coding"
 
 
 class AuditStatus(Enum):

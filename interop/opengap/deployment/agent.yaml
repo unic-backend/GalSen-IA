@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: deployment
+version: 0.1.0
+description: Prépare les déploiements.
+author: GalSen IA
+tags:
+- galsen-ia
+- deployment-agent
+metadata:
+  galsen_role: Deployment Agent
+  galsen_module: agents.deployment.agent
+  galsen_priority: 80
+  galsen_enabled: true

@@ -1,0 +1,97 @@
+# =============================================================================
+# GalSen IA — Politique de routage des modèles (VOLET 30, ADR-014)
+# =============================================================================
+# Quel modèle sert quelle tâche. Cette politique vivait **en dur** dans
+# `ProviderSelector.TASK_REQUIREMENTS` : la changer demandait de modifier du
+# code, alors que c'est une décision d'exploitation qui dépend des modèles
+# réellement installés sur la machine.
+#
+# Deux familles, décidées par ADR-014 :
+#
+#   samp — raisonnement et langue (français, wolof, langues de la région)
+#   top  — code et vision
+#
+# Elles n'existent pas encore : le VOLET 33 les produira. Tant qu'aucun modèle
+# de la famille n'est servi, la politique **le dit** et retombe sur le meilleur
+# modèle disponible — elle ne fait pas passer un modèle générique pour SamP.
+# =============================================================================
+
+# Familles de modèles et motifs de noms qui les désignent. Un modèle est reconnu
+# comme membre d'une famille si son nom contient l'un de ces motifs.
+families:
+  samp:
+    description: "Raisonnement et langue — français, wolof, langues de la région"
+    matches: ["samp"]
+  top:
+    description: "Code et vision — lecture de dépôt, édition, images, documents"
+    matches: ["top"]
+
+# Contexte minimal exigé selon la complexité annoncée par l'appelant.
+complexity_context:
+  simple: 4096
+  medium: 8192
+  high: 32000
+  very_high: 100000
+
+# Exigences par type de tâche. `family` désigne la famille visée quand elle
+# existe ; `max_input_cost` est un plafond en unité monétaire pour 1000 jetons
+# d'entrée — il **filtre réellement**, il ne se contente plus d'être accepté.
+tasks:
+  conversation:
+    family: samp
+    preferred_features: ["general_conversation", "fast_response"]
+    min_context_window: 4096
+    # Une question simple ne justifie pas le modèle le plus cher : c'est
+    # exactement la règle « question simple → petit modèle » du brief.
+    prefer_cheapest: true
+
+  reasoning:
+    family: samp
+    preferred_features: ["reasoning"]
+    min_context_window: 8192
+
+  analysis:
+    family: samp
+    preferred_features: ["analysis", "reasoning"]
+    min_context_window: 32000
+
+  planning:
+    family: samp
+    preferred_features: ["reasoning"]
+    min_context_window: 8192
+
+  translation:
+    family: samp
+    preferred_features: ["general_conversation"]
+    min_context_window: 4096
+
+  summarization:
+    family: samp
+    preferred_features: ["long_context"]
+    min_context_window: 32000
+
+  code_generation:
+    family: top
+    preferred_features: ["code_generation"]
+    min_context_window: 8192
+
+  code_review:
+    family: top
+    preferred_features: ["code_generation", "reasoning"]
+    min_context_window: 32000
+
+  vision:
+    family: top
+    requires_vision: true
+
+  document_analysis:
+    family: top
+    preferred_features: ["long_context"]
+    min_context_window: 100000
+
+# Appliqué quand le type de tâche est inconnu ou absent. Volontairement modeste :
+# router une tâche non déclarée vers un gros modèle coûte cher pour rien.
+default:
+  preferred_features: ["general_conversation"]
+  min_context_window: 4096
+  prefer_cheapest: true

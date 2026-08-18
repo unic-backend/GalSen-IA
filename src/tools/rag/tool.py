@@ -19,6 +19,9 @@ from src.knowledge_engine.types import (
     KnowledgeItem,
     SourceCategory,
     KnowledgePriority,
+    KnowledgeDomain,
+    KnowledgeSensitivity,
+    KnowledgeStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -68,6 +71,29 @@ class RAGTool(BaseTool):
     # ------------------------------------------------------------------
     # Utilitaires internes de conversion et sérialisation
     # ------------------------------------------------------------------
+    def _convert_classification(self, item_dict: Dict[str, Any]) -> None:
+        """
+        Reconvertit domaine, sensibilité et statut en énumérations, sur place.
+
+        Les sorties de l'outil sérialisent ces champs en chaînes ; un appelant
+        qui relit une connaissance, la modifie et la renvoie doit retrouver un
+        objet valide. Sans cette conversion, la connaissance repart avec des
+        chaînes là où le moteur attend des énumérations, et disparaît
+        silencieusement des résultats filtrés.
+        """
+        conversions = (
+            ("domain", KnowledgeDomain, "Domaine de connaissance invalide"),
+            ("sensitivity", KnowledgeSensitivity, "Sensibilité invalide"),
+            ("status", KnowledgeStatus, "Statut invalide"),
+        )
+        for champ, enumeration, message in conversions:
+            valeur = item_dict.get(champ)
+            if isinstance(valeur, str):
+                try:
+                    item_dict[champ] = enumeration(valeur.strip().lower())
+                except ValueError:
+                    raise ValueError(f"{message}: {valeur}")
+
     def _convert_priority(self, value: Any) -> KnowledgePriority:
         """
         Convertit une priorité en KnowledgePriority.
@@ -189,6 +215,14 @@ class RAGTool(BaseTool):
             "language": item.language.value
             if hasattr(item.language, "value")
             else str(item.language),
+            # Classification et cycle de vie (VOLET 05, chapitres 02 et 03) : sans
+            # eux, l'appelant reçoit un contenu sans savoir s'il est approuvé ni
+            # à qui il appartient.
+            "domain": item.domain.value if hasattr(item.domain, "value") else str(item.domain),
+            "sensitivity": item.sensitivity.value
+            if hasattr(item.sensitivity, "value")
+            else str(item.sensitivity),
+            "status": item.status.value if hasattr(item.status, "value") else str(item.status),
             "tags": item.tags.copy(),
             "categories": item.categories.copy(),
             "source": {
@@ -271,6 +305,9 @@ class RAGTool(BaseTool):
         if "priority" in item_dict and not isinstance(item_dict["priority"], KnowledgePriority):
             item_dict["priority"] = self._convert_priority(item_dict["priority"])
 
+        # Domaine, sensibilité et statut reviennent en chaînes des sorties de l'outil.
+        self._convert_classification(item_dict)
+
         # Gestion de la source si fournie sous forme de dictionnaire
         if "source" in item_dict and isinstance(item_dict["source"], dict):
             item_dict["source"] = self._build_source(item_dict["source"])
@@ -321,6 +358,7 @@ class RAGTool(BaseTool):
         content_type: Optional[str] = None,
         tags: Optional[List[str]] = None,
         limit: int = 10,
+        role: Optional[str] = None,
         **kwargs,
     ) -> List[Dict[str, Any]]:
         """
@@ -332,6 +370,8 @@ class RAGTool(BaseTool):
             content_type: Filtrer par type de contenu (ex. "TEXT").
             tags: Liste de tags (tous doivent être présents).
             limit: Nombre maximum de résultats à retourner (défaut: 10).
+            role: Rôle de l'appelant (VOLET 05, chapitre 07). Sans rôle, seules
+                les connaissances publiques sont retournées.
             **kwargs: Options supplémentaires (aucune actuellement).
 
         Returns:
@@ -349,7 +389,7 @@ class RAGTool(BaseTool):
         # Le score vient de l'indexeur ; le déduire du rang produirait un
         # classement faux, que rien ne distinguerait ensuite d'un vrai.
         scored_results: List[tuple] = self._get_knowledge_manager().search_knowledge_with_scores(
-            query, limit=limit * 3
+            query, limit=limit * 3, role=role
         )  # récupérer davantage pour permettre le filtrage
 
         # Préparer les filtres
@@ -399,6 +439,33 @@ class RAGTool(BaseTool):
         logger.debug(f"Search '{query}' returned {len(results)} results via RAG tool")
         return results
 
+    def _envelopper(self, element: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Ajoute à une connaissance sa forme utilisable dans une invite.
+
+        `retrieve_for_prompt` est **le chemin conçu** pour verser du texte
+        étranger dans une invite : c'est donc celui où une consigne cachée dans
+        un passage atteindrait le modèle comme un ordre. L'enveloppe de
+        confiance (VOLET 36, ch. A.1) l'annonce comme une donnée, avec son
+        origine, et transporte les soupçons relevés.
+
+        Le champ `content` **reste le contenu brut** : le tronquer ou le
+        réécrire ferait perdre au reste de la plateforme — citations, mesures,
+        stockage — le texte réel. C'est `prompt_text` qui entre dans une invite,
+        et la docstring de l'opération le dit.
+        """
+        from src.security.trust import TrustLevel, wrap
+
+        enveloppe = wrap(
+            element.get("content", ""),
+            TrustLevel.RETRIEVED,
+            origin=element.get("id") or "connaissance sans identifiant",
+        )
+        element["prompt_text"] = enveloppe.text
+        element["trust_level"] = enveloppe.level.value
+        element["injection_flags"] = len(enveloppe.suspicions)
+        return element
+
     def _op_retrieve_for_prompt(
         self,
         prompt: str,
@@ -406,6 +473,7 @@ class RAGTool(BaseTool):
         require_reliable: bool = False,
         min_priority: Optional[str] = None,
         min_confidence: Optional[float] = None,
+        role: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -428,11 +496,19 @@ class RAGTool(BaseTool):
                           require_reliable est True (défaut: P4).
             min_confidence: Seuil de confiance minimal (défaut: 0.5) quand
                             require_reliable est True.
+            role: Rôle de l'appelant (VOLET 05, chapitre 07). Sans rôle, seules
+                  les connaissances publiques entrent dans le contexte.
             **kwargs: Options supplémentaires (aucune actuellement).
 
         Returns:
             Liste de dictionnaires représentant les connaissances pertinentes,
             ou un dictionnaire avec les clés "items", "reliable",
+
+            Chaque élément porte **`prompt_text`** : c'est ce champ, et lui
+            seul, qui entre dans une invite. Il annonce le passage comme une
+            donnée récupérée, avec son origine, et signale les tournures qui
+            s'adressent à un modèle. `content` reste le texte brut, pour les
+            citations et les mesures.
             "best_priority", "best_confidence" et "reason" si
             require_reliable est True.
         """
@@ -442,9 +518,12 @@ class RAGTool(BaseTool):
         # Mode par défaut : compatibilité avec le comportement historique
         if not require_reliable:
             raw_results: List[KnowledgeItem] = self._get_knowledge_manager().retrieve_for_prompt(
-                prompt, max_items=max_items
+                prompt, max_items=max_items, role=role
             )
-            results = [self._serialize_item(k, iso_dates=True) for k in raw_results]
+            results = [
+                self._envelopper(self._serialize_item(k, iso_dates=True))
+                for k in raw_results
+            ]
             logger.debug(f"Retrieve for prompt returned {len(results)} items via RAG tool")
             return results
 
@@ -457,13 +536,26 @@ class RAGTool(BaseTool):
             max_items=max_items,
             min_priority=priority_enum,
             min_confidence=min_confidence if min_confidence is not None else 0.5,
+            role=role,
         )
+        # La réponse dit sa portée (VOLET 35, ch. 05), comme elle dit déjà si la
+        # récupération était sémantique ou lexicale (ADR-015). Une réponse sur le
+        # Sénégal construite sans aucune source sénégalaise doit le **dire** —
+        # sinon elle se lit exactement comme une réponse bien sourcée.
+        from src.knowledge_engine.scoped_retrieval import apply_scope_policy, scope_notice
+
+        politique = apply_scope_policy(reliable["items"], question=prompt, limit=max_items)
         result = {
-            "items": [self._serialize_item(k, iso_dates=True) for k in reliable["items"]],
+            "items": [
+                self._envelopper(self._serialize_item(k, iso_dates=True))
+                for k in politique["items"]
+            ],
             "reliable": reliable["reliable"],
             "best_priority": reliable["best_priority"],
             "best_confidence": reliable["best_confidence"],
             "reason": reliable["reason"],
+            "scope_report": politique["scope_report"],
+            "scope_notice": scope_notice(politique["scope_report"]),
         }
         logger.debug(
             f"Retrieve for prompt (reliable) returned {len(result['items'])} items via RAG tool"
@@ -521,6 +613,9 @@ class RAGTool(BaseTool):
         # Convertir la priorité depuis une chaîne ou un entier
         if "priority" in item_dict and not isinstance(item_dict["priority"], KnowledgePriority):
             item_dict["priority"] = self._convert_priority(item_dict["priority"])
+
+        # Domaine, sensibilité et statut reviennent en chaînes des sorties de l'outil.
+        self._convert_classification(item_dict)
 
         # Gestion de la source si fournie sous forme de dictionnaire
         if "source" in item_dict and isinstance(item_dict["source"], dict):

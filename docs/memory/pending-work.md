@@ -28,59 +28,57 @@ gets re-argued at every review.
 
 ## P1 — High · a Phase 2 exit criterion depends on it, or it removes a demonstrated risk
 
-- **Put something in the knowledge base.** It holds **0 items, 0 indexed documents, 0
-  graph nodes**, and `docs/knowledge/` does not exist. The Knowledge Engine, the RAG tool,
-  the search service and the retrieval ranking are all built and retrieving from nothing.
-  *Deciding criterion:* strategic alignment — the vision says to prioritise African data
-  and use cases, and the Knowledge Leadership pillar has no evidence under it at all. No
-  code is wrong, which is why no test caught this.
+- **Build the Senegalese corpus.** The base now holds **250 verifiable passages** from the
+  project's own documentation (VOLET 28), and the ingestion path chunks, keeps provenance
+  per passage and cites sources. What is missing is the corpus that matters: agriculture,
+  health, education. It is ingested from **real declared documents** — the manifest format
+  is in `docs/knowledge/README.md`. Nothing is written from memory: fabricating knowledge
+  served to farmers as fact is the most damaging thing this repository could do.
+  *Deciding criterion:* strategic alignment — the Knowledge Leadership pillar still has no
+  Senegalese evidence under it, and this one depends on documents, not on code.
+
+- **One search source of four has no provider, and it never will** (vision).
+  *Corrected on 2026-08-13:* this entry claimed **both** remaining sources were waiting on
+  their engine to produce searchable text. That was true for vision and **false for
+  documents** — `DocumentManagerImpl.search_documents()` has always indexed what it loads;
+  only the provider was missing. It is written and registered now, so three sources of four
+  answer.
+  Vision analyses an image and produces no indexed text, so there is nothing to search:
+  `/search` reports it in `sources_unavailable` **with that reason** rather than letting a
+  caller believe four sources were queried.
+  *Deciding criterion:* user impact — closed for documents; for vision the gap is the
+  absence of searchable text, not the absence of code.
 
 - **Deploy the platform somewhere reachable** (criterion C4). The Dockerfile, the compose
   file and CI exist; nobody has ever reached this API over a network.
   *Deciding criterion:* strategic alignment — nothing else on this list can be validated
   in production until this is true.
 
-- **Declare a performance target.** `/metrics` makes latency observable; nothing says what
-  an acceptable latency is, so the release checklist keeps refusing to tick "performance
-  targets verified" — correctly.
-  *Deciding criterion:* strategic alignment — a measurement with no threshold informs no
-  decision.
+- **Push the `v0.1.0` tag.** It exists locally on `383fcf7` with its release notes, but the
+  environment that prepared it cannot push tag refs (the git proxy answers 403), so
+  `git fetch --tags` finds nothing. One command from a normal clone publishes it and
+  triggers the image build: `git push origin v0.1.0`.
+  *Deciding criterion:* maintenance cost — one command, and criterion C4 needs it.
 
-- **Cover the hosted-provider generation path with tests.** `_call_api` is implemented for
-  OpenAI, Anthropic and Google; only the no-credentials branch is tested. A successful
-  generation and the 401 / 400 / 429 responses are not.
-  *Deciding criterion:* technical feasibility — untested vendor code is where a silent
-  break hides, and this is the path C1 depends on.
-
-- **Decide between three ways to write a file to disk.** `LocalDiskStorageConnector`
-  (ADR-007), `SQLiteFileStore` and `FileSystemCloudStore` arrived from two branches, they
-  overlap, and nothing says which one a caller should use.
-  *Deciding criterion:* maintenance cost — three implementations of one job is the debt
-  that compounds, and the decision framework's *"does it introduce unnecessary
-  complexity?"* is already answered yes.
+- **Set a `Sunset` date on `/cloud/*`.** ADR-016 is applied: the duplicated design is
+  gone and the routes are announced as deprecated. What remains is choosing a removal
+  date, which ADR-011 says must be decided rather than invented — and it is only worth
+  deciding once a deployment exists to have clients (C4).
+  *Deciding criterion:* maintenance cost — small, and it closes ADR-016.
+  *Deciding criterion:* maintenance cost — two route families do the same job until the
+  next major version, which ADR-011 accepts on purpose. What made this P1 — *"nothing says
+  which one a caller should use"* — is answered: a caller uses the file service.
 
 ## P2 — Medium · real value, no criterion waits on it
 
-- **Extend SQLite persistence (ADR-005) to the audit and approval engines.** The other
-  five services already have their store.
-  *Deciding criterion:* security implications — an audit trail that vanishes on restart
-  is worthless for forensics. It stays P2 only because there is nothing to audit yet;
-  **it becomes P1 the day C4 is met.**
-
-- **Report connector health inside `/health`**, alongside the engines. An unconfigured
-  connector must not make the platform unhealthy.
-  *Deciding criterion:* user impact for an operator — one call should answer "what is
-  wrong", not two.
-
-- **Deployment documentation.** Pairs with C4: a deployment nobody can reproduce is a
-  one-off.
-  *Deciding criterion:* maintenance cost.
-
-- **Speed up the orchestration suite.** `test_integration.py` takes **97 s**, of which
-  three tests take 31 s each because the tester agent runs real suites inside the
-  pipeline.
-  *Deciding criterion:* performance impact on the development loop. Previously recorded
-  as "~4 minutes", which was stale by a factor of two and distorted its rank.
+- **Decide whether analytics data is retained.** **ADR-020 is written and `proposed`**
+  (2026-08-13): option A keep nothing, option B retain aggregates only on the existing
+  SQLite store, option C retain events with a retention window. The recommendation is B,
+  **after C4** — an aggregate answers "is the platform degrading?", and it keeps the
+  privacy rule enforceable by shape rather than by vigilance. Nothing is implemented; the
+  decision is the owner's.
+  *Deciding criterion:* strategic alignment — worth taking **after C4**: before a
+  deployment exists there is no operational history worth keeping.
 
 ## P3 — Low · worth doing, nothing waits on it
 
@@ -95,9 +93,13 @@ gets re-argued at every review.
   until one exists.
   *Deciding criterion:* user impact — nobody uses the calendar tool today.
 
-- **Move the 27 root `test_*.py` files into `tests/`**, as `.claude/rules/testing.md`
-  requires. They are collected and green; only their location differs.
-  *Deciding criterion:* maintenance cost, low.
+- **Widen the linter, and add a formatter and a type checker.** `ruff check` runs in CI and
+  in the suite (`pyproject.toml`), and the repository passes it. What is deliberately left
+  out is written in the config: modernising annotations flags **3 183** places and sorting
+  imports touches **216 files** — mass rewrites for zero defect that would make `git blame`
+  unreadable. `ruff format` and a type checker belong to the same decision.
+  *Deciding criterion:* maintenance cost — all three start paying the day a second
+  contributor arrives, and that is the day to take the diff.
 
 - **Review the model catalogue periodically.** Context windows and prices are declared in
   `src/model_engine/providers/*_provider.py` and drift as vendors change them.

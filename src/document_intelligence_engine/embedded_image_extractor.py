@@ -120,7 +120,10 @@ class ImageExtractorImpl(DocumentImageExtractor):
             return []
 
         try:
-            import PyPDF2
+            try:
+                import pypdf as PyPDF2  # successeur maintenu de PyPDF2
+            except ImportError:
+                import PyPDF2
         except ImportError:
             self._logger.warning(
                 "PyPDF2 est absent : les images des PDF ne peuvent pas être extraites. "

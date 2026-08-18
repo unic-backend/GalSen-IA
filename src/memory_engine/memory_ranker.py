@@ -6,7 +6,7 @@ Simple ranker based on priority, recency, and status.
 
 import time
 from typing import Any, Dict, List, Optional, Tuple
-from .types import MemoryItem, MemoryPriority
+from .types import MemoryItem
 from .interfaces import MemoryRanker
 
 

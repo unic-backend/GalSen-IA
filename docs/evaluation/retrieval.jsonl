@@ -1,0 +1,25 @@
+// Jeu d'évaluation de la récupération (VOLET 33, ch. 02).
+//
+// Chaque ligne est un cas : une question, et le document qui doit être retrouvé.
+// Le taux de réussite se mesure SANS jugement humain et SANS modèle de
+// génération — le passage attendu est retrouvé, ou il ne l'est pas.
+//
+// Les cas ci-dessous portent sur la documentation du dépôt, ingérée par
+// `scripts/seed_knowledge.py`. Ils sont vérifiables ligne à ligne : la réponse
+// est dans le fichier nommé, et n'importe qui peut l'ouvrir pour le contrôler.
+//
+// AUCUNE question agricole ou sanitaire sur le Sénégal n'est écrite ici avec sa
+// réponse. Fabriquer un jeu d'évaluation, c'est fabriquer la vérité contre
+// laquelle on se mesure : le modèle apprendrait à satisfaire une invention. Le
+// jeu sénégalais se construit à partir de l'usage réel — questions posées,
+// corrections reçues (ch. 01) — et s'ajoute ici, une ligne par cas.
+{"question": "Pourquoi Redis n'a-t-il pas été retenu ?", "expected_source": "013-single-authoritative-instance.md", "language": "fr", "tags": ["architecture"]}
+{"question": "Comment la plateforme termine-t-elle TLS ?", "expected_source": "012-tls-termination.md", "language": "fr", "tags": ["deploiement"]}
+{"question": "Qu'est-ce qui empêche une deuxième instance de démarrer ?", "expected_source": "013-single-authoritative-instance.md", "language": "fr", "tags": ["architecture"]}
+{"question": "Quelle base de données la plateforme utilise-t-elle pour persister ?", "expected_source": "005-persistent-storage-backend.md", "language": "fr", "tags": ["stockage"]}
+{"question": "La plateforme dépend-elle d'un modèle tiers ?", "expected_source": "014-model-sovereignty.md", "language": "fr", "tags": ["souverainete"]}
+{"question": "Comment restaurer une sauvegarde ?", "expected_source": "rollback.md", "language": "fr", "tags": ["exploitation"]}
+{"question": "Quel port faut-il ouvrir pour obtenir un certificat ?", "expected_source": "docker.md", "language": "fr", "tags": ["deploiement"]}
+{"question": "Comment les embeddings sont-ils servis ?", "expected_source": "015-embeddings-and-semantic-retrieval.md", "language": "fr", "tags": ["recherche"]}
+{"question": "Qui décide qu'une action d'agent est autorisée ?", "expected_source": "006-human-approval-gate.md", "language": "fr", "tags": ["securite"]}
+{"question": "À qui appartient une clé API ?", "expected_source": "010-identity-model.md", "language": "fr", "tags": ["identite"]}

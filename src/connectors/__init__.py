@@ -17,6 +17,11 @@ Référence : ADR-007, VOLET 02 chapitre 09 (Integration Architecture).
 from .email_connector import SMTPEmailConnector
 from .interfaces import Connector, ConnectorRegistryContract
 from .storage_connector import LocalDiskStorageConnector, StorageAccessError
+from .sdk import (
+    VERSION_DU_CONTRAT,
+    connector_contract,
+    connector_refusal_rules,
+)
 from .registry import (
     ConnectorRegistry,
     get_shared_connector_registry,
@@ -30,6 +35,9 @@ from .types import (
 )
 
 __all__ = [
+    "VERSION_DU_CONTRAT",
+    "connector_contract",
+    "connector_refusal_rules",
     "Connector",
     "ConnectorCheck",
     "ConnectorDescription",

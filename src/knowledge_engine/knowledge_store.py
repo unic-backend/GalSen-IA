@@ -2,9 +2,10 @@
 Stockage en mémoire des connaissances pour le moteur de connaissances GalSen IA.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, List, Optional
 from .types import KnowledgeItem
 from .interfaces import KnowledgeStore
+import copy
 import threading
 import datetime
 
@@ -37,9 +38,20 @@ class InMemoryKnowledgeStore(KnowledgeStore):
             return knowledge.id
 
     def get(self, knowledge_id: str) -> Optional[KnowledgeItem]:
-        """Récupère une connaissance par son ID."""
+        """Récupère une connaissance par son ID.
+
+        Une **copie** est retournée, comme le fait déjà le magasin SQLite qui
+        désérialise à chaque lecture. Rendre la référence interne rendait
+        `update()` inutilisable depuis le flux normal — lire, corriger,
+        enregistrer : incrémenter la version de l'objet lu incrémentait du même
+        coup celle du magasin, si bien que le contrôle `version > existante`
+        refusait la mise à jour. Deux implémentations d'une même interface ne
+        peuvent pas diverger sur ce point sans qu'un appelant correct sur l'une
+        soit fautif sur l'autre.
+        """
         with self._lock:
-            return self._data.get(knowledge_id)
+            knowledge = self._data.get(knowledge_id)
+            return copy.deepcopy(knowledge) if knowledge is not None else None
 
     def update(self, knowledge: KnowledgeItem) -> bool:
         """Met à jour une connaissance existante."""
@@ -52,6 +64,32 @@ class InMemoryKnowledgeStore(KnowledgeStore):
                 return False
             self._data[knowledge.id] = knowledge
             return True
+
+    def record_access(self, knowledge_id: str) -> int:
+        """Compte une consultation et retourne le nouveau total."""
+        with self._lock:
+            knowledge = self._data.get(knowledge_id)
+            if knowledge is None:
+                return 0
+            total = int(knowledge.metadata.get("access_count", 0)) + 1
+            knowledge.metadata["access_count"] = total
+            return total
+
+    def record_accesses(self, knowledge_ids) -> int:
+        """Compte plusieurs consultations d'un coup ; retourne le nombre mis à jour."""
+        from collections import Counter
+
+        touchees = 0
+        with self._lock:
+            for identifiant, nombre in Counter(knowledge_ids).items():
+                knowledge = self._data.get(identifiant)
+                if knowledge is None:
+                    continue
+                knowledge.metadata["access_count"] = (
+                    int(knowledge.metadata.get("access_count", 0)) + nombre
+                )
+                touchees += 1
+        return touchees
 
     def delete(self, knowledge_id: str) -> bool:
         """Supprime une connaissance."""
@@ -78,6 +116,21 @@ class InMemoryKnowledgeStore(KnowledgeStore):
                             break
                     elif key == "language":
                         if knowledge.language.value != value:
+                            match = False
+                            break
+                    elif key == "domain":
+                        wanted = value.value if hasattr(value, "value") else value
+                        if knowledge.domain.value != wanted:
+                            match = False
+                            break
+                    elif key == "sensitivity":
+                        wanted = value.value if hasattr(value, "value") else value
+                        if knowledge.sensitivity.value != wanted:
+                            match = False
+                            break
+                    elif key == "status":
+                        wanted = value.value if hasattr(value, "value") else value
+                        if knowledge.status.value != wanted:
                             match = False
                             break
                     elif key == "tags":
@@ -152,8 +205,18 @@ class InMemoryKnowledgeStore(KnowledgeStore):
             return results
 
     def count(self, **filters) -> int:
-        """Compte les connaissances correspondant aux filtres."""
-        return len(self.list_items(limit=10000, **filters))
+        """
+        Compte les connaissances correspondant aux filtres.
+
+        Le compte n'est jamais plafonné : il portait auparavant la limite de
+        10 000 de `list_items`, si bien qu'un magasin de 10 050 éléments en
+        rapportait 10 000 sans le dire. Un compte faux est pire qu'un compte
+        absent — rien ne permet de s'en apercevoir.
+        """
+        if not filters:
+            with self._lock:
+                return len(self._data)
+        return len(self.list_items(limit=len(self._data), **filters))
 
     def cleanup_old_versions(self, keep_latest: int = 1) -> int:
         """Nettoie les anciennes versions, en gardant seulement les plus récentes.

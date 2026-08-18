@@ -4,7 +4,6 @@ Memory Summarizer for GalSen IA.
 Simple extractive summarizer for memories.
 """
 
-import re
 from typing import List, Optional
 from .types import MemoryItem
 from .interfaces import MemorySummarizer

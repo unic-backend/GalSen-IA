@@ -6,7 +6,6 @@ from typing import List, Dict, Any, Optional
 from .types import ModelItem
 from .interfaces import ParallelExecutor
 import asyncio
-import concurrent.futures
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 

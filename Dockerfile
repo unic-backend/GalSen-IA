@@ -28,11 +28,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copier et installer les dépendances Python
+# Copier et installer les dépendances Python.
+# `requirements.txt` ne contient que l'exécution : pytest et le client HTTP de
+# test vivent dans `requirements-dev.txt` et n'ont rien à faire dans une image
+# exposée au réseau.
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir pyyaml
+    pip install --no-cache-dir -r requirements.txt
 
 # ---------------------------------------------------------------------------
 # Étape 2 : Image de production
@@ -60,8 +62,16 @@ RUN groupadd --system galsen && \
 
 # Installer uniquement les dépendances d'exécution légères
 # curl est nécessaire pour le healthcheck Docker
+# `curl` sert au healthcheck ; `tesseract-ocr` et ses données françaises servent
+# à l'OCR. Beaucoup de documents officiels de la région sont des numérisations :
+# sans le binaire, `pytesseract` n'est qu'une enveloppe vide et l'ingestion
+# accepte une image sans en tirer une ligne de texte (VOLET 28, VOLET 32).
+# `tesseract-ocr-fra` pèse quelques mégaoctets et évite de reconnaître le
+# français avec un modèle anglais, qui rend un texte lisible et faux.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    tesseract-ocr \
+    tesseract-ocr-fra \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -75,6 +85,24 @@ WORKDIR /app
 COPY requirements.txt .
 COPY src/ src/
 COPY tools/ tools/
+
+# Registres lus à l'exécution, à la racine du projet.
+#
+# Ils manquaient : l'image ne contenait que `src/` et `tools/`, si bien que
+# `RouterEngine` — qui lit config/settings.yaml, agents/registry.yaml et
+# workflows/workflows.yaml — échouait dans le conteneur alors qu'il passait en
+# local. Les routes /workflow/* étaient donc en panne dès la mise en image, et
+# rien ne le montrait parce que la CI ne construit pas l'image.
+#
+# `agents/` porte aussi les modules Python des agents : le répartiteur les
+# importe par leur chemin de module (`agents.planner.agent`), pas seulement
+# leur déclaration YAML.
+#
+# `tests/test_docker_image_contents.py` échoue si un nouveau répertoire lu à
+# l'exécution n'est pas ajouté ici.
+COPY config/ config/
+COPY agents/ agents/
+COPY workflows/ workflows/
 
 # Créer le répertoire de données pour le stockage persistant
 RUN mkdir -p /app/data && \

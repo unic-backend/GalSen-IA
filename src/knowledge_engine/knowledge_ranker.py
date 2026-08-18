@@ -2,8 +2,8 @@
 Classeur de connaissances pour le moteur de connaissances GalSen IA.
 """
 
-from typing import List, Tuple, Dict, Any
-from .types import KnowledgeItem, KnowledgePriority
+from typing import List, Dict, Any
+from .types import KnowledgeItem
 from .interfaces import KnowledgeRanker
 import math
 from datetime import datetime, timezone

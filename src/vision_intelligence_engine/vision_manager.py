@@ -2,18 +2,9 @@
 Vision manager that coordinates all vision components.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from .interfaces import (
-    VisionManager,
-    ImageLoader,
-    ImagePreprocessor,
-    ImageMetadataExtractor,
-    ImageClassifier,
-    ObjectDetector,
-    SceneAnalyzer,
-    FaceDetector,
-    ColorAnalyzer,
-    QualityAnalyzer
+    VisionManager
 )
 from .types import ImageItem
 from .image_loader_factory import ImageLoaderFactory

@@ -6,7 +6,7 @@ Provides web browsing capabilities to fetch and interact with web pages.
 
 import re
 import html
-from typing import Any, Dict, List
+from typing import Any, List
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
@@ -204,13 +204,23 @@ class BrowserTool(BaseTool):
             text = self._extract_text(html_content)
             links = self._extract_links(html_content, url)
 
-            return {
+            from src.security.trust import TrustLevel, envelope_fields
+
+            resultat = {
                 "url": url,
                 "title": title,
                 "text": text,
                 "links": links,
                 "status": "success",
             }
+            # Une page web est du texte que personne n'a relu : elle entre comme
+            # donnée externe, annoncée avec son URL (VOLET 36, ch. A.2). `text`
+            # reste brut — l'outil sert aussi à extraire, pas seulement à
+            # nourrir une invite.
+            resultat.update(envelope_fields(
+                f"{title}\n{text}", TrustLevel.EXTERNAL, origin=url,
+            ))
+            return resultat
         except Exception as e:
             return {
                 "url": url,

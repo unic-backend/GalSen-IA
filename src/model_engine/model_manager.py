@@ -3,13 +3,9 @@ Gestionnaire principal du moteur de modèles GalSen IA.
 """
 
 from typing import Optional, Dict, Any, List
-from .types import ModelItem, ModelType, ModelPriority, ModelStatus
+from .types import ModelItem, ModelStatus
 from .interfaces import (
-    ModelStore, ModelSelector, ModelRouter,
-    ModelContextManager, PromptOptimizer, ResponseValidator,
-    TokenTracker, CostTracker, RateLimiter, RetryManager,
-    StreamHandler, ParallelExecutor, ResponseRanker,
-    HealthMonitor, CapabilityDiscoverer, ModelManager
+    ModelStore, ModelManager
 )
 from .model_store import InMemoryModelStore
 from .model_selector import SimpleModelSelector
@@ -35,7 +31,7 @@ from .providers.provider_registry import ProviderRegistry
 import logging
 import time
 import asyncio
-import os
+from src.storage.paths import sqlite_enabled
 
 
 class ModelManagerImpl(ModelManager):
@@ -52,7 +48,8 @@ class ModelManagerImpl(ModelManager):
 
         Args:
             provider_registry: Registre des fournisseurs. Le registre par défaut
-                enregistre OpenAI, Anthropic, Google et le serveur local.
+                n'inscrit que les fournisseurs souverains — serveur local et
+                serveur au format compatible (ADR-014).
             memory_manager: Moteur de mémoire recevant l'historique des
                 générations. Optionnel : sans lui, rien n'est consigné et le
                 moteur de modèles reste utilisable seul.
@@ -62,7 +59,7 @@ class ModelManagerImpl(ModelManager):
         # Initialiser tous les composants
         if store is not None:
             self._store = store
-        elif os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower() == "sqlite":
+        elif sqlite_enabled():
             # Import différé pour éviter un import circulaire avec storage.
             from src.storage.sqlite_model_store import SQLiteModelStore
             self._store = SQLiteModelStore()
@@ -113,6 +110,15 @@ class ModelManagerImpl(ModelManager):
             ID du modèle enregistré
         """
         return self._store.save(model_item)
+
+    def sovereignty_report(self) -> Dict[str, Any]:
+        """
+        Décrit l'état de la souveraineté du moteur (ADR-014).
+
+        Exposé ici parce que le registre de fournisseurs est interne au moteur :
+        `/health` a besoin du constat, pas de l'objet.
+        """
+        return self._provider_registry.sovereignty_report()
 
     def get_model(self, model_id: str) -> Optional[ModelItem]:
         """
@@ -236,7 +242,12 @@ class ModelManagerImpl(ModelManager):
             stop_sequences=kwargs.get("stop_sequences", []),
         )
 
-        response = self._call_provider(selection.provider, request, model_item)
+        response = self._call_provider(
+            selection.provider, request, model_item,
+            # La route est celle que l'appelant a annoncée : c'est elle qui
+            # permettra de dire quelle politique coûte quoi.
+            route=kwargs.get("task_type") or "unspecified",
+        )
         self._record_generation(model_item, prompt, response)
         return response
 
@@ -517,7 +528,8 @@ class ModelManagerImpl(ModelManager):
     # Utilitaires internes de génération
     # ------------------------------------------------------------------
     def _call_provider(self, provider, request: GenerationRequest,
-                       model_item: ModelItem) -> GenerationResponse:
+                       model_item: ModelItem,
+                       route: str = "unspecified") -> GenerationResponse:
         """
         Appelle un fournisseur en appliquant les protections du moteur.
 
@@ -552,7 +564,12 @@ class ModelManagerImpl(ModelManager):
 
         if response.succeeded:
             self._tt.track_usage(model_item, response.prompt_tokens, response.completion_tokens)
-            self._ct.track_cost(model_item, response.total_tokens)
+            # Le coût est ventilé **par route** (VOLET 30, ch. 02). Le suiveur
+            # sait ventiler par `operation_type` depuis le début, et tout le
+            # monde lui passait la valeur par défaut : le coût total était connu,
+            # et « qu'est-ce qui coûte cher » ne l'était pas. Une politique de
+            # routage qu'on ne peut pas mesurer ne peut pas être améliorée.
+            self._ct.track_cost(model_item, response.total_tokens, operation_type=f"route:{route}")
             model_item.usage_count += 1
             self.update_model(model_item)
 

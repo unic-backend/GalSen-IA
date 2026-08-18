@@ -10,8 +10,7 @@ Couvre :
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -483,7 +482,7 @@ class TestSearchManager:
     def test_search_calls_all_providers(self):
         """search() doit appeler tous les fournisseurs enregistrés."""
         query = self.SearchQuery(query="test", sources=[self.SearchSource.KNOWLEDGE, self.SearchSource.MEMORY])
-        response = self.manager.search(query)
+        self.manager.search(query)
         self.knowledge_provider.search.assert_called_once()
         self.memory_provider.search.assert_called_once()
 
@@ -613,7 +612,6 @@ class TestFileTypes:
     def test_file_item_from_mapping(self):
         """from_mapping() doit reconstruire un fichier depuis un dictionnaire."""
         from src.services.file import FileItem
-        import base64
         original = FileItem(name="doc.pdf", content_type="application/pdf", size=100, data=b"pdf content")
         d = original.to_dict(include_data=True)
         restored = FileItem.from_mapping(d)
@@ -1070,14 +1068,23 @@ class TestSearchManagerAdvanced:
         assert response.sources_used == ["memory"]
         assert [r.id for r in response.results] == ["m1"]
 
-    def test_search_applies_source_weight(self):
-        """Le score final doit être pondéré par la source."""
+    def test_search_does_not_weight_one_source_over_another(self):
+        """Aucune source n'est privilégiée, et le score rendu est celui du moteur.
+
+        Ce test exigeait auparavant que le score d'une source « vision » soit
+        ramené à 0,8. Ce coefficient — comme 0,9 pour la mémoire et 0,85 pour
+        les documents — ne venait d'aucune mesure, et il était inerte tant
+        qu'une seule source était branchée. Le pinner rendait l'arbitraire
+        permanent ; les scores de deux moteurs ne sont de toute façon pas
+        comparables entre eux.
+        """
         from src.services.search import SearchQuery, SearchResultItem
         self.manager.register_provider(self._provider(self.SearchSource.VISION, [
             SearchResultItem(id="v1", source=self.SearchSource.VISION, content="V", score=1.0),
         ]))
         response = self.manager.search(SearchQuery(query="test", sources=[self.SearchSource.VISION]))
-        assert response.results[0].score == pytest.approx(0.8)
+        assert response.results[0].score == pytest.approx(1.0)
+        assert response.to_dict()["ranking"]["cross_source_comparable"] is False
 
     def test_search_offset_paginates_merged_results(self):
         """L'offset doit s'appliquer après la fusion des sources."""

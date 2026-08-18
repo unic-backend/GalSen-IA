@@ -5,13 +5,15 @@ L'interface principale pour les agents afin d'interagir avec le système de mém
 """
 
 import logging
-import os
+import time
 from typing import Any, Dict, List, Optional, Tuple
-from .types import MemoryItem, MemoryType, MemoryPriority, MemoryStatus
+from .layers import LayerRefused, effective_expiry
+from .types import MemoryItem, MemoryType, MemoryStatus
 from .interfaces import (
     MemoryStore, MemoryRetriever, MemoryIndexer,
     MemorySummarizer, MemoryRanker, MemoryCache, MemoryManager as MemoryManagerInterface
 )
+from .memory_quality import DEFAULT_INACTIVITY_DAYS, inactive_memories, quality_report
 from .memory_store import InMemoryMemoryStore
 from .memory_retriever import InMemoryMemoryRetriever
 from .memory_indexer import InMemoryMemoryIndexer
@@ -19,6 +21,7 @@ from .memory_cache import LRUMemoryCache
 from .memory_summarizer import SimpleMemorySummarizer
 from .memory_ranker import SimpleMemoryRanker
 from src.storage.sqlite_store import SQLiteMemoryStore
+from src.storage.paths import storage_backend
 
 
 class MemoryManager(MemoryManagerInterface):
@@ -38,9 +41,13 @@ class MemoryManager(MemoryManagerInterface):
                    Par défaut à "in-memory".
         """
         self._logger = logging.getLogger(__name__)
+        # Combien d'expirations ont été ramenées à la durée de vie de leur
+        # couche. Compté plutôt que tu : une demande silencieusement rognée
+        # ressemblerait à une demande honorée.
+        self._plafonnements = 0
         # Initialiser les composants
         if store is None:
-            storage_type = os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower()
+            storage_type = storage_backend()
             if storage_type == "sqlite":
                 self._store: MemoryStore = SQLiteMemoryStore()
             else:
@@ -54,7 +61,7 @@ class MemoryManager(MemoryManagerInterface):
         self._ranker: MemoryRanker = SimpleMemoryRanker()
         store_type = "in-memory" if store is None else "custom"
         if store is None:
-            store_type = os.getenv("GALSEN_STORAGE_BACKEND", "in-memory").lower()
+            store_type = storage_backend()
         self._logger.info(f"MemoryManager initialisé avec des composants {store_type}.")
 
     # Note : Dans un système de production, nous autoriserions l'injection de dépendance
@@ -70,12 +77,50 @@ class MemoryManager(MemoryManagerInterface):
             L'ID de l'élément sauvegardé.
         """
         self._logger.debug(f"Sauvegarde de l'élément de mémoire : {item.id}")
+        self._appliquer_la_couche(item)
         # Indexer l'élément avant la sauvegarde (ou après, mais nous le faisons avant pour qu'il soit indexé)
         self._indexer.index(item)
         item_id = self._store.save(item)
         # Mettre en cache l'élément par son ID pour une récupération rapide
         self._cache.set(f"item:{item_id}", item, ttl=3600)  # Cache pour 1 heure
         return item_id
+
+    def _appliquer_la_couche(self, item: MemoryItem) -> None:
+        """
+        Pose l'expiration que la couche de la mémoire impose (VOLET 60).
+
+        **Le défaut refermé ici** : `expires_at` existait, la lecture le
+        respectait, le ménage le purgeait — et *rien ne le remplissait jamais*.
+        Une mémoire de session écrite aujourd'hui était donc gardée pour
+        toujours, et la durée de vie déclarée par sa couche ne changeait
+        strictement rien.
+
+        Une expiration explicite plus courte est respectée ; une plus longue est
+        ramenée à la couche, parce que rallonger est une promotion et qu'une
+        promotion se décide avec un auteur et une raison.
+        """
+        try:
+            retenue = effective_expiry(
+                item.memory_type, item.created_at, item.expires_at,
+            )
+        except LayerRefused as refus:
+            # Un type sans couche déclarée ne doit pas empêcher d'écrire, mais
+            # il ne doit pas non plus passer inaperçu.
+            self._logger.warning("Couche inconnue pour %s : %s", item.id, refus)
+            return
+
+        if retenue.get("capped"):
+            self._plafonnements += 1
+            self._logger.info(
+                "Expiration de %s ramenée à sa couche (%s) : %s",
+                item.id, item.memory_type.value, retenue["reason"],
+            )
+        item.expires_at = retenue["expires_at"]
+
+    @property
+    def capped_expirations(self) -> int:
+        """Combien d'expirations ont été ramenées à leur couche."""
+        return self._plafonnements
 
     def get_memory(self, item_id: str) -> Optional[MemoryItem]:
         """Récupérer un élément de mémoire par son ID.
@@ -90,13 +135,31 @@ class MemoryManager(MemoryManagerInterface):
         # Essayer le cache en premier
         cached = self._cache.get(f"item:{item_id}")
         if cached is not None:
+            # Une mémoire expirée ne doit pas être servie parce qu'elle a été lue
+            # récemment : le cache survivait au nettoyage et rendait un souvenir
+            # que la politique de rétention avait effacé (VOLET 07, ch. 03).
+            if self._is_expired(cached):
+                self._cache.delete(f"item:{item_id}")
+                return None
             return cached
         # Si pas dans le cache, obtenir depuis le magasin
         item = self._store.get(item_id)
+        if item is not None and self._is_expired(item):
+            return None
         if item is not None:
             # Le mettre en cache
             self._cache.set(f"item:{item_id}", item, ttl=3600)
         return item
+
+    @staticmethod
+    def _is_expired(item: MemoryItem) -> bool:
+        """Indique si une mémoire a dépassé sa date d'expiration.
+
+        L'expiration est déclarée par l'appelant : la respecter à la lecture est
+        ce qui la rend réelle. S'en remettre au seul `cleanup_expired()` faisait
+        dépendre une règle de rétention du passage d'une tâche de ménage.
+        """
+        return item.expires_at is not None and item.expires_at < time.time()
 
     def update_memory(self, item: MemoryItem) -> bool:
         """Mettre à jour un élément de mémoire.
@@ -160,30 +223,146 @@ class MemoryManager(MemoryManagerInterface):
         Returns:
             Liste de tuples (élément de mémoire, score de pertinence).
         """
+        return self.search_memory_with_method(
+            query, memory_type=memory_type, user_id=user_id, session_id=session_id,
+            agent_id=agent_id, tags=tags, limit=limit,
+        )[0]
+
+    def search_memory_with_method(
+        self,
+        query: str,
+        **filtres,
+    ) -> Tuple[List[Tuple[MemoryItem, float]], Dict[str, Any]]:
+        """
+        Recherche en mémoire, en disant par quel chemin le classement est venu.
+
+        Le récupérateur sait chercher par le sens depuis le VOLET 27 ; le
+        service de recherche appelait encore le chemin lexical, si bien que
+        `/search` répondait par termes communs **même avec un encodeur
+        installé**. C'est cette marche qui manquait.
+
+        Args:
+            query: Requête.
+            **filtres: Mêmes filtres que `search_memory`.
+
+        Returns:
+            Les couples (mémoire, score) et un rapport `{"method": ...}`.
+        """
         self._logger.debug(f"Recherche de mémoire avec la requête : {query}")
-        # Utiliser le récupérateur pour obtenir les éléments et les scores
-        results = self._retriever.retrieve(
-            query=query,
-            memory_type=memory_type,
-            user_id=user_id,
-            session_id=session_id,
-            agent_id=agent_id,
-            tags=tags,
-            limit=limit
-        )
-        # Optionnellement, nous pourrions classer les résultats à nouveau, mais le récupérateur les note déjà
-        return results
+
+        avec_methode = getattr(self._retriever, "retrieve_with_method", None)
+        if avec_methode is None:
+            # Un récupérateur personnalisé peut ne pas connaître cette méthode :
+            # il garde le chemin historique, et le rapport le dit plutôt que de
+            # laisser croire au sémantique.
+            return self._retriever.retrieve(query=query, **filtres), {
+                "method": "lexical",
+                "reason": "Ce récupérateur ne propose pas de classement sémantique.",
+            }
+        return avec_methode(query, **filtres)
 
     def forget_memory(self, item_id: str) -> bool:
-        """Oublier (supprimer) un élément de mémoire.
+        """Oublier un élément de mémoire : il est archivé, pas effacé.
+
+        Le chapitre 03 distingue l'archivage (étape 7) de la suppression
+        (étape 8), et le statut `ARCHIVED` existait sans que rien ne le pose.
+        « Oublier » supprimait donc définitivement, ce qu'aucun appelant
+        n'attendait d'un verbe aussi doux — et ce que la politique de rétention
+        interdit tant qu'une mémoire n'est pas obsolète.
+
+        Une mémoire archivée n'est plus retournée par la recherche ; elle reste
+        lisible par son identifiant, et `delete_memory()` l'efface pour de bon.
 
         Args:
             item_id: L'ID de l'élément à oublier.
 
         Returns:
-            True si oublié, False sinon.
+            True si l'élément a été archivé, False s'il n'existe pas.
         """
-        return self.delete_memory(item_id)
+        self._logger.debug(f"Archivage de l'élément de mémoire : {item_id}")
+        item = self._store.get(item_id)
+        if item is None:
+            return False
+
+        item.status = MemoryStatus.ARCHIVED
+        item.updated_at = time.time()
+        if not self._store.update(item):
+            return False
+
+        # Retirée de l'index : une mémoire archivée ne remonte plus dans une
+        # recherche, sans quoi l'archivage ne changerait rien à l'usage.
+        self._indexer.deindex(item_id)
+        self._cache.set(f"item:{item_id}", item, ttl=3600)
+        return True
+
+    def deduplicate(self, user_id: Optional[str] = None,
+                    dry_run: bool = False) -> Dict[str, Any]:
+        """
+        Archive les mémoires en double, en gardant la plus ancienne de chaque groupe.
+
+        Le chapitre 03 du VOLET 20 range « supprimer les connaissances en
+        double » parmi ses pratiques de gestion, et la détection parmi ses
+        contrôles qualité. Seule la détection existait : `quality_report()`
+        annonçait « 2 éléments redondants » et rien ne pouvait agir dessus.
+        Mesuré, trois enregistrements du même contenu produisaient trois
+        mémoires **et la recherche rendait les trois** — l'appelant recevait
+        trois fois la même réponse et le contexte de l'agent s'en trouvait
+        rempli de répétitions.
+
+        Deux mémoires sont considérées identiques quand le propriétaire et le
+        contenu textuel coïncident, après retrait des espaces de bord. C'est
+        exactement le critère de `quality_report()` : deux définitions
+        différentes du doublon donneraient un rapport et une action en désaccord.
+
+        La **plus ancienne est conservée** : elle porte la date à laquelle la
+        connaissance est apparue. Les autres sont **archivées, pas supprimées**
+        — même distinction que `forget_memory()`, et la même raison : rien
+        n'autorise à effacer ce qu'un utilisateur a enregistré au motif qu'il
+        l'a enregistré deux fois.
+
+        Args:
+            user_id: se limiter aux mémoires d'un propriétaire.
+            dry_run: ne rien modifier et rapporter ce qui serait archivé.
+
+        Returns:
+            Le nombre de groupes trouvés, le nombre de mémoires archivées et
+            leurs identifiants.
+        """
+        try:
+            items = self._store.list_items(limit=100000)
+        except Exception as error:
+            self._logger.warning("Déduplication impossible : %s", error)
+            return {"groups": 0, "archived": 0, "archived_ids": [], "dry_run": dry_run}
+
+        groupes: Dict[Any, List[MemoryItem]] = {}
+        for item in items:
+            if item.status != MemoryStatus.ACTIVE or not isinstance(item.content, str):
+                continue
+            if user_id is not None and item.user_id != user_id:
+                continue
+            groupes.setdefault((item.user_id, item.content.strip()), []).append(item)
+
+        a_archiver: List[str] = []
+        groupes_avec_doublon = 0
+        for lot in groupes.values():
+            if len(lot) < 2:
+                continue
+            groupes_avec_doublon += 1
+            # La plus ancienne d'abord ; `created_at` peut manquer sur une
+            # mémoire ancienne, auquel cas elle est traitée comme la plus vieille.
+            lot.sort(key=lambda i: i.created_at or 0.0)
+            a_archiver.extend(item.id for item in lot[1:] if item.id)
+
+        archivees = []
+        if not dry_run:
+            archivees = [item_id for item_id in a_archiver if self.forget_memory(item_id)]
+
+        return {
+            "groups": groupes_avec_doublon,
+            "archived": len(a_archiver) if dry_run else len(archivees),
+            "archived_ids": a_archiver if dry_run else archivees,
+            "dry_run": dry_run,
+        }
 
     def consolidate_memory(
         self,
@@ -199,14 +378,42 @@ class MemoryManager(MemoryManagerInterface):
         Returns:
             Nombre de mémoires traitées.
         """
-        self._logger.debug(f"Consolidation des mémoires pour l'utilisateur : {user_id}, session : {session_id}")
-        # Ceci est une implémentation de placeholder. Dans un système complet, cela ferait :
-        # 1. Identifier les mémoires candidates à la consolidation (par exemple, les mémoires de court terme anciennes)
-        # 2. Les déplacer vers le stockage à long terme
-        # 3. Résumer des groupes de mémoires
-        # 4. Appliquer des courbes d'oubli
-        # Pour l'instant, nous retournerons simplement 0.
-        return 0
+        self._logger.warning(
+            "consolidate_memory() n'est pas implémentée : aucune mémoire n'a été "
+            "consolidée pour l'utilisateur %s (session %s).", user_id, session_id
+        )
+        raise NotImplementedError(
+            "La consolidation de mémoire n'est pas implémentée. Elle demande de "
+            "décider ce qui passe du court au long terme, ce qui se résume et "
+            "selon quelle courbe d'oubli — aucune de ces règles n'existe encore. "
+            "Retourner 0 laissait croire qu'il n'y avait rien à consolider."
+        )
+
+    def quality_report(self, max_age_days: int = None) -> Dict[str, Any]:
+        """
+        Rapporte la qualité et la rétention des mémoires (chapitres 08 et 09).
+
+        Args:
+            max_age_days: seuil d'inactivité en jours ; le défaut du module sinon
+
+        Returns:
+            Fraîcheur, doublons, complétude des métadonnées, répartition par
+            statut et par type, mémoires inactives à revoir, et les métriques que
+            la plateforme ne sait pas calculer avec leur raison.
+        """
+        if max_age_days is None:
+            return quality_report(self._store)
+        return quality_report(self._store, max_age_days=max_age_days)
+
+    def list_inactive(self, max_age_days: int = DEFAULT_INACTIVITY_DAYS) -> List[MemoryItem]:
+        """
+        Liste les mémoires actives que personne n'a touchées depuis longtemps.
+
+        Répond à « revoir les mémoires inactives » (chapitre 08). Rien n'est
+        archivé automatiquement : retirer une mémoire de l'usage est une décision,
+        pas un effet de bord d'un rapport.
+        """
+        return inactive_memories(self._store.list_items(limit=100000), max_age_days)
 
     def cleanup_expired(self) -> int:
         """Supprimer les mémoires expirées.
@@ -215,7 +422,13 @@ class MemoryManager(MemoryManagerInterface):
             Nombre de mémoires supprimées.
         """
         self._logger.debug("Nettoyage des mémoires expirées")
-        return self._store.cleanup_expired()
+        supprimees = self._store.cleanup_expired()
+        if supprimees:
+            # Sans cette purge, une mémoire supprimée du magasin restait servie
+            # par le cache : le nettoyage rapportait un nombre exact et la
+            # mémoire était toujours lisible.
+            self._cache.clear()
+        return supprimees
 
     # Méthodes supplémentaires qui pourraient être utiles mais ne font pas partie de l'interface
     def get_store(self) -> MemoryStore:

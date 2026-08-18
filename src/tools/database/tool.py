@@ -6,7 +6,7 @@ Fournit une interface simple à une base de données SQLite.
 
 import sqlite3
 import os
-from typing import Any, Dict, List, Optional, Sequence, Union, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from src.tool.base import BaseTool
 

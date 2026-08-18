@@ -1,0 +1,217 @@
+# Registre des sources — portée mondiale (VOLET 51, phase 51.2).
+#
+# Ce fichier généralise `senegal.yaml` : même format, même discipline, autre
+# portée. Il rattache un domaine internet à une catégorie et à un rang, pour que
+# « ceci fait autorité » devienne vérifiable au lieu d'être crédible.
+#
+# ## Ce que ce fichier N'EST PAS
+#
+# **Aucun de ces domaines n'a été visité depuis ce dépôt.** Le mandataire réseau
+# de cet environnement refuse les sorties (`CONNECT → 403`, mesuré), et surtout
+# aucune source n'est activée : `enabled: false` partout, comme le veut
+# l'ADR-021. Inscrire n'est pas activer, et activer n'est pas collecter.
+#
+# Ce fichier ne contient donc **aucune affirmation sur le monde**. Il dit qui
+# publie quoi, pas ce qui est vrai.
+#
+# `last_verified: unknown` est la vérité ici : personne n'a relu ces entrées
+# depuis ce dépôt. `unknown` n'est pas `no`, et ce n'est pas non plus `yes`.
+#
+# ## La règle qui décide de ce qui entre ici
+#
+# **Une source mondiale ne fait jamais autorité sur `law`, `administration` ou
+# `languages`** (`NATIONAL_SUBJECTS`, `src/knowledge_engine/scope.py`). Un texte
+# de loi n'a d'existence que sur son territoire, les démarches sont nationales,
+# et le wolof ne s'explique pas par une grammaire générale. Aucune entrée de ce
+# fichier ne déclare ces sujets — et un test le garde, parce qu'une entrée qui
+# les déclarerait ferait répondre une organisation internationale à la place du
+# Journal officiel d'un pays.
+#
+# Une institution **nationale** n'entre pas ici non plus : elle appartient au
+# registre de son pays. Ce fichier ne contient que des organisations
+# intergouvernementales et des organismes de normalisation.
+
+sources:
+
+  # --- Organisations intergouvernementales -----------------------------
+
+  - name: "Organisation des Nations unies"
+    scope: global
+    subjects: [society, history, geography]
+    category: institutional
+    tier: TIER_B_INTERNATIONAL
+    base_url: https://www.un.org
+    institution_type: "organisation intergouvernementale"
+    authority_scope: "Ses propres textes, résolutions et publications."
+    languages: [ar, zh, en, fr, ru, es]
+    last_verified: unknown
+    enabled: false
+
+  - name: "Organisation mondiale de la santé"
+    scope: global
+    subjects: [health, science]
+    category: institutional
+    tier: TIER_B_INTERNATIONAL
+    base_url: https://www.who.int
+    institution_type: "agence spécialisée des Nations unies"
+    authority_scope: "Recommandations sanitaires internationales et données publiées par elle."
+    languages: [ar, zh, en, fr, ru, es]
+    last_verified: unknown
+    enabled: false
+
+  - name: "Organisation des Nations unies pour l'alimentation et l'agriculture"
+    scope: global
+    subjects: [agriculture, fisheries, environment, economics]
+    category: institutional
+    tier: TIER_B_INTERNATIONAL
+    base_url: https://www.fao.org
+    institution_type: "agence spécialisée des Nations unies"
+    authority_scope: "Statistiques et recommandations agricoles et halieutiques qu'elle publie."
+    last_verified: unknown
+    enabled: false
+
+  - name: "UNESCO"
+    scope: global
+    subjects: [education, culture, science]
+    category: institutional
+    tier: TIER_B_INTERNATIONAL
+    base_url: https://www.unesco.org
+    institution_type: "agence spécialisée des Nations unies"
+    authority_scope: "Ses inscriptions, conventions et rapports."
+    last_verified: unknown
+    enabled: false
+
+  - name: "Banque mondiale"
+    scope: global
+    subjects: [economics, society, environment]
+    category: institutional
+    tier: TIER_B_INTERNATIONAL
+    base_url: https://www.worldbank.org
+    institution_type: "institution financière internationale"
+    authority_scope: "Les indicateurs qu'elle compile ; les données nationales restent celles des instituts nationaux."
+    last_verified: unknown
+    enabled: false
+
+  - name: "Fonds monétaire international"
+    scope: global
+    subjects: [economics, business]
+    category: institutional
+    tier: TIER_B_INTERNATIONAL
+    base_url: https://www.imf.org
+    institution_type: "institution financière internationale"
+    authority_scope: "Ses propres analyses et séries macroéconomiques."
+    last_verified: unknown
+    enabled: false
+
+  - name: "OCDE"
+    scope: global
+    subjects: [economics, education, society]
+    category: institutional
+    tier: TIER_B_INTERNATIONAL
+    base_url: https://www.oecd.org
+    institution_type: "organisation intergouvernementale"
+    authority_scope: "Ses études et statistiques comparées."
+    last_verified: unknown
+    enabled: false
+
+  # --- Fédérations sportives internationales ---------------------------
+  #
+  # Une fédération fait autorité sur **ses propres** compétitions : ses
+  # calendriers, ses résultats, ses classements. Elle ne fait pas autorité sur
+  # un championnat national, qui a sa propre fédération et n'est pas inscrit
+  # ici. Ce que ces entrées portent est donc étroit, et le dire évite qu'on
+  # leur attribue un pays entier.
+
+  - name: "FIFA"
+    scope: global
+    subjects: [sports]
+    category: institutional
+    tier: TIER_B_INTERNATIONAL
+    base_url: https://www.fifa.com
+    institution_type: "fédération internationale de football"
+    authority_scope: >-
+      Ses propres compétitions et son classement. Pas les championnats
+      nationaux, qui relèvent de leurs fédérations et ne sont pas inscrits ici.
+    last_verified: unknown
+    enabled: false
+
+  - name: "Comité international olympique"
+    scope: global
+    subjects: [sports]
+    category: institutional
+    tier: TIER_B_INTERNATIONAL
+    base_url: https://olympics.com
+    institution_type: "comité international"
+    authority_scope: "Les Jeux olympiques : résultats, records, participants."
+    last_verified: unknown
+    enabled: false
+
+  # --- Organismes de normalisation --------------------------------------
+
+  - name: "ISO — Organisation internationale de normalisation"
+    scope: global
+    subjects: [technology, engineering, science, construction]
+    category: standard
+    tier: TIER_A_ACADEMIC
+    base_url: https://www.iso.org
+    institution_type: "organisme de normalisation"
+    authority_scope: >-
+      Les normes ISO. Leur texte intégral est payant : seul le catalogue est
+      public. Sur la construction (VOLET 55), elle porte la part **universelle**
+      — matériaux, méthodes, essais — et **jamais** ce qu'un pays prescrit :
+      règles parasismiques, permis et coefficients réglementaires sont
+      territoriaux.
+    last_verified: unknown
+    enabled: false
+
+  - name: "IETF / RFC Editor"
+    scope: global
+    subjects: [technology, engineering]
+    category: official_documentation
+    tier: TIER_A_ACADEMIC
+    base_url: https://www.rfc-editor.org
+    institution_type: "organisme de normalisation de l'internet"
+    authority_scope: "Les RFC. Une RFC n'est pas nécessairement une norme : son statut est écrit dedans."
+    allowed_content_types: [html, txt, pdf]
+    last_verified: unknown
+    enabled: false
+
+  - name: "W3C — World Wide Web Consortium"
+    scope: global
+    subjects: [technology, engineering]
+    category: official_documentation
+    tier: TIER_A_ACADEMIC
+    base_url: https://www.w3.org
+    institution_type: "consortium de normalisation du web"
+    authority_scope: "Ses recommandations. Un brouillon de travail n'est pas une recommandation."
+    last_verified: unknown
+    enabled: false
+
+  # --- Pistes, jamais preuves -------------------------------------------
+  #
+  # Rang D : ces sources peuvent faire *chercher* quelque chose, elles n'entrent
+  # jamais comme fondement d'une affirmation. Les inscrire au rang qui leur
+  # revient vaut mieux que de les laisser hors registre, où une catégorie
+  # d'autorité pourrait leur être attribuée par celui qui ingère.
+
+  - name: "arXiv"
+    scope: global
+    subjects: [science, technology, engineering]
+    category: institutional
+    tier: TIER_D_DISCOVERY_ONLY
+    base_url: https://arxiv.org
+    institution_type: "archive de préprints"
+    authority_scope: "Aucune : un préprint n'a pas été relu par des pairs. Piste, jamais preuve."
+    last_verified: unknown
+    enabled: false
+
+  - name: "Wikipédia"
+    scope: global
+    subjects: [general]
+    category: expert_consensus
+    tier: TIER_D_DISCOVERY_ONLY
+    base_url: https://www.wikipedia.org
+    institution_type: "encyclopédie collaborative"
+    authority_scope: "Aucune : utile pour trouver la source primaire citée en bas de page, jamais pour l'affirmation elle-même."
+    last_verified: unknown
+    enabled: false

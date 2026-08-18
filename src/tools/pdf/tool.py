@@ -12,7 +12,7 @@ Exemple:
 """
 
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict
 
 from src.tool.base import BaseTool
 
@@ -20,7 +20,10 @@ logger = logging.getLogger(__name__)
 
 # These will be set to the actual class if dependency is available
 try:
-    import PyPDF2
+    try:
+        import pypdf as PyPDF2  # successeur maintenu de PyPDF2
+    except ImportError:
+        import PyPDF2
     PDF_AVAILABLE = True
 except ImportError:  # pragma: no cover
     PDF_AVAILABLE = False
@@ -111,11 +114,19 @@ class PDFTool(BaseTool):
 
                 extracted_text = "\n\n".join(text_parts)
 
+                from src.security.trust import TrustLevel, envelope_fields
+
                 result = {
                     "text": extracted_text,
                     "num_pages": num_pages,
                     "pages_extracted": pages_to_extract,
                 }
+                # Un PDF est écrit par quelqu'un d'autre : une consigne peut y
+                # être posée en texte blanc sur fond blanc, invisible à l'œil et
+                # parfaitement lisible pour un modèle (VOLET 36, ch. A.3).
+                result.update(envelope_fields(
+                    extracted_text, TrustLevel.DOCUMENT, origin=file_path,
+                ))
                 logger.debug(f"Extraction PDF terminée: {file_path}, pages {pages_to_extract} sur {num_pages}")
                 return result
         except FileNotFoundError:

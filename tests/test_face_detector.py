@@ -10,7 +10,6 @@ Aucun modèle n'est téléchargé : les tests fabriquent une cascade minimale ou
 simulent OpenCV.
 """
 
-import os
 from unittest.mock import MagicMock, patch
 
 import pytest

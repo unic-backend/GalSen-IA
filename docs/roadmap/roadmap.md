@@ -574,19 +574,30 @@ and what triggers paying it. Measured, not recalled.
 
 | Debt | Measured | What it costs | Trigger to pay |
 |------|----------|---------------|----------------|
-| **Unbounded log** | `logs/application.log`: 6.7 MB, 43 638 lines, no rotation | already broke the monitor agent once, before a `tail` was added | P1 — criterion C5 |
-| **No metrics fed** | the `metrics` tool works; nothing calls it from request handling | `/health` reports what is *configured*, never what is *happening* | P1 — criterion C5 |
+| ~~Unbounded log~~ **paid** | rotation in place (5 MB × 3); the file is at 3.5 MB | — | closed with criterion C5 |
+| ~~No metrics fed~~ **paid** | `src/api/metrics.py` feeds traffic, auth and search counters | — | closed with criterion C5 |
 | **Three ways to write a file** | `LocalDiskStorageConnector`, `SQLiteFileStore`, `FileSystemCloudStore` | a caller has no way to choose; every future change touches three implementations | P1 — decided, not scheduled |
-| **27 test files at the repository root** | 27 `test_*.py` outside `tests/` | contradicts `.claude/rules/testing.md`; they are collected and green | P3 — cosmetic while green |
-| **Slow orchestration suite** | `test_integration.py`: 97 s, three tests at 31 s | slows every full run; the tester agent runs real suites inside the pipeline | P2 |
+| ~~27 test files at the root~~ **paid** | 0 remain; `tests/test_project_structure.py` guards it | — | closed in VOLET 03 |
+| **Slow orchestration suite** | `tests/test_integration.py`: **105 s**, three tests at ~34 s each | slows every full run; the tester agent runs real suites inside the pipeline | P2 — re-measured 2026-08-10, it grew |
 | **JavaScript untested** | `dashboard.js`, `api-client.js`: no unit runner | three rendering defects were caught only by driving a browser | accepted by ADR-008; the trigger is the interface outgrowing one page |
 | **Hand-maintained scaling inventory** | `src/api/scaling.py`, 7 entries | a new store added without an entry makes `/health` lie | accepted by ADR-009; a test catches removal, not omission |
 | **Single-instance state** | revocations and rate-limit counters in process memory | a revoked key still opens another instance | P3 → **P0 the moment a second instance runs** |
+| **No performance target** | — | `release_check.py` could not tick "performance targets verified" | ~~P1~~ **paid**: `docs/standards/performance.md` + `tests/test_performance_targets.py` |
+| **No linter or type checker** | no `setup.cfg`, `pyproject.toml`, `.flake8` or pre-commit; return type hints at 88 % | conventions hold because one author applies them | P3 — becomes P1 with a second contributor |
+| **No release tag** | `git tag` is empty; `release_check.py` expects `v0.1.0` | a rollback target has to be named by hand | P2 — cheap, and C4 needs it |
 | **Two numbering schemes in `docs/architecture/`** | 25 folders vs 25 `VOLET_NN.md`, contradicting on at least 3 numbers | two references in this repository were written wrong from it | unscheduled — see chapter 07 above |
 
 ### What this register says about the project
 
-Nine debts, and the shape matters more than the count:
+Re-measured on 2026-08-10 during VOLET 03: **four of the nine debts are paid** (log
+rotation, metrics, the root test files, and the performance target that had no entry of
+its own), **three new ones were found by measuring rather than by remembering** (no
+linter, no release tag, and the performance target before it was paid), and **one grew**:
+the orchestration suite was recorded at 97 s and now takes **105 s**. A register that is
+never re-measured drifts in both directions — it keeps debts that are settled and misses
+the ones that appeared.
+
+The original shape still holds:
 
 - **None of them is a shortcut taken to ship faster.** The usual origin of debt — "we will
   clean it up after the deadline" — is absent, because there has been no deadline and no

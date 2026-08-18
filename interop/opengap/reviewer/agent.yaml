@@ -1,0 +1,13 @@
+spec_version: 0.1.0
+name: reviewer
+version: 0.1.0
+description: Vérifie la qualité du code.
+author: GalSen IA
+tags:
+- galsen-ia
+- code-reviewer
+metadata:
+  galsen_role: Code Reviewer
+  galsen_module: agents.reviewer.agent
+  galsen_priority: 85
+  galsen_enabled: true

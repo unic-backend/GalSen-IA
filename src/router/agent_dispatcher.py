@@ -11,12 +11,21 @@ Two calling conventions are supported, in this order:
 2. **Legacy** — the module exposes a plain `execute(input_data)` function. This
    is the contract that existed before the integration layer, and it keeps
    working so that older agents and tests are unaffected.
+
+Whatever the convention, the result is checked against the output contract
+(`output_validation`) before leaving this class. The legacy convention makes the
+check necessary rather than defensive: `execute()` returns whatever its author
+wrote, and a non-dictionary used to raise an `AttributeError` in the middle of
+aggregation — failing the whole request, including the agents that had already
+succeeded.
 """
 
 import importlib
 import inspect
 import logging
 from typing import Any, Dict, Optional, Type
+
+from .output_validation import validated
 
 
 class AgentDispatcher:
@@ -28,6 +37,44 @@ class AgentDispatcher:
         # Les classes trouvées sont conservées : l'import d'un module est coûteux
         # et le dispatcher est appelé pour chaque agent de chaque requête
         self._agent_classes: Dict[str, Optional[Type]] = {}
+
+    def dispatch_by_id(
+        self,
+        agent_id: str,
+        input_data: Any,
+        context: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """
+        Exécute un agent désigné par son identifiant.
+
+        Sert la délégation d'agent à agent (VOLET 29) : un agent connaît le nom
+        de celui qu'il sollicite, pas sa configuration. La configuration est lue
+        dans le registre déclaré, jamais reconstruite ici — sinon un agent
+        délégué tournerait avec des réglages différents de ceux qu'il a quand
+        l'orchestrateur l'appelle.
+
+        Args:
+            agent_id: Identifiant de l'agent, tel que déclaré dans le registre.
+            input_data: Données d'entrée.
+            context: `AgentContext` de l'appelant, dérivé pour l'agent sollicité.
+
+        Returns:
+            Le résultat de l'agent, ou un résultat d'erreur si l'agent est inconnu.
+        """
+        import os
+
+        from .agent_loader import AgentLoader
+
+        racine = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        registre = AgentLoader(os.path.join(racine, "agents", "registry.yaml"))
+        configuration = registre.get_all_agents().get(agent_id)
+
+        if not configuration:
+            return self._create_error_result(
+                agent_id,
+                f"Agent « {agent_id} » inconnu du registre : la délégation est refusée.",
+            )
+        return self.dispatch(configuration, input_data, context)
 
     def dispatch(
         self,
@@ -90,8 +137,23 @@ class AgentDispatcher:
                     f"Le module '{module_path}' ne contient pas de fonction 'execute'",
                 )
 
-            self.logger.info(f"Agent '{agent_id}' exécuté avec succès.")
-            return result
+            # Frontière : c'est ici qu'une sortie d'agent entre dans la
+            # plateforme. La valider une fois évite que chaque code en aval —
+            # agrégateur, routeur, historique — se défende contre une forme
+            # inattendue, ce qu'aucun d'eux ne faisait.
+            verifie = validated(result, agent_id)
+            if verifie is not result:
+                self.logger.error(
+                    "Agent '%s' : sortie rejetée — %s", agent_id, verifie["error"],
+                )
+                return verifie
+
+            # Le message d'origine annonçait le succès quel que soit le statut
+            # rendu, y compris pour une erreur.
+            self.logger.info(
+                "Agent '%s' exécuté ; statut : %s.", agent_id, verifie["status"],
+            )
+            return verifie
 
         except Exception as error:
             self.logger.error(f"Erreur lors de l'exécution de l'agent '{agent_id}': {error}")

@@ -1,0 +1,181 @@
+/*
+ * Media Studio — disposition des cinq zones de la directive §34.
+ *
+ * Elle reprend les variables de `dashboard.css` : deux palettes pour une même
+ * plateforme divergeraient au premier ajustement. Ce fichier ne porte que la
+ * grille et ce qui lui est propre.
+ *
+ * Aucune police n'est téléchargée, aucune image distante : la page s'affiche
+ * entièrement sans connexion sortante, comme le tableau de bord.
+ */
+
+body.studio {
+  padding: 0.75rem;
+}
+
+.studio-haut {
+  align-items: center;
+  border-bottom: 1px solid var(--bordure);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.studio-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.lien-retour {
+  color: var(--texte-doux);
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.lien-retour:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/*
+ * Gauche / centre / droite, puis la timeline en pleine largeur — la
+ * disposition d'un outil de montage, pas d'une conversation.
+ */
+.studio-grille {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(200px, 1fr) minmax(320px, 2.2fr) minmax(200px, 1fr);
+  grid-template-areas:
+    "gauche centre droite"
+    "bas    bas    bas";
+  align-items: start;
+}
+
+/* Sur un téléphone, les colonnes s'empilent dans l'ordre de lecture. */
+@media (max-width: 900px) {
+  .studio-grille {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "centre"
+      "gauche"
+      "droite"
+      "bas";
+  }
+}
+
+.studio-gauche {
+  grid-area: gauche;
+}
+.studio-centre {
+  grid-area: centre;
+}
+.studio-droite {
+  grid-area: droite;
+}
+.studio-bas {
+  grid-area: bas;
+}
+
+.studio-gauche section,
+.studio-centre section,
+.studio-droite section,
+.studio-bas {
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+}
+
+.studio-grille h2 {
+  font-size: 0.95rem;
+  margin: 0 0 0.5rem;
+}
+
+/*
+ * L'aperçu ne montre pas une vidéo de démonstration : il montre ce que cette
+ * machine peut réellement produire. Un cadre noir avec un bouton de lecture
+ * sur un fichier qui n'existe pas se lit comme un aperçu.
+ */
+.apercu {
+  align-items: center;
+  aspect-ratio: 16 / 9;
+  background: var(--fond-carte);
+  border: 1px dashed var(--bordure);
+  border-radius: var(--rayon);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+}
+
+.apercu .discret {
+  max-width: 46ch;
+}
+
+/*
+ * La timeline se dessine sur des scènes **mesurées**. Sans média mesuré, la
+ * zone dit ce qui manque au lieu d'afficher des blocs décoratifs.
+ */
+.piste {
+  display: flex;
+  gap: 2px;
+  margin-top: 0.4rem;
+  min-height: 28px;
+}
+
+.piste-vide {
+  align-items: center;
+  border: 1px dashed var(--bordure);
+  border-radius: var(--rayon);
+  color: var(--texte-doux);
+  display: flex;
+  font-size: 0.85rem;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.bloc {
+  background: var(--accent);
+  border-radius: 3px;
+  color: var(--fond);
+  font-size: 0.72rem;
+  overflow: hidden;
+  padding: 0.3rem 0.4rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bloc--bloque {
+  background: var(--bordure);
+  color: var(--texte-doux);
+}
+
+.liste-etapes {
+  display: grid;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.liste-etapes li {
+  align-items: baseline;
+  display: flex;
+  font-size: 0.82rem;
+  gap: 0.4rem;
+  justify-content: space-between;
+}
+
+.question {
+  border-left: 3px solid var(--alerte);
+  font-size: 0.85rem;
+  margin: 0.4rem 0;
+  padding-left: 0.5rem;
+}

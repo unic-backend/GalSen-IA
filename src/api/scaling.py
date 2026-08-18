@@ -90,8 +90,16 @@ def instance_id() -> str:
 
 
 def _storage_backend() -> str:
-    """Retourne le backend de stockage choisi pour les moteurs (ADR-005)."""
-    return os.environ.get(STORAGE_BACKEND_VARIABLE, "in-memory").strip().lower()
+    """
+    Retourne le backend de stockage effectivement appliqué (ADR-005).
+
+    Passe par `src/storage/paths.py`, qui est le point de décision unique : lire
+    la variable ici ferait diverger l'inventaire de la réalité le jour où la
+    règle de normalisation changerait.
+    """
+    from src.storage.paths import storage_backend
+
+    return storage_backend()
 
 
 def state_inventory() -> List[StateComponent]:
@@ -163,8 +171,10 @@ def state_inventory() -> List[StateComponent]:
             ),
             blocking=True,
             caveat=(
-                "retirer la clé de GALSEN_API_KEYS et redémarrer reste le seul "
-                "moyen sûr de la couper partout"
+                "un verrou d'instance interdit désormais une deuxième instance "
+                "sur le même répertoire de données (ADR-013) ; la révocation ne "
+                "survit toujours pas à un redémarrage, donc retirer la clé de "
+                "GALSEN_API_KEYS reste le seul geste définitif"
             ),
         ),
         StateComponent(
@@ -219,6 +229,10 @@ def scaling_report() -> Dict[str, Any]:
         `multi_instance_ready`, la liste des sous-systèmes bloquants et
         l'inventaire complet.
     """
+    # Import différé : `instance_lock` a besoin de `instance_id()`, défini ici.
+    # L'importer en tête du module ferait un cycle.
+    from src.api.instance_lock import status as etat_du_verrou
+
     composants = state_inventory()
     bloquants = [composant for composant in composants if composant.blocking]
 
@@ -228,5 +242,14 @@ def scaling_report() -> Dict[str, Any]:
         "deployment_model": "single-instance" if bloquants else "multi-instance",
         "blocking": [composant.name for composant in bloquants],
         "components": [composant.to_dict() for composant in composants],
+        # Le verdict dit qu'une deuxième instance casserait quelque chose ; le
+        # verrou dit si une deuxième instance peut seulement démarrer (ADR-013).
+        # Vue réduite : `/health` n'est pas authentifiée, le chemin du verrou et
+        # le PID de l'occupant n'y ont rien à faire.
+        "instance_lock": {
+            cle: valeur
+            for cle, valeur in etat_du_verrou().items()
+            if cle in ("held", "multi_instance_allowed", "enforced")
+        },
         "reference": "ADR-009",
     }

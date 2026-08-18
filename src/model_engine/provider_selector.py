@@ -214,15 +214,35 @@ class ProviderSelector:
     # Utilitaires internes
     # ------------------------------------------------------------------
     def _resolve_requirements(self, task_requirements: Dict[str, Any]) -> Dict[str, Any]:
-        """Traduit une description de tâche en contraintes concrètes."""
+        """
+        Traduit une description de tâche en contraintes concrètes.
+
+        Les exigences viennent désormais de `config/model_routing.yaml`
+        (VOLET 30). Elles vivaient dans `TASK_REQUIREMENTS`, en dur : les changer
+        demandait de modifier du code, alors que le bon réglage dépend des
+        modèles réellement installés sur la machine. La table de classe reste
+        comme filet, et sert si le fichier est absent.
+        """
+        from .routing_policy import shared_policy
+
         task_type = task_requirements.get("task_type", "conversation")
         complexity = task_requirements.get("complexity", "medium")
 
-        profile = self.TASK_REQUIREMENTS.get(task_type, {})
+        modeles_servis = [
+            descripteur.model_name
+            for descripteur in self._model_registry.find_models(available_only=True)
+        ]
+        decision = shared_policy().decide(
+            {**task_requirements, "task_type": task_type, "complexity": complexity},
+            available_models=modeles_servis,
+        )
+        exigences = decision.requirements
 
-        # La contrainte de contexte la plus forte l'emporte, qu'elle vienne du
-        # type de tâche, de la complexité ou d'une demande explicite
+        # Filet : si la politique n'a rien pour ce type, la table historique
+        # fournit encore un profil plutôt que rien.
+        profile = self.TASK_REQUIREMENTS.get(task_type, {})
         min_context = max(
+            exigences.get("min_context_window", 0),
             profile.get("min_context_window", 0),
             self.COMPLEXITY_CONTEXT.get(complexity, 0),
             int(task_requirements.get("min_context_window", 0)),
@@ -233,14 +253,24 @@ class ProviderSelector:
             "complexity": complexity,
             "min_context_window": min_context,
             "requires_vision": bool(
-                task_requirements.get("requires_vision", profile.get("requires_vision", False))
+                exigences.get("requires_vision")
+                or task_requirements.get("requires_vision", profile.get("requires_vision", False))
             ),
             "requires_function_calling": bool(
-                task_requirements.get("requires_function_calling", False)
+                exigences.get("requires_function_calling")
+                or task_requirements.get("requires_function_calling", False)
             ),
-            "max_input_cost": task_requirements.get("max_input_cost"),
-            "preferred_features": profile.get("preferred_features", []),
+            "max_input_cost": exigences.get("max_input_cost"),
+            "preferred_features": (
+                exigences.get("preferred_features") or profile.get("preferred_features", [])
+            ),
             "preferred_provider": task_requirements.get("preferred_provider"),
+            # Ce que la politique a décidé voyage avec les exigences : sans cela,
+            # la réponse ne peut pas dire pourquoi ce modèle-là a été retenu.
+            "prefer_cheapest": bool(exigences.get("prefer_cheapest")),
+            "family": decision.family,
+            "family_available": decision.family_available,
+            "route_reason": decision.reason,
         }
 
     def _pick_best(
@@ -258,6 +288,28 @@ class ProviderSelector:
             for descriptor in candidates:
                 if descriptor.provider_id == preferred_provider:
                     return descriptor
+
+        # La famille visée passe avant tout le reste : router une tâche de code
+        # vers SamP alors que ToP est servi reviendrait à ignorer la décision
+        # d'ADR-014. Quand aucun modèle de la famille n'est là, la politique l'a
+        # déjà signalé et on continue avec les autres critères.
+        famille = requirements.get("family")
+        if famille:
+            from .routing_policy import shared_policy
+
+            politique = shared_policy()
+            de_la_famille = [
+                descripteur for descripteur in candidates
+                if politique.family_of(descripteur.model_name) == famille
+            ]
+            if de_la_famille:
+                candidates = de_la_famille
+
+        # « Question simple → petit modèle » : pour une tâche ordinaire, le moins
+        # cher des modèles capables suffit, et les candidats arrivent triés par
+        # coût croissant. C'est la seule optimisation de coût qui ne dégrade rien.
+        if requirements.get("prefer_cheapest"):
+            return candidates[0]
 
         preferred_features = requirements.get("preferred_features", [])
         if preferred_features:

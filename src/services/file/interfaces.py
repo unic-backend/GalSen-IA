@@ -9,7 +9,7 @@ Tout backend de stockage (mémoire, disque, S3, MinIO) peut être branché
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from .types import FileCategory, FileItem, FileUploadResult
+from .types import FileItem, FileSummary, FileUploadResult
 
 
 class FileStore(ABC):
@@ -36,8 +36,15 @@ class FileStore(ABC):
         content_type: Optional[str] = None,
         uploaded_by: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
-    ) -> List[FileItem]:
-        """Retourne les fichiers filtrés, du plus récent au plus ancien."""
+    ) -> List[FileSummary]:
+        """
+        Retourne les fichiers filtrés, du plus récent au plus ancien,
+        **sans leur contenu** (ADR-016).
+
+        Lister ne charge pas les octets : `FileItem` les porte, si bien que
+        lister cent fichiers les lisait tous pour une réponse qui les jette.
+        Le contenu se demande fichier par fichier, avec `get`.
+        """
 
     @abstractmethod
     def delete(self, file_id: str) -> bool:
@@ -98,8 +105,8 @@ class FileManager(ABC):
         category: Optional[str] = None,
         content_type: Optional[str] = None,
         uploaded_by: Optional[str] = None,
-    ) -> List[FileItem]:
-        """Retourne les fichiers filtrés."""
+    ) -> List[FileSummary]:
+        """Retourne les fichiers filtrés, **sans leur contenu** (ADR-016)."""
 
     @abstractmethod
     def delete_file(self, file_id: str) -> bool:

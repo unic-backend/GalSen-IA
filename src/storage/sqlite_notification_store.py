@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from src.services.notification.interfaces import NotificationStore
 from src.services.notification.types import Notification, NotificationPriority, NotificationType
-from src.storage.paths import default_sqlite_path
+from src.storage.paths import default_sqlite_path, prepare_connection, secure_database_file
 
 
 class SQLiteNotificationStore(NotificationStore):
@@ -39,6 +39,9 @@ class SQLiteNotificationStore(NotificationStore):
         self._lock = threading.RLock()
         self._persistent_conn: Optional[sqlite3.Connection] = None
         self._initialize_db()
+        # Une base porte des mémoires, des connaissances et des e-mails ;
+        # elle était créée en 0644, donc lisible par tout compte de la machine.
+        secure_database_file(self.db_path)
         if self.db_path == ":memory:":
             self._persistent_conn = self._get_connection()
 
@@ -54,8 +57,7 @@ class SQLiteNotificationStore(NotificationStore):
             conn = sqlite3.connect("file::memory:?cache=shared", uri=True)
         else:
             conn = sqlite3.connect(self.db_path)
-        conn.execute("PRAGMA foreign_keys = ON")
-        conn.execute("PRAGMA busy_timeout = 5000")
+        prepare_connection(conn)
         return conn
 
     def _initialize_db(self) -> None:
@@ -143,6 +145,18 @@ class SQLiteNotificationStore(NotificationStore):
                 )
                 conn.commit()
             return notification.id
+
+    def update(self, notification: Notification) -> bool:
+        """Met à jour une notification existante ; False si elle n'existe pas.
+
+        Explicite là où `save()` remplaçait silencieusement : l'appelant qui
+        veut modifier le dit, et celui qui croit créer n'écrase rien par mégarde.
+        """
+        with self._lock:
+            if self.get(notification.id) is None:
+                return False
+            self.save(notification)
+            return True
 
     def get(self, notification_id: str) -> Optional[Notification]:
         """Retourne une notification par identifiant, ou None si absente."""

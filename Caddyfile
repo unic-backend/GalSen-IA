@@ -1,0 +1,64 @@
+# =============================================================================
+# GalSen IA — Terminaison TLS
+# =============================================================================
+# Caddy se place devant l'application : il obtient et renouvelle les
+# certificats, redirige HTTP vers HTTPS, et transmet la requête au conteneur
+# `api` sur le réseau interne. L'application ne termine pas TLS elle-même — ce
+# travail appartient au déploiement, et c'est ce que dit le critère C4.
+#
+# Démarrage :
+#   GALSEN_DOMAIN=exemple.sn GALSEN_TLS_EMAIL=vous@exemple.sn docker compose up -d
+#
+# Essai local, sans certificat public :
+#   GALSEN_DOMAIN=localhost docker compose up -d
+#   (Caddy émet alors un certificat interne ; le navigateur le signalera.)
+# =============================================================================
+
+{
+	# Adresse de contact pour Let's Encrypt : elle sert aux avertissements
+	# d'expiration. Sans elle, Caddy demande quand même un certificat.
+	email {$GALSEN_TLS_EMAIL}
+
+	# Journal d'accès en JSON, lisible par une machine comme par un humain.
+	log {
+		output stdout
+		format json
+	}
+}
+
+{$GALSEN_DOMAIN} {
+	# --- Proxy vers l'application ---------------------------------------
+	# `api` est le nom du service sur le réseau Docker interne. Le port 8000
+	# n'est plus publié sur l'hôte : la seule voie d'entrée est ce bloc.
+	reverse_proxy api:8000 {
+		# Caddy pose X-Forwarded-For, X-Forwarded-Proto et X-Forwarded-Host
+		# de lui-même. Ces en-têtes ne sont crus par l'application que si
+		# GALSEN_TRUSTED_PROXIES déclare le réseau d'où ils viennent —
+		# sinon un appelant pourrait les forger et obtenir un quota
+		# illimité tout en restant invisible du détecteur de menaces.
+		health_uri /live
+		health_interval 30s
+		health_timeout 5s
+	}
+
+	# --- En-têtes ---------------------------------------------------------
+	# L'application pose déjà sa propre politique de sécurité
+	# (`src/api/security_headers.py`) : la dupliquer ici produirait deux
+	# valeurs pour un même en-tête, et c'est la plus permissive qui gagne
+	# selon le client. Caddy retire seulement ce qui trahit la pile.
+	header {
+		-Server
+		-X-Powered-By
+	}
+
+	# --- Journalisation ---------------------------------------------------
+	log {
+		output stdout
+		format json
+	}
+}
+
+# La redirection de HTTP vers HTTPS est automatique : Caddy ouvre le port 80
+# pour le défi ACME et y répond par une redirection 308 vers HTTPS. Rien à
+# déclarer, et rien ne doit être ajouté — un bloc `:80` explicite casserait
+# l'obtention des certificats.

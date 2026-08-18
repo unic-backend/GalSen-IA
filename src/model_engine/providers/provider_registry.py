@@ -6,18 +6,82 @@ providers exist, and which of them can serve a request right now.
 
 Adding a provider means registering it here. Nothing else in the engine needs to
 change, which is the point of the provider contract.
+
+**Souveraineté (ADR-014).** GalSen IA ne dépend d'aucun modèle tiers à
+l'exécution. Le registre inscrivait pourtant OpenAI, Anthropic et Google par
+défaut : ils restaient inertes faute de clé, mais *inerte n'est pas absent*, et
+« personne n'a mis de clé » est un état, pas une garantie. En mode souverain —
+le défaut — ces fournisseurs ne sont **pas inscrits**, et le registre refuse
+qu'on les inscrive après coup : un fournisseur absent du registre ne peut être
+choisi par aucun chemin.
+
+Restent `LocalProvider` (Ollama) et `OpenAICompatibleProvider`. Le second n'est
+pas une dépendance à OpenAI : c'est un **format de fil** que vLLM, llama.cpp,
+LM Studio et le serveur du projet parlent tous. Le nom est à eux, le protocole
+est public — mais si son URL pointe vers un service tiers, la souveraineté est
+perdue par la porte de derrière, et c'est refusé aussi.
 """
 
 import logging
+import os
 import threading
 from typing import Dict, List, Optional
+from urllib.parse import urlparse
 
 from .anthropic_provider import AnthropicProvider
-from .base import ModelDescriptor, ModelProvider, ProviderInfo, ProviderStatus
+from .base import ModelDescriptor, ModelProvider, ProviderInfo
+from .derogations import VARIABLE as DEROGATION_VARIABLE
+from .derogations import allowed_providers
+from .derogations import report as derogation_report
 from .google_provider import GoogleProvider
+from .hosted_provider import HostedProvider
 from .local_provider import LocalProvider
-from .openai_compatible_provider import OpenAICompatibleProvider
+from .openai_compatible_provider import URL_VARIABLE, OpenAICompatibleProvider
 from .openai_provider import OpenAIProvider
+
+SOVEREIGN_MODE_VARIABLE = "GALSEN_SOVEREIGN_MODE"
+
+# Fournisseurs qui servent le modèle d'un tiers, sur son infrastructure.
+FOURNISSEURS_TIERS = (OpenAIProvider, AnthropicProvider, GoogleProvider)
+
+# Fournisseurs qui servent un modèle que le projet héberge.
+FOURNISSEURS_SOUVERAINS = (LocalProvider, OpenAICompatibleProvider)
+
+# Hôtes qu'un déploiement souverain ne peut pas joindre, quelle que soit la
+# porte empruntée. La liste ne prétend pas être exhaustive : elle ferme le
+# détournement évident, qui est de pointer le fournisseur « compatible » vers le
+# service dont il imite le format.
+HOTES_TIERS = (
+    "api.openai.com",
+    "api.anthropic.com",
+    "generativelanguage.googleapis.com",
+    "api.deepseek.com",
+    "api.mistral.ai",
+    "api.cohere.ai",
+    "api.groq.com",
+    "openrouter.ai",
+)
+
+
+def sovereign_mode() -> bool:
+    """
+    Indique si la plateforme refuse tout modèle tiers (ADR-014).
+
+    Returns:
+        True par défaut. La souveraineté n'est pas une option qu'on active :
+        c'est l'état normal, et s'en écarter est la décision qui se déclare.
+    """
+    return os.getenv(SOVEREIGN_MODE_VARIABLE, "true").strip().lower() not in (
+        "false", "0", "no",
+    )
+
+
+def _hote_tiers(url: str) -> Optional[str]:
+    """Retourne l'hôte tiers visé par une URL, ou None si elle n'en vise aucun."""
+    if not url:
+        return None
+    hote = (urlparse(url if "://" in url else f"http://{url}").hostname or "").lower()
+    return hote if hote in HOTES_TIERS else None
 
 
 class ProviderRegistry:
@@ -48,17 +112,30 @@ class ProviderRegistry:
             self._register_default_providers()
 
     def _register_default_providers(self) -> None:
-        """Enregistre les fournisseurs fournis avec le moteur."""
-        # `OpenAICompatibleProvider` en dernier : il reste inactif tant que
-        # GALSEN_OPENAI_COMPATIBLE_URL n'est pas déclarée, donc son inscription
-        # ne change rien pour une installation qui ne s'en sert pas.
-        for provider_class in (
-            OpenAIProvider,
-            AnthropicProvider,
-            GoogleProvider,
-            LocalProvider,
-            OpenAICompatibleProvider,
-        ):
+        """
+        Enregistre les fournisseurs fournis avec le moteur.
+
+        En mode souverain — le défaut — les fournisseurs tiers ne sont pas
+        inscrits. `OpenAICompatibleProvider` reste en dernier : il est inactif
+        tant que `GALSEN_OPENAI_COMPATIBLE_URL` n'est pas déclarée, donc son
+        inscription ne change rien pour une installation qui ne s'en sert pas.
+        """
+        souverain = sovereign_mode()
+        if souverain:
+            classes = FOURNISSEURS_SOUVERAINS
+        else:
+            # L'écart doit se voir dans le journal : c'est la seule trace qu'un
+            # opérateur aura d'une plateforme redevenue locataire d'un tiers.
+            self._logger.warning(
+                "%s désactivé : les fournisseurs tiers (%s) sont inscrits. La "
+                "plateforme peut envoyer des requêtes hors de son infrastructure "
+                "(ADR-014).",
+                SOVEREIGN_MODE_VARIABLE,
+                ", ".join(classe.__name__ for classe in FOURNISSEURS_TIERS),
+            )
+            classes = FOURNISSEURS_TIERS + FOURNISSEURS_SOUVERAINS
+
+        for provider_class in classes:
             try:
                 self.register(provider_class())
             except Exception as error:
@@ -72,22 +149,104 @@ class ProviderRegistry:
         """
         Enregistre un fournisseur.
 
+        En mode souverain, un fournisseur tiers est refusé même inscrit à la
+        main : ne pas les inscrire par défaut protégerait du hasard, pas d'un
+        appel explicite, et la garantie d'ADR-014 doit tenir dans les deux cas.
+
         Args:
             provider: Fournisseur à enregistrer
 
         Raises:
-            ValueError: Si le fournisseur n'a pas d'identifiant exploitable
+            ValueError: Si le fournisseur n'a pas d'identifiant exploitable, ou
+                s'il dépend d'un tiers alors que le mode souverain est actif.
         """
         if not provider.provider_id or provider.provider_id == "base":
             raise ValueError(
                 f"Le fournisseur {type(provider).__name__} doit définir un provider_id propre"
             )
 
+        if sovereign_mode():
+            refus = self._motif_de_refus_souverain(provider)
+            if refus:
+                raise ValueError(refus)
+
         with self._lock:
             if provider.provider_id in self._providers:
                 self._logger.info(f"Fournisseur '{provider.provider_id}' remplacé")
             self._providers[provider.provider_id] = provider
             self._logger.debug(f"Fournisseur enregistré: {provider.provider_id}")
+
+    @staticmethod
+    def _motif_de_refus_souverain(provider: ModelProvider) -> Optional[str]:
+        """
+        Retourne la raison de refuser un fournisseur en mode souverain.
+
+        Deux portes, et les deux comptent : le fournisseur d'un service tiers,
+        et le fournisseur « compatible » pointé vers ce même service — le format
+        de fil est public, l'infrastructure derrière ne l'est pas.
+
+        Returns:
+            La raison du refus, ou None si le fournisseur est acceptable.
+        """
+        if isinstance(provider, HostedProvider):
+            # ADR-018 (option B) : un fournisseur tiers **nommé par une
+            # dérogation** peut être inscrit. L'inscription ne l'autorise pas
+            # pour autant : `allow()` tranche encore à chaque appel, par type de
+            # tâche. Sans cette porte, la dérogation resterait une phrase.
+            if provider.provider_id in allowed_providers():
+                return None
+            return (
+                f"Mode souverain : le fournisseur « {provider.provider_id} » sert le "
+                f"modèle d'un tiers, sur son infrastructure. GalSen IA ne dépend "
+                f"d'aucun modèle tiers à l'exécution (ADR-014). "
+                f"Pour comparer un modèle propre à une référence, déclarez "
+                f"{SOVEREIGN_MODE_VARIABLE}=false, en connaissance de cause, ou "
+                f"une dérogation par type de tâche dans {DEROGATION_VARIABLE} "
+                f"(ADR-018), qui est plus étroit."
+            )
+
+        if isinstance(provider, OpenAICompatibleProvider):
+            hote = _hote_tiers(os.environ.get(URL_VARIABLE, ""))
+            if hote:
+                return (
+                    f"Mode souverain : {URL_VARIABLE} pointe vers « {hote} », un "
+                    f"service tiers. Le format de fil est public, l'infrastructure "
+                    f"derrière ne l'est pas (ADR-014)."
+                )
+
+        return None
+
+    def sovereignty_report(self) -> Dict[str, object]:
+        """
+        Décrit l'état de la souveraineté, pour `/health`.
+
+        Un opérateur doit pouvoir **constater** que sa plateforme ne dépend
+        d'aucun tiers, pas seulement le lire dans un ADR. Aucun secret n'y
+        figure : ni clé, ni URL — seulement l'hôte visé quand il est en cause,
+        et il l'est justement parce qu'il ne devrait pas l'être.
+
+        Returns:
+            Le mode, les fournisseurs inscrits, et les fournisseurs tiers
+            présents — qui doivent être zéro en mode souverain.
+        """
+        souverain = sovereign_mode()
+        tiers = [
+            provider.provider_id for provider in self.list_providers()
+            if isinstance(provider, HostedProvider)
+        ]
+        rapport: Dict[str, object] = {
+            "sovereign_mode": souverain,
+            "providers": self.provider_ids(),
+            "third_party_providers": tiers,
+            "reference": "ADR-014",
+            # ADR-018 : une dérogation que personne ne peut voir ne se distingue
+            # pas d'une fuite. `/health` la rend en même temps que le mode.
+            "derogations": derogation_report(),
+        }
+        hote = _hote_tiers(os.environ.get(URL_VARIABLE, ""))
+        if hote:
+            rapport["third_party_endpoint"] = hote
+        return rapport
 
     def unregister(self, provider_id: str) -> bool:
         """

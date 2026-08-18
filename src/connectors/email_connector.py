@@ -17,9 +17,11 @@ import smtplib
 import socket
 import ssl
 import time
-from typing import List, Optional
+from typing import Optional
 
 from .interfaces import Connector
+from ..tool.capabilities import DataScope, Effect
+from .contract import DataContract
 from .types import ConnectorCheck, ConnectorDescription, ConnectorKind, ConnectorStatus
 
 logger = logging.getLogger(__name__)
@@ -76,6 +78,23 @@ class SMTPEmailConnector(Connector):
     def kind(self) -> ConnectorKind:
         """Catégorie : messagerie."""
         return ConnectorKind.EMAIL
+
+    @property
+    def data_contract(self) -> DataContract:
+        """
+        Ce connecteur relaie le courrier **de la plateforme**, pas celui d'une
+        personne : notifications et alertes, avec les identifiants SMTP du
+        déploiement. Il n'ouvre aucune boîte, donc il n'est lié à personne.
+        Le connecteur Gmail de la vague II sera l'inverse exact, et c'est
+        pourquoi les deux ne peuvent pas partager une seule déclaration.
+        """
+        return DataContract(
+            data_scope=DataScope.SYSTEM,
+            per_subject=False,
+            effects=frozenset({Effect.EXTERNAL}),
+            retention="Rien. Le message est remis au relais et n'est pas conservé.",
+            rationale="Sortie de la plateforme, sous ses propres identifiants.",
+        )
 
     def describe(self) -> ConnectorDescription:
         """Décrit le connecteur et les variables qu'il consulte, jamais leurs valeurs."""

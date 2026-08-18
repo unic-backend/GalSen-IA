@@ -1,0 +1,4906 @@
+{
+ "knowledge": "senegal_master_knowledge",
+ "country": "SN",
+ "built_at": "2026-08-14T00:31:04.243445+00:00",
+ "regions": [
+  {
+   "name": "Dakar",
+   "type": "region",
+   "shape_id": "71046170B16569890219484",
+   "iso_code": "SN-DK",
+   "centroid": [
+    -17.270741895691387,
+    14.755803775234247
+   ],
+   "bbox": [
+    -17.530915770999968,
+    14.586814029000038,
+    -17.12619233299995,
+    14.886339839000073
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Dakar",
+    "Guediawaye",
+    "Pikine",
+    "Rufisque"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Diourbel",
+   "type": "region",
+   "shape_id": "71046170B89912390768536",
+   "iso_code": "SN-DB",
+   "centroid": [
+    -16.113624064227206,
+    14.779658941295743
+   ],
+   "bbox": [
+    -16.68708862699998,
+    14.514397491000068,
+    -15.436370196999974,
+    15.02707435900004
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Bambey",
+    "Diourbel",
+    "Mbacke"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Fatick",
+   "type": "region",
+   "shape_id": "71046170B84527172065489",
+   "iso_code": "SN-FK",
+   "centroid": [
+    -16.330383820792086,
+    14.165739678613454
+   ],
+   "bbox": [
+    -16.793083640999953,
+    13.593316087000062,
+    -15.46221817099996,
+    14.752393227000027
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Fatick",
+    "Foundiougne",
+    "Gossas"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Kaffrine",
+   "type": "region",
+   "shape_id": "71046170B9856693808493",
+   "iso_code": "SN-KA",
+   "centroid": [
+    -15.182126547272714,
+    14.207798040739553
+   ],
+   "bbox": [
+    -15.86290160699997,
+    13.743161160000056,
+    -14.582597482999972,
+    14.723187989000053
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Birkelane",
+    "Kaffrine",
+    "Koungheul",
+    "Malem Hodar"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Kaolack",
+   "type": "region",
+   "shape_id": "71046170B19471834738959",
+   "iso_code": "SN-KL",
+   "centroid": [
+    -15.93487756664368,
+    13.966220628821343
+   ],
+   "bbox": [
+    -16.388182980999943,
+    13.591741568000032,
+    -15.41442792099997,
+    14.49812461700003
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Guinguineo",
+    "Kaolack",
+    "Nioro Du Rip"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Kolda",
+   "type": "region",
+   "shape_id": "71046170B66864032803639",
+   "iso_code": "SN-KD",
+   "centroid": [
+    -14.420052745770233,
+    13.030974689925998
+   ],
+   "bbox": [
+    -15.355695393999952,
+    12.674477178000075,
+    -13.451057853999941,
+    13.600462810000067
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Kolda",
+    "Medina Yoroufoula",
+    "Velingara"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Louga",
+   "type": "region",
+   "shape_id": "71046170B63374102885919",
+   "iso_code": "SN-LG",
+   "centroid": [
+    -15.527674754454551,
+    15.423048383334779
+   ],
+   "bbox": [
+    -16.81005442299994,
+    14.612530461000063,
+    -14.496412385999975,
+    16.18742916800005
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Kebemer",
+    "Linguere",
+    "Louga"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Matam",
+   "type": "region",
+   "shape_id": "71046170B85295751834134",
+   "iso_code": "SN-MT",
+   "centroid": [
+    -13.730591178128103,
+    15.152701998021946
+   ],
+   "bbox": [
+    -14.84929819499996,
+    14.406433287000027,
+    -12.587049595999929,
+    16.14814377700003
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Kanel",
+    "Matam",
+    "Ranerou"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Saint Louis",
+   "type": "region",
+   "shape_id": "71046170B37999982332216",
+   "iso_code": "SN-SL",
+   "centroid": [
+    -15.03313702987824,
+    16.208198730333805
+   ],
+   "bbox": [
+    -16.525611237999954,
+    15.493816940000045,
+    -13.701902479999944,
+    16.693734722000045
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Dagana",
+    "Podor",
+    "Saint Louis"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Sedhiou",
+   "type": "region",
+   "shape_id": "71046170B19178449543377",
+   "iso_code": "SN-SE",
+   "centroid": [
+    -15.586874273292318,
+    12.893870311654737
+   ],
+   "bbox": [
+    -16.023485747999928,
+    12.424853110000072,
+    -15.11227179499997,
+    13.395286079000073
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Bounkiling",
+    "Goudomp",
+    "Sedhiou"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Tambacounda",
+   "type": "region",
+   "shape_id": "71046170B85662395344337",
+   "iso_code": "SN-TC",
+   "centroid": [
+    -13.221301197689604,
+    13.88725065153052
+   ],
+   "bbox": [
+    -14.833594952999931,
+    12.629939113000034,
+    -11.864178208999931,
+    15.11116958100007
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Bakel",
+    "Goudiry",
+    "Koumpentoum",
+    "Tambacounda"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Thies",
+   "type": "region",
+   "shape_id": "71046170B89315153043645",
+   "iso_code": "SN-TH",
+   "centroid": [
+    -16.75645080539516,
+    14.824013547561002
+   ],
+   "bbox": [
+    -17.176756774999944,
+    14.053889577000064,
+    -16.176272234999942,
+    15.36019052100005
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Mbour",
+    "Thies",
+    "Tivaoune"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Ziguinchor",
+   "type": "region",
+   "shape_id": "71046170B26251724010642",
+   "iso_code": "SN-ZG",
+   "centroid": [
+    -16.374554330973467,
+    12.780481061622252
+   ],
+   "bbox": [
+    -16.793999072999952,
+    12.337969220000048,
+    -15.88844551099993,
+    13.170446574000039
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Bignona",
+    "Oussouye",
+    "Ziguinchor"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Kedougou",
+   "type": "region",
+   "shape_id": "71046170B5066698136661",
+   "iso_code": "SN-KE",
+   "centroid": [
+    -12.196999656053551,
+    12.843316105477095
+   ],
+   "bbox": [
+    -13.239610935999963,
+    12.307766467000022,
+    -11.34800579299997,
+    13.461013098000024
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "UNKNOWN",
+   "children": [
+    "Kedougou",
+    "Salemata",
+    "Saraya"
+   ],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  }
+ ],
+ "departments": [
+  {
+   "name": "Bakel",
+   "type": "department",
+   "shape_id": "50182788B16013842146029",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -12.255237107780122,
+    14.17020460172906
+   ],
+   "bbox": [
+    -12.68766029099993,
+    13.311145448000048,
+    -11.864178208999931,
+    15.11116958100007
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Tambacounda",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Bambey",
+   "type": "department",
+   "shape_id": "50182788B75300917140294",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.483895794101404,
+    14.802720374827661
+   ],
+   "bbox": [
+    -16.68708862699998,
+    14.592844375000027,
+    -16.283110085999965,
+    15.02707435900004
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Diourbel",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Bignona",
+   "type": "department",
+   "shape_id": "50182788B19391387689457",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.366693626478774,
+    12.887610876789758
+   ],
+   "bbox": [
+    -16.787090728999942,
+    12.554245598000023,
+    -15.893983676999937,
+    13.170446574000039
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Ziguinchor",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Birkelane",
+   "type": "department",
+   "shape_id": "50182788B56779252201559",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.684600721667335,
+    14.052773755870472
+   ],
+   "bbox": [
+    -15.86290160699997,
+    13.774608396000076,
+    -15.47727711799996,
+    14.296641900000054
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kaffrine",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Bounkiling",
+   "type": "department",
+   "shape_id": "50182788B68388966372963",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.60349546719086,
+    13.134829871568373
+   ],
+   "bbox": [
+    -15.994448019999936,
+    12.88363657900004,
+    -15.225480926999978,
+    13.395286079000073
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Sedhiou",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Dagana",
+   "type": "department",
+   "shape_id": "50182788B94177495754038",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.87943266953451,
+    16.278545095477778
+   ],
+   "bbox": [
+    -16.47561853199994,
+    15.926855750000072,
+    -15.333175979999965,
+    16.592417435000073
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Saint Louis",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Dakar",
+   "type": "department",
+   "shape_id": "50182788B18539004609148",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -17.46090663289689,
+    14.723670605323207
+   ],
+   "bbox": [
+    -17.530915770999968,
+    14.646582103000071,
+    -17.396570064999935,
+    14.77711234700007
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Dakar",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Diourbel",
+   "type": "department",
+   "shape_id": "50182788B22549322426328",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.217614645744487,
+    14.768132601820444
+   ],
+   "bbox": [
+    -16.385922194999978,
+    14.541280737000022,
+    -16.038584595999964,
+    15.022583720000057
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Diourbel",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Fatick",
+   "type": "department",
+   "shape_id": "50182788B55839740763416",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.48995100608912,
+    14.31707768763371
+   ],
+   "bbox": [
+    -16.793083640999953,
+    13.834697152000047,
+    -16.089735879999978,
+    14.607615702000032
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Fatick",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Foundiougne",
+   "type": "department",
+   "shape_id": "50182788B85341589150678",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.4306861872552,
+    13.853229616853174
+   ],
+   "bbox": [
+    -16.754627556999935,
+    13.593316087000062,
+    -16.085591035999983,
+    14.170325888000036
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Fatick",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Gossas",
+   "type": "department",
+   "shape_id": "50182788B90737446104605",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.838010366576237,
+    14.528645415886254
+   ],
+   "bbox": [
+    -16.22397494599994,
+    14.364282790000061,
+    -15.46221817099996,
+    14.752393227000027
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Fatick",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Goudiry",
+   "type": "department",
+   "shape_id": "50182788B18390590381778",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -12.929182638131316,
+    13.997029115924883
+   ],
+   "bbox": [
+    -13.705319693999968,
+    13.236572679000062,
+    -12.221888146999959,
+    14.708482923000076
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Tambacounda",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Goudomp",
+   "type": "department",
+   "shape_id": "50182788B48951494587639",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.512449386110491,
+    12.633321675488897
+   ],
+   "bbox": [
+    -15.968766711999933,
+    12.424853110000072,
+    -15.122420915999953,
+    12.86335196500005
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Sedhiou",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Guediawaye",
+   "type": "department",
+   "shape_id": "50182788B55211093773925",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -17.393796975595667,
+    14.77676327218861
+   ],
+   "bbox": [
+    -17.429758792999962,
+    14.744663671000069,
+    -17.362081776999958,
+    14.798486732000072
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Dakar",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Guinguineo",
+   "type": "department",
+   "shape_id": "50182788B97054679922117",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.91696304157764,
+    14.283975714952081
+   ],
+   "bbox": [
+    -16.13431603999993,
+    14.10768029600007,
+    -15.688438086999952,
+    14.49812461700003
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kaolack",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Kaffrine",
+   "type": "department",
+   "shape_id": "50182788B43046627101076",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.446995339299935,
+    14.129509806127254
+   ],
+   "bbox": [
+    -15.69963475999998,
+    13.743161160000056,
+    -15.10403208799994,
+    14.582206926000026
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kaffrine",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Kanel",
+   "type": "department",
+   "shape_id": "50182788B72122084264725",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -13.129610102066271,
+    14.975352463136616
+   ],
+   "bbox": [
+    -13.672822287999963,
+    14.406433287000027,
+    -12.587049595999929,
+    15.61307928900004
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Matam",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Kaolack",
+   "type": "department",
+   "shape_id": "50182788B15645681951695",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.06703515445359,
+    14.067233951870197
+   ],
+   "bbox": [
+    -16.388182980999943,
+    13.853565041000024,
+    -15.683814129999973,
+    14.370172955000044
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kaolack",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Kebemer",
+   "type": "department",
+   "shape_id": "50182788B60047071387499",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.26117917279739,
+    15.304217959580349
+   ],
+   "bbox": [
+    -16.81005442299994,
+    14.955149926000047,
+    -15.805585502999975,
+    15.667776213000025
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Louga",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Kedougou",
+   "type": "department",
+   "shape_id": "50182788B85082652306110",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -12.435106052480231,
+    12.765223254161526
+   ],
+   "bbox": [
+    -13.239610935999963,
+    12.307766467000022,
+    -11.721828527999946,
+    13.209594838000044
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kedougou",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Kolda",
+   "type": "department",
+   "shape_id": "50182788B77977720497228",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -14.656164129850088,
+    12.85490520445329
+   ],
+   "bbox": [
+    -15.170981813999958,
+    12.678785057000027,
+    -14.109417294999957,
+    13.06203481700004
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kolda",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Koumpentoum",
+   "type": "department",
+   "shape_id": "50182788B60464160168835",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -14.339002647502651,
+    14.132335947671045
+   ],
+   "bbox": [
+    -14.833594952999931,
+    13.509347716000036,
+    -13.779796861999955,
+    14.658583185000055
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Tambacounda",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Koungheul",
+   "type": "department",
+   "shape_id": "50182788B42114348275286",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -14.858503376354552,
+    14.204717014313468
+   ],
+   "bbox": [
+    -15.145452650999971,
+    13.76949449500006,
+    -14.582597482999972,
+    14.703571282000041
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kaffrine",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Linguere",
+   "type": "department",
+   "shape_id": "50182788B14678638932037",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.178035096353254,
+    15.33952372536953
+   ],
+   "bbox": [
+    -15.81877321099995,
+    14.612530461000063,
+    -14.496412385999975,
+    16.001063303000024
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Louga",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Louga",
+   "type": "department",
+   "shape_id": "50182788B22933374767599",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.001476540401384,
+    15.741568903201966
+   ],
+   "bbox": [
+    -16.59187675399994,
+    15.364361399000074,
+    -15.580611543999964,
+    16.18742916800005
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Louga",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Malem Hodar",
+   "type": "department",
+   "shape_id": "50182788B13883389428586",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.251066591739516,
+    14.356190025309607
+   ],
+   "bbox": [
+    -15.468451676999962,
+    13.993693845000053,
+    -15.02380717699998,
+    14.723187989000053
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kaffrine",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Matam",
+   "type": "department",
+   "shape_id": "50182788B95113260184043",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -13.630126131475587,
+    15.720520373414281
+   ],
+   "bbox": [
+    -14.248469372999978,
+    15.290648827000041,
+    -13.156606428999964,
+    16.14814377700003
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Matam",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Mbacke",
+   "type": "department",
+   "shape_id": "50182788B63857747785645",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.83307831050204,
+    14.772544715823235
+   ],
+   "bbox": [
+    -16.11606973499994,
+    14.514397491000068,
+    -15.436370196999974,
+    14.99768208100005
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Diourbel",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Mbour",
+   "type": "department",
+   "shape_id": "50182788B56533800648606",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.830740718132013,
+    14.458987335651493
+   ],
+   "bbox": [
+    -17.144621292999943,
+    14.053889577000064,
+    -16.518750569999952,
+    14.689887087000045
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Thies",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Medina Yoroufoula",
+   "type": "department",
+   "shape_id": "50182788B71056203552440",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -14.866546469446334,
+    13.214489420916426
+   ],
+   "bbox": [
+    -15.355695393999952,
+    12.868789856000035,
+    -14.307282896999936,
+    13.600462810000067
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kolda",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Nioro Du Rip",
+   "type": "department",
+   "shape_id": "50182788B29473400533502",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.835039598502975,
+    13.73358130317091
+   ],
+   "bbox": [
+    -16.251578295999934,
+    13.591741568000032,
+    -15.41442792099997,
+    13.912086216000034
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kaolack",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Oussouye",
+   "type": "department",
+   "shape_id": "50182788B11051302290888",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.616054340111887,
+    12.475571652643952
+   ],
+   "bbox": [
+    -16.793999072999952,
+    12.337969220000048,
+    -16.43526583399995,
+    12.650608443000067
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Ziguinchor",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Pikine",
+   "type": "department",
+   "shape_id": "50182788B8601261498481",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -17.34297575262577,
+    14.768091442473919
+   ],
+   "bbox": [
+    -17.42429174399996,
+    14.722388022000075,
+    -17.292319662999944,
+    14.82423803100005
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Dakar",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Podor",
+   "type": "department",
+   "shape_id": "50182788B66510054428140",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -14.606513244004455,
+    16.19503912515723
+   ],
+   "bbox": [
+    -15.43887198799996,
+    15.493816940000045,
+    -13.701902479999944,
+    16.693734722000045
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Saint Louis",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Ranerou",
+   "type": "department",
+   "shape_id": "50182788B34306626760019",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -14.133225902679111,
+    15.032180635064742
+   ],
+   "bbox": [
+    -14.84929819499996,
+    14.406955667000034,
+    -13.44768102699993,
+    15.805097916000022
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Matam",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Rufisque",
+   "type": "department",
+   "shape_id": "50182788B16861669195445",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -17.205418241280228,
+    14.759234026658117
+   ],
+   "bbox": [
+    -17.313091301999975,
+    14.586814029000038,
+    -17.12619233299995,
+    14.886339839000073
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Dakar",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Saint Louis",
+   "type": "department",
+   "shape_id": "50182788B94115130730188",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.365707563654777,
+    15.960081849015586
+   ],
+   "bbox": [
+    -16.525611237999954,
+    15.83296868800005,
+    -16.095473591999962,
+    16.14068537600002
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Saint Louis",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Salemata",
+   "type": "department",
+   "shape_id": "50182788B75788529380727",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -12.798076287779937,
+    12.601465489046806
+   ],
+   "bbox": [
+    -13.12325895999993,
+    12.368650630000047,
+    -12.388321523999934,
+    12.839698911000028
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kedougou",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Saraya",
+   "type": "department",
+   "shape_id": "50182788B8770711358016",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -11.834323072119721,
+    12.973230009640796
+   ],
+   "bbox": [
+    -12.494571391999955,
+    12.386049498000034,
+    -11.34800579299997,
+    13.461013098000024
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kedougou",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Sedhiou",
+   "type": "department",
+   "shape_id": "50182788B34006486463131",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -15.616512618230146,
+    12.807034775160155
+   ],
+   "bbox": [
+    -16.023485747999928,
+    12.538799936000032,
+    -15.11227179499997,
+    13.05007106000005
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Sedhiou",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Tambacounda",
+   "type": "department",
+   "shape_id": "50182788B74600736318601",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -13.472689915414334,
+    13.489542321064409
+   ],
+   "bbox": [
+    -14.43082047799993,
+    12.629939113000034,
+    -12.461261535999938,
+    14.412559474000034
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Tambacounda",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Thies",
+   "type": "department",
+   "shape_id": "50182788B65872214095625",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.869966265919924,
+    14.745944860949965
+   ],
+   "bbox": [
+    -17.176756774999944,
+    14.507666495000024,
+    -16.60437587499996,
+    14.95282712200003
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Thies",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Tivaoune",
+   "type": "department",
+   "shape_id": "50182788B62483410284412",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.65183495724734,
+    15.088496300501413
+   ],
+   "bbox": [
+    -17.10901314199998,
+    14.811301049000065,
+    -16.176272234999942,
+    15.36019052100005
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Thies",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Velingara",
+   "type": "department",
+   "shape_id": "50182788B9780593325351",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -13.878651943821644,
+    12.987827106790158
+   ],
+   "bbox": [
+    -14.349921670999947,
+    12.674477178000075,
+    -13.451057853999941,
+    13.547204288000046
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Kolda",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  },
+  {
+   "name": "Ziguinchor",
+   "type": "department",
+   "shape_id": "50182788B19119296887329",
+   "iso_code": "UNKNOWN",
+   "centroid": [
+    -16.223006472120478,
+    12.51775564091384
+   ],
+   "bbox": [
+    -16.537486946999934,
+    12.362319575000072,
+    -15.88844551099993,
+    12.658847363000064
+   ],
+   "chief_lieu": "UNKNOWN",
+   "population": "UNKNOWN",
+   "area_km2": "UNKNOWN",
+   "parent": "Ziguinchor",
+   "children": [],
+   "provenance": {
+    "source": "geoBoundaries (gbOpen)",
+    "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+    "source_type": "D. INTERNATIONAL DATA",
+    "source_tier": "TIER_B_INTERNATIONAL",
+    "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+    "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+    "publication_date": "UNKNOWN",
+    "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+    "verification_status": "derived_from_source",
+    "confidence": "derived"
+   }
+  }
+ ],
+ "counts": {
+  "regions": 14,
+  "departments": 45,
+  "departments_attached": 45,
+  "attachments_approximated": 0
+ },
+ "approximated_attachments": [],
+ "domains": {
+  "GEOGRAPHY": {
+   "populated": true,
+   "items": [
+    {
+     "entity": "Dakar",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -17.270741895691387,
+       14.755803775234247
+      ],
+      "bbox": [
+       -17.530915770999968,
+       14.586814029000038,
+       -17.12619233299995,
+       14.886339839000073
+      ],
+      "iso_code": "SN-DK"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Diourbel",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -16.113624064227206,
+       14.779658941295743
+      ],
+      "bbox": [
+       -16.68708862699998,
+       14.514397491000068,
+       -15.436370196999974,
+       15.02707435900004
+      ],
+      "iso_code": "SN-DB"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Fatick",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -16.330383820792086,
+       14.165739678613454
+      ],
+      "bbox": [
+       -16.793083640999953,
+       13.593316087000062,
+       -15.46221817099996,
+       14.752393227000027
+      ],
+      "iso_code": "SN-FK"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kaffrine",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -15.182126547272714,
+       14.207798040739553
+      ],
+      "bbox": [
+       -15.86290160699997,
+       13.743161160000056,
+       -14.582597482999972,
+       14.723187989000053
+      ],
+      "iso_code": "SN-KA"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kaolack",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -15.93487756664368,
+       13.966220628821343
+      ],
+      "bbox": [
+       -16.388182980999943,
+       13.591741568000032,
+       -15.41442792099997,
+       14.49812461700003
+      ],
+      "iso_code": "SN-KL"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kolda",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -14.420052745770233,
+       13.030974689925998
+      ],
+      "bbox": [
+       -15.355695393999952,
+       12.674477178000075,
+       -13.451057853999941,
+       13.600462810000067
+      ],
+      "iso_code": "SN-KD"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Louga",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -15.527674754454551,
+       15.423048383334779
+      ],
+      "bbox": [
+       -16.81005442299994,
+       14.612530461000063,
+       -14.496412385999975,
+       16.18742916800005
+      ],
+      "iso_code": "SN-LG"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Matam",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -13.730591178128103,
+       15.152701998021946
+      ],
+      "bbox": [
+       -14.84929819499996,
+       14.406433287000027,
+       -12.587049595999929,
+       16.14814377700003
+      ],
+      "iso_code": "SN-MT"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Saint Louis",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -15.03313702987824,
+       16.208198730333805
+      ],
+      "bbox": [
+       -16.525611237999954,
+       15.493816940000045,
+       -13.701902479999944,
+       16.693734722000045
+      ],
+      "iso_code": "SN-SL"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Sedhiou",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -15.586874273292318,
+       12.893870311654737
+      ],
+      "bbox": [
+       -16.023485747999928,
+       12.424853110000072,
+       -15.11227179499997,
+       13.395286079000073
+      ],
+      "iso_code": "SN-SE"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Tambacounda",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -13.221301197689604,
+       13.88725065153052
+      ],
+      "bbox": [
+       -14.833594952999931,
+       12.629939113000034,
+       -11.864178208999931,
+       15.11116958100007
+      ],
+      "iso_code": "SN-TC"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Thies",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -16.75645080539516,
+       14.824013547561002
+      ],
+      "bbox": [
+       -17.176756774999944,
+       14.053889577000064,
+       -16.176272234999942,
+       15.36019052100005
+      ],
+      "iso_code": "SN-TH"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Ziguinchor",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -16.374554330973467,
+       12.780481061622252
+      ],
+      "bbox": [
+       -16.793999072999952,
+       12.337969220000048,
+       -15.88844551099993,
+       13.170446574000039
+      ],
+      "iso_code": "SN-ZG"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kedougou",
+     "type": "region",
+     "value": {
+      "centroid": [
+       -12.196999656053551,
+       12.843316105477095
+      ],
+      "bbox": [
+       -13.239610935999963,
+       12.307766467000022,
+       -11.34800579299997,
+       13.461013098000024
+      ],
+      "iso_code": "SN-KE"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Bakel",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -12.255237107780122,
+       14.17020460172906
+      ],
+      "bbox": [
+       -12.68766029099993,
+       13.311145448000048,
+       -11.864178208999931,
+       15.11116958100007
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Bambey",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.483895794101404,
+       14.802720374827661
+      ],
+      "bbox": [
+       -16.68708862699998,
+       14.592844375000027,
+       -16.283110085999965,
+       15.02707435900004
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Bignona",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.366693626478774,
+       12.887610876789758
+      ],
+      "bbox": [
+       -16.787090728999942,
+       12.554245598000023,
+       -15.893983676999937,
+       13.170446574000039
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Birkelane",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.684600721667335,
+       14.052773755870472
+      ],
+      "bbox": [
+       -15.86290160699997,
+       13.774608396000076,
+       -15.47727711799996,
+       14.296641900000054
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Bounkiling",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.60349546719086,
+       13.134829871568373
+      ],
+      "bbox": [
+       -15.994448019999936,
+       12.88363657900004,
+       -15.225480926999978,
+       13.395286079000073
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Dagana",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.87943266953451,
+       16.278545095477778
+      ],
+      "bbox": [
+       -16.47561853199994,
+       15.926855750000072,
+       -15.333175979999965,
+       16.592417435000073
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Dakar",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -17.46090663289689,
+       14.723670605323207
+      ],
+      "bbox": [
+       -17.530915770999968,
+       14.646582103000071,
+       -17.396570064999935,
+       14.77711234700007
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Diourbel",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.217614645744487,
+       14.768132601820444
+      ],
+      "bbox": [
+       -16.385922194999978,
+       14.541280737000022,
+       -16.038584595999964,
+       15.022583720000057
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Fatick",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.48995100608912,
+       14.31707768763371
+      ],
+      "bbox": [
+       -16.793083640999953,
+       13.834697152000047,
+       -16.089735879999978,
+       14.607615702000032
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Foundiougne",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.4306861872552,
+       13.853229616853174
+      ],
+      "bbox": [
+       -16.754627556999935,
+       13.593316087000062,
+       -16.085591035999983,
+       14.170325888000036
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Gossas",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.838010366576237,
+       14.528645415886254
+      ],
+      "bbox": [
+       -16.22397494599994,
+       14.364282790000061,
+       -15.46221817099996,
+       14.752393227000027
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Goudiry",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -12.929182638131316,
+       13.997029115924883
+      ],
+      "bbox": [
+       -13.705319693999968,
+       13.236572679000062,
+       -12.221888146999959,
+       14.708482923000076
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Goudomp",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.512449386110491,
+       12.633321675488897
+      ],
+      "bbox": [
+       -15.968766711999933,
+       12.424853110000072,
+       -15.122420915999953,
+       12.86335196500005
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Guediawaye",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -17.393796975595667,
+       14.77676327218861
+      ],
+      "bbox": [
+       -17.429758792999962,
+       14.744663671000069,
+       -17.362081776999958,
+       14.798486732000072
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Guinguineo",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.91696304157764,
+       14.283975714952081
+      ],
+      "bbox": [
+       -16.13431603999993,
+       14.10768029600007,
+       -15.688438086999952,
+       14.49812461700003
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kaffrine",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.446995339299935,
+       14.129509806127254
+      ],
+      "bbox": [
+       -15.69963475999998,
+       13.743161160000056,
+       -15.10403208799994,
+       14.582206926000026
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kanel",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -13.129610102066271,
+       14.975352463136616
+      ],
+      "bbox": [
+       -13.672822287999963,
+       14.406433287000027,
+       -12.587049595999929,
+       15.61307928900004
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kaolack",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.06703515445359,
+       14.067233951870197
+      ],
+      "bbox": [
+       -16.388182980999943,
+       13.853565041000024,
+       -15.683814129999973,
+       14.370172955000044
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kebemer",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.26117917279739,
+       15.304217959580349
+      ],
+      "bbox": [
+       -16.81005442299994,
+       14.955149926000047,
+       -15.805585502999975,
+       15.667776213000025
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kedougou",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -12.435106052480231,
+       12.765223254161526
+      ],
+      "bbox": [
+       -13.239610935999963,
+       12.307766467000022,
+       -11.721828527999946,
+       13.209594838000044
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kolda",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -14.656164129850088,
+       12.85490520445329
+      ],
+      "bbox": [
+       -15.170981813999958,
+       12.678785057000027,
+       -14.109417294999957,
+       13.06203481700004
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Koumpentoum",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -14.339002647502651,
+       14.132335947671045
+      ],
+      "bbox": [
+       -14.833594952999931,
+       13.509347716000036,
+       -13.779796861999955,
+       14.658583185000055
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Koungheul",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -14.858503376354552,
+       14.204717014313468
+      ],
+      "bbox": [
+       -15.145452650999971,
+       13.76949449500006,
+       -14.582597482999972,
+       14.703571282000041
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Linguere",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.178035096353254,
+       15.33952372536953
+      ],
+      "bbox": [
+       -15.81877321099995,
+       14.612530461000063,
+       -14.496412385999975,
+       16.001063303000024
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Louga",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.001476540401384,
+       15.741568903201966
+      ],
+      "bbox": [
+       -16.59187675399994,
+       15.364361399000074,
+       -15.580611543999964,
+       16.18742916800005
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Malem Hodar",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.251066591739516,
+       14.356190025309607
+      ],
+      "bbox": [
+       -15.468451676999962,
+       13.993693845000053,
+       -15.02380717699998,
+       14.723187989000053
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Matam",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -13.630126131475587,
+       15.720520373414281
+      ],
+      "bbox": [
+       -14.248469372999978,
+       15.290648827000041,
+       -13.156606428999964,
+       16.14814377700003
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Mbacke",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.83307831050204,
+       14.772544715823235
+      ],
+      "bbox": [
+       -16.11606973499994,
+       14.514397491000068,
+       -15.436370196999974,
+       14.99768208100005
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Mbour",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.830740718132013,
+       14.458987335651493
+      ],
+      "bbox": [
+       -17.144621292999943,
+       14.053889577000064,
+       -16.518750569999952,
+       14.689887087000045
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Medina Yoroufoula",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -14.866546469446334,
+       13.214489420916426
+      ],
+      "bbox": [
+       -15.355695393999952,
+       12.868789856000035,
+       -14.307282896999936,
+       13.600462810000067
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Nioro Du Rip",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.835039598502975,
+       13.73358130317091
+      ],
+      "bbox": [
+       -16.251578295999934,
+       13.591741568000032,
+       -15.41442792099997,
+       13.912086216000034
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Oussouye",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.616054340111887,
+       12.475571652643952
+      ],
+      "bbox": [
+       -16.793999072999952,
+       12.337969220000048,
+       -16.43526583399995,
+       12.650608443000067
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Pikine",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -17.34297575262577,
+       14.768091442473919
+      ],
+      "bbox": [
+       -17.42429174399996,
+       14.722388022000075,
+       -17.292319662999944,
+       14.82423803100005
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Podor",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -14.606513244004455,
+       16.19503912515723
+      ],
+      "bbox": [
+       -15.43887198799996,
+       15.493816940000045,
+       -13.701902479999944,
+       16.693734722000045
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Ranerou",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -14.133225902679111,
+       15.032180635064742
+      ],
+      "bbox": [
+       -14.84929819499996,
+       14.406955667000034,
+       -13.44768102699993,
+       15.805097916000022
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Rufisque",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -17.205418241280228,
+       14.759234026658117
+      ],
+      "bbox": [
+       -17.313091301999975,
+       14.586814029000038,
+       -17.12619233299995,
+       14.886339839000073
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Saint Louis",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.365707563654777,
+       15.960081849015586
+      ],
+      "bbox": [
+       -16.525611237999954,
+       15.83296868800005,
+       -16.095473591999962,
+       16.14068537600002
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Salemata",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -12.798076287779937,
+       12.601465489046806
+      ],
+      "bbox": [
+       -13.12325895999993,
+       12.368650630000047,
+       -12.388321523999934,
+       12.839698911000028
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Saraya",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -11.834323072119721,
+       12.973230009640796
+      ],
+      "bbox": [
+       -12.494571391999955,
+       12.386049498000034,
+       -11.34800579299997,
+       13.461013098000024
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Sedhiou",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -15.616512618230146,
+       12.807034775160155
+      ],
+      "bbox": [
+       -16.023485747999928,
+       12.538799936000032,
+       -15.11227179499997,
+       13.05007106000005
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Tambacounda",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -13.472689915414334,
+       13.489542321064409
+      ],
+      "bbox": [
+       -14.43082047799993,
+       12.629939113000034,
+       -12.461261535999938,
+       14.412559474000034
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Thies",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.869966265919924,
+       14.745944860949965
+      ],
+      "bbox": [
+       -17.176756774999944,
+       14.507666495000024,
+       -16.60437587499996,
+       14.95282712200003
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Tivaoune",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.65183495724734,
+       15.088496300501413
+      ],
+      "bbox": [
+       -17.10901314199998,
+       14.811301049000065,
+       -16.176272234999942,
+       15.36019052100005
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Velingara",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -13.878651943821644,
+       12.987827106790158
+      ],
+      "bbox": [
+       -14.349921670999947,
+       12.674477178000075,
+       -13.451057853999941,
+       13.547204288000046
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Ziguinchor",
+     "type": "department",
+     "value": {
+      "centroid": [
+       -16.223006472120478,
+       12.51775564091384
+      ],
+      "bbox": [
+       -16.537486946999934,
+       12.362319575000072,
+       -15.88844551099993,
+       12.658847363000064
+      ],
+      "iso_code": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    }
+   ],
+   "reason": ""
+  },
+  "ADMINISTRATION": {
+   "populated": true,
+   "items": [
+    {
+     "entity": "Dakar",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Dakar",
+       "Guediawaye",
+       "Pikine",
+       "Rufisque"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Diourbel",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Bambey",
+       "Diourbel",
+       "Mbacke"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Fatick",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Fatick",
+       "Foundiougne",
+       "Gossas"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kaffrine",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Birkelane",
+       "Kaffrine",
+       "Koungheul",
+       "Malem Hodar"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kaolack",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Guinguineo",
+       "Kaolack",
+       "Nioro Du Rip"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kolda",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Kolda",
+       "Medina Yoroufoula",
+       "Velingara"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Louga",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Kebemer",
+       "Linguere",
+       "Louga"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Matam",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Kanel",
+       "Matam",
+       "Ranerou"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Saint Louis",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Dagana",
+       "Podor",
+       "Saint Louis"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Sedhiou",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Bounkiling",
+       "Goudomp",
+       "Sedhiou"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Tambacounda",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Bakel",
+       "Goudiry",
+       "Koumpentoum",
+       "Tambacounda"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Thies",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Mbour",
+       "Thies",
+       "Tivaoune"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Ziguinchor",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Bignona",
+       "Oussouye",
+       "Ziguinchor"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kedougou",
+     "type": "region",
+     "value": {
+      "parent": "UNKNOWN",
+      "children": [
+       "Kedougou",
+       "Salemata",
+       "Saraya"
+      ],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM1/geoBoundaries-SEN-ADM1.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:30:58.561177+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "88562403a6ba76c50b09ef753cc959b9d609bc4c8dc77c3f66608adbcaac35a9",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Bakel",
+     "type": "department",
+     "value": {
+      "parent": "Tambacounda",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Bambey",
+     "type": "department",
+     "value": {
+      "parent": "Diourbel",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Bignona",
+     "type": "department",
+     "value": {
+      "parent": "Ziguinchor",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Birkelane",
+     "type": "department",
+     "value": {
+      "parent": "Kaffrine",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Bounkiling",
+     "type": "department",
+     "value": {
+      "parent": "Sedhiou",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Dagana",
+     "type": "department",
+     "value": {
+      "parent": "Saint Louis",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Dakar",
+     "type": "department",
+     "value": {
+      "parent": "Dakar",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Diourbel",
+     "type": "department",
+     "value": {
+      "parent": "Diourbel",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Fatick",
+     "type": "department",
+     "value": {
+      "parent": "Fatick",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Foundiougne",
+     "type": "department",
+     "value": {
+      "parent": "Fatick",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Gossas",
+     "type": "department",
+     "value": {
+      "parent": "Fatick",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Goudiry",
+     "type": "department",
+     "value": {
+      "parent": "Tambacounda",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Goudomp",
+     "type": "department",
+     "value": {
+      "parent": "Sedhiou",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Guediawaye",
+     "type": "department",
+     "value": {
+      "parent": "Dakar",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Guinguineo",
+     "type": "department",
+     "value": {
+      "parent": "Kaolack",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kaffrine",
+     "type": "department",
+     "value": {
+      "parent": "Kaffrine",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kanel",
+     "type": "department",
+     "value": {
+      "parent": "Matam",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kaolack",
+     "type": "department",
+     "value": {
+      "parent": "Kaolack",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kebemer",
+     "type": "department",
+     "value": {
+      "parent": "Louga",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kedougou",
+     "type": "department",
+     "value": {
+      "parent": "Kedougou",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Kolda",
+     "type": "department",
+     "value": {
+      "parent": "Kolda",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Koumpentoum",
+     "type": "department",
+     "value": {
+      "parent": "Tambacounda",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Koungheul",
+     "type": "department",
+     "value": {
+      "parent": "Kaffrine",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Linguere",
+     "type": "department",
+     "value": {
+      "parent": "Louga",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Louga",
+     "type": "department",
+     "value": {
+      "parent": "Louga",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Malem Hodar",
+     "type": "department",
+     "value": {
+      "parent": "Kaffrine",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Matam",
+     "type": "department",
+     "value": {
+      "parent": "Matam",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Mbacke",
+     "type": "department",
+     "value": {
+      "parent": "Diourbel",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Mbour",
+     "type": "department",
+     "value": {
+      "parent": "Thies",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Medina Yoroufoula",
+     "type": "department",
+     "value": {
+      "parent": "Kolda",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Nioro Du Rip",
+     "type": "department",
+     "value": {
+      "parent": "Kaolack",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Oussouye",
+     "type": "department",
+     "value": {
+      "parent": "Ziguinchor",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Pikine",
+     "type": "department",
+     "value": {
+      "parent": "Dakar",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Podor",
+     "type": "department",
+     "value": {
+      "parent": "Saint Louis",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Ranerou",
+     "type": "department",
+     "value": {
+      "parent": "Matam",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Rufisque",
+     "type": "department",
+     "value": {
+      "parent": "Dakar",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Saint Louis",
+     "type": "department",
+     "value": {
+      "parent": "Saint Louis",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Salemata",
+     "type": "department",
+     "value": {
+      "parent": "Kedougou",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Saraya",
+     "type": "department",
+     "value": {
+      "parent": "Kedougou",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Sedhiou",
+     "type": "department",
+     "value": {
+      "parent": "Sedhiou",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Tambacounda",
+     "type": "department",
+     "value": {
+      "parent": "Tambacounda",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Thies",
+     "type": "department",
+     "value": {
+      "parent": "Thies",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Tivaoune",
+     "type": "department",
+     "value": {
+      "parent": "Thies",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Velingara",
+     "type": "department",
+     "value": {
+      "parent": "Kolda",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    },
+    {
+     "entity": "Ziguinchor",
+     "type": "department",
+     "value": {
+      "parent": "Ziguinchor",
+      "children": [],
+      "chief_lieu": "UNKNOWN"
+     },
+     "source": "geoBoundaries (gbOpen)",
+     "source_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SEN/ADM2/geoBoundaries-SEN-ADM2.geojson",
+     "source_type": "D. INTERNATIONAL DATA",
+     "source_tier": "TIER_B_INTERNATIONAL",
+     "licence": "Open Data Commons Open Database License (ODbL) — voir geoboundaries.org",
+     "retrieval_date": "2026-08-14T00:31:04.098131+00:00",
+     "publication_date": "UNKNOWN",
+     "content_hash": "2011b3b60e3b17c47ce0def3e26718631a245a7e3455ece1ad7fb5affc8cc517",
+     "verification_status": "derived_from_source",
+     "confidence": "derived"
+    }
+   ],
+   "reason": ""
+  },
+  "AGRICULTURE": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "FISHERIES": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "LIVESTOCK": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "MINING": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "TOURISM": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "TRANSPORT": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "EDUCATION": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "HEALTH": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "ECONOMY": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "CULTURE": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "HISTORY": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "LANGUAGES": {
+   "populated": true,
+   "items": [
+    {
+     "entity": "wolof",
+     "type": "language_corpus",
+     "value": {
+      "records": 2105,
+      "standard": "CLAD",
+      "corpus": "UD_Wolof-WTB"
+     },
+     "source": "UD_Wolof-WTB",
+     "source_url": "https://github.com/UniversalDependencies/UD_Wolof-WTB",
+     "source_type": "B. ACADEMIC DATA",
+     "source_tier": "TIER_A_ACADEMIC",
+     "licence": "CC BY-SA 4.0",
+     "retrieval_date": "UNKNOWN",
+     "publication_date": "UNKNOWN",
+     "content_hash": "UNKNOWN",
+     "verification_status": "reused_existing_artifact",
+     "confidence": "derived"
+    }
+   ],
+   "reason": ""
+  },
+  "PUBLIC_INSTITUTIONS": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  },
+  "LEGAL": {
+   "populated": false,
+   "items": [],
+   "reason": "Aucune source acquise ne porte ce domaine. Le remplir demanderait des documents déclarés dans le registre (ADR-021) et approuvés ; l'écrire de mémoire fabriquerait des faits sur un pays réel."
+  }
+ },
+ "unknown_fields": [
+  "chief_lieu",
+  "population",
+  "area_km2",
+  "publication_date"
+ ],
+ "note": "Les entités sont **dérivées** d'une source acquise, jamais écrites de mémoire. Un champ que la source ne porte pas vaut UNKNOWN : un chef-lieu est une décision administrative, pas une propriété géométrique, et le déduire serait une invention."
+}

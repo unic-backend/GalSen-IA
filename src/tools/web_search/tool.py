@@ -8,10 +8,9 @@ caching, rate limiting, and retry mechanisms.
 import html
 import re
 import time
-import json
 import threading
 from typing import List, Dict, Any, Optional
-from urllib.parse import urlencode, quote_plus
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
@@ -130,6 +129,24 @@ def _parse_duckduckgo_html(html_content: str) -> List[Dict[str, str]]:
                 snippet = html.unescape(snippet).strip()
             results.append({"title": title, "url": url, "snippet": snippet})
     return results
+
+
+def _enveloppe_de_resultat(resultat: dict) -> dict:
+    """
+    Ajoute à un résultat de recherche sa forme utilisable dans une invite.
+
+    Un titre et un extrait viennent d'une page que personne n'a relue : ils
+    entrent dans la plateforme comme **données externes** (VOLET 36, ch. A.2),
+    annoncées avec leur URL. Le résultat lui-même n'est pas réécrit — un outil
+    de recherche sert aussi à afficher des liens.
+    """
+    from src.security.trust import TrustLevel, envelope_fields
+
+    texte = f"{resultat.get('title', '')}\n{resultat.get('snippet', '')}".strip()
+    resultat.update(envelope_fields(
+        texte, TrustLevel.EXTERNAL, origin=resultat.get("url") or "url inconnue",
+    ))
+    return resultat
 
 
 class WebSearchTool(BaseTool):
@@ -298,7 +315,9 @@ class WebSearchTool(BaseTool):
                     raise e
 
         # Trim to requested amount
-        final_results = all_results[:max_results]
+        final_results = [
+            _enveloppe_de_resultat(resultat) for resultat in all_results[:max_results]
+        ]
         # Cache the results
         self.cache.set(cache_key, final_results)
         return final_results

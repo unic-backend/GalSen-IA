@@ -5,7 +5,6 @@ Charge la configuration depuis le fichier settings.yaml.
 """
 
 import yaml
-import os
 from typing import Dict, Any
 
 
