@@ -96,6 +96,16 @@ réinitialisation lisait `user_id` alors que le champ s'appelle `id`, donc elle
 n'émettait **jamais** de jeton tout en répondant comme si. Routes 140 → **142**.
 PR #27 ouverte (C13–C18) ; CI : 1 échec, `v0.1.0`, la seule connue.
 
+**Puis C19 — §46, le trou du plan.** En relisant la directive contre le code :
+le plan de 43 phases n'avait **jamais alloué de phase au StyleEngine**, alors que
+l'audit de PHASE 0 l'avait classé `EXTENSION_REQUIRED`. Une phase manquante ne
+fait échouer aucun test. Mesuré avant d'écrire : la représentation suivait
+`domain`, `duration_seconds`, `aspect` — « une scène en style anime » perdait le
+mot « anime ». `src/creative/style.py` + `corpus/creative/styles.yaml` :
+10 familles en données, **aucun style par défaut**, et `world_is_style_free()`
+qui vérifie la séparation d'avec `WorldState` au lieu de s'y fier.
+**44 phases sur 44.**
+
 **Prochaine étape** : rien dans ce programme. Ce qui débloque la suite
 n'appartient pas au dépôt — un GPU et un fournisseur dont la licence des poids a
 été lue, une route vers `huggingface.co`, une persistance pour

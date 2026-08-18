@@ -71,6 +71,18 @@ class TestParcours:
         )
 
 
+class TestStyle:
+    """§46 : le style est posé s'il est nommé, jamais choisi sinon."""
+
+    def test_un_style_nomme_traverse_la_tranche(self):
+        etape = run_slice("une scène en style anime")["stages"][0]
+        assert etape["evidence"]["style"] == "anime"
+
+    def test_sans_style_nomme_aucun_n_est_choisi(self):
+        etape = run_slice("une scène à Dakar")["stages"][0]
+        assert etape["evidence"]["style"] is None
+
+
 class TestLeCompteNePeutPasMentir:
     """Un compte final lisible comme un succès serait le vrai défaut."""
 

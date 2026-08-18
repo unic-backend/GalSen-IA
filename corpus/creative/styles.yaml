@@ -1,0 +1,108 @@
+# Visual styles the platform can name — registry data (directive V4, §46).
+#
+# SAME REASON AS THE LANGUAGE REGISTRY: adding a style must not be a commit.
+#
+# §46 lists ten families and ends with "future styles". A hard-coded enum would
+# make every new one a code change, a review and a release — and the list is
+# guaranteed to grow, because visual fashion moves faster than this repository.
+#
+# THE INVARIANT THIS FILE SERVES
+#
+# A style is NOT part of the world (§46, and `src/creative/world.py` enforces
+# it). The same street in Dakar, the same two people, the same shop, can be
+# rendered photoreal or as a cartoon. If style lived in WorldState, the first
+# continuity check would compare a documentary against a drawing and report a
+# break that does not exist.
+#
+# So a style travels beside the world, on the creative representation, and it is
+# the renderer's input — never the world's property.
+#
+# WHAT A ROW MEANS
+#
+# It means the platform can *name* the style: record that the user asked for it,
+# pass it to a provider that declares it, refuse a typo. It says nothing about
+# any provider being able to produce it — that is a provider capability, probed
+# and reported separately.
+#
+# FIELDS
+#   id       : the identifier used everywhere else.
+#   name     : the English name.
+#   family   : photoreal | stylised | graphic | experimental. A coarse grouping,
+#              useful for routing, never a quality ranking.
+#   aliases  : what a person may actually write, in French and English. The
+#              platform's users write French; a registry that only matched
+#              English would never fire.
+#   note     : anything a reader needs in order not to misread the row.
+
+styles:
+
+  - id: photorealistic
+    name: photorealistic
+    family: photoreal
+    aliases: [photoréaliste, photorealiste, photo-réaliste, realistic, réaliste]
+
+  - id: cinematic
+    name: cinematic
+    family: photoreal
+    aliases: [cinématographique, cinematographique, cinéma, film]
+    note: >-
+      Naming this style selects a look — shallow depth of field, controlled
+      lighting, deliberate framing. It is not the adjective "cinematic" glued to
+      a prompt, which `src/creative/direction.py` refuses on purpose.
+
+  - id: documentary
+    name: documentary
+    family: photoreal
+    aliases: [documentaire, reportage]
+
+  - id: commercial
+    name: commercial
+    family: photoreal
+    aliases: [publicitaire, publicité, pub, advertising]
+
+  - id: realistic_3d
+    name: realistic 3D
+    family: stylised
+    aliases: [3d réaliste, 3d realiste, realistic 3d, cgi]
+
+  - id: stylised_3d
+    name: stylised 3D
+    family: stylised
+    aliases: [3d stylisé, 3d stylise, stylized 3d, pixar]
+    note: >-
+      "pixar" is an alias people actually type. It matches this row; it does not
+      claim any association with that studio, and nothing here reproduces its
+      work.
+
+  - id: anime
+    name: anime
+    family: graphic
+    aliases: [animé, manga, japanime]
+
+  - id: cartoon
+    name: cartoon
+    family: graphic
+    aliases: [dessin animé, dessin anime, bd, comic]
+
+  - id: fantasy
+    name: fantasy
+    family: graphic
+    aliases: [fantastique, fantaisie, merveilleux]
+
+  - id: experimental
+    name: experimental
+    family: experimental
+    aliases: [expérimental, experimental, abstrait, abstract]
+    note: >-
+      Deliberately open. A style nobody can describe yet is still a style
+      somebody may ask for, and refusing to name it would push the request into
+      a family it does not belong to.
+
+# The families a row may declare. Coarse on purpose: they help a router group
+# providers, and they are NOT a quality ranking — "graphic" is not below
+# "photoreal", it is a different intent.
+families:
+  - photoreal
+  - stylised
+  - graphic
+  - experimental

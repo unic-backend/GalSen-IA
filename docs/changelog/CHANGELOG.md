@@ -12,6 +12,38 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-18 — Style registry (volet C19, §46) — a gap the plan had lost
+
+The forty-three-phase plan never allocated a phase to §46's StyleEngine. The
+PHASE 0 audit had classified it `EXTENSION_REQUIRED`; the plan lost it, and
+nothing caught that, because **a missing phase produces no failing test**. It was
+found by re-reading the directive against the code.
+
+Measured before writing anything: the creative representation tracked `domain`,
+`duration_seconds` and `aspect` and nothing else — "une scène en style anime"
+lost the word "anime" between the request and the render.
+
+- `corpus/creative/styles.yaml` — the ten families of §46, **extensible by a
+  row**, with French and English aliases. This platform's users write French; a
+  registry matching only English would never fire
+- **No default style, ever.** A request naming none stays without one, and that
+  is not a gap to fill — style is deliberately absent from `CHAMPS_REQUIS`,
+  since otherwise every style-less request would be declared incomplete
+- **Two styles named means neither is taken**: resolving an author's hesitation
+  decides in their place
+- **The style never enters `WorldState`** (already true since C09, now checked
+  rather than trusted by `world_is_style_free()`). Style inside the world would
+  make the first continuity check compare a documentary against a drawing and
+  report a break that does not exist
+- A shared alias is refused at load time — the render would depend on the file's
+  reading order
+
+One defect found on the first run: "un dessin animé" resolved to nothing,
+because "dessin animé" *contains* "animé", lighting two styles and firing the
+ambiguity rule wrongly. Fixed by discarding any match contained within another:
+the longer phrase is the more specific one, and it is the author's.
+
+
 ### Added — 2026-08-18 — ADR-029's remaining debt: lockout, password reset, breach disclosure
 
 ADR-029 chose option C and listed, in its own *Consequences*, what remained

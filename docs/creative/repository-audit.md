@@ -117,7 +117,7 @@ component required · **D** deprecated · **?** unknown.
 | AudioEngine | 41 | **X** | `src/media/audio/sound_design.py` (events anchored to real timeline events), `music.py` (rights `CLEARED`/`UNKNOWN`/`RESTRICTED`). No dialogue mixing. |
 | VideoEditorEngine | 44 | **X** | `src/media/timeline/`, `qc/`, `adapt/formats.py` cover trimming, subtitles, aspect conversion, verification. Shot replacement does not exist. |
 | Social format engine | 45 | **E** | `src/media/adapt/formats.py` — 6 formats, relative placement, refuses centre-crop and measures its cost. |
-| StyleEngine | 46 | **X** | `src/media/motion/scene.VisualIdentity` is style-as-data. Not extensible to the listed style families yet. |
+| StyleEngine | 46 | **DONE (C19)** | `src/creative/style.py` + `corpus/creative/styles.yaml`. The ten families of §46 plus extensibility by data. This row read `X` while the 43-phase plan never allocated it a phase — the gap was found by re-reading the directive against the code, not by a test. |
 | IdentityVerificationEngine | 48 | **N** | Nothing. `src/vision_intelligence_engine/face_detector.py` exists but **reports unavailable here** (no Haar cascade file shipped with headless OpenCV — measured: `is_available() == False`). Note its history: it once returned an empty list always, i.e. "no faces" for a photo of ten people; that was corrected to an explicit unavailability. |
 | IdentityDriftDetector | 49 | **N** | Nothing. |
 | ContinuityEngine / Checker | 50 | **X** | `src/media/timeline/verify.py` re-transcribes a render and compares mechanically, answering `NOT_VERIFIED` when it cannot. The pattern is right; the scope (identity, clothing, lighting, direction) is absent. |
