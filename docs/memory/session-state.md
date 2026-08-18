@@ -45,9 +45,16 @@ en silence : `admit()` nomme ce qu'il faudrait libérer, l'appelant décide.
 **Le plan annonçait 38 phases : c'était une erreur d'addition, il y en a 43.**
 Recompté et corrigé le 2026-08-18. 38 faites, 5 restantes.
 
-**Prochaine étape** : **phase 16.2** — travaux et cache (§53, §54), en se
-**raccordant au système de travaux existant** (§53 le demande nommément) au lieu
-d'en compter un second.
+**Puis phase 16.2** (§53–§55) — **C16 terminé**. `src/creative/jobs.py` se
+raccorde à `RenderQueue` (`src/media/queue/jobs.py`) : même identité, état lu
+dans la file, jamais recopié. Il ajoute ce qu'elle ne peut pas savoir — le
+fournisseur et **les références qui ont conditionné l'artefact**, sans quoi la
+révocation d'ADR-025 ne peut atteindre aucune vidéo. `src/creative/cache.py` :
+toute lecture rend la fraîcheur avec la valeur, il n'existe **pas** de méthode
+rendant la valeur seule, et rien n'expire au temps.
+
+**Prochaine étape** : **C17 — API, tests d'or, MVP (§62–§66, §70)**, 3 phases.
+Puis C18, le rapport final (1 phase). 39 faites sur 43.
 
 **Bloqué** : rien côté code. Sur cette machine : pas de GPU, pas de `torch`,
 `huggingface.co` injoignable → génération, diarisation, ASR et lip-sync restent
