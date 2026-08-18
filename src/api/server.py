@@ -77,6 +77,11 @@ from src.analytics import build_report as build_analytics_report
 from src.integration.engine_registry import get_shared_registry
 from src.coding_engine.types import CodingStatus, CodingTask
 from src.auth.jwt_handler import JWTHandler, SecretAbsent
+from src.auth.protection import (
+    LoginGuard,
+    PasswordResetService,
+    ProtectionRefused,
+)
 from src.auth.user_manager import UserManager
 
 # Import de la posture de sécurité HTTP (VOLET 02 ch. 08)
@@ -2768,6 +2773,19 @@ class LoginRequest(BaseModel):
     password: str = Field(..., description="Mot de passe en clair")
 
 
+class PasswordResetRequest(BaseModel):
+    """Demande d'ouverture d'une réinitialisation."""
+
+    email: str = Field(..., description="Adresse de courriel")
+
+
+class PasswordResetConfirm(BaseModel):
+    """Changement de mot de passe à partir d'un jeton."""
+
+    token: str = Field(..., description="Jeton de réinitialisation, à usage unique")
+    new_password: str = Field(..., description="Nouveau mot de passe en clair")
+
+
 class RegisterRequest(BaseModel):
     """Requête d'inscription."""
 
@@ -2824,18 +2842,114 @@ async def auth_register(request: RegisterRequest):
     return _paire_de_jetons(utilisateur)
 
 
+#: Verrouillage et réinitialisation — la dette qu'ADR-029 déclarait devoir.
+#: Un seul exemplaire pour tout le serveur : deux compteurs d'échecs
+#: laisseraient un attaquant en épuiser un pendant que l'autre reste ouvert.
+_login_guard = LoginGuard()
+_password_reset = PasswordResetService()
+
+
+def get_login_guard() -> LoginGuard:
+    """Le garde de connexion partagé."""
+    return _login_guard
+
+
+def get_password_reset() -> PasswordResetService:
+    """Le service de réinitialisation partagé."""
+    return _password_reset
+
+
 @app.post("/auth/login", tags=["auth"], response_model=TokenResponse,
           dependencies=[Depends(rate_limit_dependency)])
 async def auth_login(request: LoginRequest):
     """Connecte un compte et retourne ses jetons."""
+    garde = get_login_guard()
+    etat = garde.state(request.email)
+    if etat["locked"]:
+        # 429 et non 401 : le compte n'est pas refusé, il est mis en attente.
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                "Trop de tentatives. Réessayez dans "
+                f"{int(etat['remaining_seconds'])} secondes."
+            ),
+            headers={"Retry-After": str(int(etat["remaining_seconds"]))},
+        )
+
     utilisateur = get_user_manager().authenticate_user(request.email, request.password)
     if utilisateur is None:
+        # L'échec est compté que le compte existe ou non : ne compter que les
+        # comptes réels ferait du verrouillage un oracle d'existence.
+        garde.register_failure(request.email)
         # Un seul message pour « compte inconnu » et « mot de passe faux » :
         # les distinguer dirait à un attaquant quelles adresses existent.
         raise HTTPException(status_code=401, detail="Courriel ou mot de passe invalide.")
     if not getattr(utilisateur, "is_active", True):
         raise HTTPException(status_code=403, detail="Ce compte est désactivé.")
+    garde.register_success(request.email)
     return _paire_de_jetons(utilisateur)
+
+
+@app.post("/auth/password-reset/request", tags=["auth"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def auth_password_reset_request(request: PasswordResetRequest):
+    """
+    Ouvre une réinitialisation de mot de passe.
+
+    Répond **la même chose** que le compte existe ou non : distinguer les deux
+    ferait de ce formulaire un annuaire d'adresses. Le jeton n'est produit que
+    pour un compte réel, et il n'est pas rendu dans la réponse — il appartient
+    à un canal que seule la personne concernée lit, et aucun n'est configuré ici.
+    """
+    utilisateur = get_user_manager().get_user_by_email(request.email)
+    # `User.id`, et non `user_id` : un `getattr` avec repli aurait rendu `None`
+    # pour tout compte réel, et la réinitialisation n'aurait **jamais** émis de
+    # jeton — en répondant exactement comme si elle en avait émis un.
+    resultat = get_password_reset().request_reset(
+        request.email, utilisateur.id if utilisateur else None
+    )
+    return {
+        "accepted": resultat["accepted"],
+        "delivery": "NOT_CONFIGURED",
+        "detail": (
+            "Si un compte correspond à cette adresse, un jeton de "
+            "réinitialisation a été émis. Aucun canal d'envoi n'est configuré "
+            "sur cette instance, donc rien n'a été expédié — et le dire vaut "
+            "mieux que laisser attendre un courriel qui n'arrivera pas."
+        ),
+        "note": resultat["note"],
+    }
+
+
+@app.post("/auth/password-reset/confirm", tags=["auth"],
+          dependencies=[Depends(rate_limit_dependency)])
+async def auth_password_reset_confirm(request: PasswordResetConfirm):
+    """
+    Change le mot de passe à partir d'un jeton à usage unique.
+
+    Le jeton est consommé **avant** la validation du nouveau mot de passe : un
+    jeton rejouable après un refus de politique serait un second mot de passe
+    qui ne s'expire pas.
+    """
+    try:
+        identifiant = get_password_reset().consume(request.token)
+    except ProtectionRefused as erreur:
+        raise HTTPException(status_code=400, detail=str(erreur)) from erreur
+
+    gestionnaire = get_user_manager()
+    utilisateur = gestionnaire.get_user(identifiant)
+    if utilisateur is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Ce jeton ne désigne plus aucun compte.")
+    try:
+        gestionnaire.set_password(identifiant, request.new_password)
+    except ValueError as erreur:
+        raise HTTPException(status_code=409, detail=str(erreur)) from erreur
+
+    # Le verrou tombe : la personne a prouvé qu'elle contrôle son adresse.
+    get_login_guard().register_success(utilisateur.email)
+    return {"status": "PASSWORD_CHANGED", "user_id": identifiant}
 
 
 @app.post("/auth/refresh", tags=["auth"], response_model=TokenResponse,
@@ -4145,6 +4259,57 @@ async def coding_task(
 # tableau de bord Jinja2 avait été monté ici sur `/admin` : deux interfaces
 # concurrentes pour la même plateforme, c'est une de trop à maintenir et à
 # documenter. `/ui` est la décision retenue ; `src/frontend/` a été retiré.
+
+# ---------------------------------------------------------------------------
+# Couche créative (§70). Quatre routes, pas quinze : une route n'existe ici que
+# si une fonction réelle la sert. Les onze autres préfixes que la directive
+# propose sont rendus par `/creative/surface`, avec soit la route existante qui
+# les sert déjà, soit ce qui manque pour qu'ils existent. Monter des préfixes
+# qui répondraient un objet vide donnerait une API qui a l'air complète — et un
+# appelant construirait dessus.
+# ---------------------------------------------------------------------------
+
+
+@app.get("/creative/readiness", tags=["creative"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def creative_readiness():
+    """État calculé de la couche créative : ce qu'elle peut faire, maintenant."""
+    from src.creative.api_surface import readiness
+    return readiness()
+
+
+@app.get("/creative/surface", tags=["creative"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def creative_surface():
+    """Le sort de chaque préfixe proposé par la directive, avec sa raison."""
+    from src.creative.api_surface import surface_map
+    return {"prefixes": surface_map()}
+
+
+@app.get("/creative/languages", tags=["creative"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def creative_languages():
+    """Langues nommables, et les cinq capacités mesurées séparément."""
+    from src.creative.language.registry import coverage_report, language_matrix
+    return {"matrix": language_matrix(), "coverage": coverage_report()}
+
+
+@app.get("/creative/pipelines", tags=["creative"],
+         dependencies=[Depends(rate_limit_dependency),
+                       Depends(require_permission(Permission.HEALTH_VIEW))])
+async def creative_pipelines():
+    """Les deux architectures de la directive, et l'étape où chacune bute."""
+    from src.creative.pipelines import compare_pipelines
+    from src.creative.providers import ProviderRegistry, adapt_declared
+    from src.creative.research import load_research
+
+    registre = ProviderRegistry()
+    for fournisseur in adapt_declared(load_research().get("candidates") or []):
+        registre.register(fournisseur)
+    return compare_pipelines(registre)
 
 # Point d'entrée pour exécuter le serveur directement (pour le développement)
 if __name__ == "__main__":

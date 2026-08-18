@@ -309,6 +309,46 @@ class UserManager:
         logger.info("Mot de passe changé pour l'utilisateur : %s", user_id)
         return True
 
+    def set_password(self, user_id: str, new_password: str) -> bool:
+        """Pose un mot de passe sans exiger l'ancien — après une preuve d'identité.
+
+        C'est le chemin de la réinitialisation (ADR-029) : la personne a prouvé
+        qu'elle contrôle son adresse en présentant un jeton à usage unique, et
+        elle ne connaît justement plus l'ancien mot de passe.
+
+        Cette méthode est donc **volontairement plus permissive** que
+        `change_password`, et c'est ce qui la rend dangereuse si elle est
+        appelée ailleurs : elle ne vérifie rien d'autre que l'existence du
+        compte. Son seul appelant légitime est la route de confirmation, après
+        `PasswordResetService.consume()`.
+
+        Args:
+            user_id: Identifiant de l'utilisateur.
+            new_password: Nouveau mot de passe en clair.
+
+        Returns:
+            True si le mot de passe a été posé.
+
+        Raises:
+            ValueError: Utilisateur introuvable, compte sans mot de passe
+                (OAuth uniquement — lui en poser un ouvrirait une seconde voie
+                d'entrée que son propriétaire n'a jamais demandée), ou mot de
+                passe hors des bornes de bcrypt.
+        """
+        user = self._store.get(user_id)
+        if user is None:
+            raise ValueError("Utilisateur introuvable.")
+        if user.password_hash is None:
+            raise ValueError(
+                "Ce compte n'a pas de mot de passe (OAuth uniquement). Lui en "
+                "poser un par réinitialisation ouvrirait une seconde voie "
+                "d'entrée que son propriétaire n'a jamais demandée."
+            )
+        user.password_hash = self._hash_password(new_password)
+        self._store.update(user)
+        logger.info("Mot de passe réinitialisé pour l'utilisateur : %s", user_id)
+        return True
+
     def change_role(self, user_id: str, new_role: str) -> bool:
         """Change le rôle d'un utilisateur.
 

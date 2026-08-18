@@ -43,10 +43,7 @@ from typing import Any, Dict, Optional, Sequence
 
 from ...integration.degradation import DISPONIBLE
 from ...media.core.capabilities import probe
-
-#: Les langues déclarées par le moteur de sous-titres, réutilisées telles
-#: quelles : deux tables de langues divergeraient au premier ajout.
-from ...media.subtitles.cues import LANGUES  # noqa: E402  (import documenté)
+from ..language.registry import known_codes
 
 #: Ce que la plateforme sait faire d'une langue. Les deux sont **séparées** :
 #: comprendre le wolof et le parler sont deux capacités, et l'écosystème ne les
@@ -153,6 +150,13 @@ class AudioSegment:
         transcript: Le texte, ou `None`. Jamais une approximation.
         transcript_source: `MEASURED` ou `ABSENT`.
         emotion: Ce qui a été observé de la prosodie.
+        dialect: La variété, quand elle est connue. §24 nomme « pulaar » et
+            « fulfulde » séparément là où ISO 639-1 n'a que `ff` : la
+            distinction vit ici, au segment, pas dans le registre.
+        region: Où la variété est parlée, quand quelqu'un l'a établi.
+        pronunciation: Ce qui a été relevé de la prononciation (§25). Une note,
+            jamais une norme — la remonter en règle est le travail de la base
+            de connaissance linguistique, avec sa provenance.
     """
 
     segment_id: str
@@ -165,6 +169,9 @@ class AudioSegment:
     transcript: Optional[str] = None
     transcript_source: str = "ABSENT"
     emotion: Optional[str] = None
+    dialect: Optional[str] = None
+    region: Optional[str] = None
+    pronunciation: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.end < self.start:
@@ -178,16 +185,23 @@ class AudioSegment:
                 "garantie de §22 — préserver la voix de la personne — tient à "
                 "ce que ce fichier existe encore à la fin de la chaîne."
             )
-        if self.language is not None and self.language not in LANGUES:
+        if self.language is not None and self.language not in known_codes():
             raise VoiceSceneRefused(
                 f"Langue « {self.language} » non déclarée. Déclarées : "
-                f"{sorted(LANGUES)}. En deviner une afficherait de l'arabe à "
-                "l'envers."
+                f"{known_codes()}. En deviner une afficherait de l'arabe à "
+                "l'envers. Pour en ajouter une, c'est une ligne dans "
+                "`corpus/creative/languages.yaml` (§24, §64)."
             )
         if self.language_confidence is not None \
                 and not 0.0 <= self.language_confidence <= 1.0:
             raise VoiceSceneRefused(
                 f"Confiance {self.language_confidence} hors de [0, 1]."
+            )
+        if self.dialect is not None and self.language is None:
+            raise VoiceSceneRefused(
+                f"Segment « {self.segment_id} » : dialecte « {self.dialect} » "
+                "sans langue. Une variété d'une langue inconnue ne désigne "
+                "rien, et laisserait croire qu'on en sait plus qu'on n'en sait."
             )
         if self.transcript is not None and self.transcript_source != "MEASURED":
             raise VoiceSceneRefused(
@@ -230,6 +244,9 @@ class AudioSegment:
             "transcript": self.transcript,
             "transcript_source": self.transcript_source,
             "emotion": self.emotion,
+            "dialect": self.dialect,
+            "region": self.region,
+            "pronunciation": self.pronunciation,
         }
 
 
@@ -247,12 +264,13 @@ def language_capabilities(codes: Optional[Sequence[str]] = None) -> Dict[str, An
         Le dire par langue rend la lacune visible au lieu de la laisser
         combler par une mauvaise voix.
     """
+    declarees = known_codes()
     transcription = probe("transcription")
     capacites = []
-    for code in sorted(codes or LANGUES):
-        if code not in LANGUES:
+    for code in sorted(codes or declarees):
+        if code not in declarees:
             raise VoiceSceneRefused(
-                f"Langue « {code} » non déclarée. Déclarées : {sorted(LANGUES)}."
+                f"Langue « {code} » non déclarée. Déclarées : {declarees}."
             )
         capacites.append(LanguageCapability(
             code=code,

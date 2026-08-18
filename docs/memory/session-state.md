@@ -9,77 +9,127 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 ---
 
 ## Dernière session
+**2026-08-18 — VOLET créatif repris : C13 et C14 livrés (35 phases sur 38).**
+Programme en cours : **Universal Creative Intelligence, directive V4** →
+`docs/creative/phase-plan.md`. Il était à l'arrêt après C12, non par blocage
+mais par fin de quota du compte précédent.
+
+C13 (§24–§26) : registre de langues **en données** (`corpus/creative/languages.yaml`,
+19 langues), alternance codique par segment. Défaut corrigé : la couche vocale
+validait contre les 4 langues des sous-titres — sérère et lingala, qui sont les
+tests d'or 5 et 6 de §63, étaient **refusés**.
+C14 (§27–§33) : échelle observation → validation, base de connaissance avec
+frontière privé/global, boucle d'acquisition. La fréquence plafonne à
+`CORROBORATED` ; `VALIDATED` exige un humain nommé, `OFFICIAL` une autorité
+extérieure. Aucun entraînement sur les conversations, et c'est vérifiable.
+
+**Puis phase 15.1** (C15, §36) : `src/creative/routing.py` — appariement par
+capacités. Ferme ce que C04 laissait ouvert : `select()` prenait le premier
+inscrit. Règle centrale : **un classement n'a lieu que si tous les candidats
+portent le chiffre**, sinon `UNRANKED`. Et `UNKNOWN` n'est pas `UNMET`.
+
+**Cadence : une phase par tour** depuis le 2026-08-18 (budget de contexte).
+
+**Puis phase 15.2** (§43) : `src/creative/pipelines.py` — les deux architectures
+planifiées, **aucune recommandée**. L'étape audio de A est satisfaite *sans
+fournisseur* quand l'enregistrement est gardé ; la traiter autrement pousserait
+vers B là où B est le mauvais choix. Mesuré sur les 9 fournisseurs déclarés :
+les deux `BLOCKED`, sur des étapes différentes. **C15 est terminé.**
+
+**Puis phase 16.1** (§52) : `src/creative/resources.py`. Règle unique — **une
+ressource non mesurée vaut `None`, jamais `0`** : `0 Gio` conclut, `None`
+interdit de conclure. Mesuré ici : 4 cœurs, 15,7 Gio de RAM, 27,5 Gio libres,
+GPU absent (`torch` manquant) donc **VRAM `NOT_MEASURED`**. Rien ne se décharge
+en silence : `admit()` nomme ce qu'il faudrait libérer, l'appelant décide.
+
+**Le plan annonçait 38 phases : c'était une erreur d'addition, il y en a 43.**
+Recompté et corrigé le 2026-08-18. 38 faites, 5 restantes.
+
+**Puis phase 16.2** (§53–§55) — **C16 terminé**. `src/creative/jobs.py` se
+raccorde à `RenderQueue` (`src/media/queue/jobs.py`) : même identité, état lu
+dans la file, jamais recopié. Il ajoute ce qu'elle ne peut pas savoir — le
+fournisseur et **les références qui ont conditionné l'artefact**, sans quoi la
+révocation d'ADR-025 ne peut atteindre aucune vidéo. `src/creative/cache.py` :
+toute lecture rend la fraîcheur avec la valeur, il n'existe **pas** de méthode
+rendant la valeur seule, et rien n'expire au temps.
+
+**Puis phase 17.1** (§70, §72) : **4 routes `/creative`, pas 15.** Une route
+n'existe que si une fonction réelle la sert ; les 11 autres préfixes proposés
+sont rendus par `/creative/surface` — soit la route existante qui les sert déjà,
+soit ce qui manque. `/creative/readiness` **calcule** l'état à l'appel :
+`ORCHESTRATION READY — GENERATION BLOCKED (NO GPU, NO PROVIDER CLEARED)`.
+Routes publiées : 136 → **140** (comptées sur `APIRoute` ; mes 144 comptaient les routes générées par le cadre — garde `test_published_numbers.py`).
+
+**Puis phase 17.2** (§62–§64) : `src/creative/golden.py` — les 25 scénarios
+exécutés contre le code vivant. **Deux verdicts, jamais trois** : `VERIFIED`
+(19) et `BLOCKED` (6 : 1, 3, 9, 10, 15, 18). Un `BLOCKED` **est** une assertion
+— « la capacité manque et la plateforme le rapporte au lieu d'inventer » —, pas
+un test sauté. Le jeu complet tourne en < 1 s, sans modèle ni réseau (§62).
+§64 : les 15 langues de validation sont toutes nommables, **0 comprise, 0
+parlée**, et aucune architecture par langue.
+
+**Puis phase 17.3** (§65, §66) — **C17 terminé**. `src/creative/mvp.py` +
+`scripts/creative_slice.py` : les 13 étapes parcourues, **7 ont réellement eu
+lieu**, 2 `BLOCKED`, 2 `NOT_MEASURABLE`, 2 `NOT_REACHED`. `produced_video` est
+`False` et `final_video` reste **dans le total** — le retirer ferait paraître la
+chaîne complète. Toute l'orchestration (6 premières étapes) aboutit ; c'est la
+génération qui manque.
+
+**Puis C18 — le programme est terminé : 43 phases sur 43.** Rapport final →
+`docs/creative/final-report.md`, les 25 points de §76.
+
+**Ce que le rapport dit en une phrase** : la couche d'orchestration est
+construite et vérifiée, **rien ne génère**. 7 étapes sur 13 de la tranche
+verticale ont lieu ; 0 fournisseur dégagé commercialement (8 licences de poids
+`UNKNOWN`) ; 7 dimensions d'identité, 7 `NOT_MEASURABLE` ; VRAM `NOT_MEASURED`.
+
+**Deux fautes à moi attrapées par les gardes du dépôt**, écrites dans le rapport :
+j'ai publié 144 routes en comptant `/docs`, `/redoc`, `/openapi.json` et la
+redirection OAuth (le vrai chiffre est **140**, `test_published_numbers.py` l'a
+refusé) ; et j'avais écrit les totaux de la suite **avant la fin du run**.
+
+**Puis la dette d'ADR-029 soldée** (`src/auth/protection.py`) : verrouillage
+après échecs répétés, réinitialisation par jeton à usage unique, dossier de
+notification de fuite. Règle commune : **aucun des trois ne doit révéler quels
+comptes existent**. Un vrai défaut trouvé en écrivant les tests — la route de
+réinitialisation lisait `user_id` alors que le champ s'appelle `id`, donc elle
+n'émettait **jamais** de jeton tout en répondant comme si. Routes 140 → **142**.
+PR #27 ouverte (C13–C18) ; CI : 1 échec, `v0.1.0`, la seule connue.
+
+**Prochaine étape** : rien dans ce programme. Ce qui débloque la suite
+n'appartient pas au dépôt — un GPU et un fournisseur dont la licence des poids a
+été lue, une route vers `huggingface.co`, une persistance pour
+`ReferenceMemory`, une capacité de détection de visages, et
+`git push origin v0.1.0`.
+
+**Bloqué** : rien côté code. Sur cette machine : pas de GPU, pas de `torch`,
+`huggingface.co` injoignable → génération, diarisation, ASR et lip-sync restent
+`BLOCKED`, 8 licences de poids `UNKNOWN` (`docs/creative/feasibility.md`).
+Et `git push origin v0.1.0`, seul échec de CI, qui appartient au mainteneur.
+
+---
+
+### Sessions précédentes
 **2026-08-18 — ADR-029 tranchée (option C) : la plateforme a des comptes, avec mots de passe.**
 Routes `/auth/register|login|refresh` montées, `/auth/me` accepte jeton **ou** clé.
 Trois défauts corrigés avant montage, dont un **secret de signature en dur dans le dépôt**
 qui laissait forger un jeton d'administrateur. ADR-010 amendée, pas contredite.
+Fusionnée dans `main` par la PR #26.
 
-Vérifié : **5908 tests passent**, 1 échec — l'étiquette `v0.1.0`, qui attend un mainteneur.
-
-**Prochaine étape** : ce qu'ADR-029 doit encore livrer — réinitialisation de mot de passe,
-verrouillage après échecs répétés, notification de fuite. Et `GALSEN_STORAGE_BACKEND=sqlite`
-pour que les comptes survivent à un redémarrage.
-
----
-
-### Sessions précédentes
 **2026-08-17 — Coding Engine et interopérabilité portés depuis la seconde ligne de développement.**
 `src/coding_engine/` (OpenHands, Aider, SWE-agent derrière une abstraction native, ADR-028),
 `src/code_edit/` (blocs d'édition) et `src/interop/` (OpenGAP, ADR-023). Aucun code des
 projets externes recopié, aucune dépendance ajoutée, exécution passée par `src/sandbox`.
-Branche : `claude/coding-engine-on-phases`, issue de `claude/galsen-ia-phases-ukwz7p`,
-qui n'a **pas** été modifiée.
+Fusionnée dans `main` par la PR #25.
 
-Puis les **8 échecs préexistants** ont été traités : 7 corrigés à la source (dont
-l'agent testeur qui rapportait une suite en échec comme réussie), 1 laissé rouge —
-`v0.1.0` doit être poussée, ce qui est une décision de mainteneur.
+**2026-08-16 — Le moteur média universel est terminé** — 20 VOLETs, 32 phases sur 32.
+Rapport final → `docs/media/final-report.md`. `src/media/` : 26 modules, 483 tests.
+État calculé : 10 `READY`, 6 `BLOCKED`, 1 `ABSENT` (aucune synthèse vocale n'existe
+dans ce dépôt — trouvé en parcourant la chaîne, jamais rangé parmi les dépendances
+manquantes).
 
-Puis les deux derniers échecs **visibles seulement en CI** ont été corrigés (deux tests
-qui figeaient le résultat d'une mesure au lieu de vérifier l'invariant).
-
-Vérifié : **5762 tests passent**, 11 ignorés, 1 échec — l'étiquette `v0.1.0`, seule.
-`ruff` propre. CI de la PR #25 : 6 échecs sur la base → 1 attendu après ce commit.
-
-**Prochaine étape** : fusionner cette branche, puis les deux gestes qui débloquent le reste —
-`ollama serve` (génération + recherche sémantique) et un `ffmpeg` réel (cinq étapes média).
-
----
-
-### Sessions précédentes
-**Date** : 2026-08-16
-
-**En cours** : rien. **Le moteur média universel est terminé — 20 VOLETs,
-32 phases sur 32.** Rapport final → `docs/media/final-report.md`.
-
-**Terminé dans cette session**
-- **`src/media/`** : 26 modules, 21 fichiers de tests, **483 tests**. Capacités
-  sondées, ingestion, scènes, transcription, montage déterministe, récit, motion
-  design, fournisseurs + WanGP, audio, sous-titres, ressources, compétences,
-  contrôle qualité, multi-format, file d'attente, outils d'agent, langage
-  naturel, API, frontière de sécurité, mesures, aptitude, studio.
-- **L'état est calculé** : `ENGINE READY — MEDIA RUNTIME DEPENDENCIES PENDING,
-  1 STAGE(S) NOT IMPLEMENTED (VOICE)` — 10 `READY`, 6 `BLOCKED`, 1 `ABSENT`.
-- **Aucune synthèse vocale n'existe dans ce dépôt** : trouvé en parcourant la
-  chaîne. Rapporté `ABSENT`, jamais rangé parmi les dépendances manquantes.
-- **Chiffres publiés re-mesurés, jamais assouplis** : 22 → 24 outils déclarés,
-  123 → 131 routes. Quatre gardes du dépôt ont attrapé le travail ; toutes
-  honorées.
-- Suite : **5369 tests**, 8 ignorés, `ruff` propre.
-
-**Prochaine étape**
-Aucune en attente. Le prochain gain le plus élevé ne dépend pas de ce dépôt :
-installer un vrai `ffmpeg` et `ffprobe` fait passer **cinq étapes** de `BLOCKED`
-à `READY` sans une ligne de code — c'est l'intérêt des adaptateurs à sondes.
-Ensuite : un adaptateur de synthèse vocale (la seule étape que rien n'implémente).
-
-**Bloqué / à surveiller**
-- **`ffmpeg` complet, `ffprobe`, `torch`, GPU et `whisper` absents** de cet
-  environnement (mesuré). `frame_encode` et `image_analysis` sont disponibles.
-- **Licence de WanGP non inspectée** : c'est une lecture, pas de l'ingénierie,
-  et elle bloque la génération plus fermement que l'absence de GPU.
-- **Aucun curriculum `TIER_A` publié** — seule condition pour que Darra J quitte
-  `ARCHITECTURE READY`. N'appartient pas à ce dépôt.
-- **Mandataire réseau** : 9 domaines `.sn`, Banque mondiale, UNESCO, FAO, OMS
-  répondent `CONNECT → 403`. Mesuré, non contourné.
-- **C1** : `ollama serve` — génération et récupération sémantique non mesurées.
-- **`git push origin v0.1.0`** : seul échec de CI restant.
+**Bloqué / à surveiller (hérité)**
+- `ffmpeg` complet, `ffprobe`, `torch`, GPU et `whisper` absents de cet environnement.
+- Licence de WanGP non inspectée.
+- Mandataire réseau : 9 domaines `.sn`, Banque mondiale, UNESCO, FAO, OMS → `CONNECT 403`.
+- `ollama serve` : génération et récupération sémantique non mesurées.

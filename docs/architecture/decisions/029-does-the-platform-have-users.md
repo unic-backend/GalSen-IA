@@ -67,10 +67,25 @@ discovered later:
   demotion takes effect at the next renewal.
 - **Login does not distinguish "unknown account" from "wrong password"**;
   distinguishing them would tell an attacker which addresses exist.
-- Still owed, and not delivered by this ADR: password reset, lockout after
-  repeated failures, and breach notification. Under the default in-memory
-  backend the account store is SQLite but sessions are not; `GALSEN_STORAGE_BACKEND=sqlite`
-  is what makes the whole thing survive a restart.
+- **Delivered on 2026-08-18** (`src/auth/protection.py`), and each carries the
+  same rule: none of them may reveal which accounts exist.
+  - **Lockout** counts a failure whether the address exists or not — counting
+    only real accounts would turn the lock into an existence oracle, more
+    reliable than an error message because it survives reading the code.
+    Addresses are stored as digests, never in clear.
+  - **Password reset** answers identically for a known and an unknown address,
+    and the token never appears in the response. It is single-use, time-bounded,
+    and consumed *before* the new password is validated: a token replayable
+    after a policy rejection would be a second password that never expires.
+  - **Breach notification** computes what must be disclosed and to whom, and
+    reports `NOT_SENT` while no delivery channel is configured. `READY` never
+    means "the people were told" — only something that actually sends can say
+    that.
+- Still owed: `GALSEN_STORAGE_BACKEND=sqlite` covers neither the failure
+  counters nor the reset tokens, so both are lost on a restart and a patient
+  attacker gains from it. No delivery channel is configured, so no breach would
+  be announced automatically. Under the default backend the account store is
+  SQLite but sessions are not.
 
 ### The options that were on the table
 

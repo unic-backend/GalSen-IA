@@ -12,6 +12,125 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-18 — ADR-029's remaining debt: lockout, password reset, breach disclosure
+
+ADR-029 chose option C and listed, in its own *Consequences*, what remained
+owed. A debt written into an ADR and never settled eventually reads as a
+decision. `src/auth/protection.py` settles it, plus two routes and a lockout
+wired into `/auth/login`.
+
+**One rule runs through all three: none of them may reveal which accounts
+exist.**
+
+- **Lockout** counts a failure whether the address exists or not. Counting only
+  real accounts would make the lock an existence oracle — more reliable than an
+  error message, because it survives reading the code. Addresses are stored as
+  digests. A locked login answers `429` with `Retry-After`, not `401`: the
+  account is not refused, it is held
+- **Password reset** answers identically for a known and an unknown address, and
+  the token never appears in the response. Single-use, time-bounded, and
+  consumed *before* the new password is validated — a token replayable after a
+  policy rejection would be a second password that never expires
+- **Breach disclosure** computes what must be said and to whom, then reports
+  `NOT_SENT` while no delivery channel is configured. `READY` never means "the
+  people were told"; only something that actually sends can say that
+
+**A real defect was found while writing the tests**: the reset route read
+`getattr(user, "user_id", None)` where the field is `id`, so it returned `None`
+for every real account and never issued a token — while answering exactly as if
+it had. Invisible from the response *by construction*, since the rule is to
+answer the same in both cases. That is the price of the rule, and it is paid by
+a test that inspects the service's state. That test now exists.
+
+`UserManager.set_password()` added: deliberately more permissive than
+`change_password` (the person no longer knows the old one), and refusing an
+OAuth-only account, where setting a password would open a second way in that its
+owner never asked for.
+
+API routes: 140 → **142**.
+
+
+### Added — 2026-08-18 — Universal Creative Intelligence (volets C13–C18, programme complete)
+
+Nineteen volets, **43 phases**, all completed. Full report →
+`docs/creative/final-report.md`, written to the twenty-five points of §76.
+`src/creative/`: 29 modules, 9 611 lines; `tests/creative/`: 370 tests.
+
+**The orchestration layer is built and verified; nothing generates.** Those are
+two statements and the directive spends §1 insisting they stay apart. The
+platform can structure an intent, name an entity, hold a world, plan shots,
+route by capability, preserve a speaker's recording, refuse a consent it does
+not have, and say what it cannot measure. It cannot produce a video, a voice, or
+an identity score.
+
+Measured rather than recalled:
+
+- **0 providers cleared commercially** — 8 weight licences `UNKNOWN`, because
+  `huggingface.co` has no route from this container. Licence is a routing input,
+  so `route()` returns `NO_PROVIDER` for a commercial request
+- **7 identity dimensions, 7 `NOT_MEASURABLE`, 0 carrying a value**
+- **VRAM `NOT_MEASURED`, not `0`** — zero licenses a conclusion, unknown forbids
+  one
+- **Vertical slice: 7 of 13 stages actually happen**, `produced_video` False,
+  and `final_video` stays in the total — dropping it would make the chain look
+  complete
+- **25 golden scenarios: 19 `VERIFIED`, 6 `BLOCKED`**, in 365 ms with no
+  network and no model. A `BLOCKED` is an assertion that a missing capability is
+  *reported*, not a skipped test
+- **Both audio-video pipelines blocked, on different stages, neither
+  recommended** — §43 forbids assuming one is superior
+
+Two of the repository's guards caught mistakes of mine, and both are recorded in
+the report: the published route count (144 counted framework-generated routes;
+the real figure is **140**), and suite totals written into a draft before the run
+finished.
+
+Full suite: **6 126 passed, 11 skipped, 3 deselected, 1 failed** — the `v0.1.0`
+tag, pre-existing and unrelated.
+
+
+### Added — 2026-08-18 — Multilingual layer and language knowledge (volets C13–C14)
+
+Two volets of the Universal Creative Intelligence programme (directive V4,
+§24–§33), implementing ADR-027. Plan and progress → `docs/creative/phase-plan.md`.
+
+- **A language is now data, not code.** `corpus/creative/languages.yaml` declares
+  19 languages with their ISO register, script and writing direction;
+  `src/creative/language/registry.py` loads it and refuses a file it cannot
+  trust — duplicate code, invented direction, or a validation language named
+  and then missing. Adding Bambara is a row, which is what §24 and §64 ask for
+- **Fixed: two of the directive's own golden tests could not be expressed.** The
+  voice layer validated a segment's language against the subtitle engine's four
+  languages (`fr`, `en`, `wo`, `ar`), so a Serer or Lingala recording — golden
+  tests 5 and 6 of §63 — was *refused*. It now validates against the registry
+- **Declared is not supported**, and the matrix keeps five separate columns to
+  say so: nameable, documentable, subtitleable, understood, speakable. Measured
+  today: 19 nameable, 14 documentable, 4 subtitleable, **0 understood, 0
+  speakable**. Of the 15 validation languages of §24, four are fully carried
+- **Code-switching is structural** (§25): language belongs to a segment, spans
+  and switch points are derived, and there is deliberately no "dominant
+  language" — computing one would invite using it. Switching *inside* a segment
+  is reported `UNKNOWN` with its reason: detecting it needs word alignment,
+  therefore transcription, which is unavailable here
+- **`AudioSegment` carries dialect, region and pronunciation.** A dialect
+  without a language is refused
+- **The validation ladder is an invariant, not a guideline** (§28, ADR-027):
+  frequency raises an observation to `CORROBORATED` and no further — no count,
+  however large, produces `VALIDATED`. That needs a named human; `OFFICIAL`
+  needs an external authority and a reference someone can re-read, and the
+  platform is refused as its own authority
+- **The private/global boundary has exactly one gate.** `publish()` requires a
+  named consenter and a written consent, both recorded in the entry's history.
+  Nothing promotes across it automatically — not frequency, not validation
+- **Competing meanings coexist** (§32). A user's correction creates a new
+  observation and leaves the original intact: overwriting would make the last
+  person to speak the authority on the language
+- **Nothing is trained on conversations**, and `training_status()` makes that
+  checkable rather than promised — it names §31's seven conditions, all
+  `NOT_MET`, and states what separates knowledge acquisition from training
+
+62 tests added (`tests/creative/test_language_layer.py`).
+
 ### Added — 2026-08-18 — Multi-user authentication (ADR-029, option C)
 
 The project owner chose option C of ADR-029: **the platform has accounts, with

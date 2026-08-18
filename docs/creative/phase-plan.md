@@ -26,15 +26,22 @@ C09  PHASE 6   EntityEngine, CharacterMemory, WorldState/Memory  → 3 phases  �
 C10  PHASE 7   DirectorEngine + ShotPlanner (§18, §19)           → 2 phases  ✅
 C11  PHASE 8   IdentityVerification + Drift + Continuity (§48–51)→ 3 phases  ✅
 C12  PHASE 9   Crowd / background engine (§20)                   → 1 phase   ✅
-C13  PHASE 10  Multilingual voice layer, code-switching (§24–26) → 2 phases
-C14  PHASE 11  Language Intelligence + knowledge base (§27–33)   → 3 phases
-C15  PHASE 12  ModelRouter, capability matching (§36, §43)       → 2 phases
-C16  PHASE 13  GPU / resource orchestration, jobs, cache (§52–54)→ 2 phases
-C17  PHASE 14  API, golden tests, hardening, MVP slice (§62–66,70)→ 3 phases
+C13  PHASE 10  Multilingual voice layer, code-switching (§24–26) → 2 phases  ✅
+C14  PHASE 11  Language Intelligence + knowledge base (§27–33)   → 3 phases  ✅
+C15  PHASE 12  ModelRouter, capability matching (§36, §43)       → 2 phases  ✅
+C16  PHASE 13  GPU / resource orchestration, jobs, cache (§52–54)→ 2 phases  ✅
+C17  PHASE 14  API, golden tests, hardening, MVP slice (§62–66,70)→ 3 phases  ✅
 C18  PHASE 15  Future model research + final report (§73, §76)   → 1 phase
 ```
 
-**Total: 38 phases.** Completed: **30**.
+**Total: 43 phases.** Completed: **43 — le programme est terminé.**
+Rapport final → `docs/creative/final-report.md`.
+
+*(Le total annonçait 38 depuis PHASE 0 : une erreur d'addition, corrigée le
+2026-08-18 en recomptant la colonne. Les phases par volet, elles, n'ont pas
+changé — c'est la somme qui était fausse, pas le plan.)*
+
+**Cadence, depuis le 2026-08-18 : une phase par tour**, à la demande du propriétaire (budget de contexte). Elle était de deux volets par tour pour C01–C14.
 
 *(Nineteen labels, seventeen volets after C00 and C18 — the §71 phases that
 split into two volets keep their directive number in the `PHASE` column so the

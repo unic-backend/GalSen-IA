@@ -43,6 +43,19 @@ ROUTES_PUBLIQUES = {
     # compte `user`. C'est ce que « full self-service » veut dire ; restreindre
     # l'inscription serait une décision distincte, à prendre explicitement.
     "/auth/register", "/auth/login", "/auth/refresh",
+    # Les deux routes de réinitialisation (ADR-029, dette soldée). Exiger une
+    # authentification pour récupérer un mot de passe oublié n'aurait pas de
+    # sens : c'est précisément le moment où la personne n'en a plus. Ce qui les
+    # protège à la place :
+    #
+    # - la demande répond **exactement pareil** qu'un compte existe ou non,
+    #   donc elle n'énumère aucune adresse ;
+    # - le jeton n'est jamais rendu dans la réponse : il part par un canal que
+    #   seule la personne concernée lit ;
+    # - le jeton est à usage unique, borné dans le temps, et consommé avant
+    #   toute validation du nouveau mot de passe ;
+    # - le limiteur de taux est présent sur les deux.
+    "/auth/password-reset/request", "/auth/password-reset/confirm",
 }
 
 # `/` est servie par une redirection statique, sans travail derrière : la
@@ -115,6 +128,8 @@ def test_la_liste_des_routes_publiques_ne_derive_pas():
         # Portes d'entrée de l'authentification par compte (ADR-029) : on ne
         # s'authentifie pas pour obtenir son premier identifiant.
         "/auth/register", "/auth/login", "/auth/refresh",
+        # Réinitialisation : on n'a plus le mot de passe qu'on vient récupérer.
+        "/auth/password-reset/request", "/auth/password-reset/confirm",
     }
     assert ROUTES_PUBLIQUES == attendues, (
         "La liste des routes publiques a changé. Chaque entrée doit porter la "
