@@ -9,6 +9,20 @@ Mise à jour : à la fin de chaque session, et à chaque point de contrôle des 
 ---
 
 ## Dernière session
+**2026-08-18 — ADR-029 tranchée (option C) : la plateforme a des comptes, avec mots de passe.**
+Routes `/auth/register|login|refresh` montées, `/auth/me` accepte jeton **ou** clé.
+Trois défauts corrigés avant montage, dont un **secret de signature en dur dans le dépôt**
+qui laissait forger un jeton d'administrateur. ADR-010 amendée, pas contredite.
+
+Vérifié : **5908 tests passent**, 1 échec — l'étiquette `v0.1.0`, qui attend un mainteneur.
+
+**Prochaine étape** : ce qu'ADR-029 doit encore livrer — réinitialisation de mot de passe,
+verrouillage après échecs répétés, notification de fuite. Et `GALSEN_STORAGE_BACKEND=sqlite`
+pour que les comptes survivent à un redémarrage.
+
+---
+
+### Sessions précédentes
 **2026-08-17 — Coding Engine et interopérabilité portés depuis la seconde ligne de développement.**
 `src/coding_engine/` (OpenHands, Aider, SWE-agent derrière une abstraction native, ADR-028),
 `src/code_edit/` (blocs d'édition) et `src/interop/` (OpenGAP, ADR-023). Aucun code des

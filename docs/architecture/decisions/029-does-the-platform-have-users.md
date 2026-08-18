@@ -1,7 +1,8 @@
 # ADR-029: Does the platform have users?
 
 ## Status
-**Proposed** — this ADR states the decision to be taken. It does not take it.
+**Accepted** — Option C. Decided by the project owner on 2026-08-18, after this
+ADR was published as `Proposed` with the three options and their costs.
 
 ## Date
 2026-08-18
@@ -16,12 +17,12 @@ The code that would implement one answer already exists. A branch
 (`feature/service-unit-tests`, one commit, 10 August) built a JWT and OAuth login
 layer: `src/auth/` with a JWT handler, session manager, user manager and three
 OAuth login providers, plus `SQLiteUserStore` holding accounts and **password
-hashes**. It has been rebased onto the current line as
-`claude/auth-jwt-oauth-rebased`, its 105 tests pass, and it is lint-clean.
+hashes**. It was rebased onto the current line as
+`claude/auth-jwt-oauth-rebased`, where its tests pass and it is lint-clean.
 
-**It is not mounted.** No route reaches it. That is deliberate, because mounting
-`/auth/register` would create the credential store at the first call — and
-ADR-010 rejected exactly that:
+Until this decision it was **not mounted** — no route reached it — because
+mounting `/auth/register` would create the credential store at the first call,
+and ADR-010 rejected exactly that:
 
 > A password store is a secret the platform must keep. Today it keeps none —
 > adding password hashes, reset flows and lockout policies means owning a breach.
@@ -44,12 +45,39 @@ account on the operator's behalf (`src/connectors/oauth`). The branch's OAuth
 would let **a person** enter. Confusing the two would give a connector the rights
 of a user.
 
-## The decision to take
+## The decision taken
+
+**Option C: accounts with passwords.** GalSen IA owns a credential store.
+
+What that makes the platform responsible for, stated here so it is not
+discovered later:
+
+- **Password hashes are a secret the platform keeps.** bcrypt, 12 rounds, and a
+  72-byte limit enforced explicitly rather than left to the library — older
+  bcrypt versions truncated silently, and two passphrases sharing their first 72
+  bytes authenticated each other.
+- **The signing secret has no default.** `GALSEN_JWT_SECRET`, 32 characters
+  minimum, or no token is issued and the routes answer 503 with the command that
+  generates one. The original code shipped a default written in the repository
+  and only logged a warning; anyone who read the source could forge an admin
+  token.
+- **A presented Bearer token is authoritative.** Invalid or expired means
+  refused, never a silent fall back to `X-API-Key`.
+- **A refresh re-reads the role from the store**, never from the token, so a
+  demotion takes effect at the next renewal.
+- **Login does not distinguish "unknown account" from "wrong password"**;
+  distinguishing them would tell an attacker which addresses exist.
+- Still owed, and not delivered by this ADR: password reset, lockout after
+  repeated failures, and breach notification. Under the default in-memory
+  backend the account store is SQLite but sessions are not; `GALSEN_STORAGE_BACKEND=sqlite`
+  is what makes the whole thing survive a restart.
+
+### The options that were on the table
 
 **Does GalSen IA have accounts of its own?** Three answers are coherent; the
 project must pick one, and each closes doors the others leave open.
 
-### Option A — No accounts. Keys only, as today.
+#### Option A — No accounts. Keys only. *(not taken)*
 
 The platform keeps no secret. Identity stays a declaration, verified by whoever
 writes the environment. Multi-user products are built *in front of* GalSen IA,
@@ -60,7 +88,7 @@ by a caller that has its own users and holds its own key.
 - **Keeps**: the strongest property this platform has — it stores nothing whose
   loss would be a breach of someone else's credentials.
 
-### Option B — Accounts, but no passwords. OAuth only.
+#### Option B — Accounts, but no passwords. OAuth only. *(not taken)*
 
 People enter through Google, GitHub or Microsoft. The platform stores an account
 row and a provider identifier, **never a password hash**. Authentication is
@@ -72,7 +100,7 @@ delegated to a party already in that business.
 - **Keeps**: ADR-010's central argument intact — no password store, so no
   password breach. `SQLiteUserStore` survives with its hash column removed.
 
-### Option C — Accounts with passwords, as the branch implements.
+#### Option C — Accounts with passwords. **← taken**
 
 Full self-service: register, log in, refresh, reset. The platform owns the
 credential store.
@@ -89,20 +117,19 @@ Which options are technically possible — all three are. This is a question abo
 what the platform is willing to be responsible for, and that is not an
 engineering call.
 
-## Consequences of leaving it open
+## Consequences
 
-The branch rots or the code rots around it. That is why it was rebased rather
-than left at its 10 August base, 326 commits behind: whichever way this goes, the
-work is either deleted deliberately or adopted deliberately, not lost to drift.
-
-Until then:
-
-- `src/auth/` ships but is **unreachable** — no route, no store created.
-- `tests/test_auth_hybrid.py` is skipped, naming this ADR as its reason.
-- `tests/test_auth_jwt.py` and `tests/test_auth_oauth.py` run: they need no route.
-- The three dependencies (`PyJWT`, `bcrypt`, `requests`) are declared, because
-  the code that imports them is present and the dependency guard is right to
-  demand it.
+- `/auth/register`, `/auth/login` and `/auth/refresh` are mounted. `/auth/me`
+  now accepts both a Bearer token and an API key, and says which one served.
+- ADR-010 is amended, not silently contradicted: its "no credential store"
+  position held until this decision, and its own trigger — "when a self-service
+  signup exists, a directory becomes necessary and this ADR is revisited" — is
+  what opened this one.
+- API keys keep working unchanged. Every existing route still authenticates the
+  way it did; nothing was migrated.
+- The platform now has something to lose. That is the cost of Option C, it was
+  stated before the choice, and it is not reversible by deleting code — only by
+  deleting the accounts.
 
 ## Notes
 

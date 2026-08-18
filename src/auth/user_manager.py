@@ -31,6 +31,10 @@ class UserManager:
         auth_user = mgr.authenticate_user("x@y.com", "secret123")
     """
 
+    #: Limite de bcrypt, en **octets** et non en caractères. Au-delà, l'algorithme
+    #: ne lit pas la suite : ce qui dépasse ne protège rien.
+    LIMITE_BCRYPT_OCTETS = 72
+
     # Coût bcrypt — 12 rounds (bon équilibre sécurité/performances)
     BCRYPT_ROUNDS = 12
 
@@ -52,8 +56,25 @@ class UserManager:
 
         Returns:
             Hash bcrypt (str).
+
+        Raises:
+            ValueError: Mot de passe dépassant la limite de bcrypt. Elle est
+                contrôlée ici plutôt que laissée à la bibliothèque : bcrypt 5
+                lève une erreur technique qui ressortirait en 500, alors que
+                c'est une saisie à corriger. Les versions antérieures, elles,
+                **tronquaient en silence** — deux phrases de passe partageant
+                leurs 72 premiers octets s'authentifiaient l'une l'autre. Le
+                contrôle explicite tient dans les deux cas.
         """
         import bcrypt
+
+        octets = password.encode("utf-8")
+        if len(octets) > self.LIMITE_BCRYPT_OCTETS:
+            raise ValueError(
+                f"Mot de passe trop long : {len(octets)} octets, "
+                f"{self.LIMITE_BCRYPT_OCTETS} au maximum (limite de bcrypt). "
+                f"Un caractère accentué compte pour deux octets."
+            )
 
         return bcrypt.hashpw(
             password.encode("utf-8"),

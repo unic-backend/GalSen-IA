@@ -144,3 +144,20 @@ fabrication pattern chapter 06 of VOLET_04 forbids.
 - ADR-009 — revocation is instance-local; a subject changes nothing there.
 - `docs/roadmap/roadmap.md` — exit criterion C2.
 - `src/api/rbac.py` — the implementation; `tests/test_identity.py` — its tests.
+
+---
+
+## Amendment — 2026-08-18 (ADR-029)
+
+The position below — *no credential store, and none planned before self-service
+signup* — held until 2026-08-18. **ADR-029 supersedes it**: the project chose
+accounts with passwords, and the platform now keeps password hashes.
+
+This ADR predicted its own revision and named the trigger: *"When a self-service
+signup exists, a directory becomes necessary and this ADR is revisited."* That is
+what happened. Everything else here still stands — a key still declares a
+subject, the platform still verifies no identity behind an API key, and the audit
+trail still names subjects rather than key digests.
+
+Read the two together: this ADR describes how a **key** carries an identity;
+ADR-029 describes how a **person** obtains one.

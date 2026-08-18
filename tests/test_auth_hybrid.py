@@ -1,33 +1,19 @@
 """
-Tests de l'authentification hybride — **dormants par décision d'architecture**.
+Tests de l'authentification hybride — JWT et clé API sur la même API.
 
-Ces tests éprouvent des routes (`/auth/login`, `/auth/register`,
-`/auth/refresh`, `/auth/oauth/...`) qui ne sont **pas montées** sur l'API.
+ADR-029 a tranché (option C) : la plateforme a des comptes, avec mots de passe.
+Les routes sont montées, et ces tests les éprouvent de bout en bout.
 
-Ce n'est pas un oubli. ADR-010 refuse pour l'instant un magasin d'identifiants :
-« a password store is a secret the platform must keep. Today it keeps none. »
-Et `docs/memory/priorities.md` place en P0, avant tout code, la décision
-« la plateforme a-t-elle des utilisateurs ? ». Monter `/auth/register`
-créerait ce magasin au premier appel, donc trancherait la question à la place
-de la personne qui doit la trancher.
+Ce qu'ils gardent, dans l'ordre de ce qui coûte cher quand c'est faux :
 
-Le code de `src/auth/` est conservé, rebasé et couvert par
-`test_auth_jwt.py` et `test_auth_oauth.py`, qui eux tournent : ils n'ont besoin
-d'aucune route. Ce fichier-ci attend la décision.
-
-Pour le réveiller : monter les routes dans `src/api/server.py`, puis retirer le
-saut ci-dessous. Rien d'autre à changer.
+1. **Un jeton présenté fait autorité.** Invalide ou expiré, l'appel est refusé.
+   Retomber sur la clé API masquerait une session expirée, et une clé
+   d'administrateur combinée à un jeton périmé rendrait les droits
+   d'administrateur — le défaut que l'auteur de la branche avait déjà corrigé.
+2. **Aucun secret par défaut.** Sans `GALSEN_JWT_SECRET`, aucun jeton n'est émis.
+3. **Le hachage ne sort jamais.** Un compte rendu ne porte pas de mot de passe.
 """
 
-import pytest
-
-pytestmark = pytest.mark.skip(
-    reason=(
-        "Routes /auth/login|register|refresh|oauth non montées : ADR-010 refuse "
-        "le magasin d'identifiants tant que la décision P0 « la plateforme a-t-elle "
-        "des utilisateurs ? » n'est pas prise."
-    )
-)
 
 
 import os
@@ -44,6 +30,9 @@ _GALSEN_TEST_DIR = tempfile.mkdtemp(prefix="galsen-test-hybrid-")
 os.environ["GALSEN_DATA_DIR"] = _GALSEN_TEST_DIR
 os.environ["GALSEN_API_KEYS"] = "sk-test-hybrid:user,sk-test-admin:admin"
 os.environ["GALSEN_RATE_LIMIT_ENABLED"] = "false"
+# Aucun secret par défaut n'existe plus : sans celui-ci, aucune route
+# d'authentification ne fonctionnerait, et c'est voulu.
+os.environ.setdefault("GALSEN_JWT_SECRET", "secret-de-test-" + "x" * 40)
 os.environ["GALSEN_JWT_ACCESS_EXPIRY"] = "5"  # 5 secondes pour test d'expiration
 os.environ["GALSEN_JWT_REFRESH_EXPIRY"] = "10"
 
@@ -66,8 +55,20 @@ from src.api.server import app  # noqa: E402
 
 
 @pytest.fixture
-def client():
-    """Client de test FastAPI."""
+def client(monkeypatch):
+    """Client de test FastAPI, indépendant de l'ordre d'exécution.
+
+    Les clés et le secret sont posés à l'import de ce module, mais une suite
+    voisine peut les avoir retirés et rechargé le gestionnaire entre-temps —
+    `test_api_coding.py` le fait dans son démontage. S'appuyer sur l'état
+    d'import rendait ce fichier dépendant de qui tourne avant lui.
+    """
+    monkeypatch.setenv("GALSEN_API_KEYS", "sk-test-hybrid:user,sk-test-admin:admin")
+    monkeypatch.setenv("GALSEN_JWT_SECRET", os.environ["GALSEN_JWT_SECRET"])
+
+    from src.api.server import rbac_manager, set_valid_api_key_digests
+    rbac_manager.reload()
+    set_valid_api_key_digests(rbac_manager.active_key_digests())
     return TestClient(app)
 
 
@@ -289,8 +290,8 @@ class TestMeEndpoint:
         assert data["auth_method"] == "jwt"
         assert "user_id" in data
         # L'user_id exposé doit être exactement le sujet du token présenté.
-        from src.api.server import jwt_handler
-        assert data["user_id"] == jwt_handler.verify_access_token(token)["sub"]
+        from src.api.server import get_jwt_handler
+        assert data["user_id"] == get_jwt_handler().verify_access_token(token)["sub"]
         assert data["user_id"]
         assert "permissions" in data
         # Ne doit pas exposer le hash du mot de passe
@@ -321,18 +322,19 @@ class TestMeEndpoint:
         # Force l'expiration en réduisant l'access_expiry du handler à -1.
         # Le handler est un singleton partagé : restaurer la valeur d'origine,
         # sinon tous les tests suivants reçoivent des tokens déjà expirés.
-        from src.api.server import jwt_handler
-        original_expiry = jwt_handler._access_expiry
-        jwt_handler._access_expiry = -1
+        from src.api.server import get_jwt_handler
+        handler = get_jwt_handler()
+        original_expiry = handler._access_expiry
+        handler._access_expiry = -1
         try:
-            expired_token = jwt_handler.create_access_token(
+            expired_token = handler.create_access_token(
                 user_id="expire-me", role="user"
             )
             resp = client.get("/auth/me", headers={
                 "Authorization": f"Bearer {expired_token}",
             })
         finally:
-            jwt_handler._access_expiry = original_expiry
+            handler._access_expiry = original_expiry
 
         assert resp.status_code == 401
 
@@ -374,8 +376,8 @@ class TestRequireAuthJWT:
         assert data["auth_method"] == "jwt"
         assert data["role"] == "user"
         # L'utilisateur du token, pas l'admin porté par la clé API.
-        from src.api.server import jwt_handler
-        assert data["user_id"] == jwt_handler.verify_access_token(token)["sub"]
+        from src.api.server import get_jwt_handler
+        assert data["user_id"] == get_jwt_handler().verify_access_token(token)["sub"]
 
     def test_falls_back_to_api_key_when_no_jwt(self, client):
         """Sans Bearer token, X-API-Key est utilisé en fallback."""
@@ -400,15 +402,16 @@ class TestRequireAuthJWT:
 
     def test_expired_jwt_does_not_escalate_to_admin_api_key(self, client):
         """Un token expiré ne doit pas donner les droits de la clé API admin."""
-        from src.api.server import jwt_handler
-        original_expiry = jwt_handler._access_expiry
-        jwt_handler._access_expiry = -1
+        from src.api.server import get_jwt_handler
+        handler = get_jwt_handler()
+        original_expiry = handler._access_expiry
+        handler._access_expiry = -1
         try:
-            expired_token = jwt_handler.create_access_token(
+            expired_token = handler.create_access_token(
                 user_id="escalation-probe", role="user"
             )
         finally:
-            jwt_handler._access_expiry = original_expiry
+            handler._access_expiry = original_expiry
 
         resp = client.get("/auth/me", headers={
             "Authorization": f"Bearer {expired_token}",
@@ -466,3 +469,104 @@ class TestRateLimitingDisabled:
                 "password": "SecurePass123!",
             })
             assert resp.status_code == 201
+
+
+# ============================================================================
+# Les deux garanties ajoutées en montant les routes (ADR-029)
+# ============================================================================
+
+
+class TestAucunSecretParDefaut:
+    """Un secret écrit dans le dépôt est un secret public."""
+
+    def test_sans_secret_aucun_jeton_n_est_emis(self, monkeypatch):
+        """La version d'origine signait avec une valeur du dépôt et avertissait.
+
+        Un avertissement dans un journal n'arrête personne : le déploiement qui
+        oubliait la variable laissait forger un jeton d'administrateur à qui
+        avait lu le code. Désormais l'absence de secret **empêche** la
+        construction, elle ne la commente pas.
+
+        Le repli est neutralisé sur le module plutôt que par un rechargement :
+        `importlib.reload` remplacerait les classes du module, et les suites
+        voisines qui comparent des types échoueraient — c'est déjà arrivé ici.
+        """
+        from src.auth import jwt_handler as module
+        from src.auth.jwt_handler import JWTHandler, SecretAbsent
+
+        monkeypatch.delenv("GALSEN_JWT_SECRET", raising=False)
+        monkeypatch.setattr(module, "_JWT_SECRET", "")
+        with pytest.raises(SecretAbsent, match="GALSEN_JWT_SECRET"):
+            JWTHandler()
+
+    def test_un_secret_trop_court_est_refuse(self):
+        """HS256 accepte n'importe quelle clé ; la bibliothèque ne juge pas."""
+        from src.auth.jwt_handler import JWTHandler, SecretAbsent
+
+        with pytest.raises(SecretAbsent, match="trop court"):
+            JWTHandler(secret="court")
+
+    def test_le_motif_porte_la_commande_qui_repare(self, monkeypatch):
+        """Un refus sans mode d'emploi laisse chercher au mauvais endroit."""
+        from src.auth import jwt_handler as module
+        from src.auth.jwt_handler import JWTHandler, SecretAbsent
+
+        monkeypatch.delenv("GALSEN_JWT_SECRET", raising=False)
+        monkeypatch.setattr(module, "_JWT_SECRET", "")
+        try:
+            JWTHandler()
+        except SecretAbsent as erreur:
+            assert "secrets.token_urlsafe" in str(erreur)
+        else:  # pragma: no cover
+            pytest.fail("Un secret absent doit être refusé.")
+
+    def test_aucun_secret_n_est_ecrit_dans_le_code(self):
+        """Le contre-test : la valeur retirée ne doit pas revenir.
+
+        Elle avait été écrite une fois ; rien n'empêche qu'elle revienne par
+        une fusion, et personne ne la relirait.
+        """
+        from pathlib import Path
+
+        source = Path(__file__).parent.parent / "src" / "auth" / "jwt_handler.py"
+        contenu = source.read_text(encoding="utf-8")
+        assert "gal-sen-ia-dev-secret" not in contenu
+        # Aucun `os.environ.get` du secret ne doit porter de valeur de repli.
+        assert 'os.environ.get("GALSEN_JWT_SECRET", ' not in contenu
+
+
+class TestLimiteDeMotDePasse:
+    """bcrypt s'arrête à 72 octets : au-delà, ce qui dépasse ne protège rien."""
+
+    def test_un_mot_de_passe_trop_long_est_une_saisie_a_corriger(self, client):
+        """Pas une panne du serveur : bcrypt lève, l'API doit traduire.
+
+        Sans ce contrôle, l'erreur technique de la bibliothèque ressortait en
+        500. Et sur les versions de bcrypt antérieures à la 4, elle ne levait
+        pas du tout : elle **tronquait en silence**, et deux phrases de passe
+        partageant leurs 72 premiers octets s'authentifiaient l'une l'autre.
+        """
+        reponse = client.post("/auth/register", json={
+            "email": "trop-long@example.com",
+            "name": "Trop Long",
+            "password": "a" * 80,
+        })
+        assert reponse.status_code == 409
+        assert "72" in reponse.json()["detail"]
+
+    def test_les_accents_comptent_en_octets(self):
+        """« é » pèse deux octets : compter les caractères laisserait passer."""
+        from src.auth.user_manager import UserManager
+
+        gestionnaire = UserManager.__new__(UserManager)
+        # 40 caractères, 80 octets : refusé, alors qu'un compte de caractères
+        # l'aurait accepté.
+        with pytest.raises(ValueError, match="80 octets"):
+            gestionnaire._hash_password("é" * 40)
+
+    def test_un_mot_de_passe_a_la_limite_passe(self):
+        """La borne est inclusive : 72 octets exactement doivent fonctionner."""
+        from src.auth.user_manager import UserManager
+
+        gestionnaire = UserManager.__new__(UserManager)
+        assert gestionnaire._hash_password("a" * 72)

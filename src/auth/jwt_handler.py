@@ -17,11 +17,48 @@ from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 
 logger = logging.getLogger(__name__)
 
+
+class SecretAbsent(RuntimeError):
+    """Le secret de signature manque ou est trop faible pour être utilisé."""
+
+
+def _secret_configure() -> str:
+    """
+    Lit le secret de signature **au moment de la construction**.
+
+    Le lire une fois à l'import serait un piège : un exploitant qui charge son
+    `.env` après l'import de ce module — ce que fait tout lanceur qui importe
+    l'application avant de configurer l'environnement — obtiendrait un 503
+    inexplicable, la variable étant pourtant posée.
+
+    Returns:
+        Le secret courant, ou la valeur lue à l'import si l'environnement n'en
+        porte plus (chemin emprunté par les tests qui la remplacent).
+    """
+    return os.environ.get("GALSEN_JWT_SECRET") or _JWT_SECRET
+
 # ---------------------------------------------------------------------------
 # Configuration — variables d'environnement
 # ---------------------------------------------------------------------------
 
-_JWT_SECRET = os.environ.get("GALSEN_JWT_SECRET", "gal-sen-ia-dev-secret-change-me-32b")
+# **Aucun secret par défaut.** La version précédente en portait un, écrit dans
+# le dépôt, et se contentait d'avertir : un déploiement qui oubliait la variable
+# signait donc ses jetons avec une valeur publique, et n'importe qui pouvait
+# forger un jeton d'administrateur. Un avertissement dans un journal n'arrête
+# personne. La règle du dépôt est explicite — « NEVER hardcode credentials in
+# the source code » — et ADR-004 veut les identifiants dans l'environnement.
+#
+# Sans secret, aucun jeton n'est émis ni accepté : les routes d'authentification
+# rapportent leur indisponibilité, ce qui est le comportement que la plateforme
+# applique partout ailleurs à une capacité non configurée.
+#: Valeur de repli, lue à l'import. Elle existe pour être **remplacée dans un
+#: test** (`monkeypatch.setattr`) ; le chemin normal relit l'environnement à
+#: chaque construction, voir `_secret_configure()`.
+_JWT_SECRET = os.environ.get("GALSEN_JWT_SECRET") or ""
+
+#: Longueur minimale du secret. HS256 signe avec une clé arbitraire : un secret
+#: court est devinable, et la bibliothèque ne s'y oppose pas.
+LONGUEUR_MINIMALE_DU_SECRET = 32
 _JWT_ALGORITHM = "HS256"
 _JWT_ACCESS_EXPIRY = int(os.environ.get("GALSEN_JWT_ACCESS_EXPIRY", "3600"))  # 1 heure
 _JWT_REFRESH_EXPIRY = int(os.environ.get("GALSEN_JWT_REFRESH_EXPIRY", "604800"))  # 7 jours
@@ -43,15 +80,34 @@ class JWTHandler:
         access_expiry: int = _JWT_ACCESS_EXPIRY,
         refresh_expiry: int = _JWT_REFRESH_EXPIRY,
     ) -> None:
-        self._secret = secret or _JWT_SECRET
+        self._secret = secret or _secret_configure()
         self._algorithm = algorithm
         self._access_expiry = access_expiry
         self._refresh_expiry = refresh_expiry
-        if self._secret == "gal-sen-ia-dev-secret-change-me-32b":
-            logger.warning(
-                "JWT secret par défaut utilisé. "
-                "Définissez GALSEN_JWT_SECRET en production."
+        if not self._secret:
+            raise SecretAbsent(
+                "Aucun secret de signature. Renseignez GALSEN_JWT_SECRET avec "
+                "au moins "
+                f"{LONGUEUR_MINIMALE_DU_SECRET} caractères aléatoires "
+                "(`python -c \"import secrets; print(secrets.token_urlsafe(48))\"`). "
+                "Aucune valeur par défaut n'est fournie : elle serait publique."
             )
+        if len(self._secret) < LONGUEUR_MINIMALE_DU_SECRET:
+            raise SecretAbsent(
+                f"Secret de signature trop court ({len(self._secret)} caractères) : "
+                f"{LONGUEUR_MINIMALE_DU_SECRET} au minimum. Un secret devinable "
+                f"laisse forger des jetons d'administrateur."
+            )
+
+    @property
+    def access_expiry(self) -> int:
+        """Durée de validité d'un jeton d'accès, en secondes.
+
+        Exposée parce que l'API la rend dans `expires_in` : sans elle,
+        l'appelant lirait un attribut privé, et un renommage interne casserait
+        le contrat de la route sans que rien ne le signale.
+        """
+        return self._access_expiry
 
     # ------------------------------------------------------------------
     # Création de tokens
