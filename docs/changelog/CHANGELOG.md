@@ -42,6 +42,42 @@ because this line already did the same thing better.
   published in an open format. The **specification** is implemented; the upstream
   TypeScript code is not vendored, so the platform survives its deletion
 
+### Fixed — 2026-08-17 — the suite goes from 8 red to 1
+
+Priority 1 in `docs/memory/priorities.md` is *keep the suite green*, and it was
+not: eight tests had been failing. Seven are now fixed at the source; the eighth
+is blocked on a decision that is not this repository's to take.
+
+- **A failing suite was reported as passing.** `TesterAgent._run_batch` matched
+  pytest's failure lines to suites by **string suffix**, and pytest names a file
+  relative to its own rootdir — `../../../../../t/test_x.py`. Neither
+  `suite.endswith(cited)` nor `cited.endswith(suite)` answers that, so the
+  failing suite came back `passed: True`. The worst possible defect in the one
+  agent whose job is to say what fails. Matching is now on the **resolved path**,
+  with a basename fallback used only when the name designates exactly one suite
+  of the batch — attributing at random is worse than not attributing
+- **Playwright had become installed while declared absent.** The counter-test on
+  tolerances fired, correctly. It is now declared in `requirements-optional.txt`,
+  where its nature places it: imported only inside a capability probe, absence
+  measured rather than fatal. Measured after the change: `browser_render` reports
+  `AVAILABLE` with the browser path found, instead of `DEGRADED`
+- **The declaration rule was too coarse.** `requirements-optional.txt` exists for
+  lazily-imported dependencies whose absence disables a feature — its own header
+  says so — but the guard demanded `requirements.txt` regardless, which would
+  impose a browser on every install. Optional declarations now count, and a new
+  counter-test (`test_une_dependance_optionnelle_est_chargee_en_lazy`) fails if
+  an optional dependency is imported at module top level, so the door cannot
+  widen in silence
+- **Three Senegal tests needed data that no clean clone has.** `.gitignore`
+  excludes `data/raw_senegal/*.json`, so they failed everywhere the data had not
+  been acquired. They now skip with the acquisition command, and a new test
+  running **always** checks the absent-data behaviour itself: `comparable: False`,
+  the missing file named, and no invented count. Coverage goes up, not down
+
+Still red, and deliberately: `test_l_etiquette_de_la_version_courante_existe_bien`.
+The `v0.1.0` tag exists in no clone but the author's. Pushing it declares a
+release, which is the maintainer's decision, not a repair.
+
 ### Changed — 2026-08-17
 
 - `SandboxPolicy` gains `extra_environment`: variables supplied explicitly to a

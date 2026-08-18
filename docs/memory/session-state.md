@@ -16,8 +16,11 @@ projets externes recopié, aucune dépendance ajoutée, exécution passée par `
 Branche : `claude/coding-engine-on-phases`, issue de `claude/galsen-ia-phases-ukwz7p`,
 qui n'a **pas** été modifiée.
 
-Vérifié : 5755 tests passent. Les 8 échecs restants préexistaient sur la branche source —
-mesurés avant le portage, non touchés.
+Puis les **8 échecs préexistants** ont été traités : 7 corrigés à la source (dont
+l'agent testeur qui rapportait une suite en échec comme réussie), 1 laissé rouge —
+`v0.1.0` doit être poussée, ce qui est une décision de mainteneur.
+
+Vérifié : **5761 tests passent**, 11 ignorés, 1 échec. `ruff` propre.
 
 **Prochaine étape** : fusionner cette branche, puis les deux gestes qui débloquent le reste —
 `ollama serve` (génération + recherche sémantique) et un `ffmpeg` réel (cinq étapes média).

@@ -23,6 +23,14 @@ pytesseract>=0.3.10
 # Embeddings Tool (modèles lourds ~500 Mo+)
 sentence-transformers>=3.0.0
 
+# === Rendu HTML/CSS/SVG en trames ===
+# Sonde `browser_render` (`src/media/core/capabilities.py`). Importé uniquement
+# dans la sonde, dans un `try/except ImportError` dont l'échec est le résultat
+# mesuré : absent, la capacité est DEGRADE et le moteur refuse le travail au
+# lieu de le simuler. Poids : le paquet est léger, les navigateurs qu'il faut
+# ensuite installer (`playwright install chromium`) pèsent ~150 Mo.
+playwright>=1.40.0
+
 # === Advanced ML ===
 # Knowledge Engine (ranking TF-IDF)
 scipy>=1.10.0

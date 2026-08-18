@@ -204,10 +204,12 @@ class TesterAgent(BaseAgent):
         en_echec = set(re.findall(r'^(\S+\.py)(?:::\S+)? (?:FAILED|ERROR)', sortie, re.MULTILINE))
         en_echec |= set(re.findall(r'^(?:FAILED|ERROR) (\S+\.py)', sortie, re.MULTILINE))
 
+        suites_en_echec = self._suites_citees(suites, en_echec)
+
         total_tests = self._count_tests(sortie)
         resultats: List[Dict[str, Any]] = []
         for suite in suites:
-            echoue = any(suite.endswith(nom) or nom.endswith(suite) for nom in en_echec)
+            echoue = suite in suites_en_echec
             resultat: Dict[str, Any] = {
                 "suite": suite,
                 "passed": not echoue,
@@ -227,6 +229,47 @@ class TesterAgent(BaseAgent):
                 resultat["passed"] = False
                 resultat["reason"] = "aucun test collecté : le lot n'a rien exécuté"
         return resultats
+
+    def _suites_citees(self, suites: List[str], cites: set) -> set:
+        """
+        Associe les chemins cités par pytest aux suites réellement lancées.
+
+        Le rapprochement se fait sur le **chemin résolu**, pas sur un suffixe de
+        chaîne. C'était le défaut : pytest nomme un fichier relativement à sa
+        propre racine, ce qui donne des chemins comme
+        `../../../../../t/test_x.py`. Ni `suite.endswith(cite)` ni
+        `cite.endswith(suite)` n'y répondent, donc une suite **en échec était
+        rapportée comme réussie** — le pire résultat possible pour l'agent dont
+        le métier est de dire ce qui échoue.
+
+        Le repli par nom de fichier ne s'applique que si ce nom ne désigne
+        qu'une seule suite du lot : deux `test_x.py` dans des dossiers
+        différents attribueraient l'échec au hasard, et attribuer au hasard est
+        pire que ne pas attribuer.
+
+        Args:
+            suites: Les suites passées à pytest, telles que reçues.
+            cites: Les chemins relevés dans les lignes d'échec.
+
+        Returns:
+            Les suites du lot que pytest a citées en échec.
+        """
+        par_chemin = {os.path.realpath(suite): suite for suite in suites}
+
+        noms = {}
+        for suite in suites:
+            noms.setdefault(os.path.basename(suite), []).append(suite)
+
+        trouvees = set()
+        for cite in cites:
+            resolu = os.path.realpath(cite)
+            if resolu in par_chemin:
+                trouvees.add(par_chemin[resolu])
+                continue
+            homonymes = noms.get(os.path.basename(cite), [])
+            if len(homonymes) == 1:
+                trouvees.add(homonymes[0])
+        return trouvees
 
     def _run_suite(self, context: AgentContext, suite: str) -> Dict[str, Any]:
         """Exécute une suite par pytest et interprète son résultat.

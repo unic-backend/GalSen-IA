@@ -148,14 +148,87 @@ def test_toute_dependance_importee_par_le_code_est_declaree():
 
     Sans lui, déplacer un paquet vers `requirements-dev.txt` par erreur ne se
     verrait qu'au démarrage du conteneur, en production.
+
+    `requirements-optional.txt` compte comme une déclaration, et c'est la règle
+    corrigée le 2026-08-17. Ce fichier existe pour les dépendances **chargées en
+    lazy, dont l'absence désactive une fonctionnalité sans casser le reste** —
+    son propre en-tête le dit. Playwright est exactement cela : il n'est importé
+    que dans une sonde de capacité, et son absence rend `browser_render` DEGRADE.
+    L'exiger dans `requirements.txt` imposerait un navigateur à toute
+    installation qui ne rend aucune trame HTML, ce qui contredirait le fichier
+    optionnel au lieu de le respecter.
+
+    Ce que le contrôle attrape toujours : un paquet déplacé par erreur vers
+    `requirements-dev.txt`, qui reste **hors** de la déclaration d'exécution.
+    Et `test_une_dependance_optionnelle_est_chargee_en_lazy` empêche cette porte
+    de s'élargir en silence.
     """
+    declarees = _declarees("requirements.txt") | _declarees("requirements-optional.txt")
     attendues = _distributions(_modules_importes(SOURCES_EXECUTION))
-    manquantes = sorted(attendues - _declarees("requirements.txt"))
+    manquantes = sorted(attendues - declarees)
 
     assert manquantes == [], (
         f"importées par {'/'.join(SOURCES_EXECUTION)} mais absentes de "
-        f"requirements.txt : {manquantes}"
+        f"requirements.txt et de requirements-optional.txt : {manquantes}"
     )
+
+
+def test_une_dependance_optionnelle_est_chargee_en_lazy():
+    """
+    Le contre-test de la porte ouverte ci-dessus.
+
+    Une dépendance déclarée optionnelle mais importée en tête de module n'est
+    pas optionnelle : son absence casse l'import du fichier, donc la plateforme,
+    et le fichier `requirements-optional.txt` promettrait alors le contraire de
+    ce qui se passe.
+
+    Le contrôle porte sur les paquets **installés et déclarés optionnels** : ce
+    sont les seuls dont l'import de tête aurait pu passer inaperçu, puisqu'il
+    réussit sur cette machine.
+    """
+    optionnelles = _declarees("requirements-optional.txt")
+    execution = _declarees("requirements.txt")
+    table = packages_distributions()
+
+    fautes = []
+    for chemin in _fichiers_python(SOURCES_EXECUTION):
+        try:
+            arbre = ast.parse(chemin.read_text(encoding="utf-8"))
+        except SyntaxError:  # pragma: no cover - le linter le signalerait avant
+            continue
+        for noeud in arbre.body:
+            if not isinstance(noeud, (ast.Import, ast.ImportFrom)):
+                continue
+            for module in _modules_du_noeud(noeud):
+                racine = module.split(".")[0]
+                distributions = {
+                    nom.lower() for nom in table.get(racine, [racine])
+                }
+                distributions.add(NOM_DE_DISTRIBUTION.get(racine, racine).lower())
+                touchees = distributions & optionnelles - execution
+                if touchees:
+                    fautes.append(f"{chemin}: {sorted(touchees)[0]} importé en tête de module")
+
+    assert fautes == [], (
+        "Dépendances déclarées optionnelles mais importées au chargement du "
+        "module — leur absence casserait l'import : " + " | ".join(fautes)
+    )
+
+
+def _fichiers_python(racines):
+    """Retourne les fichiers Python des racines données."""
+    for racine in racines:
+        yield from (RACINE / racine).rglob("*.py")
+
+
+def _modules_du_noeud(noeud):
+    """Retourne les modules qu'un nœud d'import désigne."""
+    if isinstance(noeud, ast.Import):
+        return [alias.name for alias in noeud.names]
+    if noeud.level:
+        # Import relatif : c'est du code du dépôt, jamais une dépendance.
+        return []
+    return [noeud.module] if noeud.module else []
 
 
 def test_aucun_import_ne_vise_un_paquet_ni_installe_ni_declare():
@@ -193,15 +266,21 @@ def test_aucun_import_ne_vise_un_paquet_ni_installe_ni_declare():
         # fois plus rapide sur CPU, est celle qui est déclarée. Le code accepte
         # les deux.
         "whisper",
-        # `torch` et `playwright` ne sont importés que **dans une sonde de
-        # capacité** (`src/media/core/capabilities.py`), à l'intérieur d'un
-        # `try/except ImportError` dont l'échec est le résultat mesuré : leur
-        # absence rend `gpu_compute` INDISPONIBLE et `browser_render` DEGRADE,
-        # et `require()` refuse alors le travail au lieu de le simuler. Les
-        # déclarer dans `requirements.txt` imposerait plusieurs gigaoctets de
-        # poids CUDA à toute installation qui ne génère aucune vidéo.
+        # `torch` n'est importé que **dans une sonde de capacité**
+        # (`src/media/core/capabilities.py`, `src/media/providers/base.py`), à
+        # l'intérieur d'un `try/except` dont l'échec est le résultat mesuré :
+        # son absence rend `gpu_compute` INDISPONIBLE, et `require()` refuse
+        # alors le travail au lieu de le simuler. Le déclarer imposerait
+        # plusieurs gigaoctets de poids CUDA à toute installation qui ne génère
+        # aucune vidéo.
+        #
+        # `playwright` était ici pour la même raison et **en est sorti le
+        # 2026-08-17** : il est désormais installé sur la machine de référence,
+        # donc « toléré absent » était devenu faux. Il est déclaré dans
+        # `requirements-optional.txt`, où sa nature le place. Mesuré après le
+        # changement : la sonde `browser_render` rapporte AVAILABLE, avec le
+        # chemin du navigateur trouvé.
         "torch",
-        "playwright",
     }
 
     orphelins = _modules_tiers_non_installes(_modules_importes(SOURCES_EXECUTION))
@@ -233,14 +312,27 @@ def test_les_tolerances_sont_reellement_absentes():
     # tant que le paquet est réellement absent. Le jour où l'un est installé, sa
     # capacité cesse d'être « indisponible par construction » et doit être
     # déclarée comme les autres.
-    for module, capacite in (("torch", "gpu_compute"),
-                             ("playwright", "browser_render")):
+    #
+    # C'est arrivé pour `playwright` le 2026-08-17, et la règle a été suivie :
+    # sorti de TOLERES, déclaré dans `requirements-optional.txt`, sonde
+    # `browser_render` mesurée après coup — elle rapporte AVAILABLE avec le
+    # chemin du navigateur trouvé, au lieu de DEGRADE. Il n'est plus contrôlé
+    # ici parce qu'il n'est plus une tolérance.
+    for module, capacite in (("torch", "gpu_compute"),):
         assert module not in installes, (
             f"{module} est désormais installé : retirez-le de TOLERES, "
-            f"déclarez-le dans requirements.txt, et vérifiez que la sonde "
+            f"déclarez-le dans requirements-optional.txt s'il est chargé en "
+            f"lazy — sinon dans requirements.txt —, et vérifiez que la sonde "
             f"« {capacite} » rapporte bien son nouvel état "
             f"(`src/media/core/capabilities.py`)."
         )
+
+    # Le pendant du changement ci-dessus : une tolérance retirée doit avoir été
+    # **remplacée** par une déclaration, jamais simplement effacée.
+    assert "playwright" in _declarees("requirements-optional.txt"), (
+        "playwright est sorti de TOLERES sans être déclaré nulle part : la "
+        "tolérance aurait alors été supprimée au lieu d'être résolue."
+    )
 
 
 def test_les_outils_de_test_ne_sont_pas_dans_l_image():

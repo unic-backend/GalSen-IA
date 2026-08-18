@@ -200,6 +200,61 @@ def test_les_ports_ne_sont_pas_rattaches_a_la_peche(sectorielle):
 # 3. Les divergences administratives
 # ----------------------------------------------------------------------
 
+# ----------------------------------------------------------------------
+# Données acquises, volontairement hors du dépôt
+# ----------------------------------------------------------------------
+#
+# `.gitignore` exclut `data/raw_senegal/*.json` : un clone neuf n'a jamais les
+# jeux bruts, et les acquérir demande le réseau. Les tests qui mesurent l'état
+# **après** acquisition sont donc ignorés quand la source manque — avec la
+# commande qui la produit, jamais en silence.
+#
+# Ce n'est pas un contournement : `test_sans_la_source_iso_rien_n_est_invente`
+# ci-dessous s'exécute **toujours**, y compris sur un clone neuf, et vérifie que
+# l'absence est rapportée au lieu d'être comblée. La couverture augmente ; elle
+# ne diminue pas.
+
+def _source_iso_disponible() -> bool:
+    """Dit si la redistribution ISO 3166-2 est présente sur le disque."""
+    return compare_regions(load_all_knowledge()).get("comparable") is True
+
+
+besoin_de_la_source_iso = pytest.mark.skipif(
+    not _source_iso_disponible(),
+    reason=(
+        "Redistribution ISO 3166-2 absente (`data/raw_senegal/iso-3166-2.json`, "
+        "hors Git par `.gitignore`). Acquérir avec "
+        "`python scripts/ingest_senegal_domains.py`."
+    ),
+)
+
+
+def test_sans_la_source_iso_rien_n_est_invente():
+    """
+    Le contrôle qui vaut sur un clone neuf : une source absente se dit.
+
+    Sans elle, `compare_regions` pourrait rendre une comparaison vide qui se
+    lirait comme « aucune divergence ». Le rapport doit au contraire porter
+    `comparable: False`, nommer le fichier manquant et la commande qui
+    l'acquiert — et n'inventer aucun décompte.
+    """
+    comparaison = compare_regions(load_all_knowledge())
+
+    if comparaison.get("comparable") is True:
+        # La source est là : c'est l'autre moitié du contrat, couverte par les
+        # tests marqués `besoin_de_la_source_iso`.
+        assert comparaison["source_a"]["count"] > 0
+        return
+
+    assert comparaison["comparable"] is False
+    assert "iso-3166-2.json" in comparaison["reason"]
+    assert "ingest_senegal_domains" in comparaison["reason"]
+    # Aucun décompte inventé : l'absence ne devient pas un zéro mesuré.
+    assert comparaison.get("source_a") is None
+    assert comparaison.get("source_b") is None
+
+
+@besoin_de_la_source_iso
 def test_la_comparaison_des_regions_est_faite_entite_par_entite():
     """
     Mesuré : geoBoundaries porte 14 régions, la redistribution ISO 3166-2 en
@@ -219,6 +274,7 @@ def test_la_comparaison_des_regions_est_faite_entite_par_entite():
     assert manquantes == {"Kaffrine", "Kedougou", "Matam", "Sedhiou"}
 
 
+@besoin_de_la_source_iso
 def test_aucune_divergence_n_est_resolue():
     """
     Une divergence arbitrée en silence disparaît du rapport et réapparaît dans
@@ -254,6 +310,7 @@ def test_le_nombre_de_departements_est_inconnu_et_non_en_conflit():
     assert verdict["what_would_settle_it"]
 
 
+@besoin_de_la_source_iso
 def test_la_version_de_la_source_b_est_inconnue_et_le_dit():
     """Une liste ISO sans date peut être ancienne ou divergente : deux actions différentes."""
     comparaison = compare_regions(load_all_knowledge())
