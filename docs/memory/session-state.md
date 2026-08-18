@@ -68,8 +68,15 @@ un test sauté. Le jeu complet tourne en < 1 s, sans modèle ni réseau (§62).
 §64 : les 15 langues de validation sont toutes nommables, **0 comprise, 0
 parlée**, et aucune architecture par langue.
 
-**Prochaine étape** : **phase 17.3** — la tranche verticale MVP (§65, §66) :
-un flux de bout en bout qui dit honnêtement où il s'arrête. 41 faites sur 43.
+**Puis phase 17.3** (§65, §66) — **C17 terminé**. `src/creative/mvp.py` +
+`scripts/creative_slice.py` : les 13 étapes parcourues, **7 ont réellement eu
+lieu**, 2 `BLOCKED`, 2 `NOT_MEASURABLE`, 2 `NOT_REACHED`. `produced_video` est
+`False` et `final_video` reste **dans le total** — le retirer ferait paraître la
+chaîne complète. Toute l'orchestration (6 premières étapes) aboutit ; c'est la
+génération qui manque.
+
+**Prochaine étape** : **C18 — rapport final (§73, §76)**, 1 phase. **Ce sera la
+dernière : 42 faites sur 43.**
 
 **Bloqué** : rien côté code. Sur cette machine : pas de GPU, pas de `torch`,
 `huggingface.co` injoignable → génération, diarisation, ASR et lip-sync restent

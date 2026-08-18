@@ -1062,3 +1062,13 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **§64** : les 15 langues de validation sont **toutes nommables**, `0` comprise, `0` parlée, et aucune architecture par langue — ce qui le prouve est qu'aucune n'apparaît dans le code.
 - Une assertion tautologique (`... or True`) écrite au premier jet a été retirée : elle ne défendait rien.
 - Vérifié : `python -m pytest tests/creative -q` → **352 passent** (333 avant, +19). `ruff` propre.
+
+### 2026-08-18 (VOLET créatif, phase 17.3 — la tranche verticale, §65–§66 — C17 terminé)
+- **`src/creative/mvp.py` parcourt les 13 étapes de §65** et rapporte ce qui a réellement eu lieu, sur la forme qu'a établie `scripts/demonstration.py` dans ce dépôt. Mesuré : **7 `OK`, 2 `BLOCKED`, 2 `NOT_MEASURABLE`, 2 `NOT_REACHED`**, `produced_video: False`. Les six premières étapes — intention, voix, références, monde, direction, découpage — aboutissent toutes : **l'orchestration est en place, c'est la génération qui manque**.
+- **Quatre issues, pas deux.** `NOT_MEASURABLE` n'est pas `BLOCKED` : la vérification d'identité ne serait pas jugeable même si tout le reste marchait, parce qu'aucune mesure n'existe (ADR-026). Et `NOT_REACHED` marque ce qui vient après le premier blocage dur — §21 l'avait déjà établi pour la chaîne vocale : les étapes suivantes ne sont pas « prêtes » au sens utile du terme.
+- **Le compte final ne peut pas se lire comme un succès**, et c'est ce que les tests défendent : `final_video` figure **dans le total** (le retirer ferait paraître la chaîne complète), les étapes non atteintes ne sont jamais comptées comme franchies, et la note dit qu'aucune vidéo n'a été simulée.
+- **Rien n'est inventé pour une étape non alimentée** : sans audio, la voix est `BLOCKED` et non une scène vide qui aurait l'air traitée ; un locuteur sans entité déclarée est **nommé**, jamais rattaché au plus proche — le rattacher inventerait une identité.
+- **L'audio d'origine aboutit sans aucun fournisseur** : c'est la seule étape de la chaîne qu'une absence de travail satisfait (§22), et elle reste `OK` alors que la génération est bloquée.
+- `scripts/creative_slice.py` rend la tranche exécutable par l'exploitant, avec un code de sortie 0 même quand la génération est bloquée : un blocage est une mesure, pas un échec du script.
+- Chiffre corrigé au passage : la docstring du module annonçait « six aboutissent, quatre butent » alors que la mesure donne 7/2/2/2. Les comptes ont été **retirés de la docstring** plutôt que corrigés — les figer les ferait mentir au premier GPU branché.
+- Vérifié : `python -m pytest tests/creative -q` → **370 passent** (352 avant, +18). `python scripts/creative_slice.py` → 7 étapes sur 13. `ruff` propre.
