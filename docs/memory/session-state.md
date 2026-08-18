@@ -23,8 +23,15 @@ frontière privé/global, boucle d'acquisition. La fréquence plafonne à
 `CORROBORATED` ; `VALIDATED` exige un humain nommé, `OFFICIAL` une autorité
 extérieure. Aucun entraînement sur les conversations, et c'est vérifiable.
 
-**Prochaine étape** : **C15 — ModelRouter, appariement par capacités (§36, §43)**,
-2 phases. Puis C16 (GPU/jobs/cache), C17 (API + tests d'or + MVP), C18 (rapport).
+**Puis phase 15.1** (C15, §36) : `src/creative/routing.py` — appariement par
+capacités. Ferme ce que C04 laissait ouvert : `select()` prenait le premier
+inscrit. Règle centrale : **un classement n'a lieu que si tous les candidats
+portent le chiffre**, sinon `UNRANKED`. Et `UNKNOWN` n'est pas `UNMET`.
+
+**Cadence : une phase par tour** depuis le 2026-08-18 (budget de contexte).
+
+**Prochaine étape** : **phase 15.2** — pipelines A et B de §43 (vidéo + lip-sync
+contre génération audio-vidéo native), choisis par capacité mesurée.
 
 **Bloqué** : rien côté code. Sur cette machine : pas de GPU, pas de `torch`,
 `huggingface.co` injoignable → génération, diarisation, ASR et lip-sync restent
