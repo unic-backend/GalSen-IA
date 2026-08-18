@@ -1024,3 +1024,13 @@ Entrées antérieures au 2026-08-09 → `docs/memory/archive/completed-work-2026
 - **Mesuré sur les 9 fournisseurs réellement déclarés** (`corpus/creative/providers.yaml`) : les deux architectures `BLOCKED`, chacune sur une étape différente. Aucune réalisable, aucune recommandée.
 - Un départage n'a lieu que sur une dimension mesurée, additionnée le long des étapes, et **seulement si toutes les étapes des deux architectures la portent** — sinon sommer ce qui existe ferait gagner l'architecture la moins documentée.
 - Vérifié : `python -m pytest tests/creative -q` → **266 passent** (247 avant, +19). `ruff` propre.
+
+### 2026-08-18 (VOLET créatif, phase 16.1 — orchestration des ressources, §52)
+- **Le piège du chapitre, et la règle qui l'évite** : §52 demande de suivre GPU, VRAM, processeur, mémoire, disque, chargement et concurrence. La façon confortable est d'écrire des défauts — 8 Gio de VRAM, quatre travaux — et de router dessus ; le code tourne, les tests passent, et la première exécution réelle se fait tuer par le noyau. Ici **une ressource non mesurée vaut `None`, jamais `0`** : `0 Gio` autorise à conclure, `None` l'interdit.
+- **Mesuré sur cette machine** : 4 cœurs, 15,7 Gio de RAM, 27,48 Gio libres, GPU absent (`torch` manquant) — donc **VRAM `NOT_MEASURED`, pas `0`**. Un fournisseur exigeant 24 Gio n'est ni accepté ni refusé : la question n'a pas pu être posée.
+- **Aucun second détecteur de GPU** : la sonde `gpu_compute` de `src/media/core/capabilities.py` est réutilisée. Et aucune VRAM n'est déduite d'une sonde qui répond « disponible » — savoir qu'un GPU existe ne dit pas combien il en offre.
+- **Rien ne se décharge en silence.** `admit()` nomme le modèle le moins récemment utilisé quand la limite est atteinte, et **ne le décharge pas** : seul l'appelant sait s'il sert encore à une exécution en cours. Un déchargement silencieux transforme un travail en attente inexpliquée, et cette latence-là ne se retrouve jamais.
+- **Aucune limite de résidence déclarée n'est « pas de limite »** : c'est un chiffre que personne n'a posé, et le retour le dit (`NOT_MEASURED`) au lieu d'en choisir un.
+- La file d'attente est explicitement **non suivie ici** : le système de travaux existe déjà, et §53 demande de s'y raccorder — la phase 16.2 le fera plutôt que d'en compter un second.
+- Erreur de comptage corrigée dans le plan : il annonçait **38 phases depuis PHASE 0, il y en a 43**. Recompté colonne par colonne ; les phases par volet n'ont pas changé, c'est la somme qui était fausse.
+- Vérifié : `python -m pytest tests/creative -q` → **283 passent** (266 avant, +17). `ruff` propre.

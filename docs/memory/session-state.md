@@ -36,8 +36,18 @@ fournisseur* quand l'enregistrement est gardé ; la traiter autrement pousserait
 vers B là où B est le mauvais choix. Mesuré sur les 9 fournisseurs déclarés :
 les deux `BLOCKED`, sur des étapes différentes. **C15 est terminé.**
 
-**Prochaine étape** : **C16 — orchestration GPU, files et cache (§52–§54)**,
-2 phases. Puis C17 (API + tests d'or + MVP, 3 phases) et C18 (rapport final).
+**Puis phase 16.1** (§52) : `src/creative/resources.py`. Règle unique — **une
+ressource non mesurée vaut `None`, jamais `0`** : `0 Gio` conclut, `None`
+interdit de conclure. Mesuré ici : 4 cœurs, 15,7 Gio de RAM, 27,5 Gio libres,
+GPU absent (`torch` manquant) donc **VRAM `NOT_MEASURED`**. Rien ne se décharge
+en silence : `admit()` nomme ce qu'il faudrait libérer, l'appelant décide.
+
+**Le plan annonçait 38 phases : c'était une erreur d'addition, il y en a 43.**
+Recompté et corrigé le 2026-08-18. 38 faites, 5 restantes.
+
+**Prochaine étape** : **phase 16.2** — travaux et cache (§53, §54), en se
+**raccordant au système de travaux existant** (§53 le demande nommément) au lieu
+d'en compter un second.
 
 **Bloqué** : rien côté code. Sur cette machine : pas de GPU, pas de `torch`,
 `huggingface.co` injoignable → génération, diarisation, ASR et lip-sync restent
