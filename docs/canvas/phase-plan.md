@@ -32,7 +32,7 @@ how an orchestrator becomes a cage.
 
 ```
 K00  Audit — GalSen IA's creative/video, security, memory, provenance  → 2 phases  ✅
-K01  Audit — the five repositories, one at a time (§2, §4)             → 3 phases
+K01  Audit — the five repositories, one at a time (§2, §4)             → 3 phases  ✅
 K02  Licence and dependency matrix (§18) — the gate                    → 1 phase (indivisible)
 K03  Obsolete assumptions + Creative Canvas architecture (§5, §7)      → 2 phases
 K04  Provider comparison, ADR-031, feasibility report (§11, §25)       → 2 phases
@@ -42,7 +42,8 @@ K07  Smallest validated vertical slice (§22)                           → 2 ph
 K08  Full regression, measurements, final report (§24, §26)            → 1 phase (indivisible)
 ```
 
-**Total: 17 phases.** Completed: **2**. Audit → `docs/canvas/audit.md`.
+**Total: 17 phases.** Completed: **5**.
+Audits → `docs/canvas/audit.md` (K00), `docs/canvas/repo-audit.md` (K01).
 
 ---
 
@@ -74,6 +75,12 @@ Both also serve an identical README first line — *"# Open Higgsfield AI —
 Open-Source Alternative"* — which suggests one is a fork or copy of the other.
 Establishing that relationship is part of K01, because "which implementation is
 technically superior" (§2 D) is a different question when one is a copy.
+
+**K01 settled that relationship**: `index.html` and `src/main.js` are
+byte-identical (SHA-256) between the two unlicensed repositories — one is a
+repackaging of the other, not a competing design. Full findings, including a
+licence discrepancy inside `abdrsan/Higgsfield-Open` itself, →
+`docs/canvas/repo-audit.md`.
 
 **So K02 is not a formality placed after the fun part.** It is a gate: two
 candidates could be disqualified before a single idea is extracted from them,
