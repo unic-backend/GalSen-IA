@@ -5,7 +5,9 @@ Baseline `e170a03`, 6 191 tests passing in CI, `ruff` clean.
 Continues the Universal Creative Intelligence programme (44 phases, complete —
 `docs/creative/phase-plan.md`), and does **not** restart it.
 
-**Cadence: one phase per turn**, as agreed on 2026-08-18 for context budget.
+**Cadence: two phases per turn**, as the project owner asked on 2026-08-19.
+(It was one per turn on 2026-08-18; recording the change here so the plan and
+`.claude/rules/phase-protocol.md` do not diverge.)
 
 ---
 
@@ -22,7 +24,7 @@ architecture.
 ## The 10 volets, and their phases
 
 ```
-M00  Audit — report vs repository, and the two provider registries  → 2 phases
+M00  Audit — report vs repository, and the provider registries       → 2 phases  ✅
 M01  Audit — existing video, reference, identity, audio systems      → 2 phases
 M02  Research — MoneyPrinterTurbo, read from source not from README  → 2 phases
 M03  Licence audit — MPT and its dependency tree (§30)               → 1 phase (indivisible)
@@ -34,7 +36,7 @@ M08  Golden tests §38 — mapped to existing coverage, then completed  → 2 ph
 M09  Measurements and final report (§39, §42)                        → 1 phase (indivisible)
 ```
 
-**Total: 15 phases.** Completed: **0**.
+**Total: 15 phases.** Completed: **2**. Audit → `docs/providers/audit.md`.
 
 ---
 
@@ -47,13 +49,10 @@ because `huggingface.co` had no route from this container. Here the licence
 audit of §30 can produce answers instead of absences — so **M03 is a real phase
 with a real deliverable**, not a phase that documents its own impossibility.
 
-**Two provider abstractions already exist**, and this is the programme's central
-risk:
-
-| Abstraction | Where | What it holds today |
-|---|---|---|
-| Media providers | `src/media/providers/` | `base.py`, `wangp.py` |
-| Creative providers | `src/creative/providers.py` | `ProviderRegistry`, 9 declared candidates |
+**Two provider abstractions already exist** — *corrected by M00.2: there are
+**three***, and the third (`src/model_engine/providers/`) selects language
+models, not media generators. Finding it before writing an adapter is the whole
+point of auditing first. Full table → `docs/providers/audit.md`.
 
 §6 says plainly: *"DO NOT create a parallel architecture if an existing provider
 abstraction already exists."* There are two. Adding MoneyPrinterTurbo to the
