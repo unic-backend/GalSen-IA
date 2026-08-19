@@ -8,10 +8,10 @@ phase attend une confirmation.
 VOLET en cours   : **RESEARCH ORCHESTRATION INTEGRATION**
 Plan complet     : `docs/research/phase-plan.md`
 Phases           : 18
-Phase courante   : **R09.1 — en attente de confirmation** (les dix-huit cas de
-                   test nommés par STEP 12)
-Terminées        : R00 à R08 — quatre audits, ADR-032, et `src/research/` :
-                   providers, routing, safety, sources, pipeline, cache
+Phase courante   : **R10 — en attente de confirmation** (mesures de performance
+                   et transparence fournisseur, STEP 13 et 14 — indivisible)
+Terminées        : R00 à R09 — quatre audits, ADR-032, `src/research/` (7 modules)
+                   et la cartographie STEP 12
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :

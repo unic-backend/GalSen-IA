@@ -41,15 +41,16 @@ R05  ResearchRouter — routing and fallback (STEP 5)                          �
 R06  Source trust and security boundaries (STEP 6, STEP 10)                  → 1 phase (indivisible)  ✅
 R07  Research pipeline, knowledge status, provenance (STEP 7, 8, 9)          → 2 phases  ✅
 R08  Caching and freshness (STEP 11)                                         → 1 phase (indivisible)  ✅
-R09  The eighteen named test cases (STEP 12)                                 → 2 phases
+R09  The eighteen named test cases (STEP 12)                                 → 2 phases  ✅
 R10  Performance measurements and provider transparency (STEP 13, 14)        → 1 phase (indivisible)
 R11  Final validation, regression, final report (STEP 16, mandatory rule)    → 1 phase (indivisible)
 ```
 
 **Total: 18 phases.** Counted programmatically, not estimated.
-Completed: **14**. Decision → **ADR-032**.
+Completed: **16**. Decision → **ADR-032**.
 Code → `src/research/` : `providers.py`, `routing.py`, `safety.py`,
-`sources.py`, `pipeline.py`, `cache.py` (182 tests, 1 skipped). Audits → `docs/research/audit.md` (R00),
+`sources.py`, `pipeline.py`, `cache.py`, `golden.py` (206 tests, 1 skipped).
+STEP 12 mapping → `docs/research/test-mapping.md`. Audits → `docs/research/audit.md` (R00),
 `docs/research/repo-audit.md` (R01), `docs/research/licence-matrix.md` (R02),
 `docs/research/capability-comparison.md` (R03).
 
