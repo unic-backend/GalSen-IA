@@ -61,6 +61,7 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - Prompts → `.claude/rules/prompts.md`
 - Git → `.claude/rules/git-workflow.md`
 - Testing → `.claude/rules/testing.md`
+- Post-integration validation → `.claude/rules/post-integration-validation.md`
 
 ## Hard Rules
 - NEVER commit secrets or `.env` files.
