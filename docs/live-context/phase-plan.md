@@ -34,7 +34,7 @@ L01  Call.md audited from source (PHASE 1, §2, §3)                      → 2 
 L02  Existing real-time capability audit (PHASE 2, §7, §8, §41)         → 1 phase (indivisible)  ✅
 L03  Licence and dependency matrix (§38, §39) — the gate                → 1 phase (indivisible)  ✅
 L04  LiveContextEngine architecture + ADR-033 (PHASE 3, §5, §6, §42)    → 2 phases  ✅
-L05  Smallest validated live-input slice (PHASE 4, §7)                  → 2 phases
+L05  Smallest validated live-input slice (PHASE 4, §7)                  → 2 phases  ✅
 L06  ContextFusionEngine (PHASE 5, §13)                                 → 2 phases
 L07  Speakers and languages (PHASE 6, §9, §10, §11)                     → 2 phases
 L08  Live assistance and nudges (PHASE 7, §19, §20)                     → 2 phases
@@ -48,7 +48,8 @@ L15  Performance, hardening, full regression, final report (13–15, §45) → 2
 ```
 
 **Total: 27 phases.** Counted programmatically, not estimated.
-Completed: **8**. Decision → **ADR-033**. Audits → `docs/live-context/audit.md` (L00),
+Completed: **10**. Decision → **ADR-033**.
+First code → `src/live_context/` : `state.py`, `capture.py` (51 tests). Audits → `docs/live-context/audit.md` (L00),
 `repo-audit.md` (L01), `realtime-audit.md` (L02), `licence-matrix.md` (L03).
 
 **Several of these volets will shrink**, and the plan says so now rather than
