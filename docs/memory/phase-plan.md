@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **CREATIVE CANVAS & CINEMA ORCHESTRATION EXTENSION**
 Plan complet     : `docs/canvas/phase-plan.md`
 Phases           : 17
-Phase courante   : **K01.1 — en attente de confirmation**
-Terminées        : K00.1, K00.2
+Phase courante   : **K02 — en attente de confirmation** (matrice licences, verrou)
+Terminées        : K00.1, K00.2, K01.1, K01.2, K01.3
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :
