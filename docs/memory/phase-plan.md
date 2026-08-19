@@ -32,38 +32,51 @@ directive la redit mot pour mot à la fin ; elle s'appliquait déjà.
 
 ## Ce que les sondes ont déjà établi
 
-**Les deux dépôts sont joignables, portent un vrai `LICENSE`, et sont en
-Python.**
+**Call.md est une application Electron/TypeScript, et sa licence est déclarée
+sans être déposée.**
 
-| Dépôt | Licence | Manifeste |
-|---|---|---|
-| `Panniantong/Agent-Reach` | **MIT**, © 2025 Agent Eyes | `pyproject.toml` |
-| `sydasif/web-search-mcp` | **MIT**, © 2026 Syed Asif | `pyproject.toml` |
+| Lu | Valeur |
+|---|---|
+| `package.json` | `call-md` **1.0.4**, `"license": "MIT"` |
+| Fichier `LICENSE` | **absent** — 404 sur cinq noms × deux branches |
+| Pile | Electron 42, React 19, tRPC, Drizzle + SQLite, **`videodb`**, SDK MCP |
+| Python | **aucun** |
 
-**C'est l'inverse du programme précédent**, où quatre dépôts sur cinq étaient en
-JavaScript et deux n'avaient aucune licence. Ici du code pourrait réellement être
-adoptable — même langage, même empaquetage, licence lisible des deux côtés.
+Un champ de manifeste est une déclaration, pas une concession : consigné **MIT
+`DECLARED`**, jamais `AUTHORITATIVE`.
 
-R02 n'est donc pas une porte qui se fermera d'évidence : c'est un vrai audit de
-dépendances, et la directive l'exige séparément. Le programme MoneyPrinterTurbo a
-trouvé exactement ce piège — un dépôt MIT dont le chemin de capacité réel était
-LGPL-3.0.
+**Call.md n'enregistre pas sous Linux** — sa propre table le dit : l'application
+refuse d'enregistrer avant de démarrer, faute de binaire de capture. GalSen IA
+tourne sous Linux.
 
-## Ce que R00 doit établir avant toute proposition de module
+**Cet environnement n'a aucune entrée live** : ni `/dev/snd`, ni `/dev/video*`,
+`DISPLAY` vide, `ffmpeg` hors `PATH`. Les latences de capture et de
+transcription rendront `NOT_MEASURED`, et la tranche de L05 devra le **rapporter**
+plutôt que le simuler.
 
-La plateforme est déjà dense ici : `src/knowledge_engine/` porte plus de
-vingt-huit modules — dont `citations.py`, `freshness.py`, `contradictions.py`,
-`knowledge_security.py`, `knowledge_cache.py`, `knowledge_validator.py` — plus
-`src/services/search/`, `src/mcp/`, `src/connectors/` et `src/acquisition/`
-(chemin d'acquisition sous contrôle humain, ADR-021, dix contrôles qualité).
+## La contrainte qui décide du programme
 
-Le programme précédent a mesuré que **neuf des onze sous-systèmes réclamés
-existaient déjà**. Le pari honnête ici est que la proportion est au moins aussi
-élevée. R00 classe chaque capacité — `EXISTING`, `EXTENSION_REQUIRED`,
-`NEW_COMPONENT_REQUIRED`, `DEPRECATED`, `UNKNOWN` — avant qu'un seul module
-nouveau soit proposé.
+**Deux ADR acceptées tranchent déjà ce que §12 et §26 proposent d'évaluer.**
+
+- **ADR-014** — la plateforme ne dépend d'aucun modèle externe à l'exécution.
+- **ADR-018** — la dérogation est une configuration, jamais un paramètre de
+  requête, et trois catégories sont refusées **quoi que dise la configuration** :
+  mémoires/fichiers/connaissances de l'utilisateur, **captures d'écran**, export
+  de données d'entraînement.
+
+Or L01 a mesuré que **VideoDB porte la capture, la transcription et l'inférence**
+dans Call.md. L'option A du §26 heurte donc ADR-014 et ADR-018 ; l'option B est
+compatible. **C'est documenté, pas tranché** : amender une ADR appartient au
+propriétaire.
 
 ## Ce qui ne doit pas être reconstruit
 
-Trois registres de fournisseurs et deux systèmes de provenance existent déjà.
-STEP 9 le redit : *ne pas créer d'architecture de provenance concurrente*.
+**Six des neuf items du §41 existent déjà** : transcription, mémoire,
+orchestration MCP, boucle d'agent, base de données, moteur de résumé. Trois
+manquent : diarisation, gestionnaire de contexte, et un bus d'événements dont
+L04 décidera la nécessité.
+
+Et **deux exigences présentées comme neuves sont déjà implémentées** :
+`creative/language/switching.py` (alternance de langues, structurée et jamais
+devinée) et `creative/voice/scene.py` (l'audio d'origine reste l'artefact
+source). Le `NudgeEngine` du §20 serait `src/proactive/` écrit deux fois.
