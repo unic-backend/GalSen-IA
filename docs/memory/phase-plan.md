@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **MASTER UPDATE DIRECTIVE V4 — MoneyPrinterTurbo comme fournisseur ajouté**
 Plan complet     : `docs/providers/phase-plan.md`
 Phases           : 15
-Phase courante   : **M03 — en attente de confirmation**
-Terminées        : M00.1, M00.2, M01.1, M01.2, M02.1, M02.2
+Phase courante   : **M05 — en attente de confirmation**
+Terminées        : M00.1 → M04 (8 phases)
 Cadence          : **deux phases par tour** (demandé par le propriétaire le 2026-08-19)
 
 ---
@@ -71,8 +71,30 @@ Elles restent la responsabilité de GalSen IA.
 — il n'en fait pas — mais **le TTS et l'ASR**, les deux capacités que cette
 plateforme mesure `ABSENT` et `UNAVAILABLE`.
 
-## Ce que M03 fera
+## M03 et M04 — faits. `licence-matrix.md`, `alternatives.md`
 
-L'audit de licence de §30 : MPT **et son arbre de dépendances**. `edge-tts`
-atteint un point d'accès Microsoft, `faster-whisper` télécharge un modèle, et
-Pexels/Pixabay exigent des clés. Une licence MIT de dépôt ne dit rien de tout ça.
+**Le dépôt est MIT ; l'arbre de dépendances ne l'est pas.**
+`edge-tts` — c'est-à-dire **la capacité même pour laquelle on voudrait MPT** —
+est **LGPL-3.0**, et le SDK Azure est **propriétaire**. C'est exactement la
+confusion que §30 existe pour empêcher.
+
+**Les droits sur la sortie sont `UNKNOWN`** : les rushes viennent de Pexels et
+Pixabay, et personne ici n'a lu leurs conditions. Une vidéo produite ainsi puis
+vendue reposerait sur des termes que nul n'a lus. Le fournisseur doit donc
+déclarer `commercial=UNKNOWN` — et le routeur existant le refusera pour tout
+travail commercial, ce qui est le comportement déjà construit (ADR-024).
+
+**Porte §40 n°10 : la seule qui n'est pas verte**, et de façon intéressante —
+licence bonne pour le code, non résolue pour ce qu'on veut vraiment.
+
+**M04 : le TTS de MPT n'est ni le seul ni le plus permissif.** `kokoro-tts` est
+**MIT et local** ; `edge-tts` est LGPL-3.0 et appelle un service distant. Et
+`whisperx` (BSD-2) couvre en plus la **séparation de locuteurs**, que cette
+plateforme rapporte `BLOCKED` sans aucune implémentation. Couverture wolof /
+sérère / pulaar : **`UNKNOWN` pour tous**, non vérifiée.
+
+## Ce que M05 fera
+
+L'ADR-030 : quel registre, quel mode d'invocation, et **si l'adaptateur vaut
+d'être écrit maintenant** — puisque MPT exige un `ffmpeg` absent et rapporterait
+`BLOCKED` de toute façon.

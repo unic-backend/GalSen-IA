@@ -27,8 +27,8 @@ architecture.
 M00  Audit — report vs repository, and the provider registries       → 2 phases  ✅
 M01  Audit — existing video, reference, identity, audio systems      → 2 phases  ✅
 M02  Research — MoneyPrinterTurbo, read from source not from README  → 2 phases  ✅
-M03  Licence audit — MPT and its dependency tree (§30)               → 1 phase (indivisible)
-M04  Research — current alternatives (§34)                           → 1 phase (indivisible)
+M03  Licence audit — MPT and its dependency tree (§30)               → 1 phase (indivisible)  ✅
+M04  Research — current alternatives (§34)                           → 1 phase (indivisible)  ✅
 M05  Integration proposal + ADR-030: which registry, and why (§6)    → 1 phase (indivisible)
 M06  MoneyPrinterTurboProvider — the smallest validated slice (§37)  → 2 phases
 M07  Routing, composition, fallback (§7, §8, §29)                    → 1 phase (indivisible)
@@ -36,9 +36,10 @@ M08  Golden tests §38 — mapped to existing coverage, then completed  → 2 ph
 M09  Measurements and final report (§39, §42)                        → 1 phase (indivisible)
 ```
 
-**Total: 15 phases.** Completed: **6**.
+**Total: 15 phases.** Completed: **8**.
 Audit → `docs/providers/audit.md` · matrice → `docs/providers/capability-matrix.md`
-· recherche MPT → `docs/providers/moneyprinterturbo-research.md`.
+· recherche MPT → `docs/providers/moneyprinterturbo-research.md`
+· licences → `docs/providers/licence-matrix.md` · alternatives → `docs/providers/alternatives.md`.
 
 ---
 
