@@ -65,6 +65,7 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - Testing → `.claude/rules/testing.md`
 - Post-integration validation → `.claude/rules/post-integration-validation.md`
 - Spec-driven governance & scope → `.claude/rules/spec-driven-governance.md`
+- Spec Kit constitution (pointers only) → `.specify/memory/constitution.md`
 
 ## Hard Rules
 - NEVER commit secrets or `.env` files.
