@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **MASTER UPDATE DIRECTIVE V4 — MoneyPrinterTurbo comme fournisseur ajouté**
 Plan complet     : `docs/providers/phase-plan.md`
 Phases           : 15
-Phase courante   : **M01.1 — en attente de confirmation**
-Terminées        : M00.1, M00.2
+Phase courante   : **M02.1 — en attente de confirmation**
+Terminées        : M00.1, M00.2, M01.1, M01.2
 Cadence          : **deux phases par tour** (demandé par le propriétaire le 2026-08-19)
 
 ---
@@ -32,7 +32,25 @@ Ne pas le rouvrir ; §1 du nouveau programme interdit de reconstruire ce qui mar
 - `creative/providers.py` déclare **étendre** `media/providers/base.py` (ADR-024),
   donc la superposition est déjà tranchée — ce qui dérisque M05.
 
-## Ce que M01 fera
+## M01 — fait. `docs/providers/capability-matrix.md`
 
-Auditer les systèmes vidéo, références, identité et audio **existants** (§36
-STEP 4-6, §21) : les vérifier contre le code, jamais les réécrire.
+- **17 étapes média : 10 `READY`, 6 `BLOCKED`, 1 `ABSENT`.** Quatre des six
+  blocages tiennent à **un `ffmpeg` manquant**, pas à un fournisseur : un
+  générateur vidéo ne débloque au mieux que **2 étapes sur 17**.
+- `wangp.py` = `ADAPTER_ONLY`, `generate()` **refuse toujours** — classé `KEEP` :
+  le retirer effacerait la trace de *pourquoi* la vidéo est bloquée.
+- Ingestion de références : `image_analysis` **disponible**, mesure dimensions /
+  ratio / couleurs ; refuse visage, corps, géométrie, mouvement. Identité :
+  7 dimensions, **7 `NOT_MEASURABLE`**. Aucun fournisseur ne change cela.
+- **Classement §21 : 8 KEEP, 3 EXTEND, 1 ADAPT, 0 DEPRECATE, 0 REPLACE.**
+  Aucune preuve trouvée pour un quelconque remplacement.
+- **Hypothèse à vérifier en M02** : la synthèse vocale est `ABSENT` ici et MPT
+  documente un TTS. Si c'en est un, MPT apporterait *l'étape que rien
+  n'implémente* — argument d'intégration très différent de « un générateur
+  vidéo ». À confronter à la source, pas au README.
+
+## Ce que M02 fera
+
+Rechercher MoneyPrinterTurbo **dans sa source** (§4, §5) : version, architecture,
+API, pipeline, TTS, sous-titres, dépendances — et classer chaque capacité en
+`SUPPORTED` / `PARTIAL` / `EXPERIMENTAL` / `UNKNOWN` / `UNSUPPORTED`.
