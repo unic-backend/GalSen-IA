@@ -8,9 +8,9 @@ phase attend une confirmation.
 VOLET en cours   : **OPENCLAW COMPATIBILITY & SAFE INTEGRATION**
 Plan complet     : `docs/openclaw/phase-plan.md`
 Phases           : 19
-Phase courante   : **O00.1 — en attente de confirmation** (audit du dépôt,
-                   première moitié des 27 sous-systèmes du §2)
-Terminées        : aucune
+Phase courante   : **O01.1 — en attente de confirmation** (recherche OpenClaw
+                   depuis les sources officielles, §3 et §4)
+Terminées        : O00.1 et O00.2 — `docs/openclaw/repo-audit.md`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :

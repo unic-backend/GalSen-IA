@@ -46,7 +46,7 @@ Three things are therefore forbidden for the whole plan below:
 ## The 13 volets, and their phases
 
 ```
-O00  Repository audit — the 27 subsystems of §2                  → 2 phases
+O00  Repository audit — the 27 subsystems of §2                  → 2 phases  ✅
 O01  OpenClaw research from official sources (§3, §4)            → 2 phases
 O02  Duplication matrix (§5)                                     → 1 phase (indivisible)
 O03  Tool permission model and sandbox (§7, §8)                  → 2 phases
@@ -86,9 +86,18 @@ memory.
 
 ## Where this programme starts
 
-**O00.1 — the first half of §2's subsystem list**, classified
-`EXISTING` / `PARTIAL` / `MISSING` / `DUPLICATE` / `UNKNOWN` against the real
-repository, with the path that proves each verdict. No file is modified.
+**O00 is done** — `docs/openclaw/repo-audit.md`. 27 subsystems classified
+against the real repository, 22 `EXISTING`, 4 `PARTIAL`, 0 `MISSING`, 0
+`UNKNOWN`, with the path proving each verdict and three candidate duplications
+recorded for O02.
 
-Nothing is read about OpenClaw until O01: knowing what this repository already
-has is what makes the duplication matrix of §5 mean anything.
+**The finding that changes the programme**: this repository already contains an
+OpenClaw analysis (`docs/architecture/agent-foundations-comparison.md`, dated
+2026-08-12) and **ADR-017 was partly decided on it**. That is not a shortcut —
+a claim inside this repository is not an official source, and §3 says do not
+rely on old information. O01 verifies from official sources or records
+`UNKNOWN`.
+
+**Next: O01.1 and O01.2** — OpenClaw researched from official sources at
+execution time, with the runtime / model / gateway / sandbox distinction §4
+requires.
