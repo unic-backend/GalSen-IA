@@ -47,7 +47,7 @@ Three things are therefore forbidden for the whole plan below:
 
 ```
 O00  Repository audit — the 27 subsystems of §2                  → 2 phases  ✅
-O01  OpenClaw research from official sources (§3, §4)            → 2 phases
+O01  OpenClaw research from official sources (§3, §4)            → 2 phases  ✅
 O02  Duplication matrix (§5)                                     → 1 phase (indivisible)
 O03  Tool permission model and sandbox (§7, §8)                  → 2 phases
 O04  Multi-user isolation (§9)                                   → 1 phase (indivisible)
@@ -98,6 +98,15 @@ a claim inside this repository is not an official source, and §3 says do not
 rely on old information. O01 verifies from official sources or records
 `UNKNOWN`.
 
-**Next: O01.1 and O01.2** — OpenClaw researched from official sources at
-execution time, with the runtime / model / gateway / sandbox distinction §4
-requires.
+**O01 is done** — `docs/openclaw/openclaw-audit.md`. Read 2026-08-19 from
+`github.com/openclaw/openclaw` and its `docs/` sources; `docs.openclaw.ai` is
+`EGRESS_BLOCKED` by this environment and the refusal is recorded verbatim.
+
+Established: it is a **gateway running an agent loop, not a model** (§4
+satisfied); **MIT with a filed `LICENSE`**, dependency licences `UNKNOWN`;
+**sandboxing is off by default** and the project states it is *"not a perfect
+security boundary"*; multi-tenant isolation is **per-container, experimental**,
+and *"session IDs … do not authorize one tenant against another"*; and the
+provider list covers every model family §10 names.
+
+**Next: O02** — the duplication matrix (§5), one indivisible phase.
