@@ -12,9 +12,14 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
-### Decided — 2026-08-19 — The Creative Canvas is a server-side graph (ADR-031, Creative Canvas directive, K00–K04)
+### Added — 2026-08-19 — The Creative Canvas is a server-side graph (ADR-031, Creative Canvas directive, 17 phases)
 
-Ten of seventeen phases. Audits → `docs/canvas/`; decision → **ADR-031**.
+**Nine volets, seventeen phases, all completed.** Full report →
+`docs/canvas/final-report.md`. Audits → `docs/canvas/`; decision → **ADR-031**.
+
+Seven modules: `src/creative/intent.py`, `src/creative/cinema.py`, and
+`src/creative/canvas/` (ports, graph, privacy, readiness, slice). **130 tests
+added, 6 363 passing.** No existing source file was touched.
 
 **Nothing from the five candidate repositories is adopted.** §4's classification
 came out 0 KEEP, 0 ADAPT, 3 REFERENCE ONLY, 2 REJECT — and the two rejections are

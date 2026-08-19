@@ -5,17 +5,18 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **CREATIVE CANVAS & CINEMA ORCHESTRATION EXTENSION**
-Plan complet     : `docs/canvas/phase-plan.md`
-Phases           : 17
-Phase courante   : **K08 — en attente de confirmation** (régression complète, mesures, rapport final)
-Terminées        : K00.1, K00.2, K01.1, K01.2, K01.3, K02, K03.1, K03.2, K04.1,
-                   K04.2, K05.1, K05.2, K06.1, K06.2, K07.1, K07.2
+VOLET en cours   : **RESEARCH ORCHESTRATION INTEGRATION**
+Plan complet     : `docs/research/phase-plan.md`
+Phases           : 18
+Phase courante   : **R00.1 — en attente de confirmation** (audit de l'existant :
+                   recherche, RAG, connaissance, MCP, connecteurs)
+Terminées        : aucune
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :
 `.claude/rules/post-integration-validation.md` — toute phase se termine par une
-validation de non-régression complète, jamais par une compilation.
+validation de non-régression complète, jamais par une compilation. La nouvelle
+directive la redit mot pour mot à la fin ; elle s'appliquait déjà.
 
 ---
 
@@ -24,48 +25,43 @@ validation de non-régression complète, jamais par une compilation.
 1. **Universal Creative Intelligence** — 44 phases. `docs/creative/final-report.md`
 2. **Master Update Directive V4 (MoneyPrinterTurbo)** — 15 phases.
    `docs/providers/final-report.md`, ADR-030.
+3. **Creative Canvas & Cinema Orchestration** — 17 phases.
+   `docs/canvas/final-report.md`, ADR-031.
 
 ## Ce que les sondes ont déjà établi
 
-Les **5 dépôts sont joignables** (`200`). Mais **2 n'ont aucun fichier de
-licence** — ni `LICENSE`, ni `.md`, ni `.txt`, ni `COPYING`, sur `main` **ni**
-`master` : `clearsolid/open-higgsfield-ai` et `troy1471-sys/open-higgsfield`.
+**Les deux dépôts sont joignables, portent un vrai `LICENSE`, et sont en
+Python.**
 
-La directive les annonce MIT tous les deux. **L'absence de licence n'est pas
-MIT : c'est tous droits réservés.** K02 est donc une porte, pas une formalité —
-deux candidats peuvent être écartés avant qu'une seule idée en soit extraite.
+| Dépôt | Licence | Manifeste |
+|---|---|---|
+| `Panniantong/Agent-Reach` | **MIT**, © 2025 Agent Eyes | `pyproject.toml` |
+| `sydasif/web-search-mcp` | **MIT**, © 2026 Syed Asif | `pyproject.toml` |
 
-Les deux servent en outre une première ligne de README identique : l'un est
-peut-être une copie de l'autre, ce que K01 doit établir.
+**C'est l'inverse du programme précédent**, où quatre dépôts sur cinq étaient en
+JavaScript et deux n'avaient aucune licence. Ici du code pourrait réellement être
+adoptable — même langage, même empaquetage, licence lisible des deux côtés.
 
-## K00 — fait. `docs/canvas/audit.md`
+R02 n'est donc pas une porte qui se fermera d'évidence : c'est un vrai audit de
+dépendances, et la directive l'exige séparément. Le programme MoneyPrinterTurbo a
+trouvé exactement ce piège — un dépôt MIT dont le chemin de capacité réel était
+LGPL-3.0.
 
-**§11 demande 15 types de registre ; l'essentiel existe déjà** en champs sur deux
-types. `CreativeProvider` en porte 15, `LicenceRecord` 6. **Trois manques réels
-seulement** : `ProviderPrivacyPolicy` (§20 n'a aucun logement — où vont les
-médias, sont-ils conservés, l'exécution locale est-elle possible), un **niveau de
-confiance par type de nœud** (la frontière existe, la correspondance non), et un
-`GenerationResult` partagé (sans objet tant qu'aucun fournisseur ne tourne).
+## Ce que R00 doit établir avant toute proposition de module
 
-**Sécurité mesurée : 7 failles, et `score: None`** — le module refuse de se noter
-*« une note ferait disparaître la faille qui compte derrière la moyenne de celles
-qui ne comptent pas »*. Trois touchent ce programme : système de fichiers
-(un canvas qui reçoit une photo en hérite), réseau, et **portillon d'approbation
-en mémoire** (un redémarrage perd les décisions de consentement).
+La plateforme est déjà dense ici : `src/knowledge_engine/` porte plus de
+vingt-huit modules — dont `citations.py`, `freshness.py`, `contradictions.py`,
+`knowledge_security.py`, `knowledge_cache.py`, `knowledge_validator.py` — plus
+`src/services/search/`, `src/mcp/`, `src/connectors/` et `src/acquisition/`
+(chemin d'acquisition sous contrôle humain, ADR-021, dix contrôles qualité).
 
-**L'auto-réparation porte déjà `rollback` et `run_validation`** — c'est ce qui
-rend la nouvelle règle permanente implémentable et non velléitaire.
+Le programme précédent a mesuré que **neuf des onze sous-systèmes réclamés
+existaient déjà**. Le pari honnête ici est que la proportion est au moins aussi
+élevée. R00 classe chaque capacité — `EXISTING`, `EXTENSION_REQUIRED`,
+`NEW_COMPONENT_REQUIRED`, `DEPRECATED`, `UNKNOWN` — avant qu'un seul module
+nouveau soit proposé.
 
-**Deux systèmes de provenance existent, légitimement** : `acquisition/` pour
-l'origine d'un *fait*, `creative/jobs.py` pour celle d'un *artefact*. Un nœud de
-canvas produit des artefacts : il utilise le second. En écrire un troisième
-serait la faute.
+## Ce qui ne doit pas être reconstruit
 
-**Conclusion : le canvas est un problème de composition, pas de construction** —
-l'inverse de ce que suggérerait une implémentation de graphe de nœuds, et la
-raison pour laquelle §5 dit de ne pas simplement embarquer OpenCanvas.
-
-## Ce que K01 fera
-
-Auditer les cinq dépôts un par un (§2, §4), en commençant par les trois dont la
-licence a été vérifiée — les deux sans licence attendent la porte K02.
+Trois registres de fournisseurs et deux systèmes de provenance existent déjà.
+STEP 9 le redit : *ne pas créer d'architecture de provenance concurrente*.

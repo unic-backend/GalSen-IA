@@ -39,10 +39,11 @@ K04  Provider comparison, ADR-031, feasibility report (§11, §25)       → 2 p
 K05  CreativeIntent — required / optional / forbidden (§6, §7)         → 2 phases  ✅
 K06  Cinema layer — CameraSpec, LensSpec, ShotSpec normalised (§10)    → 2 phases  ✅
 K07  Smallest validated vertical slice (§22)                           → 2 phases  ✅
-K08  Full regression, measurements, final report (§24, §26)            → 1 phase (indivisible)
+K08  Full regression, measurements, final report (§24, §26)            → 1 phase (indivisible)  ✅
 ```
 
-**Total: 17 phases.** Completed: **16**.
+**Total: 17 phases. Completed: 17 — programme terminé.**
+Final report → `docs/canvas/final-report.md`.
 Code of the programme → `src/creative/intent.py` (K05, 32 tests),
 `src/creative/cinema.py` (K06, 37 tests) and `src/creative/canvas/` (K07,
 61 tests) — the five modules ADR-031 decided on, plus §22's vertical slice.
