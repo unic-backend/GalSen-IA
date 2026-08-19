@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **MASTER UPDATE DIRECTIVE V4 — MoneyPrinterTurbo comme fournisseur ajouté**
 Plan complet     : `docs/providers/phase-plan.md`
 Phases           : 15
-Phase courante   : **M02.1 — en attente de confirmation**
-Terminées        : M00.1, M00.2, M01.1, M01.2
+Phase courante   : **M03 — en attente de confirmation**
+Terminées        : M00.1, M00.2, M01.1, M01.2, M02.1, M02.2
 Cadence          : **deux phases par tour** (demandé par le propriétaire le 2026-08-19)
 
 ---
@@ -49,8 +49,30 @@ Ne pas le rouvrir ; §1 du nouveau programme interdit de reconstruire ce qui mar
   n'implémente* — argument d'intégration très différent de « un générateur
   vidéo ». À confronter à la source, pas au README.
 
-## Ce que M02 fera
+## M02 — fait. `docs/providers/moneyprinterturbo-research.md`
 
-Rechercher MoneyPrinterTurbo **dans sa source** (§4, §5) : version, architecture,
-API, pipeline, TTS, sous-titres, dépendances — et classer chaque capacité en
-`SUPPORTED` / `PARTIAL` / `EXPERIMENTAL` / `UNKNOWN` / `UNSUPPORTED`.
+**MoneyPrinterTurbo ne génère pas de vidéo.** Vérifié dans la source, pas le
+README : `search_videos_pexels/pixabay` télécharge des rushes de banques
+d'images, `moviepy` + `ffmpeg` les assemble. C'est un outil de **composition**,
+pas de génération. Aucun modèle ne produit de pixel.
+
+**Conséquence décisive** : MPT exige un **vrai `ffmpeg`** — exactement le
+blocage de 4 des 6 étapes média d'ici. Il **ne tournerait pas non plus** sur
+cette machine. Un adaptateur écrit ici rapporterait `BLOCKED`, comme `wangp.py`.
+
+**Licence : MIT**, lue à la source. Premier candidat des deux programmes dont la
+licence a pu être lue.
+
+**14 capacités sur 26 sont `UNSUPPORTED`** — et §23 avait prédit exactement
+cette liste : ni identité, ni références, ni continuité, ni contrôle caméra.
+Elles restent la responsabilité de GalSen IA.
+
+**Le cadrage s'inverse** : le meilleur argument d'intégration n'est pas la vidéo
+— il n'en fait pas — mais **le TTS et l'ASR**, les deux capacités que cette
+plateforme mesure `ABSENT` et `UNAVAILABLE`.
+
+## Ce que M03 fera
+
+L'audit de licence de §30 : MPT **et son arbre de dépendances**. `edge-tts`
+atteint un point d'accès Microsoft, `faster-whisper` télécharge un modèle, et
+Pexels/Pixabay exigent des clés. Une licence MIT de dépôt ne dit rien de tout ça.
