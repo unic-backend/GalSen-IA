@@ -49,7 +49,7 @@ Three things are therefore forbidden for the whole plan below:
 O00  Repository audit — the 27 subsystems of §2                  → 2 phases  ✅
 O01  OpenClaw research from official sources (§3, §4)            → 2 phases  ✅
 O02  Duplication matrix (§5)                                     → 1 phase (indivisible)  ✅
-O03  Tool permission model and sandbox (§7, §8)                  → 2 phases
+O03  Tool permission model and sandbox (§7, §8)                  → 2 phases  ✅
 O04  Multi-user isolation (§9)                                   → 1 phase (indivisible)
 O05  Licence audit (§18) — the gate                              → 1 phase (indivisible)
 O06  Model providers and memory (§10, §11)                       → 2 phases
@@ -120,4 +120,15 @@ OpenClaw has WhatsApp, Telegram, Slack, Discord, Signal, iMessage and WebChat.
 The honest reason to want it is **reach, not orchestration**, and O11 must weigh
 that against a channel connector under the existing orchestrator.
 
-**Next: O03.1 and O03.2** — the tool permission model and the sandbox (§7, §8).
+**O03 is done** — `docs/openclaw/permissions-and-sandbox.md`. The allowlist is
+**four tools out of twenty-four**, derived from `tools/tools.yaml` rather than
+invented, and narrower than the MCP one for a stated reason.
+
+§8's answer: **OpenClaw's sandboxing is not sufficient**, on its own evidence —
+off by default, the Gateway itself unsandboxed, `tools.elevated` on the host.
+The additional layer §8 demands is a container boundary around the whole
+process, and **the platform lacks the privileges to create it** — already
+recorded in `src/sandbox/policy.py`'s own `NON_GARANTI`. Named as a blocker for
+O12 gate 5, not papered over.
+
+**Next: O04** — multi-user isolation (§9), one indivisible phase.
