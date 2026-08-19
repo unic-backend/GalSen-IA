@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **MASTER UPDATE DIRECTIVE V4 — MoneyPrinterTurbo comme fournisseur ajouté**
 Plan complet     : `docs/providers/phase-plan.md`
 Phases           : 15
-Phase courante   : **M09 — en attente de confirmation**
-Terminées        : M00.1 → M08.2 (14 phases)
+Phase courante   : **aucune — programme terminé**
+Terminées        : M00.1 → M09 (15 phases sur 15)
 Cadence          : **deux phases par tour** (demandé par le propriétaire le 2026-08-19)
 
 ---
@@ -156,6 +156,27 @@ requis » côté média et « rien n'a été déclaré » côté routage créati
 se défendent isolément ; adjacents, c'est un piège. Écrit pour que le prochain ne
 le découvre pas à ses dépens.
 
-## Ce que M09 fera
+## M09 — fait. Programme terminé. `docs/providers/final-report.md`
 
-Les mesures de §39 et le rapport final de §42 — ses **31 points**.
+**15 phases sur 15.** La phrase à retenir : **MoneyPrinterTurbo ne génère pas de
+vidéo**, et l'avoir su *avant* d'écrire l'adaptateur est toute la valeur des 19
+étapes d'audit que §36 impose d'abord. Écrit en premier, il aurait été déclaré
+`text_to_video`, et un routeur aurait fini par servir les rushes d'un inconnu à
+qui demandait son ami.
+
+**Mesuré** : `pytest -q` → **6 233 passent, 1 échec** (`v0.1.0`, antérieur).
+39 tests ajoutés. Sondes : santé 3,5 ms, routage 0,44 ms sur 10 candidats.
+Aucun GPU requis — seul chemin vidéo des deux programmes dans ce cas.
+
+**Trois gardes du dépôt ont attrapé des défauts à moi**, tous à raison : le
+chargeur du corpus (une valeur sans dire comment elle a été établie), le compte
+d'ADR (30 → **31**), et **trois variables d'environnement introduites sans être
+documentées**.
+
+**Reste dû, nommé plutôt qu'oublié** : une décision TTS à part entière
+(`kokoro-tts` est MIT et local, `edge-tts` est LGPL-3.0), `whisperx` pour la
+séparation de locuteurs, l'écart `None` entre couches média et créative, et la
+lecture des conditions Pexels/Pixabay.
+
+**Blocage unique** : `ffmpeg`. Le même que quatre étapes média — une seule
+installation hors dépôt débloque cinq choses à la fois.
