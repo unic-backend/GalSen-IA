@@ -12,6 +12,76 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-19 — MoneyPrinterTurbo as a declared provider (Master Update Directive V4, 15 phases)
+
+Ten volets, fifteen phases, all completed. Full report →
+`docs/providers/final-report.md`, written to the thirty-one points of §42.
+
+**MoneyPrinterTurbo does not generate video**, and finding that out before
+writing the adapter is the whole value of the nineteen audit steps §36 puts
+first. It composes stock footage retrieved from Pexels and Pixabay. Written
+first — the natural instinct given the directive's framing — the adapter would
+have been declared `text_to_video`, and a router would eventually have served
+someone footage of a stranger for "a scene with my friend".
+
+- **A new task, `stock_assembly`**, in both the media and creative vocabularies.
+  Two acts, two names; that is the decision with the most consequence
+- **First provider either programme's router has ever selected**:
+  `stock_assembly` non-commercial → `SELECTED`; commercial → `NO_PROVIDER`
+  because output rights are unread; `text_to_video` → never offered
+- **Invocation is `API`, not import** — `edge-tts` is LGPL-3.0, and ADR-024
+  already established that calling a copyleft tool as an isolated process is not
+  the same act as linking it. No dependency added
+- **The repository is MIT; the capability wanted is copyleft.** Exactly the
+  confusion §30 exists to prevent, found by reading rather than assuming
+- **Nothing replaced.** §21 classification: 8 KEEP, 3 EXTEND, 1 ADAPT,
+  0 DEPRECATE, 0 REPLACE
+
+Two defects of my own were found by writing tests: `min_vram_gb = 0` was treated
+as a VRAM requirement and rejected a provider needing no GPU, and the adapter
+declared 1920×1080 so a 1080×1920 portrait request — MoneyPrinterTurbo's primary
+use case — was refused on its height.
+
+Three repository guards caught three more, all right: the corpus loader refused a
+value that did not say how it was established, the published ADR count moved
+30 → 31, and three new environment variables had to be documented.
+
+Full suite: **6 233 passed, 11 skipped, 3 deselected, 1 failed** — the `v0.1.0`
+tag, pre-existing.
+
+
+### Added — 2026-08-18 — Style registry (volet C19, §46) — a gap the plan had lost
+
+The forty-three-phase plan never allocated a phase to §46's StyleEngine. The
+PHASE 0 audit had classified it `EXTENSION_REQUIRED`; the plan lost it, and
+nothing caught that, because **a missing phase produces no failing test**. It was
+found by re-reading the directive against the code.
+
+Measured before writing anything: the creative representation tracked `domain`,
+`duration_seconds` and `aspect` and nothing else — "une scène en style anime"
+lost the word "anime" between the request and the render.
+
+- `corpus/creative/styles.yaml` — the ten families of §46, **extensible by a
+  row**, with French and English aliases. This platform's users write French; a
+  registry matching only English would never fire
+- **No default style, ever.** A request naming none stays without one, and that
+  is not a gap to fill — style is deliberately absent from `CHAMPS_REQUIS`,
+  since otherwise every style-less request would be declared incomplete
+- **Two styles named means neither is taken**: resolving an author's hesitation
+  decides in their place
+- **The style never enters `WorldState`** (already true since C09, now checked
+  rather than trusted by `world_is_style_free()`). Style inside the world would
+  make the first continuity check compare a documentary against a drawing and
+  report a break that does not exist
+- A shared alias is refused at load time — the render would depend on the file's
+  reading order
+
+One defect found on the first run: "un dessin animé" resolved to nothing,
+because "dessin animé" *contains* "animé", lighting two styles and firing the
+ambiguity rule wrongly. Fixed by discarding any match contained within another:
+the longer phrase is the more specific one, and it is the author's.
+
+
 ### Added — 2026-08-18 — ADR-029's remaining debt: lockout, password reset, breach disclosure
 
 ADR-029 chose option C and listed, in its own *Consequences*, what remained

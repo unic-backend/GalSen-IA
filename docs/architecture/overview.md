@@ -9,7 +9,7 @@ The platform runs. Fifteen engines and services are registered in `EngineRegistr
 (`src/api/server.py`, **142 routes**, authenticated by API key or JWT (ADR-029) and
 authorised by RBAC) and covered
 by their own test suites — **274 test files, 5 369 tests passing**, 8 skipped.
-17 agents, 24 declared tools (13 of which may run unattended), 30 ADRs.
+17 agents, 24 declared tools (13 of which may run unattended), 31 ADRs.
 Persistence exists and now covers the audit and approval engines too: every engine
 holding state selects a SQLite store through `GALSEN_STORAGE_BACKEND` (ADR-005), which
 defaults to `in-memory`.

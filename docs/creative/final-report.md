@@ -1,7 +1,7 @@
 # Universal Creative Intelligence — final report
 
 **Programme**: GALSEN-IA — Universal Creative Intelligence, Master Directive V4
-(81 sections). **19 volets, 43 phases, all completed.**
+(81 sections). **20 volets, 44 phases, all completed.**
 Plan and per-phase history → `docs/creative/phase-plan.md`.
 Report shape → directive §76, its twenty-five points, in order.
 
@@ -291,6 +291,28 @@ is not code:
 5. `git push origin v0.1.0`, which is the only red test in CI.
 
 ---
+
+## Addendum — §46, found after this report was first written
+
+The forty-three-phase plan never allocated a phase to §46's StyleEngine. The
+PHASE 0 audit had classified it `EXTENSION_REQUIRED`; the plan lost it, and
+nothing caught that, because **a missing phase produces no failing test**.
+
+Measured before writing C19: the creative representation tracked `domain`,
+`duration_seconds` and `aspect` and nothing else. "Une scène en style anime"
+lost the word "anime" between the request and the render.
+
+The negative half of §46 was already held — `WorldState` deliberately excludes
+style, so the same street can be rendered photoreal or cartoon without a
+continuity check reporting a break that does not exist. C19 adds the positive
+half: `corpus/creative/styles.yaml` (the ten families of §46, extensible by
+data) and `src/creative/style.py`, which refuses to pick a style for the author.
+A request naming none stays without one; a request naming two is a hesitation
+nobody else gets to resolve.
+
+`world_is_style_free()` checks the separation rather than trusting it: the rule
+is easy to honour while you are thinking about it, and the next module to add
+"just one field" to the world will not be.
 
 ## §73 — future proprietary models
 

@@ -59,6 +59,13 @@ TACHES_CREATIVES: Tuple[str, ...] = (
     "multimodal_understanding", "scene_understanding", "reference_analysis",
     # Post-production
     "lip_sync", "video_editing", "identity_verification",
+    # Composition à partir de rushes **récupérés**, pas générés (ADR-030).
+    # Distincte de `text_to_video` à dessein : confondre les deux ferait
+    # choisir un assembleur pour une demande de génération, et rendrait des
+    # rushes d'un inconnu à qui a demandé son ami. Elle existe aussi dans
+    # `src/media/providers/base.py` — les deux vocabulaires sont liés, celui
+    # d'ici étant le sur-ensemble qui couvre aussi l'audio et la compréhension.
+    "stock_assembly",
 )
 
 #: Comment un fournisseur est appelé. `OUT_OF_PROCESS` n'est pas un détail de
@@ -298,7 +305,12 @@ def availability(provider: CreativeProvider) -> Dict[str, Any]:
                                "state": resultat["state"],
                                "reason": resultat["reason"]})
 
-    if provider.min_vram_gb is not None:
+    # `0` et `None` ne disent pas la même chose, et les confondre a écarté un
+    # fournisseur qui n'a besoin d'aucun GPU. `None` = personne n'a déclaré le
+    # besoin ; `0` = le besoin a été établi et il est nul — le cas d'un outil
+    # qui compose sur processeur. Seul un besoin **strictement positif** demande
+    # de mesurer la VRAM.
+    if provider.min_vram_gb is not None and provider.min_vram_gb > 0:
         from ..media.providers.base import measured_vram_gb
 
         vram = measured_vram_gb()

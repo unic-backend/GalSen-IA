@@ -90,6 +90,7 @@ def run_slice(
     from .pipelines import PIPELINE_A, plan_pipeline
     from .providers import AUCUN, CreativeRequest, ProviderRegistry, adapt_declared
     from .representation import from_request
+    from .style import apply_style
     from .research import load_research
     from .routing import route
     from .verification import identity_dimensions_here
@@ -101,13 +102,15 @@ def run_slice(
 
     # 1. L'intention. Un champ que l'utilisateur n'a pas énoncé reste ouvert.
     representation = from_request(request)
+    style = apply_style(representation, request)
     manquants = [champ for champ, valeur in representation.as_dict().items()
                  if isinstance(valeur, dict) and valeur.get("origin") == "UNSET"]
     etapes.append(_etape(
         "user_intent", OK,
         "La demande est structurée ; les champs non énoncés restent ouverts "
-        "au lieu d'être comblés par un défaut.",
-        unset_fields=len(manquants)))
+        "au lieu d'être comblés par un défaut. Le style est posé s'il est "
+        "nommé, et **aucun n'est choisi** sinon (§46).",
+        unset_fields=len(manquants), style=style["style_id"]))
 
     # 2. La voix. Sans segments fournis, rien n'est transcrit ni séparé.
     if segments:

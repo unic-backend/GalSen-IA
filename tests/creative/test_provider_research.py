@@ -204,4 +204,5 @@ def test_le_rapport_nomme_ce_qu_il_refuse():
     refus = " ".join(rapport["does_not"]).lower()
     assert "choisir un fournisseur" in refus
     assert "popularité" in refus
-    assert len(rapport["candidates"]) == 9
+    # 10 depuis l'ajout de MoneyPrinterTurbo (ADR-030) ; 9 auparavant.
+    assert len(rapport["candidates"]) == 10

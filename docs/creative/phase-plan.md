@@ -31,10 +31,15 @@ C14  PHASE 11  Language Intelligence + knowledge base (§27–33)   → 3 phases
 C15  PHASE 12  ModelRouter, capability matching (§36, §43)       → 2 phases  ✅
 C16  PHASE 13  GPU / resource orchestration, jobs, cache (§52–54)→ 2 phases  ✅
 C17  PHASE 14  API, golden tests, hardening, MVP slice (§62–66,70)→ 3 phases  ✅
-C18  PHASE 15  Future model research + final report (§73, §76)   → 1 phase
+C18  PHASE 15  Future model research + final report (§73, §76)   → 1 phase  ✅
+C19  §46       StyleEngine — le trou du plan, comblé            → 1 phase   ✅
 ```
 
-**Total: 43 phases.** Completed: **43 — le programme est terminé.**
+**Total: 44 phases.** Completed: **44 — le programme est terminé.**
+
+*(C19 ajouté après coup : §46 n'avait jamais reçu de phase. L'audit de
+PHASE 0 l'avait pourtant classé `EXTENSION_REQUIRED` — c'est le plan qui
+l'a perdu, pas l'audit, et une phase manquante ne fait échouer aucun test.)*
 Rapport final → `docs/creative/final-report.md`.
 
 *(Le total annonçait 38 depuis PHASE 0 : une erreur d'addition, corrigée le
