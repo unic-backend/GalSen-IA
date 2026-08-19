@@ -156,10 +156,19 @@ class TestCouverture:
 class TestScenariosExecutables:
     """Le programme peut dire ce qu'il tient, pas seulement lancer sa suite."""
 
-    def test_les_quinze_cas_s_executent(self):
+    def test_les_trente_scenarios_du_paragraphe_35_s_executent(self):
         resultat = run_all()
 
+        assert resultat["count"] == 30
         assert resultat["count"] == len(CAS)
+
+    def test_les_deux_moities_du_programme_sont_couvertes(self):
+        """Les quinze premiers cas lisent l'état, les quinze suivants les gardes."""
+        titres = " ".join(c.title for c in CAS)
+
+        assert "ABSENT n'est pas UNKNOWN" in titres
+        assert "Un consentement ne lève pas une ADR" in titres
+        assert "L'état d'ensemble est calculé" in titres
 
     def test_aucun_cas_n_echoue(self):
         resultat = run_all()
