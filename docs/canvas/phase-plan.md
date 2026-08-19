@@ -31,7 +31,7 @@ how an orchestrator becomes a cage.
 ## The 9 volets, and their phases
 
 ```
-K00  Audit — GalSen IA's creative/video, security, memory, provenance  → 2 phases
+K00  Audit — GalSen IA's creative/video, security, memory, provenance  → 2 phases  ✅
 K01  Audit — the five repositories, one at a time (§2, §4)             → 3 phases
 K02  Licence and dependency matrix (§18) — the gate                    → 1 phase (indivisible)
 K03  Obsolete assumptions + Creative Canvas architecture (§5, §7)      → 2 phases
@@ -42,7 +42,7 @@ K07  Smallest validated vertical slice (§22)                           → 2 ph
 K08  Full regression, measurements, final report (§24, §26)            → 1 phase (indivisible)
 ```
 
-**Total: 17 phases.** Completed: **0**.
+**Total: 17 phases.** Completed: **2**. Audit → `docs/canvas/audit.md`.
 
 ---
 

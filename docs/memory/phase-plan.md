@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **CREATIVE CANVAS & CINEMA ORCHESTRATION EXTENSION**
 Plan complet     : `docs/canvas/phase-plan.md`
 Phases           : 17
-Phase courante   : **K00.1 — en attente de confirmation**
-Terminées        : aucune
+Phase courante   : **K01.1 — en attente de confirmation**
+Terminées        : K00.1, K00.2
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :
@@ -37,8 +37,34 @@ deux candidats peuvent être écartés avant qu'une seule idée en soit extraite
 Les deux servent en outre une première ligne de README identique : l'un est
 peut-être une copie de l'autre, ce que K01 doit établir.
 
-## Ce que K00 fera
+## K00 — fait. `docs/canvas/audit.md`
 
-Vérifier contre le code ce que les deux programmes précédents ont construit
-(références, monde, registres, routage, continuité, vérification) — **et
-enregistrer ce que chacun ne fait pas**. Jamais le réécrire (§13, §3).
+**§11 demande 15 types de registre ; l'essentiel existe déjà** en champs sur deux
+types. `CreativeProvider` en porte 15, `LicenceRecord` 6. **Trois manques réels
+seulement** : `ProviderPrivacyPolicy` (§20 n'a aucun logement — où vont les
+médias, sont-ils conservés, l'exécution locale est-elle possible), un **niveau de
+confiance par type de nœud** (la frontière existe, la correspondance non), et un
+`GenerationResult` partagé (sans objet tant qu'aucun fournisseur ne tourne).
+
+**Sécurité mesurée : 7 failles, et `score: None`** — le module refuse de se noter
+*« une note ferait disparaître la faille qui compte derrière la moyenne de celles
+qui ne comptent pas »*. Trois touchent ce programme : système de fichiers
+(un canvas qui reçoit une photo en hérite), réseau, et **portillon d'approbation
+en mémoire** (un redémarrage perd les décisions de consentement).
+
+**L'auto-réparation porte déjà `rollback` et `run_validation`** — c'est ce qui
+rend la nouvelle règle permanente implémentable et non velléitaire.
+
+**Deux systèmes de provenance existent, légitimement** : `acquisition/` pour
+l'origine d'un *fait*, `creative/jobs.py` pour celle d'un *artefact*. Un nœud de
+canvas produit des artefacts : il utilise le second. En écrire un troisième
+serait la faute.
+
+**Conclusion : le canvas est un problème de composition, pas de construction** —
+l'inverse de ce que suggérerait une implémentation de graphe de nœuds, et la
+raison pour laquelle §5 dit de ne pas simplement embarquer OpenCanvas.
+
+## Ce que K01 fera
+
+Auditer les cinq dépôts un par un (§2, §4), en commençant par les trois dont la
+licence a été vérifiée — les deux sans licence attendent la porte K02.
