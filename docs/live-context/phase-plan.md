@@ -42,14 +42,14 @@ L09  MCP integration (PHASE 8, §16, §17)                                → 1 
 L10  Screen context (PHASE 9, §12)                                      → 1 phase (indivisible)  ✅
 L11  Memory, privacy, consent, retention (PHASE 10, §14, §28)           → 2 phases  ✅
 L12  CreativeEngine connection (PHASE 11, §23, §24, §37)                → 1 phase (indivisible)  ✅
-L13  Provider routing and degraded mode (PHASE 12, §31–§34)             → 2 phases
+L13  Provider routing and degraded mode (PHASE 12, §31–§34)             → 2 phases  ✅
 L14  The thirty test scenarios (§35, §36)                               → 2 phases
 L15  Performance, hardening, full regression, final report (13–15, §45) → 2 phases
 ```
 
 **Total: 27 phases.** Counted programmatically, not estimated.
-Completed: **22**. Decision → **ADR-033**.
-First code → `src/live_context/` : `state.py`, `capture.py`, `fusion.py`, `speakers.py`, `languages.py`, `assistance.py`, `intent.py`, `screen.py`, `retention.py`, `memory.py`, `creative.py`, `providers.py` (331 tests). Audits → `docs/live-context/audit.md` (L00),
+Completed: **24**. Decision → **ADR-033**.
+First code → `src/live_context/` : `state.py`, `capture.py`, `fusion.py`, `speakers.py`, `languages.py`, `assistance.py`, `intent.py`, `screen.py`, `retention.py`, `memory.py`, `creative.py`, `providers.py`, `readiness.py`, `golden.py` (358 tests). Audits → `docs/live-context/audit.md` (L00),
 `repo-audit.md` (L01), `realtime-audit.md` (L02), `licence-matrix.md` (L03).
 
 **Several of these volets will shrink**, and the plan says so now rather than
