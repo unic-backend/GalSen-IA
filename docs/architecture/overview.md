@@ -10,7 +10,7 @@ The platform runs. Fifteen engines and services are registered in `EngineRegistr
 authorised by RBAC) and covered
 by their own test suites — **318 test files, 6 582 tests passing**, 12 skipped, 1 failing
 (*measured 2026-08-19*; the failure is the unpushed `v0.1.0` tag, identical on `main`).
-17 agents, 24 declared tools (13 of which may run unattended), 33 ADRs.
+17 agents, 24 declared tools (13 of which may run unattended), 34 ADRs.
 Persistence exists and now covers the audit and approval engines too: every engine
 holding state selects a SQLite store through `GALSEN_STORAGE_BACKEND` (ADR-005), which
 defaults to `in-memory`.

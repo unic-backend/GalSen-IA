@@ -8,9 +8,9 @@ phase attend une confirmation.
 VOLET en cours   : **LIVE CONTEXT ENGINE / CALL.MD INTEGRATION**
 Plan complet     : `docs/live-context/phase-plan.md`
 Phases           : 27
-Phase courante   : **L04.1 — en attente de confirmation** (architecture
-                   LiveContextEngine + ADR-033)
-Terminées        : L00 à L03 — quatre audits dans `docs/live-context/`
+Phase courante   : **L05.1 — en attente de confirmation** (plus petite tranche
+                   d'entrée live validée, §7)
+Terminées        : L00 à L04 — quatre audits, `architecture.md`, **ADR-033**
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :
