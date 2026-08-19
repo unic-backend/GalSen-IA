@@ -48,7 +48,7 @@ Three things are therefore forbidden for the whole plan below:
 ```
 O00  Repository audit — the 27 subsystems of §2                  → 2 phases  ✅
 O01  OpenClaw research from official sources (§3, §4)            → 2 phases  ✅
-O02  Duplication matrix (§5)                                     → 1 phase (indivisible)
+O02  Duplication matrix (§5)                                     → 1 phase (indivisible)  ✅
 O03  Tool permission model and sandbox (§7, §8)                  → 2 phases
 O04  Multi-user isolation (§9)                                   → 1 phase (indivisible)
 O05  Licence audit (§18) — the gate                              → 1 phase (indivisible)
@@ -109,4 +109,15 @@ security boundary"*; multi-tenant isolation is **per-container, experimental**,
 and *"session IDs … do not authorize one tenant against another"*; and the
 provider list covers every model family §10 names.
 
-**Next: O02** — the duplication matrix (§5), one indivisible phase.
+**O02 is done** — `docs/openclaw/duplication-matrix.md`. Of §5's fourteen
+capabilities: **eight `KEEP_EXISTING`, three `DEFER`, two `UNKNOWN`, zero
+`INTEGRATE`**.
+
+The finding: **thirteen of the fourteen already exist here**, and the one real
+asymmetry is a category §5 never lists — **bidirectional conversational
+channels**. GalSen IA has three one-way operator-facing notification channels;
+OpenClaw has WhatsApp, Telegram, Slack, Discord, Signal, iMessage and WebChat.
+The honest reason to want it is **reach, not orchestration**, and O11 must weigh
+that against a channel connector under the existing orchestrator.
+
+**Next: O03.1 and O03.2** — the tool permission model and the sandbox (§7, §8).
