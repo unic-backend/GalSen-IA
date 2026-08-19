@@ -30,7 +30,7 @@ reason and act* in continuous contexts — not a clone of a meeting copilot.
 
 ```
 L00  Repository audit — what GalSen IA already has (PHASE 0, §1)        → 2 phases  ✅
-L01  Call.md audited from source (PHASE 1, §2, §3)                      → 2 phases
+L01  Call.md audited from source (PHASE 1, §2, §3)                      → 2 phases  ✅
 L02  Existing real-time capability audit (PHASE 2, §7, §8, §41)         → 1 phase (indivisible)
 L03  Licence and dependency matrix (§38, §39) — the gate                → 1 phase (indivisible)
 L04  LiveContextEngine architecture + ADR-033 (PHASE 3, §5, §6, §42)    → 2 phases
@@ -48,7 +48,8 @@ L15  Performance, hardening, full regression, final report (13–15, §45) → 2
 ```
 
 **Total: 27 phases.** Counted programmatically, not estimated.
-Completed: **2**. Audit → `docs/live-context/audit.md`.
+Completed: **4**. Audits → `docs/live-context/audit.md` (L00),
+`docs/live-context/repo-audit.md` (L01).
 
 **Several of these volets will shrink**, and the plan says so now rather than
 pretending the count is fixed. L03 is a gate: if it closes, L05 through L13 lose
