@@ -115,10 +115,14 @@ pipeline, 14 STEP 12 gaps, 10 golden, 13 measurements, plus the shared fixtures.
 
 ```
 python -m pytest -q
-1 failed, 6569 passed, 12 skipped, 3 deselected in 395.66s   (R09 checkpoint)
+1 failed, 6582 passed, 12 skipped, 3 deselected, 2 warnings in 377.37s
 ```
 
-6 363 → **6 588** across the programme. The single failure is the `v0.1.0` tag,
+6 363 → **6 582** across the programme, over 318 test files.
+
+*(This figure was written as 6 588 first — deduced from 6 363 plus the tests
+added — and replaced by the run above. The deduction was wrong by six, which is
+the whole reason the run is what gets reported.)* The single failure is the `v0.1.0` tag,
 never pushed; it predates all four programmes and fails identically on `main`.
 
 ## Regression status

@@ -77,7 +77,7 @@ unattended), **142 API routes**, 33 ADRs (ADR-020 is `proposed`; ADR-024 to ADR-
 ADR-023 and ADR-028 add the interop and coding layers; ADR-030 and ADR-031 close the provider
 and canvas programmes; ADR-032 opens the research layer) — see
 `docs/architecture/overview.md`, kept synchronized with the measured state.
-**6363 tests pass**, 11 skipped, 1 failed — *measured 2026-08-19*. The single failure is the
+**6582 tests pass**, 12 skipped, 1 failed — *measured 2026-08-19*. The single failure is the
 `v0.1.0` tag, which has never been pushed; it fails identically on `main`.
 
 Unattended work is real: a routine can fire a workflow through the one orchestrator, and

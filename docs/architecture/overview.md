@@ -8,7 +8,7 @@ The platform runs. Fifteen engines and services are registered in `EngineRegistr
 *Subsystems and degradation* below. All of it is reachable through a REST API
 (`src/api/server.py`, **142 routes**, authenticated by API key or JWT (ADR-029) and
 authorised by RBAC) and covered
-by their own test suites — **310 test files, 6 363 tests passing**, 11 skipped, 1 failing
+by their own test suites — **318 test files, 6 582 tests passing**, 12 skipped, 1 failing
 (*measured 2026-08-19*; the failure is the unpushed `v0.1.0` tag, identical on `main`).
 17 agents, 24 declared tools (13 of which may run unattended), 33 ADRs.
 Persistence exists and now covers the audit and approval engines too: every engine
