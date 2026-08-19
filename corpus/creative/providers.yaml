@@ -331,6 +331,62 @@ candidates:
 
 # Datasets noted during research. Recorded, not adopted: a dataset's licence is
 # a separate question from a model's (§41), and none of these were read.
+
+  # --- MoneyPrinterTurbo (ADR-030, volets M00-M06) -------------------------
+  #
+  # LA LIGNE LA PLUS IMPORTANTE DE CETTE ENTRÉE EST `tasks`.
+  #
+  # Ce candidat ne génère pas de vidéo : il télécharge des rushes de Pexels et
+  # Pixabay et les assemble avec moviepy + ffmpeg. Lu dans la source, pas dans
+  # le README (docs/providers/moneyprinterturbo-research.md). Lui déclarer
+  # `text_to_video` ferait choisir un assembleur pour une demande de génération,
+  # et rendrait des rushes d'un inconnu à qui a demandé son ami.
+  #
+  # C'est aussi le premier candidat des deux programmes dont la licence de dépôt
+  # a pu être **lue** : huggingface.co n'a pas de route d'ici, github en a une.
+  - id: moneyprinterturbo
+    name: "MoneyPrinterTurbo"
+    tasks: [stock_assembly]
+    repository: "https://github.com/harry0703/MoneyPrinterTurbo"
+    repository_license: MIT
+    repository_license_evidence: AUTHORITATIVE
+    repository_license_source: "https://raw.githubusercontent.com/harry0703/MoneyPrinterTurbo/main/LICENSE"
+    repository_license_note: "Lue le 2026-08-19 : MIT License, Copyright (c) 2024 Harry."
+    weight_license: NOT_APPLICABLE
+    weight_license_evidence: AUTHORITATIVE
+    weight_license_reason: "Ne livre aucun modele : la composition n'a pas de poids."
+    dataset_license: NOT_APPLICABLE
+    dataset_license_evidence: AUTHORITATIVE
+    dataset_license_reason: "N'entraine rien."
+    commercial_status: UNKNOWN
+    commercial_status_reason: "Le depot est MIT, mais la video produite est faite de rushes venus de Pexels et Pixabay. Savoir si elle peut etre vendue depend de leurs conditions d'API, que personne ici n'a lues. Le chemin TTS, edge-tts, est en outre LGPL-3.0. Tant que ces lectures n'ont pas eu lieu, le selecteur doit refuser ce fournisseur pour tout travail commercial, et c'est ce que UNKNOWN declenche."
+    vram_gb_min: 0
+    vram_gb_min_evidence: AUTHORITATIVE
+    vram_note: "Aucun GPU requis : moviepy et ffmpeg. Seul chemin video des deux programmes dans ce cas."
+    audio_support: true
+    audio_note: "Narration TTS et sous-titres par faster-whisper. Verifie dans app/services/voice.py et subtitle.py."
+    lip_sync: false
+    reference_support: false
+    reference_note: "Aucun conditionnement par reference dans la source. §23 avait prevenu de ne pas le supposer."
+    identity_consistency: UNSUPPORTED
+    # Le garde du chargeur exige de dire **comment** une valeur autre que
+    # NOT_MEASURED a ete etablie, et il a raison de l'exiger ici : `UNSUPPORTED`
+    # n'est pas une mesure de qualite, c'est une lecture de source. La nommer
+    # empeche qu'on la relise plus tard comme un resultat de banc d'essai.
+    identity_consistency_measured_by: "Lecture de la source le 2026-08-19 : app/services/{video,material,voice,subtitle}.py ne contient aucun conditionnement par reference. L'absence est constatee, pas mesuree."
+    quality: NOT_MEASURED
+    latency: NOT_MEASURED
+    multi_entity: false
+    camera_control: false
+    limitations:
+      - "Ne genere pas de video : assemble des rushes recuperes."
+      - "Exige un ffmpeg reel, le meme blocage que quatre etapes du moteur media."
+      - "Exige au moins une cle Pexels ou Pixabay, non fournie."
+      - "Aucune identite, continuite, camera ni synchronisation labiale."
+      - "Droits sur la video produite non etablis."
+    integration_complexity: LOW
+    integration_reason: "Appele par HTTP, jamais importe (ADR-030). Aucune dependance ajoutee, aucun poids, aucun GPU."
+
 datasets:
   - id: waxal
     name: "WAXAL"

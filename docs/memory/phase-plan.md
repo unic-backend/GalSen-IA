@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **MASTER UPDATE DIRECTIVE V4 — MoneyPrinterTurbo comme fournisseur ajouté**
 Plan complet     : `docs/providers/phase-plan.md`
 Phases           : 15
-Phase courante   : **M06.2 — en attente de confirmation**
-Terminées        : M00.1 → M06.1 (10 phases)
+Phase courante   : **M08.1 — en attente de confirmation**
+Terminées        : M00.1 → M07 (12 phases)
 Cadence          : **deux phases par tour** (demandé par le propriétaire le 2026-08-19)
 
 ---
@@ -109,8 +109,32 @@ dépendance ajoutée**.
 conditions manquantes ensemble (service, ffmpeg, banque d'images) avec le geste
 qui répare chacune ; `generate()` **refuse**, comme `wangp`. 20 tests.
 
-## Ce que M06.2 fera
+## M06.2 et M07 — faits
 
-Déclarer le fournisseur dans le **registre créatif** avec sa `LicenceRecord`
-(MIT dépôt / `UNKNOWN` commercial) et vérifier que le routeur le **refuse** pour
-un travail commercial — sans une ligne de code de plus.
+**Le routeur créatif sélectionne un fournisseur pour la première fois** des deux
+programmes. Trois demandes, trois réponses distinctes :
+
+| Demande | Réponse |
+|---|---|
+| `stock_assembly`, non commercial | **`SELECTED` moneyprinterturbo** |
+| `stock_assembly`, **commercial** | `NO_PROVIDER` — droit non établi |
+| `text_to_video` | `NO_PROVIDER` — jamais offert comme générateur |
+
+Le refus commercial marche **sans une ligne de code de plus**, comme ADR-030
+l'avait prévu.
+
+**Un vrai défaut trouvé par cette entrée** : `availability()` traitait
+`min_vram_gb = 0` comme un besoin de VRAM et écartait un fournisseur qui n'a
+besoin d'aucun GPU. `0` (besoin établi et nul) et `None` (non déclaré) sont deux
+informations. Corrigé étroitement : seul un besoin **strictement positif**
+déclenche la mesure, et un test garde que les candidats à GPU restent écartés.
+
+**§29 (repli), dit honnêtement** : aucun autre fournisseur ne sert
+`stock_assembly`, donc un échec de MPT donne `NO_PROVIDER`. Ce n'est pas un repli
+qui fonctionne — c'est l'absence de second candidat, et le routeur refuse de
+substituer plutôt que de servir autre chose.
+
+## Ce que M08 fera
+
+Cartographier les tests d'or de §38 (MPT-01→09, REF, ID, AUDIO) sur ce que
+`src/creative/golden.py` exécute déjà, **avant** d'en écrire un seul.

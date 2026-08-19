@@ -215,9 +215,12 @@ def test_le_rapport_nomme_les_taches_sans_fournisseur():
 # --------------------------------------------------------------------------
 
 
-def test_les_neuf_candidats_s_adaptent_en_fournisseurs():
+def test_les_dix_candidats_s_adaptent_en_fournisseurs():
     fournisseurs = adapt_declared(load_research()["candidates"])
-    assert len(fournisseurs) == 9
+    # 9 jusqu'au 2026-08-19, 10 depuis : MoneyPrinterTurbo (ADR-030).
+    # Le chiffre est figé exprès — un candidat qui entre ou sort du
+    # dossier de recherche doit passer par ici, jamais en silence.
+    assert len(fournisseurs) == 10
     assert all(isinstance(f, CreativeProvider) for f in fournisseurs)
 
 

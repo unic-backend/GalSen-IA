@@ -30,13 +30,13 @@ M02  Research — MoneyPrinterTurbo, read from source not from README  → 2 pha
 M03  Licence audit — MPT and its dependency tree (§30)               → 1 phase (indivisible)  ✅
 M04  Research — current alternatives (§34)                           → 1 phase (indivisible)  ✅
 M05  Integration proposal + ADR-030: which registry, and why (§6)    → 1 phase (indivisible)  ✅
-M06  MoneyPrinterTurboProvider — the smallest validated slice (§37)  → 2 phases  ⏳ 06.1 ✅
-M07  Routing, composition, fallback (§7, §8, §29)                    → 1 phase (indivisible)
+M06  MoneyPrinterTurboProvider — the smallest validated slice (§37)  → 2 phases  ✅
+M07  Routing, composition, fallback (§7, §8, §29)                    → 1 phase (indivisible)  ✅
 M08  Golden tests §38 — mapped to existing coverage, then completed  → 2 phases
 M09  Measurements and final report (§39, §42)                        → 1 phase (indivisible)
 ```
 
-**Total: 15 phases.** Completed: **10**. ADR-030 accepted.
+**Total: 15 phases.** Completed: **12**. ADR-030 accepted.
 Audit → `docs/providers/audit.md` · matrice → `docs/providers/capability-matrix.md`
 · recherche MPT → `docs/providers/moneyprinterturbo-research.md`
 · licences → `docs/providers/licence-matrix.md` · alternatives → `docs/providers/alternatives.md`.
