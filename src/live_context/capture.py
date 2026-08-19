@@ -78,12 +78,32 @@ class CaptureRefused(ValueError):
     """Une entrée non déclarée."""
 
 
-def _module_present(nom: str) -> bool:
-    """Dit si un module de la plateforme est importable."""
+def module_present(nom: str) -> bool:
+    """
+    Dit si un module est importable, sans l'importer.
+
+    Args:
+        nom: Le nom du module, éventuellement pointé.
+
+    Returns:
+        Vrai s'il est importable. Un paquet parent manquant lève
+        `ModuleNotFoundError` depuis `find_spec` plutôt que de rendre `None` :
+        les trois exceptions sont donc attrapées, et l'absence est une absence.
+
+    Note:
+        C'est la sonde commune des modules de `live_context/` : quatre copies du
+        même `try/except` finiraient par diverger sur le jeu d'exceptions, et
+        c'est la plus indulgente qui survivrait.
+    """
     try:
         return importlib.util.find_spec(nom) is not None
-    except (ImportError, ValueError):
+    except (ImportError, ValueError, ModuleNotFoundError):
         return False
+
+
+def _module_present(nom: str) -> bool:
+    """Sonde locale, laissée pour que les tests puissent la remplacer."""
+    return module_present(nom)
 
 
 def _sonde_microphone() -> Tuple[bool, str]:

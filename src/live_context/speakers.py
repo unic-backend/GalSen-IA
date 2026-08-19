@@ -43,11 +43,11 @@ affirmation sur nous.
 
 from __future__ import annotations
 
-import importlib.util
 from typing import Any, Dict, List, Sequence
 
 from src.creative.voice.scene import CAPACITES_EXTERNES, AudioSegment
 
+from .capture import module_present
 from .state import DECLARE, MESURE, Observation, absent, unknown
 
 #: D'où une identité de locuteur peut venir, et ce que cela vaut comme statut.
@@ -77,11 +77,8 @@ class SpeakerRefused(ValueError):
 
 
 def _module_present(nom: str) -> bool:
-    """Dit si un module est importable, sans l'importer."""
-    try:
-        return importlib.util.find_spec(nom) is not None
-    except (ImportError, ValueError, ModuleNotFoundError):
-        return False
+    """Sonde locale, laissée pour que les tests puissent la remplacer."""
+    return module_present(nom)
 
 
 def diarization_state() -> Dict[str, Any]:

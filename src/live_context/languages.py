@@ -46,12 +46,12 @@ rend donc `ABSENT` avec ce constat, jamais une phrase.
 
 from __future__ import annotations
 
-import importlib.util
 from typing import Any, Dict, List, Sequence
 
 from src.creative.language.switching import switching_report
 from src.creative.voice.scene import AudioSegment
 
+from .capture import module_present
 from .state import DECLARE, MESURE, Observation, absent, unknown
 
 #: Les modules qui porteraient une identification de langue **sur l'audio**.
@@ -73,11 +73,8 @@ BASE_DE_CONFIANCE = ("confiance d'identification de langue rapportée par le "
 
 
 def _module_present(nom: str) -> bool:
-    """Dit si un module est importable, sans l'importer."""
-    try:
-        return importlib.util.find_spec(nom) is not None
-    except (ImportError, ValueError, ModuleNotFoundError):
-        return False
+    """Sonde locale, laissée pour que les tests puissent la remplacer."""
+    return module_present(nom)
 
 
 def audio_language_identification_state() -> Dict[str, Any]:
