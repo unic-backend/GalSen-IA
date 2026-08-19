@@ -8,9 +8,10 @@ phase attend une confirmation.
 VOLET en cours   : **RESEARCH ORCHESTRATION INTEGRATION**
 Plan complet     : `docs/research/phase-plan.md`
 Phases           : 18
-Phase courante   : **R01.1 — en attente de confirmation** (audit d'Agent-Reach
-                   depuis la source)
-Terminées        : R00.1, R00.2 — `docs/research/audit.md`
+Phase courante   : **R02 — en attente de confirmation** (matrice licences et
+                   dépendances, auditée à part — indivisible)
+Terminées        : R00.1, R00.2, R01.1, R01.2 — `docs/research/audit.md`,
+                   `docs/research/repo-audit.md`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :
