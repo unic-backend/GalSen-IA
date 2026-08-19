@@ -55,10 +55,10 @@ models, not media generators. Finding it before writing an adapter is the whole
 point of auditing first. Full table → `docs/providers/audit.md`.
 
 §6 says plainly: *"DO NOT create a parallel architecture if an existing provider
-abstraction already exists."* There are two. Adding MoneyPrinterTurbo to the
-wrong one — or worse, to both — creates the duplication the directive forbids,
-and this repository has already paid for two vocabularies of one gesture four
-times.
+abstraction already exists."* There are three. Adding MoneyPrinterTurbo to the
+wrong one — or worse, to more than one — creates the duplication the directive
+forbids, and this repository has already paid for two vocabularies of one
+gesture four times.
 
 **So the adapter is not written until M05 decides where it goes.** M05 is an ADR
 with a decision, not a design sketch. Ordering the plan any other way would let
