@@ -34,8 +34,8 @@ And the rule that decides how everything below is ordered:
 ```
 R00  Audit — existing search, RAG, knowledge, MCP, cache, security (STEP 1)  → 2 phases  ✅
 R01  Audit — Agent-Reach and web-search-mcp, from source (STEP 2)            → 2 phases  ✅
-R02  Licence and dependency matrix, audited separately (STEP 2)              → 1 phase (indivisible)
-R03  Capability comparison — unique / overlapping / superior (STEP 3)        → 1 phase (indivisible)
+R02  Licence and dependency matrix, audited separately (STEP 2)              → 1 phase (indivisible)  ✅
+R03  Capability comparison — unique / overlapping / superior (STEP 3)        → 1 phase (indivisible)  ✅
 R04  ResearchProvider abstraction + ADR-032 (STEP 4)                         → 2 phases
 R05  ResearchRouter — routing and fallback (STEP 5)                          → 2 phases
 R06  Source trust and security boundaries (STEP 6, STEP 10)                  → 1 phase (indivisible)
@@ -47,8 +47,9 @@ R11  Final validation, regression, final report (STEP 16, mandatory rule)    →
 ```
 
 **Total: 18 phases.** Counted programmatically, not estimated.
-Completed: **4**. Audits → `docs/research/audit.md` (R00),
-`docs/research/repo-audit.md` (R01).
+Completed: **6**. Audits → `docs/research/audit.md` (R00),
+`docs/research/repo-audit.md` (R01), `docs/research/licence-matrix.md` (R02),
+`docs/research/capability-comparison.md` (R03).
 
 ---
 
