@@ -8,12 +8,13 @@ phase attend une confirmation.
 VOLET en cours   : **LIVE CONTEXT ENGINE / CALL.MD INTEGRATION**
 Plan complet     : `docs/live-context/phase-plan.md`
 Phases           : 27
-Phase courante   : **L12 — en attente de confirmation** (connexion au
-                   CreativeEngine — §23, §24, §37 — 1 phase, indivisible)
-Terminées        : L00 à L11 — quatre audits, ADR-033, et `src/live_context/` :
+Phase courante   : **L13.2 — en attente de confirmation** (readiness.py :
+                   l'état calculé de la chaîne live — §31 à §34)
+Terminées        : L00 à L12, et L13.1 — quatre audits, ADR-033, et `src/live_context/` :
                    `state.py`, `capture.py`, `fusion.py`, `speakers.py`,
                    `languages.py`, `assistance.py`, `intent.py`,
-                   `screen.py`, `retention.py`, `memory.py` (275 tests)
+                   `screen.py`, `retention.py`, `memory.py`,
+                   `creative.py`, `providers.py` (331 tests)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :
