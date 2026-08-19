@@ -82,7 +82,7 @@ ADR-023 and ADR-028 add the interop and coding layers; ADR-030 and ADR-031 close
 and canvas programmes; ADR-032 opens the research layer;
 ADR-033 opens the live-context layer) — see
 `docs/architecture/overview.md`, kept synchronized with the measured state.
-**6582 tests pass**, 12 skipped, 1 failed — *measured 2026-08-19*. The single failure is the
+**6958 tests pass**, 12 skipped, 1 failed — *measured 2026-08-19*. The single failure is the
 `v0.1.0` tag, which has never been pushed; it fails identically on `main`.
 
 Unattended work is real: a routine can fire a workflow through the one orchestrator, and
@@ -161,6 +161,40 @@ Rules worth knowing before touching `src/darra_j/`:
   publishing and learner reads out of every platform role, admin included.
 - `INSUFFICIENT_EVIDENCE` is **off the mastery scale**, never a low level, and a
   rate over zero cases is `NOT_MEASURABLE`, never 100 %.
+
+## Live context — `src/live_context/` (ADR-033)
+
+Sixteen volets, 27 phases, 16 modules, 376 tests. Full report →
+`docs/live-context/final-report.md`.
+
+**The state is computed, never written**: `readiness()` walks the chain and
+answers `REPRESENTATION READY — NO LIVE PERCEPTION ON THIS MACHINE, 5 STAGE(S)
+NOT IMPLEMENTED, 2 BLOCKED` — 9 `READY`, 2 `BLOCKED`, 5 `ABSENT`. The split is
+total: every representation stage runs, no perception stage does. **Nothing can
+be captured here**, and the engine says so instead of simulating a session.
+
+Rules worth knowing before touching `src/live_context/`:
+
+- **`ABSENT` is not `UNKNOWN`.** One is measured and will not change by
+  waiting; the other is waiting for a measurement. An absence without its
+  finding is refused — saying "absent" without saying *how* is a supposition.
+- **Fusion records conflicts and resolves none.** Two providers disagreeing
+  produce two observations and a recorded conflict, never an average. Nothing
+  is promoted, and corroborated values are never ranked by voice count.
+- **No speaker is numbered**, and **a channel is not a speaker**: an identity
+  derived from a channel is `DECLARED`, never `MEASURED`.
+- **Zero does not exist where nothing was counted**: `turns`, `switch_count`,
+  `speaker_count` and every §33 latency are `None`, never `0`.
+- **Consent is necessary, never sufficient.** ADR-018's unconditional refusals
+  are evaluated *before* consent — a scope permitting `upload` still cannot
+  send screen content off the machine.
+- **Nothing observed in a session is a request.** The creative link stops at
+  `offer()` and exposes no function that accepts.
+- Screen content, speech and tool results enter at `EXTERNAL`; the caller
+  cannot choose the level.
+
+`golden.run_all()` runs the thirty §35 scenarios: 24 `VERIFIED`, 6 `BLOCKED`,
+0 failed. `BLOCKED` asserts that the platform reports its own incapacity.
 
 ## Media engine — `src/media/`, and its studio
 

@@ -12,6 +12,54 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-19 — A live context engine that represents everything and perceives nothing (ADR-033, Live Context / Call.md directive, 27 phases)
+
+`src/live_context/` — 16 modules, 4 805 lines, **376 tests**, no new dependency,
+no second registry, no second memory. Full report →
+`docs/live-context/final-report.md`.
+
+**The state is computed, never written.** `readiness.py` walks the chain and
+answers `REPRESENTATION READY — NO LIVE PERCEPTION ON THIS MACHINE, 5 STAGE(S)
+NOT IMPLEMENTED, 2 BLOCKED` — 9 `READY`, 2 `BLOCKED`, 5 `ABSENT`, and the split
+is total: every representation stage runs, no perception stage does. A test
+replaces the stage list and asserts the verdict changes.
+
+- **`ABSENT` is not `UNKNOWN`** — one is measured and will not change by
+  waiting; the other is waiting for a measurement. An absence without its
+  finding is refused: "absent" without saying how it was established is a
+  supposition.
+- **Fusion records conflicts and resolves none.** Two providers disagreeing
+  produce two observations and a recorded conflict, never an average. Nothing is
+  promoted, and corroborated values are never ranked by how many voices carry
+  them — ranking by count is arbitration without saying so.
+- **No speaker is numbered.** `SPEAKER_1` cut at random has the shape of a
+  diarization and none of its content. A channel says where the sound came from,
+  not who spoke, so an identity derived from one is `DECLARED`, never `MEASURED`.
+- **Zero does not exist where nothing was counted**: `turns`, `switch_count`,
+  `speaker_count` and every §33 latency are `None`.
+- **Consent is necessary, never sufficient.** ADR-018's unconditional refusals
+  are evaluated *before* consent, so a scope explicitly permitting `upload`
+  still cannot send screen content off the machine — proved with the sovereign
+  derogation set.
+- **Nothing observed in a session is a request.** The creative link stops at
+  `offer()` and exposes no function that accepts.
+- **30 executable scenarios** (§35) — 24 `VERIFIED`, 6 `BLOCKED`, 0 failed.
+  `BLOCKED` is an assertion that the platform reports its own incapacity, not a
+  skipped test.
+- **No claim of real time**: `realtime_claim()` answers neither yes nor no, and
+  names the three things that would settle it.
+
+Reused rather than rebuilt: `src/proactive/` (the §20 nudge engine, already
+here, with evidence-fingerprint suppression rather than a two-minute cooldown),
+`creative/language/switching.py`, `creative/voice/scene.py`,
+`creative/reference/consent.py`, `mcp/exposure.py`, `mcp/client.py`,
+`tool/authorization.py`, `tools/screen/tool.assert_stays_local()`,
+`security/trust.py`, `memory_engine/`.
+
+Four of §31's five provider interfaces were **not** built; only
+`LiveCaptureProvider` had the argument, and the table says what serves the
+others.
+
 ### Added — 2026-08-19 — A research orchestration layer whose providers are both blocked (ADR-032, Research Orchestration directive, 18 phases)
 
 **Twelve volets, eighteen phases, all completed.** Full report →

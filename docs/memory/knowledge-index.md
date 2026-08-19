@@ -20,6 +20,14 @@ Each engine lives in `src/` and exposes a single manager class as its entry poin
 `docs/architecture/identity.md` — what VOLET_16 asks, what exists, what is deliberately
 absent with its trigger. Decision: ADR-010 (a key belongs to a subject).
 
+## Live context, and what Call.md actually is
+`docs/live-context/final-report.md` — the computed state of the live chain, and the
+rules it holds. `repo-audit.md` reads Call.md from source: it **does not record on
+Linux** (its own platform table), and VideoDB carries capture, transcription *and*
+inference inside it. `licence-matrix.md` records `MIT DECLARED` with **no LICENSE
+file** on either branch. `realtime-audit.md` measures what this repository already
+had. Decision: ADR-033.
+
 ## Architecture Decision Records (ADRs)
 
 - ADR-001: Choose Python as the primary implementation language

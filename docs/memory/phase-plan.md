@@ -5,23 +5,17 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **LIVE CONTEXT ENGINE / CALL.MD INTEGRATION**
-Plan complet     : `docs/live-context/phase-plan.md`
-Phases           : 27
-Phase courante   : **L15.2 — en attente de confirmation** (rapport final,
-                   mémoire, régression complète — §45)
-Terminées        : L00 à L14, et L15.1 — quatre audits, ADR-033, et `src/live_context/` :
-                   `state.py`, `capture.py`, `fusion.py`, `speakers.py`,
-                   `languages.py`, `assistance.py`, `intent.py`,
-                   `screen.py`, `retention.py`, `memory.py`,
-                   `creative.py`, `providers.py`, `readiness.py`,
-                   `golden.py`, `measurements.py` (376 tests)
+VOLET en cours   : **aucun**
+Dernier terminé  : **LIVE CONTEXT ENGINE / CALL.MD INTEGRATION** — 27 phases,
+                   **ADR-033**. Rapport → `docs/live-context/final-report.md`
+Phase courante   : **aucune** — le programme est fini, il reste à ouvrir la PR
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :
 `.claude/rules/post-integration-validation.md` — toute phase se termine par une
-validation de non-régression complète, jamais par une compilation. La nouvelle
-directive la redit mot pour mot à la fin ; elle s'appliquait déjà.
+validation de non-régression complète, jamais par une compilation. Quatorze
+régressions complètes ont tourné pendant ce programme, toutes `PASS` avec le
+même échec unique (`v0.1.0`).
 
 ---
 
@@ -34,54 +28,35 @@ directive la redit mot pour mot à la fin ; elle s'appliquait déjà.
    `docs/canvas/final-report.md`, ADR-031.
 4. **Research Orchestration Integration** — 18 phases.
    `docs/research/final-report.md`, ADR-032.
+5. **Live Context Engine / Call.md** — 27 phases.
+   `docs/live-context/final-report.md`, ADR-033.
 
-## Ce que les sondes ont déjà établi
+## Ce que ce dernier programme a mesuré, et qu'il ne faut pas re-déduire
 
-**Call.md est une application Electron/TypeScript, et sa licence est déclarée
-sans être déposée.**
+**L'état de la chaîne live est calculé par `readiness()`**, jamais écrit :
+`REPRESENTATION READY — NO LIVE PERCEPTION ON THIS MACHINE, 5 STAGE(S) NOT
+IMPLEMENTED, 2 BLOCKED`. Neuf étapes `READY`, deux `BLOCKED`, cinq `ABSENT`, et
+la coupure est totale : **toutes** les étapes de représentation tournent,
+**aucune** étape de perception.
 
-| Lu | Valeur |
-|---|---|
-| `package.json` | `call-md` **1.0.4**, `"license": "MIT"` |
-| Fichier `LICENSE` | **absent** — 404 sur cinq noms × deux branches |
-| Pile | Electron 42, React 19, tRPC, Drizzle + SQLite, **`videodb`**, SDK MCP |
-| Python | **aucun** |
+**La diarisation est `ABSENT` et non `BLOCKED`** : installer `pyannote`
+fournirait la capacité et laisserait toujours rien pour l'appeler. La ranger
+sous `BLOCKED` enverrait un opérateur chercher un paquet qui n'a jamais été le
+problème.
 
-Un champ de manifeste est une déclaration, pas une concession : consigné **MIT
-`DECLARED`**, jamais `AUTHORITATIVE`.
+**Call.md n'enregistre pas sous Linux** — sa propre table le dit — et **VideoDB
+y porte la capture, la transcription et l'inférence**. Son « Local-First »
+couvre le **stockage**, pas le traitement. L'option A du §26 heurtait donc
+ADR-014 et ADR-018 avant même d'être évaluée ; **aucune ADR n'a été amendée**.
 
-**Call.md n'enregistre pas sous Linux** — sa propre table le dit : l'application
-refuse d'enregistrer avant de démarrer, faute de binaire de capture. GalSen IA
-tourne sous Linux.
+**Six des neuf items « ne pas dupliquer » du §41 existaient déjà**, et le
+`NudgeEngine` du §20 est `src/proactive/` : sa suppression des répétitions par
+empreinte des preuves est plus précise qu'un minuteur de deux minutes, parce
+qu'une suggestion revient quand la situation a changé et non quand le temps a
+passé.
 
-**Cet environnement n'a aucune entrée live** : ni `/dev/snd`, ni `/dev/video*`,
-`DISPLAY` vide, `ffmpeg` hors `PATH`. Les latences de capture et de
-transcription rendront `NOT_MEASURED`, et la tranche de L05 devra le **rapporter**
-plutôt que le simuler.
-
-## La contrainte qui décide du programme
-
-**Deux ADR acceptées tranchent déjà ce que §12 et §26 proposent d'évaluer.**
-
-- **ADR-014** — la plateforme ne dépend d'aucun modèle externe à l'exécution.
-- **ADR-018** — la dérogation est une configuration, jamais un paramètre de
-  requête, et trois catégories sont refusées **quoi que dise la configuration** :
-  mémoires/fichiers/connaissances de l'utilisateur, **captures d'écran**, export
-  de données d'entraînement.
-
-Or L01 a mesuré que **VideoDB porte la capture, la transcription et l'inférence**
-dans Call.md. L'option A du §26 heurte donc ADR-014 et ADR-018 ; l'option B est
-compatible. **C'est documenté, pas tranché** : amender une ADR appartient au
-propriétaire.
-
-## Ce qui ne doit pas être reconstruit
-
-**Six des neuf items du §41 existent déjà** : transcription, mémoire,
-orchestration MCP, boucle d'agent, base de données, moteur de résumé. Trois
-manquent : diarisation, gestionnaire de contexte, et un bus d'événements dont
-L04 décidera la nécessité.
-
-Et **deux exigences présentées comme neuves sont déjà implémentées** :
-`creative/language/switching.py` (alternance de langues, structurée et jamais
-devinée) et `creative/voice/scene.py` (l'audio d'origine reste l'artefact
-source). Le `NudgeEngine` du §20 serait `src/proactive/` écrit deux fois.
+**La licence n'était pas l'obstacle** : 48 MIT sur 54 paquets, l'arbre le plus
+propre des cinq dépôts audités en quatre programmes. Ce qui bloque est
+l'architecture, la plateforme et la souveraineté. À noter tout de même :
+`package.json` déclare MIT et **aucun fichier `LICENSE` n'existe** — consigné
+`MIT DECLARED`, jamais `AUTHORITATIVE`.
