@@ -8,9 +8,9 @@ phase attend une confirmation.
 VOLET en cours   : **LIVE CONTEXT ENGINE / CALL.MD INTEGRATION**
 Plan complet     : `docs/live-context/phase-plan.md`
 Phases           : 27
-Phase courante   : **L00.1 — en attente de confirmation** (audit du dépôt
-                   existant, §1 de la directive)
-Terminées        : aucune
+Phase courante   : **L01.1 — en attente de confirmation** (audit de Call.md
+                   depuis la source)
+Terminées        : L00.1, L00.2 — `docs/live-context/audit.md`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :
