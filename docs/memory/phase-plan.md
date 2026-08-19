@@ -5,12 +5,12 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **RESEARCH ORCHESTRATION INTEGRATION**
-Plan complet     : `docs/research/phase-plan.md`
-Phases           : 18
-Phase courante   : **aucune — le VOLET est terminé.**
-                   Rapport final : `docs/research/final-report.md`
-Terminées        : R00 à R11 — 18 phases sur 18
+VOLET en cours   : **LIVE CONTEXT ENGINE / CALL.MD INTEGRATION**
+Plan complet     : `docs/live-context/phase-plan.md`
+Phases           : 27
+Phase courante   : **L00.1 — en attente de confirmation** (audit du dépôt
+                   existant, §1 de la directive)
+Terminées        : aucune
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :
@@ -27,6 +27,8 @@ directive la redit mot pour mot à la fin ; elle s'appliquait déjà.
    `docs/providers/final-report.md`, ADR-030.
 3. **Creative Canvas & Cinema Orchestration** — 17 phases.
    `docs/canvas/final-report.md`, ADR-031.
+4. **Research Orchestration Integration** — 18 phases.
+   `docs/research/final-report.md`, ADR-032.
 
 ## Ce que les sondes ont déjà établi
 
