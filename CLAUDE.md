@@ -73,10 +73,12 @@ last session stopped. Keep it up to date; it is the project's continuity.
 *Measured 2026-08-17.* Foundation and core engines are done (ADR-001, ADR-002). Fifteen
 engines **plus nine subsystems probed after the registry** (volets 47–64, probed by
 `src/integration/degradation.py`), **17 agents**, **24 declared tools** (13 runnable
-unattended), **142 API routes**, 31 ADRs (ADR-020 is `proposed`; ADR-024 to ADR-027 open the creative programme;
-ADR-023 and ADR-028 add the interop and coding layers) — see
+unattended), **142 API routes**, 32 ADRs (ADR-020 is `proposed`; ADR-024 to ADR-027 open the creative programme;
+ADR-023 and ADR-028 add the interop and coding layers; ADR-030 and ADR-031 close the provider
+and canvas programmes) — see
 `docs/architecture/overview.md`, kept synchronized with the measured state.
-**5369 tests pass**, 8 skipped.
+**6233 tests pass**, 11 skipped, 1 failed — *measured 2026-08-19*. The single failure is the
+`v0.1.0` tag, which has never been pushed; it fails identically on `main`.
 
 Unattended work is real: a routine can fire a workflow through the one orchestrator, and
 **an approval is never granted by the absence of someone to refuse it**. One job is

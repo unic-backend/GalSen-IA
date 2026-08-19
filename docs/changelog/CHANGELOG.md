@@ -12,6 +12,30 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Decided — 2026-08-19 — The Creative Canvas is a server-side graph (ADR-031, Creative Canvas directive, K00–K04)
+
+Ten of seventeen phases. Audits → `docs/canvas/`; decision → **ADR-031**.
+
+**Nothing from the five candidate repositories is adopted.** §4's classification
+came out 0 KEEP, 0 ADAPT, 3 REFERENCE ONLY, 2 REJECT — and the two rejections are
+legal: those repositories carry no licence on any of four filenames across two
+branches, so all rights are reserved. The directive's premise that both are MIT is
+false, measured. The dependency count this programme adds is **zero**.
+
+The canvas is a graph model on the server — nodes, typed ports, an edge legality
+rule — with no opinion about rendering. Four new modules against nine reused
+subsystems, because K00 measured that nine of the eleven things §5–§17 asks for
+already exist and exactly one type is genuinely missing: `ProviderPrivacyPolicy`.
+
+**A trust rule written in this programme was corrected inside it.** Deriving a
+node's trust level from `CreativeProvider.invocation` looked right; that field is
+computed from the *repository licence*, so a provider reached over HTTP at a
+third-party host would have been trusted as platform output. Trust now derives
+from `data_destination`, whose `UNKNOWN` fails safe to `EXTERNAL`.
+
+Published counts corrected against a measurement: **32 ADRs**, and 6 233 tests
+passing across 306 test files (announced as 5 369 across 274 since 2026-08-17).
+
 ### Added — 2026-08-19 — MoneyPrinterTurbo as a declared provider (Master Update Directive V4, 15 phases)
 
 Ten volets, fifteen phases, all completed. Full report →
