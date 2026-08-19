@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **MASTER UPDATE DIRECTIVE V4 — MoneyPrinterTurbo comme fournisseur ajouté**
 Plan complet     : `docs/providers/phase-plan.md`
 Phases           : 15
-Phase courante   : **M05 — en attente de confirmation**
-Terminées        : M00.1 → M04 (8 phases)
+Phase courante   : **M06.2 — en attente de confirmation**
+Terminées        : M00.1 → M06.1 (10 phases)
 Cadence          : **deux phases par tour** (demandé par le propriétaire le 2026-08-19)
 
 ---
@@ -93,8 +93,24 @@ licence bonne pour le code, non résolue pour ce qu'on veut vraiment.
 plateforme rapporte `BLOCKED` sans aucune implémentation. Couverture wolof /
 sérère / pulaar : **`UNKNOWN` pour tous**, non vérifiée.
 
-## Ce que M05 fera
+## M05 et M06.1 — faits. ADR-030 acceptée
 
-L'ADR-030 : quel registre, quel mode d'invocation, et **si l'adaptateur vaut
-d'être écrit maintenant** — puisque MPT exige un `ffmpeg` absent et rapporterait
-`BLOCKED` de toute façon.
+**La décision qui a le plus de conséquence : une tâche nouvelle,
+`stock_assembly`.** Déclarer `text_to_video` aurait été une erreur de catégorie
+réelle — un routeur aurait choisi cet assembleur pour « génère une scène avec mon
+ami » et rendu des rushes d'un inconnu. Deux actes, deux noms.
+
+Reste décidé : registre **créatif** (le seul qui lit une licence avant de
+choisir), invocation **`API`** (`edge-tts` est LGPL-3.0 : lier n'est pas
+appeler), `commercial=UNKNOWN` (droits sur la sortie non lus), et **aucune
+dépendance ajoutée**.
+
+`src/media/providers/moneyprinterturbo.py` : `health()` rapporte les **trois**
+conditions manquantes ensemble (service, ffmpeg, banque d'images) avec le geste
+qui répare chacune ; `generate()` **refuse**, comme `wangp`. 20 tests.
+
+## Ce que M06.2 fera
+
+Déclarer le fournisseur dans le **registre créatif** avec sa `LicenceRecord`
+(MIT dépôt / `UNKNOWN` commercial) et vérifier que le routeur le **refuse** pour
+un travail commercial — sans une ligne de code de plus.

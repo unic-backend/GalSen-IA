@@ -47,6 +47,14 @@ TACHES = (
     "text_to_image",
     "upscale",
     "interpolate",
+    # Composer un montage à partir de rushes **récupérés**, pas générés
+    # (ADR-030). C'est une tâche distincte de `text_to_video`, et les
+    # confondre serait une erreur de catégorie aux conséquences réelles :
+    # un routeur choisirait un assembleur pour « génère une scène avec mon
+    # ami » et rendrait des rushes d'un inconnu. Le sélecteur refuse déjà de
+    # servir autre chose que ce qui est demandé ; encore faut-il que les deux
+    # actes portent deux noms.
+    "stock_assembly",
 )
 
 #: Ce qu'une sélection peut donner.
