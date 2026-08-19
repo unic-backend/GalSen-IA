@@ -12,6 +12,53 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-19 — A research orchestration layer whose providers are both blocked (ADR-032, Research Orchestration directive, 18 phases)
+
+**Twelve volets, eighteen phases, all completed.** Full report →
+`docs/research/final-report.md`. Audits → `docs/research/`; decision → **ADR-032**.
+
+`src/research/` — eight modules, 2 929 lines, **219 tests**: a provider
+declaration, a router that refuses three distinct ways, one address guard where
+the repository had two halves, a normalised source with STEP 9's ten provenance
+fields, the thirteen-stage pipeline, a research cache key over the existing
+cache, eighteen runnable cases, and a measurement report.
+
+**Neither candidate can run here**, and the layer says so rather than pretending:
+`agent_reach` is `BLOCKED` on three conditions, `web_search_mcp` on four. Three
+of the six programs Agent-Reach orchestrates carry **no licence at all**. No
+dependency was added, nothing was cloned, installed or executed, and no existing
+source file was touched.
+
+
+### Added — 2026-08-19 — The Creative Canvas is a server-side graph (ADR-031, Creative Canvas directive, 17 phases)
+
+**Nine volets, seventeen phases, all completed.** Full report →
+`docs/canvas/final-report.md`. Audits → `docs/canvas/`; decision → **ADR-031**.
+
+Seven modules: `src/creative/intent.py`, `src/creative/cinema.py`, and
+`src/creative/canvas/` (ports, graph, privacy, readiness, slice). **130 tests
+added, 6 363 passing.** No existing source file was touched.
+
+**Nothing from the five candidate repositories is adopted.** §4's classification
+came out 0 KEEP, 0 ADAPT, 3 REFERENCE ONLY, 2 REJECT — and the two rejections are
+legal: those repositories carry no licence on any of four filenames across two
+branches, so all rights are reserved. The directive's premise that both are MIT is
+false, measured. The dependency count this programme adds is **zero**.
+
+The canvas is a graph model on the server — nodes, typed ports, an edge legality
+rule — with no opinion about rendering. Four new modules against nine reused
+subsystems, because K00 measured that nine of the eleven things §5–§17 asks for
+already exist and exactly one type is genuinely missing: `ProviderPrivacyPolicy`.
+
+**A trust rule written in this programme was corrected inside it.** Deriving a
+node's trust level from `CreativeProvider.invocation` looked right; that field is
+computed from the *repository licence*, so a provider reached over HTTP at a
+third-party host would have been trusted as platform output. Trust now derives
+from `data_destination`, whose `UNKNOWN` fails safe to `EXTERNAL`.
+
+Published counts corrected against a measurement: **32 ADRs**, and 6 233 tests
+passing across 306 test files (announced as 5 369 across 274 since 2026-08-17).
+
 ### Added — 2026-08-19 — MoneyPrinterTurbo as a declared provider (Master Update Directive V4, 15 phases)
 
 Ten volets, fifteen phases, all completed. Full report →
