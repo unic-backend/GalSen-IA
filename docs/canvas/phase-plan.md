@@ -37,13 +37,14 @@ K02  Licence and dependency matrix (§18) — the gate                    → 1 
 K03  Obsolete assumptions + Creative Canvas architecture (§5, §7)      → 2 phases  ✅
 K04  Provider comparison, ADR-031, feasibility report (§11, §25)       → 2 phases  ✅
 K05  CreativeIntent — required / optional / forbidden (§6, §7)         → 2 phases  ✅
-K06  Cinema layer — CameraSpec, LensSpec, ShotSpec normalised (§10)    → 2 phases
+K06  Cinema layer — CameraSpec, LensSpec, ShotSpec normalised (§10)    → 2 phases  ✅
 K07  Smallest validated vertical slice (§22)                           → 2 phases
 K08  Full regression, measurements, final report (§24, §26)            → 1 phase (indivisible)
 ```
 
-**Total: 17 phases.** Completed: **12**.
-First code of the programme → `src/creative/intent.py` (K05), 32 tests.
+**Total: 17 phases.** Completed: **14**.
+Code of the programme → `src/creative/intent.py` (K05, 32 tests) and
+`src/creative/cinema.py` (K06, 37 tests).
 Decision → **ADR-031**, `docs/architecture/decisions/031-creative-canvas-is-a-server-side-graph.md`.
 Audits → `docs/canvas/audit.md` (K00), `docs/canvas/repo-audit.md` (K01),
 `docs/canvas/licence-matrix.md` (K02),
