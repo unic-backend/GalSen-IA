@@ -69,7 +69,9 @@ stronger of the two — a manifest field is metadata, a `LICENSE` file is the
 grant — but a project that contradicts itself about its own licence is a
 project whose licence must be re-read before any adoption, not assumed.
 
-Seven dependencies (Tailwind, Vite, plain JS). No framework: `index.html` loads
+Seven declared dependencies — Tailwind, PostCSS, Vite, and **`puppeteer`**, a
+full headless Chromium, declared at runtime in a client-side studio (see K02).
+No framework: `index.html` loads
 `/src/main.js`, which is 214 lines of hand-written routing across 25 studio
 components. Total application ≈ 8.7 KB of entry code.
 
@@ -211,9 +213,10 @@ matters later:
   a trademark question, separate from the copyright one, and it attaches to
   anything built on them.
 - `troy1471-sys` lists **`puppeteer ^24.37.2`** as a runtime dependency of a
-  creative studio. A headless Chromium in a media application is not
-  self-explanatory; unexplained heavyweight dependencies are §18's other
-  subject.
+  creative studio, exactly as `abdrsan/Higgsfield-Open` does; `clearsolid`
+  replaces it with a Next.js/React/axios tree. A headless Chromium in a media
+  application is not self-explanatory; unexplained heavyweight dependencies are
+  §18's other subject.
 
 ### `higgsfield-ai/skills` — MIT, and still not adoptable as a component
 

@@ -33,8 +33,8 @@ how an orchestrator becomes a cage.
 ```
 K00  Audit — GalSen IA's creative/video, security, memory, provenance  → 2 phases  ✅
 K01  Audit — the five repositories, one at a time (§2, §4)             → 3 phases  ✅
-K02  Licence and dependency matrix (§18) — the gate                    → 1 phase (indivisible)
-K03  Obsolete assumptions + Creative Canvas architecture (§5, §7)      → 2 phases
+K02  Licence and dependency matrix (§18) — the gate                    → 1 phase (indivisible)  ✅
+K03  Obsolete assumptions + Creative Canvas architecture (§5, §7)      → 2 phases  (K03.1 ✅)
 K04  Provider comparison, ADR-031, feasibility report (§11, §25)       → 2 phases
 K05  CreativeIntent — required / optional / forbidden (§6, §7)         → 2 phases
 K06  Cinema layer — CameraSpec, LensSpec, ShotSpec normalised (§10)    → 2 phases
@@ -42,8 +42,10 @@ K07  Smallest validated vertical slice (§22)                           → 2 ph
 K08  Full regression, measurements, final report (§24, §26)            → 1 phase (indivisible)
 ```
 
-**Total: 17 phases.** Completed: **5**.
-Audits → `docs/canvas/audit.md` (K00), `docs/canvas/repo-audit.md` (K01).
+**Total: 17 phases.** Completed: **7**.
+Audits → `docs/canvas/audit.md` (K00), `docs/canvas/repo-audit.md` (K01),
+`docs/canvas/licence-matrix.md` (K02),
+`docs/canvas/obsolete-assumptions.md` (K03.1).
 
 ---
 
