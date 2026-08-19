@@ -32,7 +32,7 @@ And the rule that decides how everything below is ordered:
 ## The 12 volets, and their phases
 
 ```
-R00  Audit — existing search, RAG, knowledge, MCP, cache, security (STEP 1)  → 2 phases
+R00  Audit — existing search, RAG, knowledge, MCP, cache, security (STEP 1)  → 2 phases  ✅
 R01  Audit — Agent-Reach and web-search-mcp, from source (STEP 2)            → 2 phases
 R02  Licence and dependency matrix, audited separately (STEP 2)              → 1 phase (indivisible)
 R03  Capability comparison — unique / overlapping / superior (STEP 3)        → 1 phase (indivisible)
@@ -47,6 +47,7 @@ R11  Final validation, regression, final report (STEP 16, mandatory rule)    →
 ```
 
 **Total: 18 phases.** Counted programmatically, not estimated.
+Completed: **2**. Audit → `docs/research/audit.md`.
 
 ---
 
@@ -78,8 +79,9 @@ it is a real dependency audit, and the directive says so explicitly:
 The MoneyPrinterTurbo programme found exactly that trap — an MIT repository
 whose actual capability path was LGPL-3.0. It is the reason R02 stands alone.
 
-**And the platform is already dense here.** A first listing shows
-`src/knowledge_engine/` with more than twenty-eight modules — including
+**And the platform is already dense here.** A first listing showed
+`src/knowledge_engine/` with more than twenty-eight modules; R00 counted
+**37** — including
 `citations.py`, `freshness.py`, `contradictions.py`, `knowledge_security.py`,
 `knowledge_cache.py`, `knowledge_validator.py` — plus `src/services/search/`,
 `src/mcp/`, `src/connectors/`, and `src/acquisition/` (ADR-021's gated
