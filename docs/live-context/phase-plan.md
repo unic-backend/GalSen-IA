@@ -36,7 +36,7 @@ L03  Licence and dependency matrix (§38, §39) — the gate                → 
 L04  LiveContextEngine architecture + ADR-033 (PHASE 3, §5, §6, §42)    → 2 phases  ✅
 L05  Smallest validated live-input slice (PHASE 4, §7)                  → 2 phases  ✅
 L06  ContextFusionEngine (PHASE 5, §13)                                 → 2 phases  ✅
-L07  Speakers and languages (PHASE 6, §9, §10, §11)                     → 2 phases
+L07  Speakers and languages (PHASE 6, §9, §10, §11)                     → 2 phases  ✅
 L08  Live assistance and nudges (PHASE 7, §19, §20)                     → 2 phases
 L09  MCP integration (PHASE 8, §16, §17)                                → 1 phase (indivisible)
 L10  Screen context (PHASE 9, §12)                                      → 1 phase (indivisible)
@@ -48,8 +48,8 @@ L15  Performance, hardening, full regression, final report (13–15, §45) → 2
 ```
 
 **Total: 27 phases.** Counted programmatically, not estimated.
-Completed: **12**. Decision → **ADR-033**.
-First code → `src/live_context/` : `state.py`, `capture.py`, `fusion.py` (103 tests). Audits → `docs/live-context/audit.md` (L00),
+Completed: **14**. Decision → **ADR-033**.
+First code → `src/live_context/` : `state.py`, `capture.py`, `fusion.py`, `speakers.py`, `languages.py` (158 tests). Audits → `docs/live-context/audit.md` (L00),
 `repo-audit.md` (L01), `realtime-audit.md` (L02), `licence-matrix.md` (L03).
 
 **Several of these volets will shrink**, and the plan says so now rather than
