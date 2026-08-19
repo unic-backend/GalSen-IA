@@ -24,6 +24,8 @@ Focus: practical AI agents, data platforms, and tools for African contexts first
 - Work in phases of ≤ 8 min; at 25 min elapsed, stop and ask → `.claude/rules/work-cadence.md`.
 - Ask for clarification when requirements are ambiguous.
 - Never call work done without running it → `.claude/rules/verification.md`.
+- **Implement only what was requested** → `.claude/rules/spec-driven-governance.md`.
+  A possible improvement is not a requirement; an optional suggestion never becomes a task.
 - After completing significant work → update `docs/memory/` and `docs/changelog/CHANGELOG.md` following `.claude/rules/memory.md`.
 
 ## Memory System (consult first)
@@ -62,6 +64,8 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - Git → `.claude/rules/git-workflow.md`
 - Testing → `.claude/rules/testing.md`
 - Post-integration validation → `.claude/rules/post-integration-validation.md`
+- Spec-driven governance & scope → `.claude/rules/spec-driven-governance.md`
+- Spec Kit constitution (pointers only) → `.specify/memory/constitution.md`
 
 ## Hard Rules
 - NEVER commit secrets or `.env` files.
