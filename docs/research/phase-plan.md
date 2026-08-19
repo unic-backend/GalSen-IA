@@ -38,8 +38,8 @@ R02  Licence and dependency matrix, audited separately (STEP 2)              →
 R03  Capability comparison — unique / overlapping / superior (STEP 3)        → 1 phase (indivisible)  ✅
 R04  ResearchProvider abstraction + ADR-032 (STEP 4)                         → 2 phases  ✅
 R05  ResearchRouter — routing and fallback (STEP 5)                          → 2 phases  ✅
-R06  Source trust and security boundaries (STEP 6, STEP 10)                  → 1 phase (indivisible)
-R07  Research pipeline, knowledge status, provenance (STEP 7, 8, 9)          → 2 phases
+R06  Source trust and security boundaries (STEP 6, STEP 10)                  → 1 phase (indivisible)  ✅
+R07  Research pipeline, knowledge status, provenance (STEP 7, 8, 9)          → 2 phases  (R07.1 ✅)
 R08  Caching and freshness (STEP 11)                                         → 1 phase (indivisible)
 R09  The eighteen named test cases (STEP 12)                                 → 2 phases
 R10  Performance measurements and provider transparency (STEP 13, 14)        → 1 phase (indivisible)
@@ -47,8 +47,9 @@ R11  Final validation, regression, final report (STEP 16, mandatory rule)    →
 ```
 
 **Total: 18 phases.** Counted programmatically, not estimated.
-Completed: **10**. Decision → **ADR-032**.
-Code → `src/research/providers.py` and `routing.py` (66 tests, 1 skipped). Audits → `docs/research/audit.md` (R00),
+Completed: **12**. Decision → **ADR-032**.
+Code → `src/research/` : `providers.py`, `routing.py`, `safety.py`,
+`sources.py` (143 tests, 1 skipped). Audits → `docs/research/audit.md` (R00),
 `docs/research/repo-audit.md` (R01), `docs/research/licence-matrix.md` (R02),
 `docs/research/capability-comparison.md` (R03).
 
