@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **MASTER UPDATE DIRECTIVE V4 — MoneyPrinterTurbo comme fournisseur ajouté**
 Plan complet     : `docs/providers/phase-plan.md`
 Phases           : 15
-Phase courante   : **M08.1 — en attente de confirmation**
-Terminées        : M00.1 → M07 (12 phases)
+Phase courante   : **M09 — en attente de confirmation**
+Terminées        : M00.1 → M08.2 (14 phases)
 Cadence          : **deux phases par tour** (demandé par le propriétaire le 2026-08-19)
 
 ---
@@ -134,7 +134,28 @@ déclenche la mesure, et un test garde que les candidats à GPU restent écarté
 qui fonctionne — c'est l'absence de second candidat, et le routeur refuse de
 substituer plutôt que de servir autre chose.
 
-## Ce que M08 fera
+## M08 — fait. `docs/providers/golden-mapping.md`
 
-Cartographier les tests d'or de §38 (MPT-01→09, REF, ID, AUDIO) sur ce que
-`src/creative/golden.py` exécute déjà, **avant** d'en écrire un seul.
+**19 des 22 tests de §38 étaient déjà couverts** — par `golden.py` (25 scénarios)
+et par les tests de M06/M07. En réécrire un aurait gonflé le compte sans ajouter
+une ligne de couverture. **3 écrits** : MPT-06, MPT-07, MPT-08.
+
+**MPT-07 a trouvé un vrai défaut dans ma propre déclaration** : l'adaptateur
+annonçait 1920×1080, et les bornes sont comparées **axe par axe** — un
+1080×1920 vertical était donc refusé sur sa hauteur, c'est-à-dire **le cas
+d'usage principal** de MPT. Corrigé à 1920 sur les deux axes, avec
+l'imprécision nommée dans le code.
+
+**MPT-06 écrit honnêtement** : aucun second fournisseur ne sert
+`stock_assembly`, donc le test affirme le **refus de substituer**, pas un repli
+qui marche. Un second test garde qu'il n'y a qu'un servant — le jour où il y en
+aura deux, c'est là qu'on le verra.
+
+**Écart relevé (§35), non résolu** : `min_vram_gb = None` veut dire « aucun GPU
+requis » côté média et « rien n'a été déclaré » côté routage créatif. Les deux
+se défendent isolément ; adjacents, c'est un piège. Écrit pour que le prochain ne
+le découvre pas à ses dépens.
+
+## Ce que M09 fera
+
+Les mesures de §39 et le rapport final de §42 — ses **31 points**.

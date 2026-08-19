@@ -92,8 +92,16 @@ BLOCAGES = {
 CAPACITE_ATTENDUE = ProviderCapability(
     provider_id="moneyprinterturbo",
     tasks=frozenset({"stock_assembly"}),
+    # 1920 sur **les deux** axes, et non 1920x1080. Les bornes sont comparées
+    # axe par axe (`base.py:199`), donc déclarer un cadrage paysage refuserait
+    # un 1080x1920 — c'est-à-dire le 9:16, l'usage principal de
+    # MoneyPrinterTurbo. Imprécision assumée et nommée : un carré 1920x1920
+    # passerait alors qu'il n'a pas été vérifié. Entre refuser à tort le cas
+    # d'usage central et laisser passer un cas non vérifié — qui échouerait
+    # côté fournisseur, visiblement — le second se répare, le premier se
+    # cherche longtemps.
     max_width=1920,
-    max_height=1080,
+    max_height=1920,
     max_duration_s=600.0,
     # `None` et non `0` : MoneyPrinterTurbo ne demande **pas** de GPU, et c'est
     # sa seule vraie supériorité ici. Écrire `0` laisserait croire qu'un besoin
