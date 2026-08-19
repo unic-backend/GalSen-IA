@@ -8,10 +8,10 @@ phase attend une confirmation.
 VOLET en cours   : **RESEARCH ORCHESTRATION INTEGRATION**
 Plan complet     : `docs/research/phase-plan.md`
 Phases           : 18
-Phase courante   : **R04.1 — en attente de confirmation** (abstraction
-                   ResearchProvider)
-Terminées        : R00.1, R00.2, R01.1, R01.2, R02, R03 — quatre audits dans
-                   `docs/research/`
+Phase courante   : **R05.1 — en attente de confirmation** (ResearchRouter :
+                   routage et repli)
+Terminées        : R00.1, R00.2, R01.1, R01.2, R02, R03, R04.1, R04.2 —
+                   quatre audits + ADR-032 + `src/research/providers.py`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :

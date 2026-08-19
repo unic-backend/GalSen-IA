@@ -36,7 +36,7 @@ R00  Audit — existing search, RAG, knowledge, MCP, cache, security (STEP 1)  �
 R01  Audit — Agent-Reach and web-search-mcp, from source (STEP 2)            → 2 phases  ✅
 R02  Licence and dependency matrix, audited separately (STEP 2)              → 1 phase (indivisible)  ✅
 R03  Capability comparison — unique / overlapping / superior (STEP 3)        → 1 phase (indivisible)  ✅
-R04  ResearchProvider abstraction + ADR-032 (STEP 4)                         → 2 phases
+R04  ResearchProvider abstraction + ADR-032 (STEP 4)                         → 2 phases  ✅
 R05  ResearchRouter — routing and fallback (STEP 5)                          → 2 phases
 R06  Source trust and security boundaries (STEP 6, STEP 10)                  → 1 phase (indivisible)
 R07  Research pipeline, knowledge status, provenance (STEP 7, 8, 9)          → 2 phases
@@ -47,7 +47,8 @@ R11  Final validation, regression, final report (STEP 16, mandatory rule)    →
 ```
 
 **Total: 18 phases.** Counted programmatically, not estimated.
-Completed: **6**. Audits → `docs/research/audit.md` (R00),
+Completed: **8**. Decision → **ADR-032**.
+First code → `src/research/providers.py` (38 tests). Audits → `docs/research/audit.md` (R00),
 `docs/research/repo-audit.md` (R01), `docs/research/licence-matrix.md` (R02),
 `docs/research/capability-comparison.md` (R03).
 
