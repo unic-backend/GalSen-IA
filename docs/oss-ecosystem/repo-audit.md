@@ -89,11 +89,16 @@ question, so it was measured rather than argued.
 |---|---|---|---|
 | 271 *(today's chunk count)* | 0.17 s | **70.42 ms** | **94.93 ms** |
 | 10 000 | 6.57 s | **1 943 ms** | **2 186 ms** |
-| 100 000 | *measurement running at time of writing* | — | — |
+| 100 000 *(the ADR's own threshold)* | 62.72 s | **27 944 ms** | **32 473 ms** |
 
-**The p95 half of ADR-015's trigger is already met at 271 vectors** — 94.93 ms
-against a 100 ms threshold — and exceeded by a factor of twenty at 10 000, long
-before the 100 000-vector half of the condition is approached.
+**Both halves of ADR-015's trigger are met, and the p95 half is met at 271
+vectors** — 94.93 ms against a 100 ms threshold, at today's corpus size. At the
+ADR's own 100 000-vector threshold a single query takes **28 seconds**.
+
+The growth is linear in the number of vectors, which is what an exhaustive scan
+predicts — 271 → 10 000 is ×37 in count and ×28 in time; 10 000 → 100 000 is ×10
+and ×14. Nothing here is a surprise about *algorithms*; it is a surprise about
+*where the time goes*.
 
 ### Why, precisely — and why the answer may not be Qdrant
 
@@ -132,5 +137,43 @@ is not an argument against them; it is the reason §3's twenty fields exist.
 
 ## Baseline suite, recorded before anything (§13)
 
-*(filled by the closing run of this phase — see the report line in the
-commit)*
+```
+python -m pytest -q
+1 failed, 6967 passed, 12 skipped, 3 deselected in 503.30s (0:08:23)
+```
+
+| | |
+|---|---|
+| Total collected | **6 980** (6 968 + 12 skipped) |
+| Passed | **6 967** |
+| Failed | **1** |
+| Skipped | **12** |
+| Deselected | 3 |
+
+The single failure is
+`tests/test_release_check.py::TestEtiquette::test_l_etiquette_de_la_version_courante_existe_bien`.
+The `v0.1.0` tag has never been pushed, so it fails here and in CI alike. It is
+**not** caused by this programme, and it is the figure every later phase compares
+against.
+
+*(An earlier run in this session reported 6 968 passed and 0 failed. That was a
+clone in which the tag had been created locally; the container was recycled and
+the tag went with it. The number above is the honest one — the one CI also
+sees.)*
+
+## What this phase did not change
+
+**Zero** files under `src/`. **Zero** dependencies added. **Zero** tests added,
+altered or removed. §12 forbids implementation during the audit, and E01 is an
+audit.
+
+## What E01 leaves open, named
+
+1. **`litellm` is installed and unowned.** Whether that matters is a Ch. 07
+   (security) question — an undeclared package is not a vulnerability, but it is
+   also not something this repository chose.
+2. **Whether a cached matrix closes the vector-store gap** — the baseline any
+   candidate must beat. Ch. 04-D, measured, not argued.
+3. **Nothing has been read from any official source yet.** Every licence,
+   requirement and capability claim about the twelve is still `UNKNOWN` at this
+   point; Ch. 03 and Ch. 06 read them.
