@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **DEEPSEEK HARNESS — GALSEN-IA COMPATIBILITY AUDIT**
 Plan complet     : `docs/deepseek-harness/phase-plan.md`
 Phases           : 14
-Phase courante   : **D07 — en attente de confirmation** (audit de sécurité,
-                   Phase 5 — 1 phase, indivisible)
+Phase courante   : **D08 — en attente de confirmation** (audit de licence,
+                   Phase 6 — 1 phase, indivisible)
 Terminées        : D00.1 à D00.3 — `docs/deepseek-harness/source-audit.md`.
                    **`0.1.0-rc.8`**, MIT déposé, `THIRD_PARTY_NOTICES.md`
                    publié. **14 points vérifiés, 11 `UNKNOWN`.**
@@ -31,7 +31,11 @@ Terminées        : D00.1 à D00.3 — `docs/deepseek-harness/source-audit.md`.
                    `dsh-llm-pi-ai` prend un `baseURL`. Phase 4 passe,
                    sous condition de configuration. **Question la plus
                    tranchante : `cordis_define` / `cordis_run` laissent
-                   un agent enregistrer des greffons à l'exécution**
+                   un agent enregistrer des greffons à l'exécution**.
+                   D07 **mesuré ici** : `bwrap` absent, Landlock `ENOSYS`,
+                   stub faible dans `kallsyms` → **le bac à sable Linux de
+                   DSH ne peut pas tourner sur cet hôte**. Approbation
+                   **fail closed** des deux côtés
 Précédent        : **OPENCLAW** — 19 phases, **ADR-034**, décision rendue
                    (`docs/openclaw/feasibility-gates.md`)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)

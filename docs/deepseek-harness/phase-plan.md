@@ -73,7 +73,7 @@ D03  └─ D00.3 sandbox, permissions, persistence, observability, recovery
 D04  GalSen IA overlap matrix — Phase 2's 20 subsystems        → 2 phases  ✅
 D05  Coding capability evaluation (Phase 3)                    → 2 phases  ✅
 D06  Provider independence (Phase 4)                           → 1 phase (indivisible)  ✅
-D07  Security audit (Phase 5)                                  → 1 phase (indivisible)
+D07  Security audit (Phase 5)                                  → 1 phase (indivisible)  ✅
 D08  Licence audit (Phase 6) — the gate                        → 1 phase (indivisible)
 D09  Feasibility gates (Phase 7)                               → 1 phase (indivisible)
 D10  Architecture decision + ADR (Phase 8)                     → 1 phase (indivisible)
@@ -203,7 +203,24 @@ engines available), nine-subsystem degradation, and `FailoverModelRouter`.
 `cordis_run` let an agent **register plugins at runtime**. Whether that reaches
 the model adapter is `UNKNOWN` → D07.
 
-**Next: D07** — the security audit (Phase 5), one indivisible phase.
+**D07 is done** — `docs/deepseek-harness/security-audit.md`. **The measurement
+that decides it**: DSH's Linux confinement is `bwrap`/Landlock, and on this host
+`bwrap` is absent, `landlock_create_ruleset` returns `ENOSYS`, `kallsyms` shows
+a **weak stub**, and `securityfs` lists no LSM. Kernel `6.18.5-fc-v20` has
+Landlock compiled out.
+
+So **D04's best finding survives as architecture and fails as deployment,
+here.** Third consecutive programme whose blocker is this environment's
+privileges rather than the audited project.
+
+Genuine alignment found: approval **fails closed**, and `never` *"resolves
+`'rejected'` deterministically"* — this repository's own rule, reached
+independently. Weaker than ours on one point: *"Plugin-wide authorization covers
+later versions"*, where `src/plugins/review.py` **disables a plugin the moment it
+is edited**.
+
+**Next: D08** — the licence audit (Phase 6), one indivisible phase, and the
+first subject in five programmes to ship its own `THIRD_PARTY_NOTICES.md`.
 
 Nothing is installed, nothing under `src/` is touched, and no existing test is
 deleted, disabled, weakened or bypassed.
