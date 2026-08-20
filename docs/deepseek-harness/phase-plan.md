@@ -114,9 +114,30 @@ measurable?*) is where that lands.
 
 ## Where this programme starts
 
-**D00.1** — identity, licence, releases and runtime requirements, read from
-official sources at execution time, with every unverified item marked `UNKNOWN`
-and every refusal quoted exactly.
+**D00.1 and D00.2 are done** — `docs/deepseek-harness/source-audit.md`.
+
+Established: **`0.1.0-rc.8`**, released **2026-08-19**, one day before this
+audit; **MIT filed**; Node `^22.19.0 || >=24.0.0`; a `python/` directory and a
+`pytest.ini` at root, so not TypeScript-only; **`THIRD_PARTY_NOTICES.md` shipped
+by the project** — the first subject in four programmes to publish one.
+
+*Everything is a plugin* is literal: *"including the model adapter, the tool
+registry, the session log, and the agent loop itself"*, with *"no privileged
+core to patch"*.
+
+**The finding that reframes the audit**: `dsh-headless` is *"a one-shot runner
+without a server"*. Every constraint that made OpenClaw un-adoptable flowed from
+a daemon holding state and credentials. A one-shot runner has none of those
+properties by construction — **whether that is really so is now the audit's
+central question**, and D00.3 and D07 must establish it rather than inherit the
+previous verdict.
+
+Correction recorded: the default branch is **`master`**, not `main`; the first
+raw fetch 404'd on that.
+
+**Next: D00.3** — session and state, sandbox, permissions, security boundaries,
+persistence, observability, failure handling, recovery, dependencies, breaking
+changes.
 
 Nothing is installed, nothing under `src/` is touched, and no existing test is
 deleted, disabled, weakened or bypassed.
