@@ -74,7 +74,7 @@ D04  GalSen IA overlap matrix — Phase 2's 20 subsystems        → 2 phases  �
 D05  Coding capability evaluation (Phase 3)                    → 2 phases  ✅
 D06  Provider independence (Phase 4)                           → 1 phase (indivisible)  ✅
 D07  Security audit (Phase 5)                                  → 1 phase (indivisible)  ✅
-D08  Licence audit (Phase 6) — the gate                        → 1 phase (indivisible)
+D08  Licence audit (Phase 6) — the gate                        → 1 phase (indivisible)  ✅
 D09  Feasibility gates (Phase 7)                               → 1 phase (indivisible)
 D10  Architecture decision + ADR (Phase 8)                     → 1 phase (indivisible)
 D11  Test plan (Phase 10) + final report                       → 2 phases
@@ -219,8 +219,25 @@ independently. Weaker than ours on one point: *"Plugin-wide authorization covers
 later versions"*, where `src/plugins/review.py` **disables a plugin the moment it
 is edited**.
 
-**Next: D08** — the licence audit (Phase 6), one indivisible phase, and the
-first subject in five programmes to ship its own `THIRD_PARTY_NOTICES.md`.
+**D08 is done** — `docs/deepseek-harness/licence-audit.md`. **The dependency
+tree was read**, which is new: ~130 packages, ~100 MIT, ~15 Apache-2.0, plus
+BSD, ISC — and **two copyleft entries** (LGPL-3.0-only, MPL-2.0) that the project
+scopes itself to *"development tooling; their code is not linked into or
+distributed with any DeepSeek Harness artifact."* Quoted and attributed, not
+adopted as verified.
+
+**The gate does not close, and for a narrower reason than last time**: one
+dependency, `@anthropic-ai/claude-agent-sdk`, is listed `SEE LICENSE IN` —
+a pointer to a file this audit has not read. `UNKNOWN`, and Phase 6 says what
+that means. Whether it matters **depends on D10's shape**: the viable coding
+configuration would not exercise that path.
+
+**A finding about this repository**: `ls LICENSE*` → **no such file**. Five
+programmes spent on *a manifest is a declaration, a file is a grant*, and
+GalSen IA has neither. Recorded for `pending-work`.
+
+**Next: D09** — the eleven feasibility gates (Phase 7), one indivisible
+phase.
 
 Nothing is installed, nothing under `src/` is touched, and no existing test is
 deleted, disabled, weakened or bypassed.
