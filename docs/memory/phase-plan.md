@@ -8,10 +8,11 @@ phase attend une confirmation.
 VOLET en cours   : **OPENCLAW COMPATIBILITY & SAFE INTEGRATION**
 Plan complet     : `docs/openclaw/phase-plan.md`
 Phases           : 19
-Phase courante   : **O04 — en attente de confirmation** (isolation
-                   multi-utilisateurs, §9 — 1 phase, indivisible)
-Terminées        : O00 à O03 — `repo-audit.md`, `openclaw-audit.md`,
-                   `duplication-matrix.md`, `permissions-and-sandbox.md`
+Phase courante   : **O05 — en attente de confirmation** (audit de licence,
+                   §18 — 1 phase, indivisible : la porte)
+Terminées        : O00 à O04 — `repo-audit.md`, `openclaw-audit.md`,
+                   `duplication-matrix.md`, `permissions-and-sandbox.md`,
+                   `multi-user-isolation.md`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :

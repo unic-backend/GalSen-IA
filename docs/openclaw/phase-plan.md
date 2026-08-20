@@ -50,7 +50,7 @@ O00  Repository audit — the 27 subsystems of §2                  → 2 phases
 O01  OpenClaw research from official sources (§3, §4)            → 2 phases  ✅
 O02  Duplication matrix (§5)                                     → 1 phase (indivisible)  ✅
 O03  Tool permission model and sandbox (§7, §8)                  → 2 phases  ✅
-O04  Multi-user isolation (§9)                                   → 1 phase (indivisible)
+O04  Multi-user isolation (§9)                                   → 1 phase (indivisible)  ✅
 O05  Licence audit (§18) — the gate                              → 1 phase (indivisible)
 O06  Model providers and memory (§10, §11)                       → 2 phases
 O07  Skills and plugins, untrusted until audited (§12)           → 1 phase (indivisible)
@@ -131,4 +131,13 @@ process, and **the platform lacks the privileges to create it** — already
 recorded in `src/sandbox/policy.py`'s own `NON_GARANTI`. Named as a blocker for
 O12 gate 5, not papered over.
 
-**Next: O04** — multi-user isolation (§9), one indivisible phase.
+**O04 is done** — `docs/openclaw/multi-user-isolation.md`. §9's fork has
+**both branches blocked**. One shared OpenClaw fails on the source's own
+sentence — *"Session IDs select routing; they do not authorize one tenant
+against another"* — and one container per user needs privileges O03 already
+measured as absent, on a Fleet the project calls experimental.
+
+The two shapes do not compose: GalSen IA isolates **per call**, OpenClaw
+isolates **per deployment**.
+
+**Next: O05** — the licence audit (§18), one indivisible phase, and the gate.
