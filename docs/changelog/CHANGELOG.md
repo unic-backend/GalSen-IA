@@ -12,6 +12,133 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-20 — DeepSeek Harness audited; option C, and not yet (ADR-035, DeepSeek Harness directive, 14 phases)
+
+Eleven documents under `docs/deepseek-harness/`. **Zero lines of `src/` changed,
+zero dependencies, zero tests added or altered.** Full report →
+`docs/deepseek-harness/final-report.md`.
+
+**Decision: OPTION C — a specialized coding-agent backend**, entering as a fourth
+`CodingEngineAdapter` beside `aider`, `openhands` and `swe_agent`. Not the
+orchestrator, not a model router, not a memory, not a plugin host.
+**Implementation is not authorized**; three named conditions must close first.
+
+**No feasibility gate fails outright** — 7 `YES`, 3 `UNKNOWN`, 1 split — where
+the previous programme's subject failed three of twelve. The pattern:
+**everything structural passes, everything empirical is `UNKNOWN`**. Structure
+passes on work already done — ADR-028's capability router that *"ne connaît aucun
+des trois moteurs par son nom"*, `degradation.py`'s nine probes, the
+`check_availability` pattern. Empirics are unknown because the directive forbids
+the install that would settle them.
+
+- **Its sandbox cannot run on this host**, measured three ways: `bwrap` absent,
+  `landlock_create_ruleset` → `ENOSYS`, weak stub in `/proc/kallsyms`, no LSM in
+  `securityfs`. So D04's best finding — that our sandbox bounds CPU, memory and
+  environment but not filesystem, while theirs bounds *exactly* the filesystem —
+  is **architectural here, not deployable**.
+- **`BENCHMARK.md` publishes NO SCORES.** The repository contains no comparative
+  evidence about coding quality, which is exactly the claim the directive says
+  not to accept uncritically. 170.4k stars on a `0.1.0-rc` measures attention.
+- **First subject in five programmes whose dependency tree could be read**:
+  ~130 packages, ~98 % permissive, two copyleft scoped to development *by the
+  project itself*, one `SEE LICENSE IN` unread.
+- **Two points of genuine alignment**: approval **fails closed** on both sides —
+  `never` *"resolves `'rejected'` deterministically"* — and DSH refuses *"silent
+  unconfined passthrough"* as this repository refuses plausible answers from
+  unfinished capabilities.
+
+Three findings about GalSen IA itself, recorded for `pending-work` and none
+fixed: **this repository has no `LICENSE` file**; the sovereignty test does not
+cover subordinate runtimes (second occurrence, after ADR-034);
+`load_capabilities()` is uncached at ~22 ms.
+
+### Added — 2026-08-20 — OpenClaw audited and not integrated (ADR-034, OpenClaw Compatibility directive, 19 phases)
+
+Thirteen documents under `docs/openclaw/`. **Zero lines of `src/` changed, zero
+dependencies added, zero tests touched.** §20 asked for ten deliverables and then
+a stop; all ten are present and the programme stopped.
+
+**Decision: do not integrate.** Three of §19's twelve gates answer `NO`.
+
+- **Cannot be sandboxed.** OpenClaw's sandboxing is off by default, the Gateway
+  process itself is unsandboxed while holding credentials, and `tools.elevated`
+  runs on the host. Its own document says *"This is not a perfect security
+  boundary."* The layer §8 requires needs namespaces and cgroups
+  `src/sandbox/policy.py` already records the platform as lacking.
+- **Cannot isolate users.** *"Session IDs select routing; they do not authorize
+  one tenant against another."* The per-tenant alternative is blocked on the same
+  privileges, on a Fleet the project calls experimental.
+- **Complexity not justified.** §5's matrix returned eight `KEEP_EXISTING`, three
+  `DEFER`, two `UNKNOWN`, **zero `INTEGRATE`** — thirteen of fourteen capabilities
+  already exist here. §20's `NudgeEngine` is `src/proactive/`; §12's untrusted-plugin
+  discipline is `src/plugins/`, which additionally disables a plugin the moment it
+  is edited; §16's failure isolation is `src/integration/degradation.py`.
+
+**The one real gap is a channel, not a runtime**: bidirectional conversational
+channels, against three one-way operator-facing notification channels here.
+`src/connectors/` already makes subject binding mandatory and checked at
+registration. Costing a WhatsApp connector is **recommended as a separate
+programme** and not authorised by this one.
+
+**Recorded because it generalises**: ADR-014 defaults sovereign mode to true and
+does not register hosted providers; any subordinate runtime with its own
+credential store is a hole in that guarantee **the existing test cannot see**,
+because it exercises GalSen IA's model path.
+
+Five findings about GalSen IA itself, recorded for `pending-work`, none fixed
+here: `ApprovalRequest` has no subject field; key revocation state is in-process;
+`load_capabilities()` is uncached at ~22 ms (latent — every API caller passes a
+shared registry); two job vocabularies and two retry managers; and an
+`OPTIONAL SUGGESTION — NOT IMPLEMENTED` for installation-keyed pseudonyms.
+
+### Added — 2026-08-19 — A live context engine that represents everything and perceives nothing (ADR-033, Live Context / Call.md directive, 27 phases)
+
+`src/live_context/` — 16 modules, 4 805 lines, **376 tests**, no new dependency,
+no second registry, no second memory. Full report →
+`docs/live-context/final-report.md`.
+
+**The state is computed, never written.** `readiness.py` walks the chain and
+answers `REPRESENTATION READY — NO LIVE PERCEPTION ON THIS MACHINE, 5 STAGE(S)
+NOT IMPLEMENTED, 2 BLOCKED` — 9 `READY`, 2 `BLOCKED`, 5 `ABSENT`, and the split
+is total: every representation stage runs, no perception stage does. A test
+replaces the stage list and asserts the verdict changes.
+
+- **`ABSENT` is not `UNKNOWN`** — one is measured and will not change by
+  waiting; the other is waiting for a measurement. An absence without its
+  finding is refused: "absent" without saying how it was established is a
+  supposition.
+- **Fusion records conflicts and resolves none.** Two providers disagreeing
+  produce two observations and a recorded conflict, never an average. Nothing is
+  promoted, and corroborated values are never ranked by how many voices carry
+  them — ranking by count is arbitration without saying so.
+- **No speaker is numbered.** `SPEAKER_1` cut at random has the shape of a
+  diarization and none of its content. A channel says where the sound came from,
+  not who spoke, so an identity derived from one is `DECLARED`, never `MEASURED`.
+- **Zero does not exist where nothing was counted**: `turns`, `switch_count`,
+  `speaker_count` and every §33 latency are `None`.
+- **Consent is necessary, never sufficient.** ADR-018's unconditional refusals
+  are evaluated *before* consent, so a scope explicitly permitting `upload`
+  still cannot send screen content off the machine — proved with the sovereign
+  derogation set.
+- **Nothing observed in a session is a request.** The creative link stops at
+  `offer()` and exposes no function that accepts.
+- **30 executable scenarios** (§35) — 24 `VERIFIED`, 6 `BLOCKED`, 0 failed.
+  `BLOCKED` is an assertion that the platform reports its own incapacity, not a
+  skipped test.
+- **No claim of real time**: `realtime_claim()` answers neither yes nor no, and
+  names the three things that would settle it.
+
+Reused rather than rebuilt: `src/proactive/` (the §20 nudge engine, already
+here, with evidence-fingerprint suppression rather than a two-minute cooldown),
+`creative/language/switching.py`, `creative/voice/scene.py`,
+`creative/reference/consent.py`, `mcp/exposure.py`, `mcp/client.py`,
+`tool/authorization.py`, `tools/screen/tool.assert_stays_local()`,
+`security/trust.py`, `memory_engine/`.
+
+Four of §31's five provider interfaces were **not** built; only
+`LiveCaptureProvider` had the argument, and the table says what serves the
+others.
+
 ### Added — 2026-08-19 — A research orchestration layer whose providers are both blocked (ADR-032, Research Orchestration directive, 18 phases)
 
 **Twelve volets, eighteen phases, all completed.** Full report →
