@@ -55,7 +55,7 @@ O05  Licence audit (§18) — the gate                              → 1 phase 
 O06  Model providers and memory (§10, §11)                       → 2 phases  ✅
 O07  Skills and plugins, untrusted until audited (§12)           → 1 phase (indivisible)  ✅
 O08  Provenance and observability (§13, §14)                     → 1 phase (indivisible)  ✅
-O09  Self-healing and failure isolation (§15, §16)               → 1 phase (indivisible)
+O09  Self-healing and failure isolation (§15, §16)               → 1 phase (indivisible)  ✅
 O10  Performance analysis (§17)                                  → 1 phase (indivisible)
 O11  Adapter architecture proposal (§6)                          → 2 phases
 O12  The twelve feasibility gates, decision and ADR (§19)        → 2 phases
@@ -192,5 +192,17 @@ asymmetry is what makes the two complementary rather than conflicting.
 recordable under O06's viable arrangement, so §10 and §13 exclude the same
 option from different directions.
 
-**Next: O09** — self-healing and failure isolation (§15, §16), one indivisible
-phase.
+**O09 is done** — `docs/openclaw/self-healing-and-failure-isolation.md`. §16
+**costs one probe**: `src/integration/degradation.py` already reports a
+subsystem as `DEGRADED` rather than failed, and already refuses to be taken down
+by the thing it observes. §15 needs nothing built — the self-healer treats a
+traceback as data and answers `UNKNOWN_DIAGNOSIS` rather than guessing.
+
+**A real conflict is named**: OpenClaw re-dispatches interrupted sessions
+automatically a few seconds after restart, with a synthetic system message
+telling the model to continue. That is an execution decision taken outside
+`authorize()` and outside ADR-006's per-execution gate. Resolution: **per-task
+sessions owned by the adapter** — which O04 and O06 already required for
+different reasons.
+
+**Next: O10** — performance analysis (§17), one indivisible phase.
