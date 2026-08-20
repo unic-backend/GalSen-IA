@@ -57,7 +57,7 @@ O07  Skills and plugins, untrusted until audited (§12)           → 1 phase (i
 O08  Provenance and observability (§13, §14)                     → 1 phase (indivisible)  ✅
 O09  Self-healing and failure isolation (§15, §16)               → 1 phase (indivisible)  ✅
 O10  Performance analysis (§17)                                  → 1 phase (indivisible)  ✅
-O11  Adapter architecture proposal (§6)                          → 2 phases
+O11  Adapter architecture proposal (§6)                          → 2 phases  ✅
 O12  The twelve feasibility gates, decision and ADR (§19)        → 2 phases
 ```
 
@@ -216,4 +216,18 @@ One latent cost found by measuring rather than assuming: `load_capabilities()`
 is uncached at ~22 ms, harmless today because every API caller passes a shared
 registry.
 
-**Next: O11.1 and O11.2** — the adapter architecture proposal (§6).
+**O11 is done** — `docs/openclaw/adapter-architecture.md`. The design holds
+**twelve of §6's fifteen controls** with mechanisms that already exist. **Three
+cannot be delivered here** — resource, network and filesystem policy — because
+they need a container boundary `src/sandbox/policy.py` already records the
+platform as unable to build.
+
+The adapter is implementable; **the deployment is not**, until an operator
+provisions a container runtime. And the audit kept pointing elsewhere: the
+**connector route** delivers the one thing OpenClaw uniquely offers — channels —
+without a foreign process, without container privileges, without a sovereignty
+workaround, and under a contract (`src/connectors/`) that **already** makes
+subject binding mandatory.
+
+**Next: O12.1 and O12.2** — the twelve feasibility gates, the decision, and the
+ADR (§19).
