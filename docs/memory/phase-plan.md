@@ -5,11 +5,22 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **aucun**
-Dernier terminé  : **OPENCLAW COMPATIBILITY & SAFE INTEGRATION** — 19 phases,
-                   **ADR-034**. Rapport → `docs/openclaw/feasibility-gates.md`
-Phase courante   : **aucune** — le programme est fini, décision rendue
+VOLET en cours   : **DEEPSEEK HARNESS — GALSEN-IA COMPATIBILITY AUDIT**
+Plan complet     : `docs/deepseek-harness/phase-plan.md`
+Phases           : 14
+Phase courante   : **D00.1 — en attente de confirmation** (audit de source
+                   officielle : identité, licence, versions, prérequis)
+Terminées        : aucune
+Précédent        : **OPENCLAW** — 19 phases, **ADR-034**, décision rendue
+                   (`docs/openclaw/feasibility-gates.md`)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
+
+**Deux sondes prises avant d'écrire le plan** : le dépôt
+`github.com/deepseek-ai/deepseek-harness` **existe** (MIT, 170,4 k étoiles,
+TypeScript, *« an architecture where everything is a plugin »*), et
+`deepseek.com` est **`EGRESS_BLOCKED`** par le mandataire de cet environnement —
+comme `docs.openclaw.ai` l'était. D01 doit établir si les sources brutes GitHub
+offrent le même contournement.
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md` — toute
 phase se termine par une validation de non-régression complète.
