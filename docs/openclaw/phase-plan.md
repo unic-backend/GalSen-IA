@@ -56,7 +56,7 @@ O06  Model providers and memory (§10, §11)                       → 2 phases 
 O07  Skills and plugins, untrusted until audited (§12)           → 1 phase (indivisible)  ✅
 O08  Provenance and observability (§13, §14)                     → 1 phase (indivisible)  ✅
 O09  Self-healing and failure isolation (§15, §16)               → 1 phase (indivisible)  ✅
-O10  Performance analysis (§17)                                  → 1 phase (indivisible)
+O10  Performance analysis (§17)                                  → 1 phase (indivisible)  ✅
 O11  Adapter architecture proposal (§6)                          → 2 phases
 O12  The twelve feasibility gates, decision and ADR (§19)        → 2 phases
 ```
@@ -205,4 +205,15 @@ telling the model to continue. That is an execution decision taken outside
 sessions owned by the adapter** — which O04 and O06 already required for
 different reasons.
 
-**Next: O10** — performance analysis (§17), one indivisible phase.
+**O10 is done** — `docs/openclaw/performance.md`. §17's comparison is
+**`UNKNOWN`**, because §20 forbids the installation that would make it
+measurable — a collision between two of the directive's own rules, stated as
+one. What was done instead is measure the **left-hand column properly**: 651.8 ms
+startup, 67.6 MB, **0.003 ms** per authorisation on the production path, no GPU;
+five of nine figures `NOT_MEASURED` with a named reason each.
+
+One latent cost found by measuring rather than assuming: `load_capabilities()`
+is uncached at ~22 ms, harmless today because every API caller passes a shared
+registry.
+
+**Next: O11.1 and O11.2** — the adapter architecture proposal (§6).
