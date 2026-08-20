@@ -7,9 +7,10 @@ phase attend une confirmation.
 
 VOLET en cours   : **OPEN-SOURCE ECOSYSTEM AUDIT & INTEGRATION**
                    12 chapitres → **22 phases**
-Phase courante   : **E04.3 — en attente de confirmation**
-Terminées        : E01, E02, E03 (8 phases), E04.1, E04.2 — `docs/oss-ecosystem/`
+Phase courante   : **E05 — en attente de confirmation**
+Terminées        : E01, E02, E03, E04 (12 phases) — `docs/oss-ecosystem/`
                    Ch. 03 clos : 12 projets, 20 champs chacun
+                   Ch. 04 clos : les huit analyses spéciales A–H
 Repère           : **1 failed, 6967 passed, 12 skipped** (l'étiquette `v0.1.0`)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
