@@ -8,11 +8,11 @@ phase attend une confirmation.
 VOLET en cours   : **OPENCLAW COMPATIBILITY & SAFE INTEGRATION**
 Plan complet     : `docs/openclaw/phase-plan.md`
 Phases           : 19
-Phase courante   : **O05 — en attente de confirmation** (audit de licence,
-                   §18 — 1 phase, indivisible : la porte)
-Terminées        : O00 à O04 — `repo-audit.md`, `openclaw-audit.md`,
-                   `duplication-matrix.md`, `permissions-and-sandbox.md`,
-                   `multi-user-isolation.md`
+Phase courante   : **O06.1 — en attente de confirmation** (fournisseurs de
+                   modèles et mémoire, §10 et §11)
+Terminées        : O00 à O05 — six documents sous `docs/openclaw/`.
+                   **La porte de licence ne se ferme pas** : MIT déclaré *et*
+                   déposé ; dépendances et skills `UNKNOWN`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente en vigueur depuis le 2026-08-19** :

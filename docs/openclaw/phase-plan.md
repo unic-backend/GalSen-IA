@@ -51,7 +51,7 @@ O01  OpenClaw research from official sources (§3, §4)            → 2 phases 
 O02  Duplication matrix (§5)                                     → 1 phase (indivisible)  ✅
 O03  Tool permission model and sandbox (§7, §8)                  → 2 phases  ✅
 O04  Multi-user isolation (§9)                                   → 1 phase (indivisible)  ✅
-O05  Licence audit (§18) — the gate                              → 1 phase (indivisible)
+O05  Licence audit (§18) — the gate                              → 1 phase (indivisible)  ✅
 O06  Model providers and memory (§10, §11)                       → 2 phases
 O07  Skills and plugins, untrusted until audited (§12)           → 1 phase (indivisible)
 O08  Provenance and observability (§13, §14)                     → 1 phase (indivisible)
@@ -140,4 +140,18 @@ measured as absent, on a Fleet the project calls experimental.
 The two shapes do not compose: GalSen IA isolates **per call**, OpenClaw
 isolates **per deployment**.
 
-**Next: O05** — the licence audit (§18), one indivisible phase, and the gate.
+**O05 is done** — `docs/openclaw/licence-matrix.md`. **The gate does not
+close.** MIT is both declared *and* filed — unlike the previous programme's
+subject, which had the field and no file.
+
+But the ecosystem does not share one licence, measured rather than assumed: two
+workspace packages carry **no `license` field**, `skills/` holds **51 wrappers
+around other people's software** with no `LICENSE` at that level, and ClawHub
+states **no licensing policy** for published skills. Dependency licences are
+`UNKNOWN` — `package.json`'s dependencies block could not be fetched, twice, and
+`pnpm-lock.yaml` cannot be read whole here.
+
+`UNKNOWN` is a condition, not a refusal: one `pnpm licenses list` settles it, in
+an environment allowed to install.
+
+**Next: O06.1 and O06.2** — model providers (§10) and memory (§11).
