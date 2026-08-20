@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **DEEPSEEK HARNESS — GALSEN-IA COMPATIBILITY AUDIT**
 Plan complet     : `docs/deepseek-harness/phase-plan.md`
 Phases           : 14
-Phase courante   : **D09 — en attente de confirmation** (portes de
-                   faisabilité, Phase 7 — 1 phase, indivisible)
+Phase courante   : **D10 — en attente de confirmation** (décision
+                   d'architecture + ADR, Phase 8 — 1 phase, indivisible)
 Terminées        : D00.1 à D00.3 — `docs/deepseek-harness/source-audit.md`.
                    **`0.1.0-rc.8`**, MIT déposé, `THIRD_PARTY_NOTICES.md`
                    publié. **14 points vérifiés, 11 `UNKNOWN`.**
@@ -39,7 +39,11 @@ Terminées        : D00.1 à D00.3 — `docs/deepseek-harness/source-audit.md`.
                    D08 : ~130 dépendances lues, ~100 MIT ; deux copyleft
                    cantonnées au dev **par le projet lui-même** ; une
                    `SEE LICENSE IN` non lue → `UNKNOWN`.
-                   **GalSen IA n'a aucun fichier `LICENSE`** — consigné
+                   **GalSen IA n'a aucun fichier `LICENSE`** — consigné.
+                   D09 : **aucune porte n'échoue franchement**. Tout ce qui
+                   est structurel passe, tout ce qui est empirique est
+                   `UNKNOWN`. Node `v22.22.2` **satisfait** `^22.19.0` :
+                   **le harnais pourrait tourner ici, son confinement non**
 Précédent        : **OPENCLAW** — 19 phases, **ADR-034**, décision rendue
                    (`docs/openclaw/feasibility-gates.md`)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)

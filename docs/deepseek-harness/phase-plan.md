@@ -75,7 +75,7 @@ D05  Coding capability evaluation (Phase 3)                    → 2 phases  ✅
 D06  Provider independence (Phase 4)                           → 1 phase (indivisible)  ✅
 D07  Security audit (Phase 5)                                  → 1 phase (indivisible)  ✅
 D08  Licence audit (Phase 6) — the gate                        → 1 phase (indivisible)  ✅
-D09  Feasibility gates (Phase 7)                               → 1 phase (indivisible)
+D09  Feasibility gates (Phase 7)                               → 1 phase (indivisible)  ✅
 D10  Architecture decision + ADR (Phase 8)                     → 1 phase (indivisible)
 D11  Test plan (Phase 10) + final report                       → 2 phases
 ```
@@ -236,7 +236,21 @@ configuration would not exercise that path.
 programmes spent on *a manifest is a declaration, a file is a grant*, and
 GalSen IA has neither. Recorded for `pending-work`.
 
-**Next: D09** — the eleven feasibility gates (Phase 7), one indivisible
+**D09 is done** — `docs/deepseek-harness/feasibility-gates.md`. **No gate fails
+outright** — materially different from the previous programme, where three of
+twelve answered `NO`.
+
+The pattern is: **everything structural passes, everything empirical is
+`UNKNOWN`.** Complexity, failure detection, fallback and removability all pass
+**because of work this repository already did** (ADR-028's capability router,
+`degradation.py`, `check_availability`). Latency, quality and measurability are
+`UNKNOWN` **because the directive forbids the install that would settle them**.
+
+Measured for this phase: **Node `v22.22.2` satisfies DSH's `^22.19.0`**, 4 CPUs,
+15 GB free, no GPU needed. So **the harness could run here and its confinement
+could not** — the least comfortable of the four combinations.
+
+**Next: D10** — the architecture decision and its ADR (Phase 8), one indivisible
 phase.
 
 Nothing is installed, nothing under `src/` is touched, and no existing test is
