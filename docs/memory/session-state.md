@@ -6,40 +6,46 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ---
 
-## Dernière session — 2026-08-19
+## Dernière session — 2026-08-20
 
-**En cours** : rien. Le VOLET Live Context est terminé, aucune phase en attente.
+**En cours** : rien. Aucun VOLET ouvert, aucune phase en attente.
 
-**Terminé** : **Live Context Engine / Call.md**, 16 volets, **27 phases**,
-**ADR-033**. `src/live_context/` : 16 modules, **376 tests**, aucune dépendance
-ajoutée. Rapport → `docs/live-context/final-report.md`.
-L'état est **calculé** : `REPRESENTATION READY — NO LIVE PERCEPTION ON THIS
-MACHINE, 5 STAGE(S) NOT IMPLEMENTED, 2 BLOCKED` (9 `READY`, 2 `BLOCKED`,
-5 `ABSENT`). Toutes les étapes de représentation tournent, **aucune** étape de
-perception. Les quatre audits ont **réduit** le programme : Call.md n'enregistre
-pas sous Linux, VideoDB y porte capture *et* inférence, six des neuf items du
-§41 existaient déjà, et la licence n'était pas l'obstacle.
-Vérifié : suite complète **6 958 passent, 12 ignorés, 1 échec** (`v0.1.0`),
-`ruff check .` propre, 30 scénarios `golden` → 24 `VERIFIED`, 6 `BLOCKED`.
+**Terminé** : deux programmes d'audit, **par la même méthode et avec des
+réponses différentes** — ce qui est la seule preuve que la méthode travaille.
+- **OpenClaw** — 19 phases, **ADR-034** : **ne pas intégrer**. 3 portes sur 12 à
+  `NON` (bac à sable désactivé par défaut, isolation multi-utilisateurs absente,
+  13 des 14 capacités déjà ici). 13 documents → `docs/openclaw/`.
+- **DeepSeek Harness** — 14 phases, **ADR-035** : **quatrième back-end de
+  codage, et pas encore**. Aucune porte n'échoue franchement ; tout ce qui est
+  structurel passe, tout ce qui est empirique est `UNKNOWN`. `BENCHMARK.md` ne
+  publie **aucun score**. 11 documents → `docs/deepseek-harness/`.
 
-**Prochaine étape** : la branche `claude/unit-tests-notification-search-file-4z0ok1`
-porte tout le programme et **aucune PR n'est ouverte**. L'ouvrir, attendre la CI,
-fusionner.
+**Zéro ligne de `src/` modifiée, zéro dépendance, zéro test touché** sur les deux.
+Vérifié après chaque phase : **6 958 passent, 12 ignorés, 1 échec** (`v0.1.0`),
+`ruff check .` propre. Tout est poussé sur
+`claude/unit-tests-notification-search-file-4z0ok1`.
+
+**Prochaine étape** : attendre le prochain VOLET du propriétaire. **PR #31 reste
+ouverte**, rouge uniquement sur `test_release_check`.
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
-- `git push origin v0.1.0` → seul test rouge, en cinq programmes.
-- Un périphérique de capture + un `LiveCaptureProvider` implémenté.
-- `pip install faster-whisper` → débloque l'étape de transcription.
-- `ollama serve`, un `ffmpeg` réel, supprimer `feature/service-unit-tests` (403).
+- `git push origin v0.1.0` → seul test rouge, en sept programmes.
+- Les 3 conditions d'ADR-035 : mesurer la qualité sur une machine autorisée à
+  installer, lire la licence de `@anthropic-ai/claude-agent-sdk`, établir ce que
+  persiste `dsh-headless`.
+- `ollama serve`, un `ffmpeg` réel, un périphérique de capture.
 
-**Dette nommée** : `docs/memory/completed-work.md` dépasse 1 150 lignes — la
-règle demande d'archiver au-delà de 200. Signalé, non fait : hors périmètre de
-ce programme. Plus l'écart de sens `invocation`/`min_vram_gb` (ADR-031), la
-décision TTS, et les conditions Pexels/Pixabay/Exa/DuckDuckGo non lues.
+**Dette nommée** : **ce dépôt n'a aucun fichier `LICENSE`** (trouvé par les deux
+audits). Le **test de souveraineté ne couvre pas les runtimes subordonnés** —
+même trou relevé deux fois, donc il est ici. `completed-work.md` dépasse 1 150
+lignes contre 200 autorisées.
 
 ---
 
 ### Sessions précédentes
+
+**2026-08-19 — Live Context Engine / Call.md**, 27 phases, **ADR-033**.
+`REPRESENTATION READY — NO LIVE PERCEPTION ON THIS MACHINE`. **PR #31.**
 
 **2026-08-19 — Creative Canvas (17 phases, ADR-031) et Research Orchestration
 (18 phases, ADR-032)**, fusionnés par la **PR #29**. *Il n'y avait rien à
