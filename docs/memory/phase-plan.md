@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **DEEPSEEK HARNESS — GALSEN-IA COMPATIBILITY AUDIT**
 Plan complet     : `docs/deepseek-harness/phase-plan.md`
 Phases           : 14
-Phase courante   : **D05.1 — en attente de confirmation** (évaluation de la
-                   capacité de codage, Phase 3)
+Phase courante   : **D06 — en attente de confirmation** (indépendance vis-à-vis
+                   du fournisseur, Phase 4 — 1 phase, indivisible)
 Terminées        : D00.1 à D00.3 — `docs/deepseek-harness/source-audit.md`.
                    **`0.1.0-rc.8`**, MIT déposé, `THIRD_PARTY_NOTICES.md`
                    publié. **14 points vérifiés, 11 `UNKNOWN`.**
@@ -22,6 +22,11 @@ Terminées        : D00.1 à D00.3 — `docs/deepseek-harness/source-audit.md`.
                    échouent sur des axes opposés** — le leur borne le
                    système de fichiers au niveau noyau, le nôtre pas.
                    Vraie question : **meilleur back-end de codage ?**
+                   D05 : `BENCHMARK.md` **ne publie aucun score**. Nos trois
+                   moteurs : **déclarés, zéro disponible**, réparation
+                   nommée. 26 cellules sur 13 axes = **26 `NOT_MEASURED`**.
+                   `router.py` ne connaît aucun moteur par son nom →
+                   **un quatrième adaptateur coûte une déclaration**
 Précédent        : **OPENCLAW** — 19 phases, **ADR-034**, décision rendue
                    (`docs/openclaw/feasibility-gates.md`)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)

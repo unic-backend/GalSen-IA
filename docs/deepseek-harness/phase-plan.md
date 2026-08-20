@@ -71,7 +71,7 @@ D01  ├─ D00.1 identity, licence, releases, requirements
 D02  ├─ D00.2 architecture, plugins, agent loop, tools, MCP
 D03  └─ D00.3 sandbox, permissions, persistence, observability, recovery
 D04  GalSen IA overlap matrix — Phase 2's 20 subsystems        → 2 phases  ✅
-D05  Coding capability evaluation (Phase 3)                    → 2 phases
+D05  Coding capability evaluation (Phase 3)                    → 2 phases  ✅
 D06  Provider independence (Phase 4)                           → 1 phase (indivisible)
 D07  Security audit (Phase 5)                                  → 1 phase (indivisible)
 D08  Licence audit (Phase 6) — the gate                        → 1 phase (indivisible)
@@ -171,7 +171,25 @@ answers no and rows 1, 3 and 19 show why it would collide — but **whether it i
 a better coding backend than the three adapters `src/coding_engine/` already
 declares**.
 
-**Next: D05.1 and D05.2** — the coding capability evaluation (Phase 3).
+**D05 is done** — `docs/deepseek-harness/coding-capability.md`. **`BENCHMARK.md`
+publishes no scores** — it is a how-to-run file. The repository therefore
+contains **no comparative evidence** about coding quality, which is exactly the
+claim Phase 3 says not to accept uncritically.
+
+Measured on our side, reproducibly: **three engines declared, zero available**,
+each unavailability naming its repair. Phase 3's thirteen axes × two sides =
+**twenty-six cells, twenty-six `NOT_MEASURED`**, with different reasons per
+column.
+
+Two real capability differences that are not repackaging: **`lsp`** (no existing
+adapter declares a language-server path) and **six persistent-PTY tools**.
+
+And the finding that does not depend on any benchmark: `router.py` *"ne connaît
+aucun des trois moteurs par son nom"*, so **adding DSH as a fourth adapter costs
+a declaration, not a redesign** — the seam Phase 9 asks for already exists
+(ADR-028).
+
+**Next: D06** — provider independence (Phase 4), one indivisible phase.
 
 Nothing is installed, nothing under `src/` is touched, and no existing test is
 deleted, disabled, weakened or bypassed.
