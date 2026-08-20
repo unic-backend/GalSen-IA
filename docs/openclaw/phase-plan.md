@@ -54,7 +54,7 @@ O04  Multi-user isolation (§9)                                   → 1 phase (i
 O05  Licence audit (§18) — the gate                              → 1 phase (indivisible)  ✅
 O06  Model providers and memory (§10, §11)                       → 2 phases  ✅
 O07  Skills and plugins, untrusted until audited (§12)           → 1 phase (indivisible)  ✅
-O08  Provenance and observability (§13, §14)                     → 1 phase (indivisible)
+O08  Provenance and observability (§13, §14)                     → 1 phase (indivisible)  ✅
 O09  Self-healing and failure isolation (§15, §16)               → 1 phase (indivisible)
 O10  Performance analysis (§17)                                  → 1 phase (indivisible)
 O11  Adapter architecture proposal (§6)                          → 2 phases
@@ -180,5 +180,17 @@ each wraps someone else's program.
 **Decision: expose no OpenClaw skill or plugin. `REJECT` for that surface**,
 while the rest of the programme stays open.
 
-**Next: O08** — provenance and observability (§13, §14), one indivisible
+**O08 is done** — `docs/openclaw/provenance-and-observability.md`. §13 is
+satisfiable **by writing nothing new**: our `AuditEvent` records the execution,
+OpenClaw's ledger records its own lifecycle, the `request_id` crosses the
+boundary — it already survives boundaries by design — and the two are never
+merged. Their ledger is deliberately `metadata_only` and stores **no input, no
+output, no raw error**, which is precisely what §13 wants recorded; that
+asymmetry is what makes the two complementary rather than conflicting.
+
+§14 needs no new component. One dependency worth noting: `model_id` is only
+recordable under O06's viable arrangement, so §10 and §13 exclude the same
+option from different directions.
+
+**Next: O09** — self-healing and failure isolation (§15, §16), one indivisible
 phase.

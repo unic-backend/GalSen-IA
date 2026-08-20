@@ -8,9 +8,9 @@ phase attend une confirmation.
 VOLET en cours   : **OPENCLAW COMPATIBILITY & SAFE INTEGRATION**
 Plan complet     : `docs/openclaw/phase-plan.md`
 Phases           : 19
-Phase courante   : **O08 — en attente de confirmation** (provenance et
-                   observabilité, §13 et §14 — 1 phase, indivisible)
-Terminées        : O00 à O07 — huit documents sous `docs/openclaw/`.
+Phase courante   : **O09 — en attente de confirmation** (auto-réparation et
+                   isolation des pannes, §15 et §16 — 1 phase, indivisible)
+Terminées        : O00 à O08 — neuf documents sous `docs/openclaw/`.
                    Licence : MIT déposé, dépendances `UNKNOWN`.
                    Souveraineté : un OpenClaw portant ses propres clés
                    défait le défaut d'ADR-014.
