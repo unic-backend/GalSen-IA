@@ -8,8 +8,8 @@ phase attend une confirmation.
 VOLET en cours   : **DEEPSEEK HARNESS — GALSEN-IA COMPATIBILITY AUDIT**
 Plan complet     : `docs/deepseek-harness/phase-plan.md`
 Phases           : 14
-Phase courante   : **D06 — en attente de confirmation** (indépendance vis-à-vis
-                   du fournisseur, Phase 4 — 1 phase, indivisible)
+Phase courante   : **D07 — en attente de confirmation** (audit de sécurité,
+                   Phase 5 — 1 phase, indivisible)
 Terminées        : D00.1 à D00.3 — `docs/deepseek-harness/source-audit.md`.
                    **`0.1.0-rc.8`**, MIT déposé, `THIRD_PARTY_NOTICES.md`
                    publié. **14 points vérifiés, 11 `UNKNOWN`.**
@@ -26,7 +26,12 @@ Terminées        : D00.1 à D00.3 — `docs/deepseek-harness/source-audit.md`.
                    moteurs : **déclarés, zéro disponible**, réparation
                    nommée. 26 cellules sur 13 axes = **26 `NOT_MEASURED`**.
                    `router.py` ne connaît aucun moteur par son nom →
-                   **un quatrième adaptateur coûte une déclaration**
+                   **un quatrième adaptateur coûte une déclaration**.
+                   D06 : DSH **n'exige pas** les modèles DeepSeek —
+                   `dsh-llm-pi-ai` prend un `baseURL`. Phase 4 passe,
+                   sous condition de configuration. **Question la plus
+                   tranchante : `cordis_define` / `cordis_run` laissent
+                   un agent enregistrer des greffons à l'exécution**
 Précédent        : **OPENCLAW** — 19 phases, **ADR-034**, décision rendue
                    (`docs/openclaw/feasibility-gates.md`)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)

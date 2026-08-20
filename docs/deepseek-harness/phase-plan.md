@@ -72,7 +72,7 @@ D02  ├─ D00.2 architecture, plugins, agent loop, tools, MCP
 D03  └─ D00.3 sandbox, permissions, persistence, observability, recovery
 D04  GalSen IA overlap matrix — Phase 2's 20 subsystems        → 2 phases  ✅
 D05  Coding capability evaluation (Phase 3)                    → 2 phases  ✅
-D06  Provider independence (Phase 4)                           → 1 phase (indivisible)
+D06  Provider independence (Phase 4)                           → 1 phase (indivisible)  ✅
 D07  Security audit (Phase 5)                                  → 1 phase (indivisible)
 D08  Licence audit (Phase 6) — the gate                        → 1 phase (indivisible)
 D09  Feasibility gates (Phase 7)                               → 1 phase (indivisible)
@@ -189,7 +189,21 @@ aucun des trois moteurs par son nom"*, so **adding DSH as a fourth adapter costs
 a declaration, not a redesign** — the seam Phase 9 asks for already exists
 (ADR-028).
 
-**Next: D06** — provider independence (Phase 4), one indivisible phase.
+**D06 is done** — `docs/deepseek-harness/provider-independence.md`. **The
+harness does not require DeepSeek models**: *"supported but not mandated as
+default"*, and `dsh-llm-pi-ai` takes a `baseURL` override, so it can be pointed
+at our own OpenAI-compatible endpoint and inference stays inside `ModelRouter`.
+That closes D00.2's `UNKNOWN` on item 5.
+
+**Phase 4 passes, conditionally on configuration.** Fallback is already built at
+three layers — capability-based coding router (which already runs with zero
+engines available), nine-subsystem degradation, and `FailoverModelRouter`.
+
+**The programme's sharpest question is now security**: `cordis_define` /
+`cordis_run` let an agent **register plugins at runtime**. Whether that reaches
+the model adapter is `UNKNOWN` → D07.
+
+**Next: D07** — the security audit (Phase 5), one indivisible phase.
 
 Nothing is installed, nothing under `src/` is touched, and no existing test is
 deleted, disabled, weakened or bypassed.
