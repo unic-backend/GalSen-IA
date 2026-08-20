@@ -8,89 +8,78 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ## Dernière session — 2026-08-20
 
-**En cours** : rien. Aucun VOLET ouvert, aucune phase en attente.
+> ### ⚠ REPRISE : lire `docs/oss-ecosystem/handover.md` AVANT toute autre chose.
+> Il contient le passage de relais complet — état exact, règles, mesures déjà
+> faites, et ce que chacune des 8 phases restantes doit produire.
+> **Ne pose aucune question à l'utilisateur : tout y est.**
 
-**Terminé** : deux programmes d'audit, **par la même méthode et avec des
-réponses différentes** — ce qui est la seule preuve que la méthode travaille.
-- **OpenClaw** — 19 phases, **ADR-034** : **ne pas intégrer**. 3 portes sur 12 à
-  `NON` (bac à sable désactivé par défaut, isolation multi-utilisateurs absente,
-  13 des 14 capacités déjà ici). 13 documents → `docs/openclaw/`.
-- **DeepSeek Harness** — 14 phases, **ADR-035** : **quatrième back-end de
-  codage, et pas encore**. Aucune porte n'échoue franchement ; tout ce qui est
-  structurel passe, tout ce qui est empirique est `UNKNOWN`. `BENCHMARK.md` ne
-  publie **aucun score**. 11 documents → `docs/deepseek-harness/`.
+**En cours** : **VOLET OPEN-SOURCE ECOSYSTEM AUDIT** — audit de 12 projets
+open-source (Transformers, SGLang, llama.cpp, LangGraph, OpenHands, vLLM,
+LiteLLM, LlamaIndex, Qdrant, Open WebUI, Unsloth, whisper.cpp).
+**14 phases sur 22 terminées.** La suivante est **E06.2**, en attente de
+confirmation. Cadence : **deux phases par tour**.
 
-**Zéro ligne de `src/` modifiée, zéro dépendance, zéro test touché** sur les deux.
-**PR #31 fusionnée** — `1e09f6d` sur `main`, CI vérifiée avant fusion
-(`1 failed, 6955 passed`, l'étiquette et rien d'autre).
+**Terminé cette session** : PR #31 et PR #32 fusionnées sur `main` (Live Context
+ADR-033, audits ADR-034/035, **ADR-036 Apache-2.0**, test de souveraineté des
+runtimes subordonnés, mémoire réalignée, `completed-work.md` 1 170 → 83 lignes).
+Puis les Ch. 01 à 05 et la moitié du Ch. 06 du VOLET en cours — 14 documents
+dans `docs/oss-ecosystem/`. **Zéro ligne de `src/`, zéro dépendance, zéro test
+touché** : le §12 de la directive interdit d'implémenter pendant l'audit.
 
-Puis la finalisation, **fusionnée par la PR #32** (`f08a4ff` sur `main`) :
-- **Trois mensonges de la mémoire corrigés** — `current-objectives.md` et
-  `priorities.md` annonçaient C6 seul tenu (la feuille de route en compte
-  **quatre**), gardaient ouverte la question tranchée par **ADR-029**, et
-  disaient la base de connaissances vide (**212 objets secteur, 14 régions,
-  45 départements**, mesurés).
-- **`completed-work.md` : 1 170 → 83 lignes**, tout l'avant-19-août versé dans
-  `archive/completed-work-2026.md`. Rien supprimé.
-- **Le trou de souveraineté relevé deux fois est fermé** :
-  `tests/test_sovereignty_subordinate_runtimes.py`, 9 tests, aucune ligne de
-  `src/`. Le seul canal vers un runtime subordonné est `ModelSpec.api_key_env`,
-  et aucun modèle joignable n'en déclare.
-- **La plateforme a une licence — ADR-036, Apache-2.0.** Elle n'en avait
-  **aucune**. Choisie pour la concession de brevet du §3, que MIT n'offre pas ;
-  pas d'AGPL, qui gênerait les déploiements institutionnels que la vision vise.
-  19 dépendances d'exécution lues avant de choisir, **zéro copyleft**. Texte
-  récupéré depuis `apache.org`. `LICENSE` et `NOTICE` nomment « GalSen IA » —
-  **y mettre un nom légal est la décision du propriétaire**.
+**Prochaine étape** : `git fetch origin && git reset --hard origin/claude/unit-tests-notification-search-file-4z0ok1`,
+puis **E06.2** (licences des six derniers) et **E07** (audit de sécurité, §9).
 
-Vérifié : **6 968 passent, 12 ignorés, 0 échec**, `ruff check .` propre.
-**Attention au zéro** : il tient à l'étiquette `v0.1.0` créée dans ce clone —
-rien n'a été réparé, et la CI échouera à l'identique tant qu'elle n'est pas
-poussée.
+**Résultat du VOLET à ce stade** : **zéro `INTEGRATE` sur douze**. Trois constats
+sur GalSen IA elle-même, aucun corrigé, tous destinés au Ch. 07 :
+`SQLiteVectorStore.search()` est **3 388 × plus lent** que le design qu'ADR-015
+décrivait ; `Role.USER` atteint `POST /coding/task` avec n'importe quel dossier
+de l'hôte (exposition **latente** — aucun moteur n'est disponible) ; et
+`litellm==1.81.10` est installé sans être déclaré ni importé.
 
-**Prochaine étape** : attendre le prochain VOLET du propriétaire. Rien n'est en
-attente sur `main` ; **PR #31 et PR #32 sont fusionnées**.
+**Repère de non-régression, à chaque phase** : `1 failed, 6967 passed,
+12 skipped`. L'unique échec est l'étiquette `v0.1.0`, **identique sur `main` et
+en CI** — ce n'est pas une régression, ne pas la « corriger ».
 
-**Piège de l'environnement, vu deux fois** : le conteneur est recyclé et le clone
-retombe sur un vieux commit (`8879e8b`). Rien n'est perdu — `git fetch origin` +
-`git reset --hard origin/main` réaligne. Ne pas conclure qu'un programme a
-disparu avant d'avoir fait ce fetch.
+**Piège de l'environnement, vu trois fois** : le conteneur est recyclé et le
+clone retombe sur `8879e8b`. Un `docs/oss-ecosystem/` absent = clone périmé,
+**jamais un programme perdu**. Faire le `git fetch` avant de conclure.
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
-- `git push origin v0.1.0` → seul test rouge, en sept programmes. Cible correcte
-  `383fcf7`. **Pousser l'étiquette publie une release GitHub** (`release.yml`).
-  Refusé depuis cet environnement : `HTTP 403`, mesuré.
-- Les 3 conditions d'ADR-035 : mesurer la qualité sur une machine autorisée à
-  installer, lire la licence de `@anthropic-ai/claude-agent-sdk`, établir ce que
-  persiste `dsh-headless`.
-- `ollama serve`, un `ffmpeg` réel, un périphérique de capture.
+- `git push origin v0.1.0` sur `383fcf7` → seul test rouge. **Publie une release
+  GitHub.** Refusé d'ici : `HTTP 403`, mesuré deux fois. Ne pas réessayer.
+- `ollama serve` (critère C1) ; les 3 conditions d'ADR-035 ; un nom légal dans
+  `LICENSE`/`NOTICE` à la place de « GalSen IA ».
+- Cet hôte : **aucun GPU**, **`ffmpeg` absent**, Hugging Face et
+  `api.github.com` en **403**. `raw.githubusercontent.com` et `pypi.org`
+  répondent — c'est par là que les licences ont été lues.
 
 ---
 
 ### Sessions précédentes
 
+**2026-08-20 — Finalisation, PR #32** : ADR-036 (Apache-2.0, choisie pour la
+concession de brevet du §3), `tests/test_sovereignty_subordinate_runtimes.py`,
+trois mensonges de la mémoire corrigés.
+
+**2026-08-19/20 — OpenClaw (19 phases, ADR-034 : ne pas intégrer)** et
+**DeepSeek Harness (14 phases, ADR-035 : quatrième back-end de codage,
+implémentation non autorisée)**. Même méthode, réponses différentes.
+
 **2026-08-19 — Live Context Engine / Call.md**, 27 phases, **ADR-033**.
 `REPRESENTATION READY — NO LIVE PERCEPTION ON THIS MACHINE`. **PR #31.**
 
-**2026-08-19 — Creative Canvas (17 phases, ADR-031) et Research Orchestration
-(18 phases, ADR-032)**, fusionnés par la **PR #29**. *Il n'y avait rien à
-importer* : 0 KEEP, 0 ADAPT, et deux dépôts sur cinq n'ont aucune licence.
-Puis la **PR #30** : couche de gouvernance spec-driven et Spec Kit installé.
+**2026-08-19 — Creative Canvas (ADR-031) et Research Orchestration (ADR-032)**,
+PR #29. *Il n'y avait rien à importer.* Puis PR #30 : gouvernance spec-driven.
 
 **2026-08-18/19 — Universal Creative Intelligence (44 phases) et
 MoneyPrinterTurbo (15 phases, ADR-030)**, PR #28. **MPT ne génère pas de
 vidéo** : il assemble des rushes Pexels/Pixabay.
 
-**2026-08-18 — ADR-029 (option C) : la plateforme a des comptes.** Trois défauts
-corrigés avant montage, dont un secret de signature en dur. PR #26.
-
+**2026-08-18 — ADR-029 (option C) : la plateforme a des comptes.** PR #26.
 **2026-08-17 — Coding Engine et interopérabilité** (ADR-028, ADR-023). PR #25.
-
-**2026-08-16 — Moteur média universel**, 32 phases. État calculé : 10 `READY`,
-6 `BLOCKED`, 1 `ABSENT` — aucune synthèse vocale n'existe dans ce dépôt.
+**2026-08-16 — Moteur média universel**, 32 phases. Aucune synthèse vocale ici.
 
 **Hérité, toujours vrai**
-- `ffmpeg` complet, `ffprobe`, `torch`, GPU et `whisper` absents.
 - Ni `/dev/snd`, ni `/dev/video*`, `DISPLAY` vide — mesuré par `capture.py`.
 - Mandataire : 9 domaines `.sn`, Banque mondiale, UNESCO, FAO, OMS → `CONNECT 403`.
 - `ollama serve` : génération et récupération sémantique non mesurées.
