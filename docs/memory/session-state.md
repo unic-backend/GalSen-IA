@@ -24,7 +24,7 @@ réponses différentes** — ce qui est la seule preuve que la méthode travaill
 **PR #31 fusionnée** — `1e09f6d` sur `main`, CI vérifiée avant fusion
 (`1 failed, 6955 passed`, l'étiquette et rien d'autre).
 
-Puis la finalisation, sur la branche du même nom repartie de `main` :
+Puis la finalisation, **fusionnée par la PR #32** (`f08a4ff` sur `main`) :
 - **Trois mensonges de la mémoire corrigés** — `current-objectives.md` et
   `priorities.md` annonçaient C6 seul tenu (la feuille de route en compte
   **quatre**), gardaient ouverte la question tranchée par **ADR-029**, et
@@ -48,7 +48,13 @@ Vérifié : **6 968 passent, 12 ignorés, 0 échec**, `ruff check .` propre.
 rien n'a été réparé, et la CI échouera à l'identique tant qu'elle n'est pas
 poussée.
 
-**Prochaine étape** : attendre le prochain VOLET du propriétaire.
+**Prochaine étape** : attendre le prochain VOLET du propriétaire. Rien n'est en
+attente sur `main` ; **PR #31 et PR #32 sont fusionnées**.
+
+**Piège de l'environnement, vu deux fois** : le conteneur est recyclé et le clone
+retombe sur un vieux commit (`8879e8b`). Rien n'est perdu — `git fetch origin` +
+`git reset --hard origin/main` réaligne. Ne pas conclure qu'un programme a
+disparu avant d'avoir fait ce fetch.
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
 - `git push origin v0.1.0` → seul test rouge, en sept programmes. Cible correcte
