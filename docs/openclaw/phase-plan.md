@@ -53,7 +53,7 @@ O03  Tool permission model and sandbox (§7, §8)                  → 2 phases 
 O04  Multi-user isolation (§9)                                   → 1 phase (indivisible)  ✅
 O05  Licence audit (§18) — the gate                              → 1 phase (indivisible)  ✅
 O06  Model providers and memory (§10, §11)                       → 2 phases  ✅
-O07  Skills and plugins, untrusted until audited (§12)           → 1 phase (indivisible)
+O07  Skills and plugins, untrusted until audited (§12)           → 1 phase (indivisible)  ✅
 O08  Provenance and observability (§13, §14)                     → 1 phase (indivisible)
 O09  Self-healing and failure isolation (§15, §16)               → 1 phase (indivisible)
 O10  Performance analysis (§17)                                  → 1 phase (indivisible)
@@ -166,5 +166,19 @@ Memory: **controlled combination** — OpenClaw's SQLite is session scratch,
 `memory_engine` is the source of truth, and nothing crosses except through the
 permission-and-declared-link gate already written.
 
-**Next: O07** — skills and plugins, untrusted until audited (§12), one
-indivisible phase.
+**O07 is done** — `docs/openclaw/skills-and-plugins.md`. **§12 describes
+`src/plugins/`**, which already declares effects and scopes, installs
+**disabled**, runs a static manifest-versus-imports check, and **disables a
+plugin the moment it is edited**. OpenClaw's plugin document states no
+permissions model and leaves capability boundaries unstated; `installPolicy` is
+a sound hook, not a policy.
+
+Applying §12's nine-item checklist to the 51 in-repo skills gives **seven
+`UNKNOWN`** — not for lack of effort, but because the answer is per-skill and
+each wraps someone else's program.
+
+**Decision: expose no OpenClaw skill or plugin. `REJECT` for that surface**,
+while the rest of the programme stays open.
+
+**Next: O08** — provenance and observability (§13, §14), one indivisible
+phase.
