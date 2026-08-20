@@ -70,7 +70,7 @@ D00  Official source audit — Phase 1's 25 items                → 3 phases
 D01  ├─ D00.1 identity, licence, releases, requirements
 D02  ├─ D00.2 architecture, plugins, agent loop, tools, MCP
 D03  └─ D00.3 sandbox, permissions, persistence, observability, recovery
-D04  GalSen IA overlap matrix — Phase 2's 20 subsystems        → 2 phases
+D04  GalSen IA overlap matrix — Phase 2's 20 subsystems        → 2 phases  ✅
 D05  Coding capability evaluation (Phase 3)                    → 2 phases
 D06  Provider independence (Phase 4)                           → 1 phase (indivisible)
 D07  Security audit (Phase 5)                                  → 1 phase (indivisible)
@@ -151,8 +151,27 @@ one-shot runner, and `persistence.md` *"does not distinguish persistence
 behavior between one-shot runs and server deployments"*. Everything downstream
 turns on it. Handed to D07, not resolved by assumption.
 
-**Next: D04.1 and D04.2** — the overlap matrix against Phase 2's twenty
-subsystems.
+**D04 is done** — `docs/deepseek-harness/overlap-matrix.md`. Nineteen
+subsystems: **4 complementary, 1 duplicate, 4 conflicting, 5 unnecessary,
+5 `UNKNOWN`**.
+
+**The strongest positive finding in five programmes**: GalSen IA's sandbox and
+DSH's fail on *opposite* axes. Ours bounds CPU, memory, processes and the
+environment but explicitly **not** filesystem or network, for want of
+privileges. Theirs bounds **exactly the filesystem**, at kernel level, and
+explicitly not network. Each covers what the other cannot — Phase 2's class A by
+definition. Whether `bwrap`/Landlock is permitted **here** is `UNKNOWN`, and D07
+must measure it rather than assume either way.
+
+**The question is reframed.** DSH is a *coding-agent harness* — `bash`, `pwsh`,
+file ops, `glob`/`grep`, `lsp`, PTYs, `subagent`, `run_code`. It touches none of
+creative state, video, reference entities, VoiceScene or world representation.
+So the honest question is **not** whether it should orchestrate — the directive
+answers no and rows 1, 3 and 19 show why it would collide — but **whether it is
+a better coding backend than the three adapters `src/coding_engine/` already
+declares**.
+
+**Next: D05.1 and D05.2** — the coding capability evaluation (Phase 3).
 
 Nothing is installed, nothing under `src/` is touched, and no existing test is
 deleted, disabled, weakened or bypassed.

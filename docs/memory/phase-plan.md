@@ -8,15 +8,20 @@ phase attend une confirmation.
 VOLET en cours   : **DEEPSEEK HARNESS — GALSEN-IA COMPATIBILITY AUDIT**
 Plan complet     : `docs/deepseek-harness/phase-plan.md`
 Phases           : 14
-Phase courante   : **D04.1 — en attente de confirmation** (matrice de
-                   recouvrement, les 20 sous-systèmes de la Phase 2)
+Phase courante   : **D05.1 — en attente de confirmation** (évaluation de la
+                   capacité de codage, Phase 3)
 Terminées        : D00.1 à D00.3 — `docs/deepseek-harness/source-audit.md`.
                    **`0.1.0-rc.8`**, MIT déposé, `THIRD_PARTY_NOTICES.md`
                    publié. **14 points vérifiés, 11 `UNKNOWN`.**
                    Bac à sable **noyau** (bwrap/Landlock, Seatbelt, ACL) —
                    rien à voir avec celui d'OpenClaw.
                    **Question centrale ouverte** : ce que persiste un
-                   `dsh-headless` n'est pas documenté
+                   `dsh-headless` n'est pas documenté.
+                   D04 : 4 complémentaires, 1 doublon, 4 conflits,
+                   5 inutiles, 5 `UNKNOWN`. **Les deux bacs à sable
+                   échouent sur des axes opposés** — le leur borne le
+                   système de fichiers au niveau noyau, le nôtre pas.
+                   Vraie question : **meilleur back-end de codage ?**
 Précédent        : **OPENCLAW** — 19 phases, **ADR-034**, décision rendue
                    (`docs/openclaw/feasibility-gates.md`)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
