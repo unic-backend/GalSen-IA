@@ -76,7 +76,7 @@ D06  Provider independence (Phase 4)                           → 1 phase (indi
 D07  Security audit (Phase 5)                                  → 1 phase (indivisible)  ✅
 D08  Licence audit (Phase 6) — the gate                        → 1 phase (indivisible)  ✅
 D09  Feasibility gates (Phase 7)                               → 1 phase (indivisible)  ✅
-D10  Architecture decision + ADR (Phase 8)                     → 1 phase (indivisible)
+D10  Architecture decision + ADR (Phase 8)                     → 1 phase (indivisible)  ✅
 D11  Test plan (Phase 10) + final report                       → 2 phases
 ```
 
@@ -250,8 +250,21 @@ Measured for this phase: **Node `v22.22.2` satisfies DSH's `^22.19.0`**, 4 CPUs,
 15 GB free, no GPU needed. So **the harness could run here and its confinement
 could not** — the least comfortable of the four combinations.
 
-**Next: D10** — the architecture decision and its ADR (Phase 8), one indivisible
-phase.
+**D10 is done** — `docs/deepseek-harness/architecture-decision.md` and
+**ADR-035**. Phase 8's choice: **OPTION C — a specialized coding-agent
+backend**, entering as a fourth `CodingEngineAdapter` beside `aider`,
+`openhands` and `swe_agent`. **Implementation is not authorized**: three cheap,
+named conditions must close first, and condition 1 — measure quality — is the
+one this environment cannot perform.
+
+A was rejected because no gate fails outright; B because the seam already exists
+and is specific; D because there is *"no privileged core to patch"* to take a
+component from; E because 170.4k stars on a `0.1.0-rc` with **no published
+scores** is not evidence, let alone the *"exceptionally strong"* kind E demands.
+
+**Phase 9 is now valid to design and is still not authorized.**
+
+**Next: D11.1 and D11.2** — the test plan (Phase 10) and the final report.
 
 Nothing is installed, nothing under `src/` is touched, and no existing test is
 deleted, disabled, weakened or bypassed.
