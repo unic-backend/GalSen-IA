@@ -7,7 +7,7 @@ phase attend une confirmation.
 
 VOLET en cours   : **OPEN-SOURCE ECOSYSTEM AUDIT & INTEGRATION**
                    12 chapitres → **22 phases**
-Phase courante   : **E08 — en attente de confirmation**
+Phase courante   : **E12.1 — en attente de confirmation**
 **REPRISE**      : session interrompue au budget, 14 phases sur 22.
                    **Lire `docs/oss-ecosystem/handover.md` d'abord.**
                    Il porte l'état exact, les mesures déjà faites et ce
@@ -18,6 +18,7 @@ Terminées        : E01, E02, E03, E04 (12 phases) — `docs/oss-ecosystem/`
                    Ch. 05 clos : matrice de duplication, **0 `INTEGRATE` sur 12**
                    Ch. 06 clos : 12 licences lues — 10 propres, 2 non
                    Ch. 07 clos : 3 constats sur GalSen IA, aucun corrigé
+                   Ch. 08–11 clos : perf, architecture, portes, ordre
 Repère           : **1 failed, 6967 passed, 12 skipped** (l'étiquette `v0.1.0`)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
