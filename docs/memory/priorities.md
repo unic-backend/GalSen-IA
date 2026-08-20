@@ -20,13 +20,13 @@ criteria were still open and ADR-029 was still a question. Both had changed.*
    sector objects, 14 regions, 45 departments, all sourced — but agriculture, health and
    education hold nothing, and **ten domains carry the reason instead of a filling**.
    Blocked here by the proxy, not by code.
-5. **Give this repository a `LICENSE` file.** The last of the two holes both external
-   audits found, and the only one that is not a task: **which licence is the owner's
-   decision.**
-
-**Retired on 2026-08-20** — *« Decide whether the platform has users »*, decided by
-ADR-029 on 2026-08-18. And *« the sovereignty test does not cover subordinate runtimes »*,
-closed the same day by `tests/test_sovereignty_subordinate_runtimes.py`.
+**Retired on 2026-08-20** — three entries, none of them silently:
+- *« Decide whether the platform has users »*, decided by **ADR-029** on 2026-08-18.
+- *« The sovereignty test does not cover subordinate runtimes »*, closed by
+  `tests/test_sovereignty_subordinate_runtimes.py`.
+- *« This repository has no `LICENSE` file »*, closed by **ADR-036** — Apache-2.0, chosen
+  for its patent grant. `LICENSE` and `NOTICE` name **"GalSen IA"** as copyright holder;
+  substituting a legal name or a registered entity is a one-line edit and is the owner's.
 
 Everything else is queued in `pending-work.md` and should not be started ahead of these
 without saying why.

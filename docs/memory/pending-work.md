@@ -28,14 +28,6 @@ gets re-argued at every review.
 
 ## P1 — High · a Phase 2 exit criterion depends on it, or it removes a demonstrated risk
 
-- **This repository has no `LICENSE` file** (`ls LICENSE*` returns nothing, 2026-08-20).
-  Found independently by ADR-034 and ADR-035, after five programmes spent refusing other
-  projects' manifests on the grounds that *a manifest is a declaration and a file is a
-  grant*. **Which licence is the owner's decision**, so this entry is a question waiting
-  for an answer, not a task waiting for a session.
-  *Deciding criterion:* strategic alignment — without it nobody may legally reuse this
-  work, and the standard this repository applies to others it does not meet itself.
-
 - **Build the Senegalese corpus.** The base now holds **250 verifiable passages** from the
   project's own documentation (VOLET 28), and the ingestion path chunks, keeps provenance
   per passage and cites sources. What is missing is the corpus that matters: agriculture,

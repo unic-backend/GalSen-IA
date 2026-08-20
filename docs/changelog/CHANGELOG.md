@@ -12,6 +12,41 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-20 — The platform has a licence: Apache-2.0 (ADR-036)
+
+`LICENSE`, `NOTICE`, and `docs/architecture/decisions/036-…`.
+
+**This repository had no licence file at all** — `ls LICENSE*` returned nothing,
+and `pyproject.toml` declares no `[project]` metadata either. Default copyright
+applied, meaning **nobody could legally reuse, modify or redistribute the work**,
+whatever its visibility suggested. ADR-034 and ADR-035 each found this
+independently, immediately after refusing to accept another project's manifest
+as proof on the grounds that *a manifest is a declaration and a file is a grant*.
+The standard was being applied outward and not inward.
+
+**Measured before choosing**: the 19 runtime dependencies in `requirements.txt`
+were read — twelve from the installed distributions, seven from the packages'
+own published metadata since they are not installed here. **Zero copyleft**: 8
+MIT, 6 Apache-2.0, 4 BSD-3-Clause, 1 mixed permissive. Nothing forced a stronger
+licence and nothing conflicted with a permissive one. The optional, audio,
+embeddings, training and development sets were **not** read, and the ADR says so.
+
+**Apache-2.0 rather than MIT, for the patent grant.** MIT is silent on patents;
+a contributor can grant copyright permission while holding a patent reading on
+what they contributed. Routing, retrieval, orchestration and agent methods are
+patented territory. §3 grants a patent licence and terminates it for anyone who
+sues over the work; §5 defines what a contribution is; §4 gives attribution a
+defined home in `NOTICE`.
+
+**Not AGPL-3.0**: this platform ships an image and a public API meant to be
+deployed by ministries, universities, NGOs and companies. Copyleft would defend
+it against a risk it does not yet face, at the cost of the adoption it exists
+for.
+
+The licence text was **fetched from `apache.org`, not reproduced from memory**.
+`LICENSE` and `NOTICE` name **"GalSen IA"** as copyright holder; substituting a
+legal name or registered entity is one edit, and it is the owner's.
+
 ### Added — 2026-08-20 — The sovereignty guarantee, tested where it actually breaks
 
 `tests/test_sovereignty_subordinate_runtimes.py` — **9 tests**, no source change.

@@ -1,0 +1,13 @@
+GalSen IA
+Copyright 2026 GalSen IA
+
+This product includes software developed as part of the GalSen IA platform
+(https://github.com/unic-backend/GalSen-IA).
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+Third-party dependencies keep their own licences. The runtime dependencies
+declared in requirements.txt were read on 2026-08-20: 19 of 19 permissive
+(MIT, BSD-3-Clause, Apache-2.0, MIT-CMU, 0BSD, Zlib, CC0-1.0), none copyleft.
+Optional and development dependencies are declared separately and are not
+covered by that reading.

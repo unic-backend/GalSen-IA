@@ -36,6 +36,12 @@ Puis la finalisation, sur la branche du même nom repartie de `main` :
   `tests/test_sovereignty_subordinate_runtimes.py`, 9 tests, aucune ligne de
   `src/`. Le seul canal vers un runtime subordonné est `ModelSpec.api_key_env`,
   et aucun modèle joignable n'en déclare.
+- **La plateforme a une licence — ADR-036, Apache-2.0.** Elle n'en avait
+  **aucune**. Choisie pour la concession de brevet du §3, que MIT n'offre pas ;
+  pas d'AGPL, qui gênerait les déploiements institutionnels que la vision vise.
+  19 dépendances d'exécution lues avant de choisir, **zéro copyleft**. Texte
+  récupéré depuis `apache.org`. `LICENSE` et `NOTICE` nomment « GalSen IA » —
+  **y mettre un nom légal est la décision du propriétaire**.
 
 Vérifié : **6 968 passent, 12 ignorés, 0 échec**, `ruff check .` propre.
 **Attention au zéro** : il tient à l'étiquette `v0.1.0` créée dans ce clone —
@@ -48,8 +54,6 @@ poussée.
 - `git push origin v0.1.0` → seul test rouge, en sept programmes. Cible correcte
   `383fcf7`. **Pousser l'étiquette publie une release GitHub** (`release.yml`).
   Refusé depuis cet environnement : `HTTP 403`, mesuré.
-- **Choisir une licence** : ce dépôt n'a toujours **aucun fichier `LICENSE`**,
-  et le choix n'est pas le mien.
 - Les 3 conditions d'ADR-035 : mesurer la qualité sur une machine autorisée à
   installer, lire la licence de `@anthropic-ai/claude-agent-sdk`, établir ce que
   persiste `dsh-headless`.
