@@ -77,14 +77,15 @@ last session stopped. Keep it up to date; it is the project's continuity.
 *Measured 2026-08-17.* Foundation and core engines are done (ADR-001, ADR-002). Fifteen
 engines **plus nine subsystems probed after the registry** (volets 47–64, probed by
 `src/integration/degradation.py`), **17 agents**, **24 declared tools** (13 runnable
-unattended), **142 API routes**, 36 ADRs (ADR-020 is `proposed`; ADR-024 to ADR-027 open the creative programme;
+unattended), **142 API routes**, 37 ADRs (ADR-020 is `proposed`; ADR-024 to ADR-027 open the creative programme;
 ADR-023 and ADR-028 add the interop and coding layers; ADR-030 and ADR-031 close the provider
 and canvas programmes; ADR-032 opens the research layer;
 ADR-033 opens the live-context layer; **ADR-034 audits OpenClaw and does not integrate it**;
-**ADR-035 places DeepSeek Harness as a fourth coding backend, implementation not yet authorized**) — see
+**ADR-035 places DeepSeek Harness as a fourth coding backend, implementation not yet authorized**;
+**ADR-036 licenses the platform under Apache-2.0** — it had no licence file at all) — see
 `docs/architecture/overview.md`, kept synchronized with the measured state.
-**6958 tests pass**, 12 skipped, 1 failed — *measured 2026-08-19*. The single failure is the
-`v0.1.0` tag, which has never been pushed; it fails identically on `main`.
+**6968 tests pass**, 12 skipped — *measured 2026-08-20*. The `v0.1.0` tag test passes only where
+the tag exists locally; the tag has never been pushed, so it fails in CI and on `main` alike.
 
 Unattended work is real: a routine can fire a workflow through the one orchestrator, and
 **an approval is never granted by the absence of someone to refuse it**. One job is
