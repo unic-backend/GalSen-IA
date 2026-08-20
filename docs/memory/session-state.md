@@ -8,41 +8,39 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ## Dernière session — 2026-08-20
 
-> ### ⚠ REPRISE : lire `docs/oss-ecosystem/handover.md` AVANT toute autre chose.
-> Il contient le passage de relais complet — état exact, règles, mesures déjà
-> faites, et ce que chacune des 8 phases restantes doit produire.
-> **Ne pose aucune question à l'utilisateur : tout y est.**
+**En cours** : rien. Aucun VOLET ouvert, aucune phase en attente.
 
-**En cours** : **VOLET OPEN-SOURCE ECOSYSTEM AUDIT** — audit de 12 projets
-open-source (Transformers, SGLang, llama.cpp, LangGraph, OpenHands, vLLM,
-LiteLLM, LlamaIndex, Qdrant, Open WebUI, Unsloth, whisper.cpp).
-**14 phases sur 22 terminées.** La suivante est **E06.2**, en attente de
-confirmation. Cadence : **deux phases par tour**.
+**Terminé** : **VOLET OPEN-SOURCE ECOSYSTEM AUDIT — 22 phases sur 22, ADR-037.**
+Douze projets audités (Transformers, SGLang, llama.cpp, LangGraph, OpenHands,
+vLLM, LiteLLM, LlamaIndex, Qdrant, Open WebUI, Unsloth, whisper.cpp) →
+**zéro `INTEGRATE`**. 16 documents dans `docs/oss-ecosystem/`, rapport final
+inclus. **Zéro ligne de `src/`, zéro dépendance, zéro test touché.**
+Avant cela : **PR #31 et PR #32 fusionnées** (ADR-033, ADR-034, ADR-035,
+**ADR-036 Apache-2.0**, test de souveraineté des runtimes subordonnés).
 
-**Terminé cette session** : PR #31 et PR #32 fusionnées sur `main` (Live Context
-ADR-033, audits ADR-034/035, **ADR-036 Apache-2.0**, test de souveraineté des
-runtimes subordonnés, mémoire réalignée, `completed-work.md` 1 170 → 83 lignes).
-Puis les Ch. 01 à 05 et la moitié du Ch. 06 du VOLET en cours — 14 documents
-dans `docs/oss-ecosystem/`. **Zéro ligne de `src/`, zéro dépendance, zéro test
-touché** : le §12 de la directive interdit d'implémenter pendant l'audit.
+**Quatre constats sur GalSen IA, aucun corrigé — suggestions, pas tâches**
+1. `SQLiteVectorStore.search()` est **3 388 × plus lent** que le design
+   qu'ADR-015 décrivait : il relit et reparse chaque ligne à chaque requête.
+   13 132 ms → **3,88 ms** à 100 000 vecteurs (153,6 Mo). La moitié p95 de la
+   condition de renversement d'ADR-015 est atteinte **dès 271 vecteurs**.
+   *C'est le point le plus utile trouvé par ce programme.*
+2. `Role.USER` atteint `POST /coding/task` avec n'importe quel dossier de
+   l'hôte. **Latent** : aucun des trois moteurs n'est disponible.
+3. L'entraînement exige une approbation ADR-006 pour *l'exécution*, jamais pour
+   *le contenu* du jeu de données.
+4. `litellm==1.81.10` installé, déclaré par rien, importé par rien.
 
-**Prochaine étape** : `git fetch origin && git reset --hard origin/claude/unit-tests-notification-search-file-4z0ok1`,
-puis **E06.2** (licences des six derniers) et **E07** (audit de sécurité, §9).
+**Prochaine étape** : attendre le prochain VOLET du propriétaire. Tout est
+poussé sur `claude/unit-tests-notification-search-file-4z0ok1` ; **rien n'est
+fusionné sur `main` depuis la PR #32** — ouvrir une PR quand tu le décides.
 
-**Résultat du VOLET à ce stade** : **zéro `INTEGRATE` sur douze**. Trois constats
-sur GalSen IA elle-même, aucun corrigé, tous destinés au Ch. 07 :
-`SQLiteVectorStore.search()` est **3 388 × plus lent** que le design qu'ADR-015
-décrivait ; `Role.USER` atteint `POST /coding/task` avec n'importe quel dossier
-de l'hôte (exposition **latente** — aucun moteur n'est disponible) ; et
-`litellm==1.81.10` est installé sans être déclaré ni importé.
-
-**Repère de non-régression, à chaque phase** : `1 failed, 6967 passed,
-12 skipped`. L'unique échec est l'étiquette `v0.1.0`, **identique sur `main` et
-en CI** — ce n'est pas une régression, ne pas la « corriger ».
+**Repère de non-régression** : `1 failed, 6967 passed, 12 skipped`. L'unique
+échec est l'étiquette `v0.1.0`, **identique sur `main` et en CI** — jamais une
+régression, ne pas la « corriger ».
 
 **Piège de l'environnement, vu trois fois** : le conteneur est recyclé et le
-clone retombe sur `8879e8b`. Un `docs/oss-ecosystem/` absent = clone périmé,
-**jamais un programme perdu**. Faire le `git fetch` avant de conclure.
+clone retombe sur `8879e8b`. Un dossier attendu absent = clone périmé, **jamais
+un programme perdu**. `git fetch` avant de conclure.
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
 - `git push origin v0.1.0` sur `383fcf7` → seul test rouge. **Publie une release
@@ -51,7 +49,7 @@ clone retombe sur `8879e8b`. Un `docs/oss-ecosystem/` absent = clone périmé,
   `LICENSE`/`NOTICE` à la place de « GalSen IA ».
 - Cet hôte : **aucun GPU**, **`ffmpeg` absent**, Hugging Face et
   `api.github.com` en **403**. `raw.githubusercontent.com` et `pypi.org`
-  répondent — c'est par là que les licences ont été lues.
+  répondent — c'est par là que les 12 licences ont été lues.
 
 ---
 

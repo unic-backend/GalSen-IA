@@ -12,6 +12,43 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-20 — Twelve open-source projects audited, none integrated (ADR-037, 22 phases)
+
+Sixteen documents under `docs/oss-ecosystem/`. **Zero lines of `src/` changed,
+zero dependencies, zero tests added or altered.** Full report →
+`docs/oss-ecosystem/final-report.md`.
+
+**Zero `INTEGRATE` out of twelve** — 3 already present, 2 reachable through an
+existing seam, 3 deferred, 2 kept as-is, 2 rejected. Not a defensive posture:
+every provider abstraction §6 asks for already exists, so each candidate would
+enter behind a seam that is already there.
+
+**The four high-overlap candidates share one shape**: each overlaps the
+mechanism and misses the constraint. LiteLLM misses ADR-014's refusal at
+registration; LangGraph's `interrupt` is a pause a caller resumes, where ADR-006
+requires a person to decide; LlamaIndex misses scope and the `UNKNOWN` path.
+
+- **A database was about to be blamed for a caching bug.**
+  `SQLiteVectorStore.search()` re-reads every row and calls `json.loads` per row
+  on every query — ADR-015's premise, *"une matrice en mémoire"*, is not what the
+  code does. Measured: **13 132 ms → 3.88 ms at 100 000 vectors, 3 388 ×**, for
+  153.6 MB resident. The p95 half of ADR-015's own reversal condition is met
+  **at 271 vectors**, today's corpus size.
+- **§4F's constraint is unmet**: `POST /coding/task` is gated by `tool:execute`,
+  held by `admin`, `operator` **and `user`**, with any host directory accepted as
+  the workspace. **Latent** — all three coding engines are unavailable.
+- **Two licences are not what their manifests say**, both found only by opening
+  the file: LiteLLM carves out an `enterprise/` directory whose licence returns
+  **404** while PyPI declares plain MIT — the manifest being the *more
+  permissive* reading; Open WebUI is BSD-3 plus a clause forbidding rebranding
+  above **50 users / 30 days**.
+- **Nine performance rows are `UNKNOWN`** — no GPU, no reachable model weights,
+  no `ffmpeg`. Four candidates are recorded *not needed*, never *not better*.
+
+Fourth consecutive external audit to find a defect here rather than in its
+subject.
+
+
 ### Added — 2026-08-20 — The platform has a licence: Apache-2.0 (ADR-036)
 
 `LICENSE`, `NOTICE`, and `docs/architecture/decisions/036-…`.
