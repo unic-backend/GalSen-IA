@@ -52,7 +52,7 @@ O02  Duplication matrix (§5)                                     → 1 phase (i
 O03  Tool permission model and sandbox (§7, §8)                  → 2 phases  ✅
 O04  Multi-user isolation (§9)                                   → 1 phase (indivisible)  ✅
 O05  Licence audit (§18) — the gate                              → 1 phase (indivisible)  ✅
-O06  Model providers and memory (§10, §11)                       → 2 phases
+O06  Model providers and memory (§10, §11)                       → 2 phases  ✅
 O07  Skills and plugins, untrusted until audited (§12)           → 1 phase (indivisible)
 O08  Provenance and observability (§13, §14)                     → 1 phase (indivisible)
 O09  Self-healing and failure isolation (§15, §16)               → 1 phase (indivisible)
@@ -154,4 +154,17 @@ states **no licensing policy** for published skills. Dependency licences are
 `UNKNOWN` is a condition, not a refusal: one `pnpm licenses list` settles it, in
 an environment allowed to install.
 
-**Next: O06.1 and O06.2** — model providers (§10) and memory (§11).
+**O06 is done** — `docs/openclaw/providers-and-memory.md`. Provider **coverage**
+is not the obstacle: every family §10 names is among OpenClaw's sixty. Provider
+**configuration** is. ADR-014 defaults `GALSEN_SOVEREIGN_MODE` to true and does
+not register hosted providers *at all*; an OpenClaw holding its own keys reaches
+them, and the existing sovereignty test would still pass while the guarantee was
+false. One viable shape: OpenClaw configured against GalSen IA's own
+OpenAI-compatible endpoint, so `ModelRouter` stays authoritative.
+
+Memory: **controlled combination** — OpenClaw's SQLite is session scratch,
+`memory_engine` is the source of truth, and nothing crosses except through the
+permission-and-declared-link gate already written.
+
+**Next: O07** — skills and plugins, untrusted until audited (§12), one
+indivisible phase.
