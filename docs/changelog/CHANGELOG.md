@@ -12,6 +12,41 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-20 — The sovereignty guarantee, tested where it actually breaks
+
+`tests/test_sovereignty_subordinate_runtimes.py` — **9 tests**, no source change.
+
+ADR-014 sets sovereign mode true and does not register hosted providers at all,
+and `tests/test_model_sovereignty.py` proves it with all three hosted keys
+present. That guarantee is real and **blind to a second runtime**: a coding
+engine, a plugin or an external harness talking to a hosted provider without
+passing through `ModelRouter` would leave the registry sovereign, its test
+green, and the platform a tenant by the side door.
+
+**Two external audits found this independently** — ADR-034 for OpenClaw,
+ADR-035 for DeepSeek Harness. Two projects, one blind spot, which is what made
+it ours rather than theirs.
+
+What the file establishes, measured rather than asserted:
+
+- The **only** channel by which a key can reach a subordinate runtime is
+  `ModelSpec.api_key_env`, read from `os.environ` by all three adapters — and
+  **no model reachable in sovereign mode declares one**, with the three hosted
+  keys set.
+- A subprocess environment **inherits none of them**, values as well as names.
+- **The protection is not in the adapter**, and the file says so instead of
+  implying a second barrier: given a hand-made `ModelSpec` naming a hosted
+  variable, aider and SWE-agent forward the key. The guard is the selection.
+- The allowlist filters **inheritance, not injection** — a counter-test pins
+  that boundary rather than leaving it to be assumed.
+- No adapter retains a credential of its own.
+- **The coverage guard**: the declared engine set must equal the set covered
+  here, so ADR-035's fourth backend cannot enter unexamined.
+
+One test exists only to make the guard bite: a reachable model is made to
+declare `OPENAI_API_KEY`, and the read must see it. A guard nobody watched
+refuse is not a guard.
+
 ### Added — 2026-08-20 — DeepSeek Harness audited; option C, and not yet (ADR-035, DeepSeek Harness directive, 14 phases)
 
 Eleven documents under `docs/deepseek-harness/`. **Zero lines of `src/` changed,

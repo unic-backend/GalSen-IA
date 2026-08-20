@@ -36,15 +36,6 @@ gets re-argued at every review.
   *Deciding criterion:* strategic alignment — without it nobody may legally reuse this
   work, and the standard this repository applies to others it does not meet itself.
 
-- **The sovereignty test does not cover subordinate runtimes.** ADR-014 sets sovereign
-  mode true and does not register hosted providers at all; the current test exercises
-  **GalSen IA's own model path**, so any subordinate runtime carrying its own credential
-  store would be a hole in that guarantee **while the test kept passing**. Recorded twice,
-  for two different external projects — which is what makes it a missing test here rather
-  than a fault there.
-  *Deciding criterion:* security implications — a guarantee whose test cannot see the
-  breach is worse than a named gap.
-
 - **Build the Senegalese corpus.** The base now holds **250 verifiable passages** from the
   project's own documentation (VOLET 28), and the ingestion path chunks, keeps provenance
   per passage and cites sources. What is missing is the corpus that matters: agriculture,

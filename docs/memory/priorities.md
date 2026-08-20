@@ -20,13 +20,13 @@ criteria were still open and ADR-029 was still a question. Both had changed.*
    sector objects, 14 regions, 45 departments, all sourced — but agriculture, health and
    education hold nothing, and **ten domains carry the reason instead of a filling**.
    Blocked here by the proxy, not by code.
-5. **Close the two holes the external audits found**: this repository has **no `LICENSE`
-   file**, and **the sovereignty test does not cover subordinate runtimes** — the same
-   blind spot recorded twice, by ADR-034 and ADR-035, which is what makes it ours rather
-   than theirs.
+5. **Give this repository a `LICENSE` file.** The last of the two holes both external
+   audits found, and the only one that is not a task: **which licence is the owner's
+   decision.**
 
 **Retired on 2026-08-20** — *« Decide whether the platform has users »*, decided by
-ADR-029 on 2026-08-18.
+ADR-029 on 2026-08-18. And *« the sovereignty test does not cover subordinate runtimes »*,
+closed the same day by `tests/test_sovereignty_subordinate_runtimes.py`.
 
 Everything else is queued in `pending-work.md` and should not be started ahead of these
 without saying why.
