@@ -77,7 +77,7 @@ D07  Security audit (Phase 5)                                  → 1 phase (indi
 D08  Licence audit (Phase 6) — the gate                        → 1 phase (indivisible)  ✅
 D09  Feasibility gates (Phase 7)                               → 1 phase (indivisible)  ✅
 D10  Architecture decision + ADR (Phase 8)                     → 1 phase (indivisible)  ✅
-D11  Test plan (Phase 10) + final report                       → 2 phases
+D11  Test plan (Phase 10) + final report                       → 2 phases  ✅
 ```
 
 **Total: 14 phases.** Phase 1 gets three because it carries twenty-five items;
@@ -264,7 +264,12 @@ scores** is not evidence, let alone the *"exceptionally strong"* kind E demands.
 
 **Phase 9 is now valid to design and is still not authorized.**
 
-**Next: D11.1 and D11.2** — the test plan (Phase 10) and the final report.
+**D11 is done, and the programme is complete** — `test-plan.md` and
+`final-report.md`. **14 phases of 14.** Thirteen test suites defined, **two
+recorded as blocked** until conditions close, and **four writable before
+anything is installed** because they test *our* seam rather than their harness.
+
+Zero lines of `src/` changed, zero dependencies, zero tests added or altered.
 
 Nothing is installed, nothing under `src/` is touched, and no existing test is
 deleted, disabled, weakened or bypassed.

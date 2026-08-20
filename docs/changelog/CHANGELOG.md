@@ -12,6 +12,46 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-20 — DeepSeek Harness audited; option C, and not yet (ADR-035, DeepSeek Harness directive, 14 phases)
+
+Eleven documents under `docs/deepseek-harness/`. **Zero lines of `src/` changed,
+zero dependencies, zero tests added or altered.** Full report →
+`docs/deepseek-harness/final-report.md`.
+
+**Decision: OPTION C — a specialized coding-agent backend**, entering as a fourth
+`CodingEngineAdapter` beside `aider`, `openhands` and `swe_agent`. Not the
+orchestrator, not a model router, not a memory, not a plugin host.
+**Implementation is not authorized**; three named conditions must close first.
+
+**No feasibility gate fails outright** — 7 `YES`, 3 `UNKNOWN`, 1 split — where
+the previous programme's subject failed three of twelve. The pattern:
+**everything structural passes, everything empirical is `UNKNOWN`**. Structure
+passes on work already done — ADR-028's capability router that *"ne connaît aucun
+des trois moteurs par son nom"*, `degradation.py`'s nine probes, the
+`check_availability` pattern. Empirics are unknown because the directive forbids
+the install that would settle them.
+
+- **Its sandbox cannot run on this host**, measured three ways: `bwrap` absent,
+  `landlock_create_ruleset` → `ENOSYS`, weak stub in `/proc/kallsyms`, no LSM in
+  `securityfs`. So D04's best finding — that our sandbox bounds CPU, memory and
+  environment but not filesystem, while theirs bounds *exactly* the filesystem —
+  is **architectural here, not deployable**.
+- **`BENCHMARK.md` publishes NO SCORES.** The repository contains no comparative
+  evidence about coding quality, which is exactly the claim the directive says
+  not to accept uncritically. 170.4k stars on a `0.1.0-rc` measures attention.
+- **First subject in five programmes whose dependency tree could be read**:
+  ~130 packages, ~98 % permissive, two copyleft scoped to development *by the
+  project itself*, one `SEE LICENSE IN` unread.
+- **Two points of genuine alignment**: approval **fails closed** on both sides —
+  `never` *"resolves `'rejected'` deterministically"* — and DSH refuses *"silent
+  unconfined passthrough"* as this repository refuses plausible answers from
+  unfinished capabilities.
+
+Three findings about GalSen IA itself, recorded for `pending-work` and none
+fixed: **this repository has no `LICENSE` file**; the sovereignty test does not
+cover subordinate runtimes (second occurrence, after ADR-034);
+`load_capabilities()` is uncached at ~22 ms.
+
 ### Added — 2026-08-20 — OpenClaw audited and not integrated (ADR-034, OpenClaw Compatibility directive, 19 phases)
 
 Thirteen documents under `docs/openclaw/`. **Zero lines of `src/` changed, zero
