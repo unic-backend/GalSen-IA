@@ -58,7 +58,7 @@ O08  Provenance and observability (§13, §14)                     → 1 phase (
 O09  Self-healing and failure isolation (§15, §16)               → 1 phase (indivisible)  ✅
 O10  Performance analysis (§17)                                  → 1 phase (indivisible)  ✅
 O11  Adapter architecture proposal (§6)                          → 2 phases  ✅
-O12  The twelve feasibility gates, decision and ADR (§19)        → 2 phases
+O12  The twelve feasibility gates, decision and ADR (§19)        → 2 phases  ✅
 ```
 
 **Total: 19 phases.** Counted from the directive's 21 sections; §1 states the
@@ -229,5 +229,9 @@ without a foreign process, without container privileges, without a sovereignty
 workaround, and under a contract (`src/connectors/`) that **already** makes
 subject binding mandatory.
 
-**Next: O12.1 and O12.2** — the twelve feasibility gates, the decision, and the
-ADR (§19).
+**O12 is done, and the programme is complete** — `docs/openclaw/feasibility-gates.md`
+and **ADR-034**. Three of twelve gates answer `NO`: cannot be sandboxed, cannot
+isolate users, complexity not justified. **Decision: do not integrate.** §21 is
+not entered, because it is conditional on an approval that did not come.
+
+Ten deliverables of §20, all present. Zero lines of `src/` changed.

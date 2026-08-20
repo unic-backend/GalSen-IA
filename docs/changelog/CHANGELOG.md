@@ -12,6 +12,45 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-20 — OpenClaw audited and not integrated (ADR-034, OpenClaw Compatibility directive, 19 phases)
+
+Thirteen documents under `docs/openclaw/`. **Zero lines of `src/` changed, zero
+dependencies added, zero tests touched.** §20 asked for ten deliverables and then
+a stop; all ten are present and the programme stopped.
+
+**Decision: do not integrate.** Three of §19's twelve gates answer `NO`.
+
+- **Cannot be sandboxed.** OpenClaw's sandboxing is off by default, the Gateway
+  process itself is unsandboxed while holding credentials, and `tools.elevated`
+  runs on the host. Its own document says *"This is not a perfect security
+  boundary."* The layer §8 requires needs namespaces and cgroups
+  `src/sandbox/policy.py` already records the platform as lacking.
+- **Cannot isolate users.** *"Session IDs select routing; they do not authorize
+  one tenant against another."* The per-tenant alternative is blocked on the same
+  privileges, on a Fleet the project calls experimental.
+- **Complexity not justified.** §5's matrix returned eight `KEEP_EXISTING`, three
+  `DEFER`, two `UNKNOWN`, **zero `INTEGRATE`** — thirteen of fourteen capabilities
+  already exist here. §20's `NudgeEngine` is `src/proactive/`; §12's untrusted-plugin
+  discipline is `src/plugins/`, which additionally disables a plugin the moment it
+  is edited; §16's failure isolation is `src/integration/degradation.py`.
+
+**The one real gap is a channel, not a runtime**: bidirectional conversational
+channels, against three one-way operator-facing notification channels here.
+`src/connectors/` already makes subject binding mandatory and checked at
+registration. Costing a WhatsApp connector is **recommended as a separate
+programme** and not authorised by this one.
+
+**Recorded because it generalises**: ADR-014 defaults sovereign mode to true and
+does not register hosted providers; any subordinate runtime with its own
+credential store is a hole in that guarantee **the existing test cannot see**,
+because it exercises GalSen IA's model path.
+
+Five findings about GalSen IA itself, recorded for `pending-work`, none fixed
+here: `ApprovalRequest` has no subject field; key revocation state is in-process;
+`load_capabilities()` is uncached at ~22 ms (latent — every API caller passes a
+shared registry); two job vocabularies and two retry managers; and an
+`OPTIONAL SUGGESTION — NOT IMPLEMENTED` for installation-keyed pseudonyms.
+
 ### Added — 2026-08-19 — A live context engine that represents everything and perceives nothing (ADR-033, Live Context / Call.md directive, 27 phases)
 
 `src/live_context/` — 16 modules, 4 805 lines, **376 tests**, no new dependency,
