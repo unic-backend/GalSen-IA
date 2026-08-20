@@ -146,19 +146,164 @@ and it is now the audit's central question rather than a detail.
 
 ---
 
-## What D00 leaves for D00.3
+---
 
-Items **8, 9, 10, 18, 19, 20, 21, 22, 24, 25** — session/state management,
-sandbox and execution model, permissions, security boundaries, persistence,
-observability, failure handling, recovery, third-party dependencies, and
-compatibility-breaking changes.
+# D00.3 — Sandbox, permissions, persistence, credentials
 
-The documents that hold them exist and are named:
-`docs/persistence-catalog.md`, `docs/tool-execution-pipeline.md`,
-`docs/agent-lifecycle.md`, `docs/api-gateway.md`, `docs/defensive-patterns.md`,
-`docs/capability-seams.md`, `docs/subsystems/`, `docs/postmortem/`, and
-`THIRD_PARTY_NOTICES.md`.
+`docs/subsystems/` holds **at least 33 subsystem documents × 3 languages** — the
+listing truncated at 100 entries. Four were read for this phase, chosen because
+they carry Phase 1's items 8, 9, 10, 18 and 19.
 
-**`docs/postmortem/` is worth noting before it is read**: a project that
-publishes postmortems is a project that says what went wrong, and that is the
-kind of source an audit can use.
+## Item 9 — the sandbox, and it is a real one
+
+`docs/subsystems/sandbox.md`, VERIFIED FROM OFFICIAL SOURCE.
+
+**Three OS-level mechanisms, not a container option:**
+
+| Platform | Mechanism |
+|---|---|
+| Linux | **`bwrap` / Landlock** |
+| macOS | **Seatbelt** |
+| Windows | **ACL restricted-token backend** |
+
+Described as *"sibling implementations"* rather than one unified approach.
+
+**Three modes**: `read-only` — *"permits only required sinks such as
+`/dev/null`"*; `workspace-write` — *"permits writes under the workspace root and
+the backend's promised temp area"*; `danger-full-access` — which *"bypasses
+confinement"*.
+
+**And the sentence that matters most in this phase:**
+
+> *"Silent unconfined passthrough is never legal for a confined policy."*
+
+That is this repository's own rule, in someone else's words: a capability that
+cannot be delivered reports its state rather than degrading quietly. The
+Windows runner *"reports partial enforcement for its ambient ACL gaps"*, and
+older Landlock ABIs likewise report partial enforcement — **they say so rather
+than pretending**.
+
+**The named limit**: *"Network and process visibility are outside this
+vocabulary."* The sandbox governs **file effects only**.
+
+`INFERENCE`, and it is a reversal of the previous audit's finding: **OpenClaw's
+sandbox was off by default and its own document called it "not a perfect security
+boundary". This one is kernel-level, per-platform, and declares what it does not
+cover.** The two are not comparable, and this audit must not carry the previous
+verdict across.
+
+**`UNKNOWN`**: whether the sandbox is on by default. `sandbox.md` does not say,
+and `permission-presets.md` says the deployment default is *"not stated"*.
+
+## Item 10 — permissions
+
+`docs/subsystems/permission-presets.md`, VERIFIED FROM OFFICIAL SOURCE.
+
+**Two presets**, each pairing a sandbox mode with an approval policy:
+
+| Preset | Sandbox mode | Approval policy |
+|---|---|---|
+| `workspace-write` | `workspace-write` | **`ask`** |
+| `danger-full-access` | `danger-full-access` | **`never`** |
+
+**Scope**: per **session** — `set(session, name)` writes to a specific session,
+and *"the selection event precedes the knob events in the same turn"*, so a
+change takes effect immediately within a session.
+
+**Who may change a preset**: **not stated**. `UNKNOWN`, and it is a security
+question rather than a documentation gap — D07 owns it.
+
+`INFERENCE`: this is again **per-session** capability scoping, the same
+granularity mismatch the OpenClaw audit found against GalSen IA's per-call
+`authorize()`. The mismatch is structural to agent harnesses, not specific to
+one project. What differs here is that the sandbox mode and the approval policy
+are **paired in the preset**, so `danger-full-access` and `never` arrive
+together — a coupling that is at least legible.
+
+## Items 8 and 19 — session state and persistence
+
+`docs/subsystems/persistence.md`, VERIFIED FROM OFFICIAL SOURCE.
+
+**Two backends.** JSONL: *"an append-only logical JSONL log per session, stored
+as checksummed concatenated Zstandard frames by default or raw lines by
+configuration"*, returning *"the absolute transcript path inside its
+project/session directory"*. SQLite: *"schema 17"*, with bounded `text-chunks`,
+`reasoning-chunks` and `tool-call-chunks` rows, returning `undefined` for a path
+because *"sessions share one database"*.
+
+**State survives process exit**, and crash recovery is explicit: *"A backend
+that reloads a log crashed mid-turn finds an open `turn/start` with no
+`turn/end`"* and closes orphaned turns with synthetic boundaries. Sessions
+resume via `ctx.agents.resume({ resumeSessionId })`.
+
+**The question this phase was opened to answer**: does `dsh-headless` — *"a
+one-shot runner without a server"* — persist anything?
+
+**`UNKNOWN`.** `persistence.md` *"does not distinguish persistence behavior
+between one-shot runs and server deployments"*, read verbatim. So the audit's
+central question from D00.2 is **not yet answered**, and this phase records that
+rather than resolving it by assumption.
+
+`INFERENCE` worth carrying: an append-only session log with **resume by session
+id** is the same capability that made OpenClaw's automatic re-dispatch a
+problem — an execution decision taken outside our gate. The difference, if there
+is one, is whether `dsh-headless` **opts out**. D07 must establish it.
+
+**Retention and deletion**: **not stated**. `UNKNOWN`.
+
+## Item 18 — credentials
+
+`docs/subsystems/credentials.md`, VERIFIED FROM OFFICIAL SOURCE.
+
+**Storage location, form and encryption: all *"not stated"***. Layer identifiers
+exist — `env`, `file`, `project-env`, `user-env` — for the local provider.
+
+**Two rules are stated, and both are good ones**: *"an empty stored value is
+absent everywhere"* — a blank is unconfigured, not empty-but-set — and
+credentials are resolved *"once per operation"* with consumers that *"must not
+cache across operations."*
+
+**Whether credentials reach plugins or tools: not stated.** `UNKNOWN`, and given
+*everything is a plugin*, it is the sharpest open question of this phase. D07
+owns it.
+
+---
+
+## Phase 1's twenty-five items, tallied
+
+| Verified | `UNKNOWN` | Deferred to a later volet |
+|---|---|---|
+| 1, 2, 3, 4, 5 (partial), 6, 7, 9, 10, 12, 14, 15 (partial), 19, 23 | 5 (providers), 11 (MCP depth), 13, 15 (Python version), 16, 17, 18 (storage), 20, 21, 22, 24, 25 | 13 → D07 · 20, 21, 22 → D07 · 24 → D08 · 25 → D08 |
+
+**Fourteen verified, eleven `UNKNOWN`**, and the `UNKNOWN`s are named with the
+document that would close each. Four of them — observability, failure handling,
+recovery, and whether credentials reach plugins — are **security questions**, and
+they are handed to D07 rather than answered from a document that does not say.
+
+## The two things D00 establishes for the rest of the audit
+
+1. **This sandbox is not OpenClaw's sandbox.** Kernel-level per platform, three
+   declared modes, partial enforcement reported rather than hidden, and a
+   published limit — file effects only. The previous programme's blocker was
+   *"cannot be sandboxed"*; here that question has to be asked again from
+   scratch.
+
+2. **The central question is still open.** `dsh-headless` is documented as a
+   one-shot runner; `persistence.md` does not say what a one-shot run persists.
+   Everything downstream — whether an adapter needs to impose per-task sessions,
+   whether resume can be defeated, whether a credential store exists — turns on
+   it, and it is `UNKNOWN` today.
+
+## What remains for later volets
+
+`docs/api-gateway.md`, `docs/agent-lifecycle.md`, `docs/defensive-patterns.md`,
+`docs/capability-seams.md`, `docs/subsystems/approval.md`,
+`docs/subsystems/shell.md`, `docs/subsystems/skills.md`,
+`docs/subsystems/extensions.md`, `docs/subsystems/code-runtime.md`,
+`docs/postmortem/`, `BENCHMARK.md`, and `THIRD_PARTY_NOTICES.md`.
+
+**`docs/postmortem/` and `BENCHMARK.md` are worth noting before they are read**:
+a project that publishes its postmortems says what went wrong, and a project
+that publishes a benchmark file has made claims an audit can check against
+Phase 3's rule — *never claim "best coding model" without comparative
+evidence*.

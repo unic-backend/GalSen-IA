@@ -8,13 +8,15 @@ phase attend une confirmation.
 VOLET en cours   : **DEEPSEEK HARNESS — GALSEN-IA COMPATIBILITY AUDIT**
 Plan complet     : `docs/deepseek-harness/phase-plan.md`
 Phases           : 14
-Phase courante   : **D00.3 — en attente de confirmation** (sessions, bac à
-                   sable, permissions, persistance, observabilité, reprise)
-Terminées        : D00.1 et D00.2 — `docs/deepseek-harness/source-audit.md`.
+Phase courante   : **D04.1 — en attente de confirmation** (matrice de
+                   recouvrement, les 20 sous-systèmes de la Phase 2)
+Terminées        : D00.1 à D00.3 — `docs/deepseek-harness/source-audit.md`.
                    **`0.1.0-rc.8`**, MIT déposé, `THIRD_PARTY_NOTICES.md`
-                   publié. `dsh-headless` est *« a one-shot runner without a
-                   server »* — la forme qui rendait OpenClaw inadoptable
-                   pourrait ne pas être présente ici
+                   publié. **14 points vérifiés, 11 `UNKNOWN`.**
+                   Bac à sable **noyau** (bwrap/Landlock, Seatbelt, ACL) —
+                   rien à voir avec celui d'OpenClaw.
+                   **Question centrale ouverte** : ce que persiste un
+                   `dsh-headless` n'est pas documenté
 Précédent        : **OPENCLAW** — 19 phases, **ADR-034**, décision rendue
                    (`docs/openclaw/feasibility-gates.md`)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)

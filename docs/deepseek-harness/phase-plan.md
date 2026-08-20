@@ -135,9 +135,24 @@ previous verdict.
 Correction recorded: the default branch is **`master`**, not `main`; the first
 raw fetch 404'd on that.
 
-**Next: D00.3** — session and state, sandbox, permissions, security boundaries,
-persistence, observability, failure handling, recovery, dependencies, breaking
-changes.
+**D00.3 is done** — the source audit now covers Phase 1 end to end:
+**fourteen items verified, eleven `UNKNOWN`**, each `UNKNOWN` named with the
+document that would close it.
+
+**The sandbox is not OpenClaw's sandbox**: kernel-level per platform — `bwrap`/
+Landlock, Seatbelt, ACL restricted-token — three declared modes, partial
+enforcement **reported rather than hidden**, and a published limit (file effects
+only; *"Network and process visibility are outside this vocabulary"*). Its own
+rule reads like ours: *"Silent unconfined passthrough is never legal for a
+confined policy."*
+
+**The central question is still open.** `dsh-headless` is documented as a
+one-shot runner, and `persistence.md` *"does not distinguish persistence
+behavior between one-shot runs and server deployments"*. Everything downstream
+turns on it. Handed to D07, not resolved by assumption.
+
+**Next: D04.1 and D04.2** — the overlap matrix against Phase 2's twenty
+subsystems.
 
 Nothing is installed, nothing under `src/` is touched, and no existing test is
 deleted, disabled, weakened or bypassed.
