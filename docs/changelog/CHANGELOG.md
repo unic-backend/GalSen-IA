@@ -12,6 +12,35 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Fixed — 2026-08-20 — vector search rebuilt its matrix on every query (ADR-015)
+
+The OSS ecosystem audit measured `SQLiteVectorStore.search()` against the design
+ADR-015 describes and found they were not the same thing. The cosine was a
+NumPy dot product as written; the matrix it multiplied was **re-read and
+re-parsed from SQLite on every call**, so the trigger condition ADR-015 wrote
+for itself was measuring JSON parsing rather than similarity.
+
+- Measured here before and after, medians over 15 queries: **49.4 → 0.463 ms**
+  at 271 vectors (today's corpus), **1 856.8 → 0.830 ms** at 10 000.
+- The matrix is cached per (collection, model) and validated by a **version
+  counter written inside each write's transaction**, not by an in-memory flag.
+  A cache only its own process can invalidate serves a stale answer the moment
+  another process writes, and one of the eleven tests writes from a second
+  store instance to prove this one does not.
+- `PRAGMA data_version` would have been exact too, but it needs a persistent
+  connection: measured here, a fresh connection always reads `1`, and this
+  store opens one per operation. That measurement is why the counter exists.
+- A collection above a declared ceiling is served **without** cache rather than
+  growing the process quietly; `stats()` reports cache entries, bytes and hits.
+- The five staleness guards were verified by **sabotaging the validation** —
+  all five go red. One of them did not discriminate and was rewritten to assert
+  the stale *score* rather than the ranking, which was identical either way.
+- ADR-015 carries the amendment, including two corrections to how the original
+  finding reads: 94.93 ms is *below* the 100 ms threshold, not beyond it, and
+  the fix does not move the trigger — it removes an overhead that was never
+  part of the decision.
+
+
 ### Added — 2026-08-20 — Twelve open-source projects audited, none integrated (ADR-037, 22 phases)
 
 Sixteen documents under `docs/oss-ecosystem/`. **Zero lines of `src/` changed,

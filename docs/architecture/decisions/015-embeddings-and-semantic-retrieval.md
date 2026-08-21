@@ -69,6 +69,40 @@ brute-force cosine over a matrix in memory is on the order of a millisecond, and
 no service to run, secure, back up and monitor. **Trigger to revisit (Qdrant, ADR to
 follow): more than ~100 000 vectors, or a p95 query latency above 100 ms.**
 
+#### Amendment, 2026-08-20 — the code did not do what this section describes
+
+The OSS ecosystem audit measured `SQLiteVectorStore.search()` against the design
+written above and found they were not the same thing. "A brute-force cosine over
+a matrix in memory" was accurate about the cosine and wrong about the matrix:
+the matrix was **rebuilt on every query**, re-reading the table and re-parsing
+every `values_json`. What the trigger condition was measuring, therefore, was
+not the cost of similarity but the cost of JSON parsing.
+
+Measured on a 4-CPU host, medians over 15 queries, before and after keeping the
+matrix:
+
+| Vectors | Before | After | p95 after |
+|---:|---:|---:|---:|
+| 271 *(today's corpus)* | 49.4 ms | **0.463 ms** | 0.627 ms |
+| 10 000 | 1 856.8 ms | **0.830 ms** | 1.327 ms |
+
+*(The audit measured 70.42 ms and 1 232 ms on the same untouched code. Two runs
+on a shared host differ by about a factor of two; both numbers are stated rather
+than averaged into one that neither run produced.)*
+
+Two corrections to how the audit's finding should be read. It reported the p95
+half of this trigger as "met at 271 vectors" on a measurement of **94.93 ms** —
+which is below the 100 ms written here, not beyond it, though close enough that
+a slower run crosses it. And the fix does not move the trigger: **it removes an
+overhead that was never part of the decision**, so the 100 000-vector figure now
+measures roughly what this section always claimed it did.
+
+The matrix is cached per (collection, model) and validated by a version counter
+written inside each write's transaction — not by an in-memory flag, because a
+cache only its own process can invalidate serves a stale answer the moment
+another writes. A collection above a declared ceiling is served **without**
+cache rather than growing the process quietly, and `stats()` reports which.
+
 ### 4. Retrieval says which path it took
 
 This is the part that matters most, and it is the project's rule applied to search: a

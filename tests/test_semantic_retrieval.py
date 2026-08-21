@@ -429,3 +429,141 @@ def test_la_recherche_de_connaissances_passe_au_semantique(tmp_path, monkeypatch
     assert rapport["method"] == "semantic"
     assert resultats, "Le chemin sémantique ne rend rien"
     assert resultats[0][0].id == attendu
+
+
+# ----------------------------------------------------------------------
+# Le cache de matrice : ce qu'il accélère, et ce qu'il ne doit jamais servir
+#
+# `search()` reconstruisait la matrice à chaque requête — 49,4 ms à 271
+# vecteurs et 1 856,8 ms à 10 000, mesuré avant correction. La matrice est
+# désormais gardée par (collection, modèle) et validée par un compteur de
+# version inscrit dans la base. Ces tests portent sur la validité, pas sur la
+# vitesse : un cache rapide qui rend un résultat périmé est pire que la
+# lenteur qu'il remplace.
+# ----------------------------------------------------------------------
+
+
+def _vecteur(item_id, valeurs, collection="c", modele="m", metadata=None):
+    """Un vecteur normalisé, pour les tests de cache."""
+    norme = math.sqrt(sum(v * v for v in valeurs)) or 1.0
+    return Vector(item_id=item_id, collection=collection,
+                  values=[v / norme for v in valeurs], model_name=modele,
+                  metadata=metadata or {})
+
+
+def test_une_ecriture_invalide_le_cache(magasin):
+    magasin.upsert([_vecteur("a", [1.0, 0.0])])
+    assert [r.item_id for r in magasin.search("c", [1.0, 0.0], "m")] == ["a"]
+
+    magasin.upsert([_vecteur("b", [0.9, 0.1])])
+    trouves = [r.item_id for r in magasin.search("c", [1.0, 0.0], "m")]
+    # Sans invalidation, « b » serait resté invisible jusqu'au redémarrage.
+    assert set(trouves) == {"a", "b"}
+
+
+def test_une_valeur_remplacee_est_bien_relue(magasin):
+    magasin.upsert([_vecteur("a", [1.0, 0.0]), _vecteur("b", [0.0, 1.0])])
+    assert magasin.search("c", [1.0, 0.0], "m", limit=1)[0].item_id == "a"
+
+    # Même identifiant, valeur opposée : le nombre de lignes ne change pas.
+    # Un cache validé par un simple décompte aurait manqué ce cas.
+    magasin.upsert([_vecteur("a", [0.0, -1.0])])
+
+    # On interroge la direction d'origine de « a » : sur une matrice périmée
+    # son score vaudrait encore 1,0. C'est le score, et non le classement, qui
+    # distingue les deux cas — un test qui ne regarde que l'ordre passerait
+    # dans les deux, et ne garderait donc rien.
+    scores = {r.item_id: r.score for r in magasin.search("c", [1.0, 0.0], "m")}
+    assert scores["a"] < 0.5, (
+        f"« a » marque {scores['a']} sur sa valeur remplacée : la matrice "
+        "servie est celle d'avant l'écriture."
+    )
+
+
+def test_une_suppression_invalide_le_cache(magasin):
+    magasin.upsert([_vecteur("a", [1.0, 0.0]), _vecteur("b", [0.0, 1.0])])
+    magasin.search("c", [1.0, 0.0], "m")
+
+    magasin.delete("c", ["a"])
+    assert [r.item_id for r in magasin.search("c", [1.0, 0.0], "m")] == ["b"]
+
+
+def test_un_vidage_invalide_le_cache(magasin):
+    magasin.upsert([_vecteur("a", [1.0, 0.0])])
+    magasin.search("c", [1.0, 0.0], "m")
+
+    magasin.clear("c")
+    assert magasin.search("c", [1.0, 0.0], "m") == []
+
+
+def test_une_ecriture_d_un_autre_processus_invalide_le_cache(tmp_path):
+    """Le cas qui justifie un compteur en base plutôt qu'un drapeau en mémoire."""
+    chemin = str(tmp_path / "vectors.sqlite")
+    lecteur = SQLiteVectorStore(chemin)
+    ecrivain = SQLiteVectorStore(chemin)
+
+    ecrivain.upsert([_vecteur("a", [1.0, 0.0])])
+    assert [r.item_id for r in lecteur.search("c", [1.0, 0.0], "m")] == ["a"]
+
+    # Une seconde instance écrit — c'est ce que fait un autre processus.
+    ecrivain.upsert([_vecteur("b", [0.9, 0.1])])
+    trouves = [r.item_id for r in lecteur.search("c", [1.0, 0.0], "m")]
+    assert set(trouves) == {"a", "b"}, (
+        "Le lecteur a servi une matrice périmée : un cache que seul son "
+        "processus sait invalider ment dès qu'un autre écrit."
+    )
+
+
+def test_les_metadonnees_rendues_sont_celles_du_vecteur(magasin):
+    magasin.upsert([_vecteur("a", [1.0, 0.0], metadata={"source": "x"}),
+                    _vecteur("b", [0.0, 1.0], metadata={"source": "y"})])
+    magasin.search("c", [1.0, 0.0], "m")  # remplit le cache
+
+    resultat = magasin.search("c", [0.0, 1.0], "m", limit=1)[0]
+    assert resultat.item_id == "b"
+    assert resultat.metadata == {"source": "y"}
+
+
+def test_le_cache_ne_melange_pas_deux_modeles(magasin):
+    magasin.upsert([_vecteur("a", [1.0, 0.0], modele="m1"),
+                    _vecteur("b", [1.0, 0.0], modele="m2")])
+    assert [r.item_id for r in magasin.search("c", [1.0, 0.0], "m1")] == ["a"]
+    assert [r.item_id for r in magasin.search("c", [1.0, 0.0], "m2")] == ["b"]
+
+
+def test_le_cache_ne_melange_pas_deux_collections(magasin):
+    magasin.upsert([_vecteur("a", [1.0, 0.0], collection="c1"),
+                    _vecteur("b", [1.0, 0.0], collection="c2")])
+    assert [r.item_id for r in magasin.search("c1", [1.0, 0.0], "m")] == ["a"]
+    assert [r.item_id for r in magasin.search("c2", [1.0, 0.0], "m")] == ["b"]
+
+
+def test_une_dimension_incompatible_est_toujours_refusee(magasin):
+    magasin.upsert([_vecteur("a", [1.0, 0.0])])
+    magasin.search("c", [1.0, 0.0], "m")  # remplit le cache
+    with pytest.raises(DimensionMismatch):
+        magasin.search("c", [1.0, 0.0, 0.0], "m")
+
+
+def test_le_cache_est_visible_dans_les_statistiques(magasin):
+    magasin.upsert([_vecteur("a", [1.0, 0.0])])
+    magasin.search("c", [1.0, 0.0], "m")
+    magasin.search("c", [1.0, 0.0], "m")
+
+    cache = magasin.stats()["cache"]
+    assert cache["entries"] == 1
+    assert cache["bytes"] > 0
+    assert cache["hits"]["frais"] >= 1
+    # Un cache qu'on ne peut pas voir est un cache dont personne ne sait s'il sert.
+    assert cache["max_mb"] > 0
+
+
+def test_une_collection_au_dela_du_plafond_est_servie_sans_cache(magasin, monkeypatch):
+    import src.embeddings.vector_store as module
+
+    magasin.upsert([_vecteur("a", [1.0, 0.0]), _vecteur("b", [0.0, 1.0])])
+    monkeypatch.setattr(module, "CACHE_MAX_MO", 0)
+
+    # Le résultat reste juste ; seule la mise en cache est refusée.
+    assert [r.item_id for r in magasin.search("c", [1.0, 0.0], "m", limit=1)] == ["a"]
+    assert magasin.stats()["cache"]["entries"] == 0

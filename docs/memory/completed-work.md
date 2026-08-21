@@ -109,3 +109,12 @@ Entrées antérieures au 2026-08-19 → `docs/memory/archive/completed-work-2026
 - **Troisième audit externe d'affilée qui trouve un défaut ici plutôt que chez son sujet** — après le trou de souveraineté (ADR-034) et le `LICENSE` absent (ADR-035).
 - **Programme terminé** : 16 documents, **ADR-037**, rapport → `docs/oss-ecosystem/final-report.md`. Un passage de relais avait été écrit à mi-parcours (`handover.md`) ; les 8 phases restantes ont été exécutées ensuite.
 - Vérifié à chaque phase : `ruff check .` propre, **1 failed, 6967 passed, 12 skipped** (l'étiquette `v0.1.0`, identique sur `main`).
+
+### 2026-08-20 (Constat n°1 de l'audit OSS corrigé : la recherche vectorielle)
+- **`SQLiteVectorStore.search()` reconstruisait la matrice à chaque requête** — il relisait la table et reparsait chaque `values_json`. Ce que la condition de renversement d'ADR-015 mesurait n'était donc pas le coût du cosinus mais celui de l'analyse JSON.
+- **Mesuré ici avant/après**, médianes sur 15 requêtes : **49,4 → 0,463 ms** à 271 vecteurs, **1 856,8 → 0,830 ms** à 10 000. L'audit avait mesuré 70,42 ms et 1 232 ms sur le même code intact ; deux exécutions sur un hôte partagé varient d'un facteur deux, et les deux chiffres sont dits plutôt que moyennés.
+- **Le cache est validé par un compteur de version écrit dans la transaction de chaque écriture**, pas par un drapeau en mémoire : un cache que seul son processus sait invalider ment dès qu'un autre écrit. `PRAGMA data_version` aurait été exact aussi, mais **mesuré ici** une connexion neuve rend toujours `1`, et ce magasin en ouvre une par opération.
+- **Les 5 gardes anti-péremption ont été vérifiées en sabotant la validation** : toutes passent au rouge. L'une ne discriminait pas — elle vérifiait le classement, identique dans les deux cas — et a été refaite pour vérifier le **score** périmé.
+- **Deux nuances portées à ADR-015** : 94,93 ms est **sous** le seuil de 100 ms qu'ADR-015 se donne, pas au-delà ; et la correction **ne déplace pas** le déclencheur, elle retire un surcoût qui n'en faisait jamais partie.
+- **Piège d'environnement mesuré au passage** : `bcrypt==5.0.0` est déclaré dans `requirements.txt` et n'était pas installé dans ce conteneur — **40 échecs et 16 erreurs**, tous d'authentification. La base **intacte** a été mesurée sur la même machine avant de conclure : les 40 échecs préexistaient, et la correction n'en introduit aucun (+11 tests, 0 échec).
+- Suite complète : **6982 passent**, 9 ignorés, 3 désélectionnés, **0 échec**. `ruff` propre.
