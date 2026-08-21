@@ -75,6 +75,7 @@ from src.version import __version__
 from src.config import log_environment_problems
 from src.analytics import build_report as build_analytics_report
 from src.integration.engine_registry import get_shared_registry
+from src.coding_engine.authorization import refused_reason as coding_refused_reason
 from src.coding_engine.types import CodingStatus, CodingTask
 from src.auth.jwt_handler import JWTHandler, SecretAbsent
 from src.auth.protection import (
@@ -4188,10 +4189,14 @@ class CodingTaskRequest(BaseModel):
 
 
 @app.get("/coding/engines", tags=["coding"],
-         dependencies=[Depends(rate_limit_dependency),
-                       Depends(require_permission(Permission.TOOL_EXECUTE))])
-async def coding_engines():
+         dependencies=[Depends(rate_limit_dependency)])
+async def coding_engines(
+    ctx: RBACContext = Depends(require_permission(Permission.TOOL_EXECUTE)),
+):
     """État des moteurs de codage : lesquels peuvent travailler, et sinon pourquoi."""
+    refus = coding_refused_reason(ctx)
+    if refus:
+        raise HTTPException(status_code=403, detail=refus)
     moteur = get_shared_registry().try_get("coding")
     if moteur is None:
         raise HTTPException(status_code=503, detail="Moteur de codage indisponible")
@@ -4211,6 +4216,12 @@ async def coding_task(
     indisponibilité rendue en 200 ferait passer une absence de travail pour un
     résultat.
     """
+    # Le plafond de rôle avant tout le reste : `tool:execute` ouvre la porte,
+    # elle ne dit pas quel outil, et un moteur de codage atteint `system`.
+    refus = coding_refused_reason(ctx)
+    if refus:
+        raise HTTPException(status_code=403, detail=refus)
+
     if not request.instruction.strip():
         raise HTTPException(status_code=422, detail="L'instruction ne peut pas être vide")
 

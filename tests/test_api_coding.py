@@ -182,3 +182,141 @@ class TestSoumissionDeTache:
             "status", "ok", "engine_id", "task_id", "summary", "files_changed",
             "tests", "errors", "warnings", "execution_time_seconds", "audit_id",
         }
+
+
+# ----------------------------------------------------------------------
+# Le plafond de rôle (constat n°2)
+#
+# `tool:execute` ouvre la porte de *un* outil, jamais celle d'un moteur qui
+# écrit sur l'hôte. Ces tests éprouvent la borne côté API et côté politique.
+# ----------------------------------------------------------------------
+
+
+@pytest.fixture
+def client_utilisateur(monkeypatch):
+    """Le même client, sous un rôle `user` ordinaire."""
+    monkeypatch.setenv("GALSEN_API_KEYS", f"{CLE}:user:utilisateur")
+    import src.api.server as serveur
+    serveur.rbac_manager.reload()
+    serveur.set_valid_api_key_digests(serveur.rbac_manager.active_key_digests())
+    try:
+        with TestClient(serveur.app) as client:
+            yield client
+    finally:
+        monkeypatch.delenv("GALSEN_API_KEYS", raising=False)
+        serveur.rbac_manager.reload()
+        serveur.set_valid_api_key_digests(serveur.rbac_manager.active_key_digests())
+
+
+class TestPlafondDeRole:
+    """Qui peut confier une tâche de codage, et qui ne le peut pas."""
+
+    def _tache(self, espace, **extra):
+        charge = {"instruction": "corrige la faute de frappe", "workspace": espace}
+        charge.update(extra)
+        return charge
+
+    def test_un_utilisateur_ordinaire_est_refuse(self, client_utilisateur, espace):
+        """Le cœur du constat n°2 : `Role.USER` détient bien `tool:execute`."""
+        reponse = client_utilisateur.post(
+            "/coding/task", json=self._tache(espace), headers=ENTETE
+        )
+        assert reponse.status_code == 403
+
+    def test_le_refus_nomme_la_classe_de_donnees(self, client_utilisateur, espace):
+        """Un refus sans motif est indébogable et sera contourné à l'aveugle."""
+        detail = client_utilisateur.post(
+            "/coding/task", json=self._tache(espace), headers=ENTETE
+        ).json()["detail"]
+        assert "system" in detail
+        assert "user" in detail
+
+    def test_le_refus_precede_la_validation_du_corps(self, client_utilisateur, espace):
+        """
+        Un dossier inexistant ne doit pas être distingué d'un dossier réel.
+
+        Répondre 404 ici dirait à un appelant non autorisé ce qui existe sur
+        l'hôte — c'est l'énumération que le plafond est censé fermer.
+        """
+        reponse = client_utilisateur.post(
+            "/coding/task",
+            json=self._tache("/racine/qui/n/existe/pas"),
+            headers=ENTETE,
+        )
+        assert reponse.status_code == 403
+
+    def test_l_etat_des_moteurs_est_aussi_derriere_le_plafond(
+        self, client_utilisateur,
+    ):
+        """Savoir quel moteur est installé décrit l'hôte, pas l'utilisateur."""
+        assert client_utilisateur.get("/coding/engines", headers=ENTETE).status_code == 403
+
+    def test_un_administrateur_passe_le_plafond(self, client, espace):
+        """La borne ferme un rôle, elle ne ferme pas la route."""
+        reponse = client.post("/coding/task", json=self._tache(espace), headers=ENTETE)
+        # 503 : aucun moteur installé ici. Ce qui compte est que ce ne soit
+        # pas 403 — le plafond a été franchi.
+        assert reponse.status_code != 403
+
+
+class TestPolitiqueDeCodage:
+    """La politique elle-même, sans passer par FastAPI."""
+
+    def _acteur(self, role, permissions=("tool:execute",)):
+        from src.tool.authorization import Actor
+        return Actor(subject="qui", role=role, permissions=frozenset(permissions))
+
+    def test_operateur_et_administrateur_sont_dans_leur_plafond(self):
+        from src.coding_engine.authorization import authorize_coding
+        from src.tool.authorization import Decision
+        for role in ("admin", "operator"):
+            assert authorize_coding(self._acteur(role)).decision is Decision.ALLOWED
+
+    def test_utilisateur_et_lecture_seule_sont_hors_plafond(self):
+        from src.coding_engine.authorization import authorize_coding
+        from src.tool.authorization import Decision
+        for role in ("user", "readonly"):
+            assert authorize_coding(self._acteur(role)).decision is Decision.REFUSED
+
+    def test_aucun_role_educatif_n_atteint_le_moteur_de_codage(self):
+        """
+        Une position dans une école n'a jamais demandé d'écrire sur l'hôte.
+
+        Le test parcourt `EDUCATION_ROLES` plutôt qu'une liste recopiée : un
+        rôle éducatif ajouté demain est couvert sans que personne y pense.
+        """
+        from src.api.rbac import EDUCATION_ROLES
+        from src.coding_engine.authorization import authorize_coding
+        from src.tool.authorization import Decision
+        for role in EDUCATION_ROLES:
+            verdict = authorize_coding(self._acteur(role.value))
+            assert verdict.decision is Decision.REFUSED, role.value
+
+    def test_un_role_inconnu_est_refuse(self):
+        """Une faute de frappe dans la configuration ne doit rien ouvrir."""
+        from src.coding_engine.authorization import authorize_coding
+        from src.tool.authorization import Decision
+        verdict = authorize_coding(self._acteur("oprateur"))
+        assert verdict.decision is Decision.REFUSED
+
+    def test_la_permission_reste_necessaire(self):
+        """Le plafond complète `tool:execute`, il ne la remplace pas."""
+        from src.coding_engine.authorization import authorize_coding
+        from src.tool.authorization import Decision
+        verdict = authorize_coding(self._acteur("admin", permissions=()))
+        assert verdict.decision is Decision.REFUSED
+        assert "tool:execute" in verdict.reason
+
+    def test_la_capacite_declaree_dit_ce_que_le_moteur_fait(self):
+        """
+        Elle atteint `system` et n'est pas exécutable sans témoin.
+
+        Affaiblir l'un ou l'autre rouvrirait le constat n°2 en silence : c'est
+        `data_scope` qui produit le refus, pas une liste de rôles.
+        """
+        from src.coding_engine.authorization import CAPACITE
+        from src.tool.capabilities import DataScope, Effect
+        assert CAPACITE.data_scope is DataScope.SYSTEM
+        assert CAPACITE.effects == frozenset({Effect.READ, Effect.WRITE})
+        assert CAPACITE.unattended is False
+        assert CAPACITE.reason
