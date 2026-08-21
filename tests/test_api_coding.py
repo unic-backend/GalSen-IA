@@ -18,6 +18,22 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+
+@pytest.fixture(autouse=True)
+def racines_declarees(monkeypatch, tmp_path_factory):
+    """
+    Déclare l'arborescence temporaire de pytest comme racine autorisée.
+
+    Sans cela, `resolve_workspace()` refuse tout : une variable
+    `GALSEN_CODING_WORKSPACE_ROOTS` absente ne vaut pas « tout l'hôte ». La
+    déclaration est faite ici, visible, plutôt que contournée — c'est
+    exactement le geste qu'un exploitant devra poser.
+    """
+    monkeypatch.setenv(
+        "GALSEN_CODING_WORKSPACE_ROOTS", str(tmp_path_factory.getbasetemp())
+    )
+
+
 CLE = "cle-de-test-coding"
 ENTETE = {"X-API-Key": CLE}
 

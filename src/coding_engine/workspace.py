@@ -22,6 +22,22 @@ l'utilisateur qui lance GalSen IA peut lire. La seule isolation réelle est un
 conteneur — d'où `GALSEN_CODING_REQUIRE_CONTAINER`, qui refuse toute exécution
 hors conteneur quand l'exploitant l'exige. C'est écrit dans ADR-028, section
 *Limites connues*.
+
+## Le point 1 ne tenait pas ce qu'il promettait
+
+Le confinement ci-dessus est **relatif** : il empêche de sortir de l'espace de
+travail, jamais de choisir `~/.ssh` comme espace de travail. `resolve_workspace`
+acceptait n'importe quel dossier existant de l'hôte, et le paragraphe qui
+promettait de protéger `~/.ssh` décrivait donc une garantie que le module
+n'avait pas.
+
+D'où les **racines déclarées** : `GALSEN_CODING_WORKSPACE_ROOTS` énumère les
+dossiers sous lesquels un espace de travail peut se trouver. Rien en dehors
+n'est acceptable, et **une variable absente ne vaut pas « tout est permis »** :
+elle vaut « personne n'a déclaré où ce moteur peut écrire », et un moteur qui
+écrit là où personne ne l'a autorisé est le défaut qu'on corrige ici. Le refus
+nomme la variable — une capacité inachevée rapporte son état, elle ne se replie
+pas sur un défaut plausible.
 """
 
 import os
@@ -73,6 +89,10 @@ MOTIFS_A_APPROUVER = (
 
 VARIABLE_CONTENEUR = "GALSEN_CODING_REQUIRE_CONTAINER"
 
+#: Les dossiers sous lesquels un espace de travail peut se trouver, déclarés par
+#: l'exploitant et séparés comme un `PATH` (`:` sous Unix, `;` sous Windows).
+VARIABLE_RACINES = "GALSEN_CODING_WORKSPACE_ROOTS"
+
 
 class WorkspaceError(ValueError):
     """Espace de travail inutilisable, ou chemin qui en sort."""
@@ -94,6 +114,70 @@ class SafetyVerdict:
     reasons: List[str]
 
 
+def declared_roots() -> Tuple[List[Path], List[str]]:
+    """
+    Lit les racines déclarées par l'exploitant.
+
+    La lecture se fait à chaque appel, comme pour `container_required()` : une
+    politique mise en cache à l'import ne se corrige plus sans redémarrage, et
+    c'est celle-là qu'on oublie d'appliquer.
+
+    Returns:
+        Les racines utilisables, résolues, et les entrées écartées avec leur
+        raison. Une entrée fautive n'est **pas** silencieusement ignorée : une
+        faute de frappe qui rétrécit la politique sans le dire se paye à
+        l'exécution suivante, sur un refus qu'on ne s'explique pas.
+    """
+    brut = os.environ.get(VARIABLE_RACINES, "")
+    racines: List[Path] = []
+    ecartees: List[str] = []
+    for entree in brut.split(os.pathsep):
+        entree = entree.strip()
+        if not entree:
+            continue
+        chemin = Path(entree).expanduser().resolve()
+        if not chemin.is_dir():
+            ecartees.append(f"« {entree} » : ce n'est pas un dossier existant")
+            continue
+        racines.append(chemin)
+    return racines, ecartees
+
+
+def _hors_des_racines(resolu: Path) -> str:
+    """
+    Dit pourquoi un espace de travail n'est pas déclaré, ou `""` s'il l'est.
+
+    Args:
+        resolu: L'espace de travail, déjà résolu.
+
+    Returns:
+        Le motif du refus, en clair, ou une chaîne vide quand le chemin tombe
+        sous une racine déclarée.
+    """
+    racines, ecartees = declared_roots()
+    detail = (" Entrées écartées de la déclaration : "
+              + " ; ".join(ecartees) + ".") if ecartees else ""
+
+    if not racines:
+        return (
+            f"Aucune racine d'espace de travail n'est déclarée. Renseignez "
+            f"« {VARIABLE_RACINES} » avec les dossiers où ce moteur a le droit "
+            f"d'écrire, séparés par « {os.pathsep} ». Une variable absente ne "
+            f"veut pas dire « tout l'hôte » : elle veut dire que personne n'a "
+            f"dit où ce moteur peut travailler.{detail}"
+        )
+
+    if any(resolu == racine or racine in resolu.parents for racine in racines):
+        return ""
+
+    return (
+        f"« {resolu} » ne se trouve sous aucune racine déclarée "
+        f"({', '.join(str(racine) for racine in racines)}). Le confinement des "
+        f"chemins empêche de sortir de l'espace de travail ; il n'empêche pas "
+        f"d'en choisir un mauvais, et c'est ce que cette borne fait.{detail}"
+    )
+
+
 def resolve_workspace(path: Any) -> Path:
     """
     Vérifie qu'un espace de travail est utilisable et retourne son chemin résolu.
@@ -105,7 +189,14 @@ def resolve_workspace(path: Any) -> Path:
         Le chemin absolu, liens symboliques résolus.
 
     Raises:
-        WorkspaceError: Chemin vide, inexistant, ou qui n'est pas un dossier.
+        WorkspaceError: Chemin vide, inexistant, qui n'est pas un dossier, ou
+            qui ne tombe sous aucune racine déclarée par l'exploitant.
+
+    Note:
+        L'existence est contrôlée **avant** la déclaration, à dessein : le
+        contrôle d'accès a déjà eu lieu plus haut (`authorization.py`), et
+        « ce dossier n'existe pas » répare une faute de frappe là où « hors
+        des racines » enverrait chercher un problème de configuration.
     """
     if not path:
         raise WorkspaceError("Aucun espace de travail fourni.")
@@ -114,6 +205,9 @@ def resolve_workspace(path: Any) -> Path:
         raise WorkspaceError(f"« {resolu} » n'existe pas.")
     if not resolu.is_dir():
         raise WorkspaceError(f"« {resolu} » n'est pas un dossier.")
+    refus = _hors_des_racines(resolu)
+    if refus:
+        raise WorkspaceError(refus)
     return resolu
 
 

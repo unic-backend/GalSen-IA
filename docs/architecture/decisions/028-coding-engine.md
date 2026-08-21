@@ -124,6 +124,30 @@ test enumerates forbidden imports, hosts and key variables across
 - **Container policy.** `GALSEN_CODING_REQUIRE_CONTAINER=1` refuses any execution
   outside a container.
 
+### Amendment, 2026-08-21 — confinement was relative, and the door was open
+
+Two holes were found in what this section describes, and both are closed.
+
+**The workspace itself was unbounded.** *Confinement* above refuses a path that
+leaves the workspace; nothing refused `~/.ssh` as the workspace. `resolve_workspace`
+accepted any existing host directory, so the guarantee the module's own header
+claims — "sans cela, une instruction mal comprise ou mal intentionnée touche
+`~/.ssh`" — was not held. `GALSEN_CODING_WORKSPACE_ROOTS` now declares the
+directories a workspace may live under, and **an unset variable refuses everything**
+rather than meaning "the whole host": nobody has said where this engine may write.
+Paths are resolved before the comparison, so a symlink planted inside a declared
+root cannot point out of it, and the comparison is on path components — `/data/projet`
+does not contain `/data/projet-secret`.
+
+**`tool:execute` was the only gate on the route.** `Role.USER` holds it — it is the
+permission that opens the calculator — so an ordinary user reached `POST /coding/task`.
+The engine now declares its capability (`data_scope: system`, read+write,
+`unattended: False`) and both `/coding` routes consult the existing role ceiling
+(`src/tool/authorization.py`), which already refuses `system` to `user`. No second
+authorization model was introduced; `src/coding_engine/authorization.py` says why.
+
+Approval is untouched: it remains a property of the act, not of the actor.
+
 ### Governance reuses what exists
 
 The Approval Engine (ADR-006) and the Audit Engine are the platform's, unchanged.

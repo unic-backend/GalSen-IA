@@ -74,6 +74,7 @@ export GALSEN_OPENHANDS_URL=http://localhost:8010
 | `GALSEN_OPENHANDS_API_KEY` | Session key, if the server requires one |
 | `GALSEN_CODING_ENGINES` | Restrict and order the engines, e.g. `aider,openhands` |
 | `GALSEN_CODING_REQUIRE_CONTAINER` | `1` refuses any execution outside a container |
+| `GALSEN_CODING_WORKSPACE_ROOTS` | Directories a workspace may live under, `PATH`-separated. **Unset refuses every execution** |
 | `GALSEN_ENGINES_ROOT` | Where the install script puts the virtualenvs |
 
 ---
@@ -133,6 +134,7 @@ changes.
 
 | Guard | What it does |
 |---|---|
+| Declared roots | A workspace must live under `GALSEN_CODING_WORKSPACE_ROOTS`. Unset means nobody said where the engine may write — not "the whole host" |
 | Confinement | Paths resolved, symlinks included; anything outside the workspace is refused |
 | Environment allowlist | Subprocesses never see `GALSEN_API_KEYS`, `GITHUB_TOKEN` or provider keys |
 | Bounded execution | Finite timeout, capped at one hour; on expiry the process **group** is killed |
@@ -140,6 +142,7 @@ changes.
 | Approval gate | Push, publish, secrets, production config, recursive delete → Approval Engine |
 | Container policy | `GALSEN_CODING_REQUIRE_CONTAINER=1` refuses execution outside a container |
 | Key handling | Keys travel by environment, never on a command line; `ModelSpec` carries only the variable's *name* |
+| Role ceiling | `/coding/*` is measured against `src/tool/authorization.py`. The engine reaches `system`, so `user`, `readonly` and the education roles are refused |
 
 **What this does not do:** it does not sandbox a local subprocess. A subprocess
 can read what the user running GalSen IA can read. The only real isolation is a
