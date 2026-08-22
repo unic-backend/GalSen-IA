@@ -85,6 +85,17 @@ Design constraints, all inherited from decisions already taken:
 - Personal data is excluded at capture time, not at export time. Filtering later means
   it was written to disk in the first place.
 
+**Amendment, 2026-08-21 — the gate covered the act, not the content.** `export_pairs`
+required an approval id and only checked it was non-empty: `export_pairs("oui")` passed,
+and nobody asked the Approval Engine whether the request existed, had been *granted*, or
+what it covered. That second half is the one that matters — a real approval said "export
+the training set", an act, while the set grows every day, so an approval obtained over
+twelve pairs authorized twelve thousand a month later. `request_export_approval()` now
+records a SHA-256 fingerprint of the exact text that would leave, and `export_pairs()`
+recomputes it: if the content moved, the approval covers something else and the refusal
+says what changed. The fingerprint is over the text, not the count — swapping one pair for
+another leaves the count identical.
+
 This component is the reason to start early: it is the only one whose cost grows every day
 it is postponed.
 
@@ -142,7 +153,7 @@ that does without pretending to have run it.
 
 | Component | State |
 |---|---|
-| `src/training/feedback.py` | **Built and verified.** Corrections, preferences and reports, with consent, per-subject ownership (ADR-010), personal data scrubbed **at write time**, and export gated by ADR-006 |
+| `src/training/feedback.py` | **Built and verified.** Corrections, preferences and reports, with consent, per-subject ownership (ADR-010), personal data scrubbed **at write time**, and export gated by ADR-006 **over the dataset's fingerprint, not merely over the act** |
 | `src/training/evaluation.py` + `docs/evaluation/retrieval.jsonl` | **Built and verified**, with a real baseline measured — see below |
 | `src/training/lineage.py` + `docs/training/lineage.jsonl` | **Built and verified.** Base, licence, data hash, metrics, kept-or-not |
 | `scripts/training/train_adapter.py` | **Written, never executed.** It needs a GPU, PyTorch and access to base weights. It refuses to start without an approval id, and reports precisely what is missing rather than dying on an ImportError halfway through a rented hour |

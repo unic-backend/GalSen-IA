@@ -28,11 +28,12 @@ Usage :
 
     python scripts/training/train_adapter.py \
         --famille samp --base Qwen/Qwen2.5-7B-Instruct \
-        --paires data/exports/pairs.jsonl --approbation req_xxx
+        --paires data/exports/pairs.jsonl --approbation appr_xxx --empreinte <sha256>
 """
 
 import argparse
 import hashlib
+import json
 import os
 import sys
 from pathlib import Path
@@ -89,6 +90,30 @@ def verifier_environnement() -> str:
     return ""
 
 
+def empreinte_du_fichier(chemin: str) -> str:
+    """
+    Recalcule l'empreinte d'un JSONL de paires.
+
+    Args:
+        chemin: Le fichier de paires.
+
+    Returns:
+        L'empreinte, calculée par la **même** fonction que l'export
+        (`src.training.feedback.dataset_fingerprint`). Une seconde
+        implémentation ici dériverait de la première, et c'est celle qui dérive
+        qui laisserait passer un jeu que personne n'a approuvé.
+    """
+    from src.training.feedback import dataset_fingerprint
+
+    paires = []
+    with open(chemin, encoding="utf-8") as fichier:
+        for ligne in fichier:
+            ligne = ligne.strip()
+            if ligne:
+                paires.append(json.loads(ligne))
+    return dataset_fingerprint(paires)
+
+
 def entrainer(options) -> int:
     """Exécute l'entraînement, ou dit précisément pourquoi il ne peut pas."""
     if not options.approbation:
@@ -99,13 +124,41 @@ def entrainer(options) -> int:
         )
         return 2
 
-    manque = verifier_environnement()
-    if manque:
-        print(f"Entraînement impossible ici. {manque}", file=sys.stderr)
-        return 1
+    if not options.empreinte:
+        print(
+            "Refus : --empreinte est exigée. Une approbation porte sur un "
+            "contenu précis, pas sur le geste d'entraîner ; sans elle, cet "
+            "identifiant autoriserait n'importe quel fichier de paires. "
+            "L'empreinte est celle inscrite dans la demande d'approbation.",
+            file=sys.stderr,
+        )
+        return 2
 
     if not os.path.isfile(options.paires):
         print(f"Jeu de paires introuvable : {options.paires}", file=sys.stderr)
+        return 1
+
+    try:
+        mesuree = empreinte_du_fichier(options.paires)
+    except (OSError, ValueError) as erreur:
+        print(f"Jeu de paires illisible : {erreur}", file=sys.stderr)
+        return 1
+
+    if mesuree != options.empreinte:
+        print(
+            f"Refus : le fichier de paires ne correspond pas à l'approbation "
+            f"« {options.approbation} ».\n"
+            f"  approuvée : {options.empreinte}\n"
+            f"  mesurée   : {mesuree}\n"
+            "Ce jeu de données n'est pas celui qui a été relu. Redemandez une "
+            "approbation plutôt que de recopier l'empreinte mesurée.",
+            file=sys.stderr,
+        )
+        return 2
+
+    manque = verifier_environnement()
+    if manque:
+        print(f"Entraînement impossible ici. {manque}", file=sys.stderr)
         return 1
 
     # Imports tardifs : ils n'existent que sur la machine d'entraînement.
@@ -181,6 +234,8 @@ def main() -> int:
     analyseur.add_argument("--nom", default=None, help="Nom de la version produite")
     analyseur.add_argument("--sortie", default="checkpoints")
     analyseur.add_argument("--approbation", default="", help="Identifiant d'approbation (ADR-006)")
+    analyseur.add_argument("--empreinte", default="",
+                           help="Empreinte du jeu approuvé, inscrite dans la demande")
     options = analyseur.parse_args()
     options.nom = options.nom or f"{options.famille}-1"
     return entrainer(options)
