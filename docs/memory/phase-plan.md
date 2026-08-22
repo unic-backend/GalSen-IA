@@ -10,10 +10,12 @@ VOLET en cours   : **SUPERPOWERS — IMPLÉMENTATION DES 6 CANDIDATS**
                    tout »), sur la base de `docs/research/superpowers-audit.md`
 Chapitres        : **7**
 Phases           : **11**
-Phase courante   : **4 (C5, fin de branche) — en attente de confirmation**
-Terminées        : **1 (C3)**, **2 (C4)**, **3.1 et 3.2 (C2)** — 4 sur 11.
+Phase courante   : **5.2 — ligne de base ROUGE — en attente de confirmation**
+Terminées        : **1 (C3)**, **2 (C4)**, **3.1/3.2 (C2)**, **4 (C5)**,
+                   **5.1 (C1, skill écrit)** — 6 sur 11.
                    `verification.md`, `memory.md`, `phase-protocol.md`,
-                   `.claude/skills/systematic-debugging/`
+                   `git-workflow.md`, `skills/systematic-debugging/`,
+                   `skills/testing-instructions/`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md` — toute
