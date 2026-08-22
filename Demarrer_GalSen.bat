@@ -74,6 +74,37 @@ if errorlevel 1 (
     echo [OK] Modele pret
 )
 
+REM --- 3bis. Cle d'acces locale --------------------------------
+REM  Sans GALSEN_API_KEYS, l'API refuse tout et le tableau de bord
+REM  affiche "Cle API absente" sur chaque panneau. Mesure sur la
+REM  machine du proprietaire, 2026-08-22 : la plateforme demarrait,
+REM  l'interface s'affichait, et rien n'etait utilisable.
+REM
+REM  Ceci n'affaiblit AUCUNE regle d'authentification : une cle reste
+REM  exigee et verifiee. Ce qui change, c'est qu'elle est fabriquee et
+REM  MONTREE au lieu d'etre devinee. Le fichier vit dans data\, que
+REM  .gitignore exclut, et n'est jamais versionne.
+if not "%GALSEN_API_KEYS%"=="" goto :cle_prete
+if not exist "%~dp0data" mkdir "%~dp0data"
+if exist "%~dp0data\cle_locale.txt" (
+    set /p GALSEN_LOCAL_KEY=<"%~dp0data\cle_locale.txt"
+) else (
+    for /f %%k in ('powershell -NoProfile -Command "[guid]::NewGuid().ToString('N')"') do set GALSEN_LOCAL_KEY=%%k
+    > "%~dp0data\cle_locale.txt" echo %GALSEN_LOCAL_KEY%
+)
+set GALSEN_API_KEYS=%GALSEN_LOCAL_KEY%:admin:proprietaire
+echo.
+echo   ===========================================================
+echo     CLE API LOCALE — copie-la dans le champ "Cle API" du
+echo     tableau de bord, en haut a droite, puis "Appliquer" :
+echo.
+echo        %GALSEN_LOCAL_KEY%
+echo.
+echo     Elle est aussi dans data\cle_locale.txt et ne change plus.
+echo   ===========================================================
+echo.
+:cle_prete
+
 REM --- 4. Persistance ------------------------------------------
 REM  Par defaut tout vit en memoire et disparait a l'arret.
 REM  Ces deux variables donnent une memoire durable a la plateforme.
