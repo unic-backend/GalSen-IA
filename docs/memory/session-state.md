@@ -8,33 +8,32 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ## Dernière session — 2026-08-22
 
-**En cours** : rien. VOLET SUPERPOWERS **terminé** — audit 24 phases puis
-implémentation 11 phases, **ADR-038**.
+**En cours** : rien. **AUDIT #01 `codebase-memory-mcp` terminé**, 16 phases.
 
-**Terminé** : `obra/superpowers` (`b36e0829`, v6.3.0, MIT) audité → **`PARTIAL-GO`**,
-puis **6 candidats adoptés**. Rapport : `docs/research/superpowers-audit.md`.
+**Terminé** : `DeusData/codebase-memory-mcp` à `010569fa` audité →
+**`KEEP FOR RESEARCH`**. Rapport : `docs/research/codebase-memory-mcp-audit.md`.
+**Rien installé, rien intégré, rien adapté. Zéro fichier hors `docs/`.**
 
-Ce qu'il faut savoir sans relire :
-- Superpowers est **de la prose** : 29 322 lignes contre 4 012 de code, zéro
-  dépendance, **aucune surface d'import**. **19 sous-systèmes sur 37 :
-  `KEEP GALSEN`. `REPLACE` : zéro.**
-- **Rien n'est installé**, et c'est la moitié porteuse : le plugin importerait
-  une cadence contredisant `phase-protocol.md`, un flux d'instructions
-  auto-mis-à-jour qui **inverse** `trust.py`, et 9 skills inutiles.
-- **Ce qui a atterri** : `skills/testing-instructions/`,
-  `skills/systematic-debugging/`, la clause de fraîcheur (*« dans ce message »*),
-  le format `Décision : quoi — pourquoi — coût si c'est faux`, la fin d'une
-  branche, et `scripts/find_polluter.py` (**seule copie**, notice MIT retenue).
-- **Première règle de ce dépôt jamais mesurée** : C3 éprouvée par C1,
-  **ROUGE → VERT**. La campagne a trouvé que C3 *créait* un conflit avec
-  `work-cadence.md` (fermé le jour même) et que **les sous-agents héritent de
-  `CLAUDE.md`** — une ligne de base sans la règle n'est pas atteignable par
-  instruction.
-- **L'étape de preuve de C6 a trouvé un vrai défaut dans mon propre portage.**
+À savoir sans relire :
+- **Projet en C, 1,3 Go** (842 `.c`, 160 grammaires tree-sitter), **MIT**, aucun
+  copyleft, **30 Mo de poids `nomic` embarqués** (Apache-2.0).
+- **Réellement indépendant des fournisseurs** — vérifié dans le C : aucun client
+  d'API, aucun appel sortant, la seule socket `AF_INET` vise `127.0.0.1`.
+- **16 lignes sur 24 sont `KEEP`** parce que **`code-review-graph`, déjà branché
+  ici, les couvre**. Ce n'est pas une capacité qui manque : c'est un **second
+  fournisseur** d'une capacité existante.
+- **Le risque** : il écrit des **fichiers d'instructions** dans `$HOME`
+  (`global_rules.md`, `AGENTS.md`). Même classe de surface qu'ADR-038 a écartée.
+  **Le retrait n'est pas propre** : désinstaller ne les efface pas.
+- **`NOT_MEASURED`** sur la performance : la mesure qui déciderait est contre
+  `code-review-graph`, et son serveur MCP s'est déconnecté deux fois ici.
+- **Deux faux positifs écartés en lisant les correspondances** : « 7 MPL » était
+  *simplecpp*, et `getaddrinfo` était une table générée de symboles Python.
 
-**Prochaine étape** : rien en attente. Cinq exclusions restent nommées dans
-ADR-038 ; la **boucle de correction de sous-agents** mérite son propre VOLET si
-tu la veux.
+**Prochaine étape** : rien d'autorisé. Le déclencheur nommé, si tu le veux :
+mesurer tokens et appels contre `code-review-graph` sur les 5 questions de la
+phase 8. Suggestion optionnelle non implémentée : arêtes `CALLS` et incrémental
+par hachage dans `src/agent/`, le jour où `self_healer.py` en aura besoin.
 
 **Ce qui a servi à chaque fois** : *sabotez la garde avant de la croire.* Une
 sabotage a elle-même été fautive — la ligne ajoutée s'est collée à la

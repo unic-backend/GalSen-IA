@@ -5,11 +5,11 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **OPEN-SOURCE COMPONENT AUDIT #01 — `codebase-memory-mcp`**
+VOLET en cours   : **aucun — AUDIT #01 terminé, 16 phases sur 16**
                    Brief du propriétaire, 2026-08-22, phases 0 à 12 + rapport
 Chapitres        : **13**
 Phases           : **16**
-Phase courante   : **13 (rapport final) — en attente de confirmation**
+Phase courante   : aucune — le VOLET est clos
 Terminées        : **0.1, 0.2, 1** — 3 sur 16. Sujet cloné à `010569fa`,
                    **1,3 Go, projet en C** (842 `.c`), **MIT**, 160 grammaires
                    tree-sitter, et **30 Mo de poids nomic-embed-code embarqués**.

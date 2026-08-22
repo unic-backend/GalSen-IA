@@ -918,5 +918,143 @@ deliberately not a design.
 
 ---
 
-*Phases 0 to 11 complete (15 of 16). The final report — chapter 13 — has not been
-written.*
+## FINAL REPORT — the brief's 25 points
+
+```
+1.  REPOSITORY STATE
+    GalSen IA at 8f64379, branch claude/galsen-ia-phases-ukwz7p, tree clean.
+    Subject cloned read-only to /home/user/DeusData/codebase-memory-mcp.
+
+2.  FILES CREATED
+    docs/research/codebase-memory-mcp-audit.md  (this document)
+
+3.  FILES MODIFIED
+    docs/memory/phase-plan.md  (phase tracking, as the protocol requires)
+    Zero files under src/, tests/, agents/, scripts/, workflows/ or .claude/.
+
+4.  EXISTING COMPONENTS REUSED
+    None — nothing was built. The audit measured, in GalSen IA:
+    src/memory_engine/ (13) · src/knowledge_engine/ (38) · src/embeddings/ (6)
+    src/agent/ (23, incl. repo_graph, repo_map, symbol_index, self_healer)
+    src/mcp/ (4) · src/services/search/ · src/acquisition/ · src/security/
+    src/api/rbac.py · src/tool/authorization.py · workflows/workflows.yaml
+    and the code-review-graph MCP server already wired into this repository.
+
+5.  NEW ARCHITECTURE IMPLEMENTED
+    None. Audit only.
+
+6.  PROVIDERS EVALUATED
+    None as providers. The subject is a code-intelligence engine, not a model
+    provider — and phase 5 verified it depends on no provider at all.
+
+7.  SOURCES RESEARCHED
+    The clone at 010569fa: README.md, LICENSE, THIRD_PARTY.md, SECURITY.md,
+    docs/BENCHMARK.md, install.sh, .github/workflows/ (8), and the C sources in
+    src/ and internal/cbm/.
+    api.github.com and github.com answer 403 here, so issues, releases and PR
+    history were NOT read.
+
+8.  LICENSE FINDINGS
+    MIT (c) 2025 DeusData. Compatible with ADR-036 (Apache-2.0).
+    Vendored, declared with paths: SQLite public domain · mimalloc, yyjson,
+    Verstable MIT · xxHash, TRE, LZ4 BSD-2 · Zstandard BSD-3 (dual GPLv2 NOT
+    taken) · simplecpp 0BSD · wyhash Unlicense · nomic weights Apache-2.0.
+    INCOMPATIBLE: none. TO WATCH: the nomic NOTICE, dormant unless redistributed.
+    A first count reported 7 MPL matches — false positive, "simplecpp" and
+    "implementation". There is no MPL.
+    Verified-against-upstream count for 160 grammars: UNKNOWN.
+
+9.  TESTS ADDED
+    0. The audit adds no test because it adds no code.
+
+10. TOTAL TESTS      7039 collected (7036 + 3 deselected)
+11. PASSED           7027
+12. FAILED           0
+13. SKIPPED          9
+
+14. REGRESSION STATUS
+    PASS. Measured in this message: 7027 passed, 9 skipped, 3 deselected,
+    0 failed; ruff check src tests scripts clean. Nothing executable changed.
+
+15. PERFORMANCE MEASUREMENTS
+    NOT_MEASURED. Their figures are recorded as claims with their method
+    (Apple M3 Pro). The independent benchmark is DEFINED and NOT RUN: its
+    decisive arm compares against code-review-graph, whose MCP server
+    disconnected twice during this session. No performance number here is mine.
+
+16. GPU / RESOURCE MEASUREMENTS
+    Subject: 1.3 GB source, of which 1.2 GB is 160 Tree-sitter grammars.
+    Host: cc GCC 13.3.0, GNU Make 4.3 present — a build is plausible and was
+    not attempted. GPU: not required by the subject and absent from this host.
+
+17. IDENTITY VERIFICATION MEASUREMENTS
+    Not applicable to this subject. GalSen IA's own state is unchanged:
+    whoever writes GALSEN_API_KEYS asserts who each key belongs to and nothing
+    checks it (P0, docs/memory/pending-work.md).
+
+18. CONTINUITY MEASUREMENTS
+    Not applicable. GalSen IA's session continuity is unchanged: phase-plan.md
+    and session-state.md injected by the SessionStart hook.
+
+19. UNKNOWN ITEMS
+    a. Performance and context gain against code-review-graph — the measurement
+       that would change the decision.
+    b. Memory cost and latency on this host.
+    c. Licence of 160 grammars verified against their own upstreams.
+    d. Injection resistance — not assessed.
+    e. Issues, releases and PR history — api.github.com 403.
+
+20. KNOWN LIMITATIONS
+    - Sweeps covered src/ and internal/cbm C sources, not the 160 generated
+      grammar parsers.
+    - The subject was read and never built or executed. Every behavioural
+      statement comes from its source, not from running it.
+    - "No outbound path found" is narrower than "none exists", and is written
+      that way throughout.
+
+21. SECURITY STATUS
+    No destructive or hidden operation found. No sudo. No privilege escalation.
+    Installer verifies checksums with a size bound and refuses non-https,
+    non-loopback download URLs.
+    ONE DISCLOSED PRIVILEGED OPERATION: it writes MCP registrations AND agent
+    instruction files into $HOME (~/.claude.json, global_rules.md, AGENTS.md,
+    codebase-memory.md and others). Same class of surface ADR-038 weighed for
+    Superpowers and decided against on the plugin path.
+
+22. PRIVACY STATUS
+    The "100% local" claim was checked in the C, not taken from the README:
+    no curl_*, gethostbyname, SSL_connect or socket(AF_INET in src/ or
+    internal/cbm/; the only AF_INET connect targets htonl(0x7F000001) —
+    127.0.0.1; ipc.c is AF_UNIX. The single getaddrinfo hit is a generated
+    table of Python stdlib symbol names, not a call.
+    The claim survives. No telemetry found.
+
+23. CONSENT STATUS
+    Not applicable — no user data is involved. GalSen IA's consent model
+    (ADR-021, src/creative/reference/consent.py) is untouched.
+
+24. FINAL DECISION
+    KEEP FOR RESEARCH
+    — with a named trigger converting it to USE DURING DEVELOPMENT ONLY.
+    Not INTEGRATE (phase 4B, architecture). Not ADAPT yet (POSSIBLE is not
+    implemented). Not REJECT (the quality is not the problem).
+
+25. NEXT IMPLEMENTATION PHASE
+    NONE. Nothing is authorised by this audit.
+    The one action that would change the decision, if the owner wants it:
+    measure tokens and tool calls against code-review-graph on this repository,
+    on the five structural questions defined in phase 8. That needs CRG's MCP
+    server to stay connected.
+    Recorded separately as an OPTIONAL SUGGESTION — NOT IMPLEMENTED: adding
+    CALLS edges and content-hash incrementality to src/agent/, triggered the day
+    self_healer.py needs a call graph to decide what a repair touches.
+```
+
+**Not production ready** is not claimed, and neither is the opposite: nothing was
+built, so there is nothing to call ready.
+
+---
+
+**End of audit.** 16 phases of 16. Zero files under `src/`, `tests/`, `agents/`,
+`scripts/`, `workflows/` or `.claude/` were created, modified or deleted. Nothing
+was installed, integrated or adapted.
