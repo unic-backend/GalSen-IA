@@ -322,6 +322,177 @@ properly in chapter 12 (§16) rather than characterised now.
 
 ---
 
-*Phases 1.1, 1.2, 1.3 and 2.1 complete. Phase 2.2 — `skills/`, `hooks/`,
-bootstrap and update mechanism — has not started, and nothing below chapter 02
-exists in this document yet.*
+## PHASE 2.2 — skills, hooks, bootstrap, update mechanism
+
+### The bootstrap — one hook, and it is the same idea GalSen IA already uses
+
+`hooks/hooks.json` declares **exactly one hook**: `SessionStart`, matching
+`startup|clear|compact`, running `hooks/run-hook.cmd session-start`.
+
+`hooks/session-start` (49 lines of bash) does one thing: it reads
+`skills/using-superpowers/SKILL.md` from disk, escapes it for JSON, and prints it
+wrapped in `<EXTREMELY_IMPORTANT>` as the host's context-injection field. It
+branches on three host conventions (`additional_context` for Cursor,
+`hookSpecificOutput.additionalContext` for Claude Code, top-level
+`additionalContext` for Copilot CLI and the SDK standard) because — its own
+comment says — Claude Code reads both without de-duplicating.
+
+**No network call. No state written. One local file read.**
+
+This is worth stating plainly because it is the closest structural match in the
+whole audit: GalSen IA's `SessionStart` hook runs `scripts/session_bootstrap.py`
+and injects `docs/memory/session-state.md` and `docs/memory/phase-plan.md`. Same
+event, same mechanism, different payload — Superpowers injects *how to work*,
+GalSen IA injects *where the work stopped*. They are not competitors; they are
+two uses of one hook.
+
+`run-hook.cmd` is a bash/batch polyglot so Windows hosts find Git Bash. On no
+bash it exits 0 silently rather than failing — a deliberate degradation.
+
+### Update mechanism
+
+The README's entire answer: *"Superpowers updates are somewhat coding-agent
+dependent, but are often automatic."* For Claude Code it is the plugin
+marketplace (`/plugin install superpowers@claude-plugins-official`).
+
+**This is an integration-relevant fact, not a footnote.** An auto-updating source
+of instructions is a supply-chain surface: the text that steers a coding agent
+can change without a review. §13 will weigh it; recorded here where it was found.
+
+### Telemetry — found while reading the update section, verified in code
+
+The README declares it, so the README is not the evidence. Read at
+`skills/brainstorming/scripts/server.cjs:106-112, 244-249`:
+
+```js
+const SUPERPOWERS_BRAND_IMAGE_URL =
+  'https://primeradiant.com/brand/superpowers-visual-brainstorming-logo.png';
+const TELEMETRY_DISABLE_ENV_VARS = [
+  'SUPERPOWERS_DISABLE_TELEMETRY', 'DISABLE_TELEMETRY',
+  'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+…
+: '<img class="brand-logo" src="' + SUPERPOWERS_BRAND_IMAGE_URL + '?v='
+  + encodeURIComponent(SUPERPOWERS_VERSION) + '" … referrerpolicy="no-referrer">'
+```
+
+Measured, precisely:
+
+- It is **one remote `<img>`**, in **one skill** (`brainstorming`'s optional
+  visual companion), carrying **the Superpowers version** as `?v=` and nothing
+  else the page controls.
+- `referrerpolicy="no-referrer"` is set — which matters more than it looks: the
+  companion's own URL carries a per-session secret key, and no-referrer keeps it
+  out of the outbound request.
+- The three opt-outs exist in code and are **covered by four tests**
+  (`tests/brainstorm-server/branding.test.js`).
+- Grepping every executable file for outbound URLs found **six**, and apart from
+  this one they are all `github.com/obra/superpowers` links inside a release
+  script.
+
+**The README's claim survives verification.** What still leaves the machine when
+enabled is what any HTTP GET carries — source IP, browser user-agent, timestamp,
+version — which is not nothing, and §16's judgement belongs in chapter 12.
+
+### Skill shape
+
+39 markdown files under `skills/`, plus 8 non-markdown (2 `js`, 3 `sh`, 1 `ts`,
+1 `cjs`, 1 `html`, 1 `dot`, and three extensionless scripts under
+`subagent-driven-development/scripts/`). Sizes range from 63 lines
+(`using-superpowers`) to 568 (`subagent-driven-development`).
+
+---
+
+## PHASE 3.1 — Architectural comparison, areas A to H
+
+Each area answers §4's nine questions. Where the answer is the same across
+several areas it is said once, not repeated to look thorough.
+
+### A. Agent architecture
+
+| | |
+|---|---|
+| GalSen IA | 17 agents declared in `agents/registry.yaml`, loaded by `src/router/agent_loader.py`, dispatched by `agent_dispatcher.py`, aggregated by `result_aggregator.py`. **Runtime agents of a product.** |
+| Superpowers | No agent registry. Its "agents" are the host CLI itself, steered by prose. `.agents/plugins` is host wiring. |
+| Better? | **Not comparable.** These are different layers: GalSen IA's agents serve users at runtime; Superpowers steers the developer's coding agent. |
+| Duplication | None. |
+| Conflict | None. |
+| Native? | N/A |
+| Import needed? | **No.** |
+
+### B. Skill architecture
+
+| | |
+|---|---|
+| GalSen IA | 14 skills, `SKILL.md` + YAML front-matter, `.claude/skills/`. |
+| Superpowers | 14 skills, `SKILL.md` + YAML front-matter, `skills/`. |
+| Better? | **The format is identical.** The difference is content and one mechanism: Superpowers' `using-superpowers` skill is force-injected at session start, so the agent is told the skills exist before it can forget. GalSen IA's skills wait to be invoked. |
+| Duplication | Format: total. Content: near-zero overlap — GalSen IA's are graph-navigation and Spec Kit; Superpowers' are methodology. |
+| Conflict | None. Both are development-time. |
+| Native? | **Yes, trivially** — a skill is a markdown file in a directory that already exists. |
+| Import needed? | **No.** |
+
+### C. Planning
+
+Two different meanings of the word, and conflating them would be the easiest
+error in this audit.
+
+| | |
+|---|---|
+| GalSen IA, runtime | `src/router/execution_planner.py` — which agent runs when. |
+| GalSen IA, engineering | `.claude/rules/phase-protocol.md` — VOLET → chapters → phases, one phase per turn, plan written to `docs/memory/phase-plan.md`, injected at session start, ending every phase with an explicit stop. |
+| Superpowers | `writing-plans` (171 lines) + `executing-plans` — spec to plan to execution. |
+| Better? | **GalSen IA's is stronger on one axis and weaker on another.** Stronger: its plan is persisted, injected at session start, and survives an interrupted session — this document exists because of it. Weaker: it says nothing about how a plan is *written* from a spec, which is exactly `writing-plans`' subject. |
+| Duplication | Partial and complementary, not redundant. |
+| Native? | Yes. |
+
+### D. Specification workflow
+
+| | |
+|---|---|
+| GalSen IA | Ten `speckit-*` skills (specify, clarify, plan, tasks, analyze, implement, checklist, constitution, converge, taskstoissues) plus `.specify/memory/constitution.md` and `.claude/rules/spec-driven-governance.md`. |
+| Superpowers | `brainstorming` (250 lines) — a *pre-spec* phase: explore the problem before creating anything. |
+| Better? | Different position in the pipeline. Spec Kit starts at "write the spec"; `brainstorming` starts before that. GalSen IA's governance rule says *"When a request is ambiguous and the ambiguity materially changes the implementation, ask"* — the intent exists; the method does not. |
+| Duplication | Low. |
+
+### E. TDD
+
+| | |
+|---|---|
+| GalSen IA | `.claude/rules/testing.md` — pytest, fixtures, 80 % target, "write tests before or alongside implementation (TDD/TDD-like)". |
+| Superpowers | `test-driven-development` (320 lines) — a hard sequence, not an aspiration. |
+| Better? | **Superpowers is stricter.** "TDD-like" is a preference; a red-green gate is a rule. |
+| Native? | Yes — it is prose. |
+
+### F. Debugging
+
+| | |
+|---|---|
+| GalSen IA | `.claude/skills/debug-issue` (graph-powered navigation) + `.claude/rules/verification.md`'s regression clause: *"If something that worked stops working after your change, that is your change until proven otherwise. Find the cause; do not work around the symptom."* |
+| Superpowers | `systematic-debugging` (283 lines): an Iron Law, four named phases (root-cause investigation → pattern analysis → hypothesis and testing → implementation), red flags, and a section on common rationalisations. |
+| Better? | **GalSen IA has the principle; Superpowers has the procedure.** One sentence versus four phases. This is the clearest single gap found so far. |
+| Duplication | The principle, yes. The method, no. |
+| Native? | Yes. |
+
+### G. Verification
+
+| | |
+|---|---|
+| GalSen IA | Three rule files — `verification.md` (definition of done, four items), `post-integration-validation.md` (sixteen checks after every phase), `spec-driven-governance.md` (the scope half). Plus seven repository-level tests that *enforce* rather than advise. |
+| Superpowers | `verification-before-completion` (120 lines): *"NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE"*, a five-step gate function, and a table of claims against what actually proves them. |
+| Better? | **GalSen IA is stronger overall — it has tests, and Superpowers has only prose.** But Superpowers has one thing GalSen IA does not write down: the *freshness* requirement. *"If you haven't run the verification command in this message, you cannot claim it passes."* GalSen IA's rule says run it "in this session". A session is long. |
+| Duplication | High. |
+| Native? | Yes — a one-line amendment to an existing rule. |
+
+### H. Code review
+
+| | |
+|---|---|
+| GalSen IA | `.claude/skills/review-changes` + the `code-review-graph` MCP server: callers, dependents, test coverage, risk-scored change detection. |
+| Superpowers | `requesting-code-review` (95 lines) and `receiving-code-review` — the *social* protocol: how to ask, and how to take an answer without defending. |
+| Better? | **Orthogonal.** GalSen IA has the machinery for finding what a change touches; Superpowers has the discipline for what to do with a review once it exists. Neither replaces the other. |
+| Duplication | None. |
+
+---
+
+*Phases 1.1 → 3.1 complete. Phase 3.2 (areas I–P) has not started, and nothing
+below area H exists in this document yet.*
