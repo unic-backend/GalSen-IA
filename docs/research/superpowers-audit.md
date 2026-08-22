@@ -202,6 +202,126 @@ not compare them as if they were the same layer.
 
 ---
 
-*Phases 1.1 and 1.2 complete. Chapter 02 (§1 + §3 — what Superpowers actually is,
-its licence, metadata, bootstrap and update mechanism) has not started, and
-nothing below chapter 02 exists in this document yet.*
+## PHASE 1.3 — GalSen IA reconnaissance: testing, verification, review, CI, git, security, ADRs
+
+### Testing — measured by collection, not by counting files
+
+```
+python -m pytest --collect-only -q
+→ 7036/7039 tests collected (3 deselected)
+```
+
+333 test files: 242 at the top level, plus seven suites
+(`agent/`, `creative/`, `darra_j/`, `live_context/`, `media/`, `research/`).
+
+**Seven of them test the repository itself rather than the product**, and they
+are the ones that matter most to this audit because they are the mechanism a
+methodology needs in order to be more than advice:
+
+`test_published_numbers.py` (documentation may not contradict the served API),
+`test_release_check.py`, `test_model_sovereignty.py`,
+`test_sovereignty_subordinate_runtimes.py`, `test_knowledge_governance.py`,
+`test_search_governance.py`, `test_package_documentation.py`.
+
+### Verification — a written rule, and a gate
+
+Three rule files carry it: `.claude/rules/verification.md` (when *a phase* is
+done), `.claude/rules/post-integration-validation.md` (when *the platform* is
+still whole — sixteen checks, run after every phase), and
+`.claude/rules/spec-driven-governance.md` (the scope half of the same gate).
+
+`verification.md` names five ways of making a test pass that are forbidden, one
+of which — *"pinning a fabricated value"* — is recorded with the four real cases
+that reached `main` before it was written. That is a methodology with a scar,
+not a checklist.
+
+### CI — `tests.yml`
+
+Lint (`ruff check .`) → an import check that mirrors how the Dockerfile starts
+the API → `pytest -q --durations=10` → a coverage report on `src/services`.
+Plus `release.yml`.
+
+### Review, debugging, git
+
+- Review: `.claude/skills/review-changes`, backed by the `code-review-graph` MCP
+  server (`CLAUDE.md` §"MCP Tools") — a persistent knowledge graph giving
+  callers, dependents and test coverage.
+- Debugging: `.claude/skills/debug-issue`, same graph.
+- Git: `.claude/rules/git-workflow.md` — never push to `main`, feature branches,
+  Conventional Commits.
+
+### Security, approval, observability
+
+`src/security/` (`trust.py`, `checkpoints.py`, `isolation.py`, `posture.py`,
+`redaction.py`), `src/sandbox/` (`policy.py`, `runner.py`),
+`src/approval_engine/` (5 modules), `src/audit_engine/` (5 modules),
+`src/observability/trail.py`.
+
+**38 ADRs.**
+
+---
+
+## PHASE 2.1 — What Superpowers is: licence, metadata, category
+
+### It says what it is, and the repository agrees
+
+> *"Superpowers is a complete software development methodology for your coding
+> agents, built on top of a set of composable skills and some initial
+> instructions that make sure your agent uses them."* — `README.md`
+
+Measured, and the measurement is the whole answer to §3:
+
+| | |
+|---|---|
+| Markdown | **93 files, 29 322 lines** |
+| JS + TS + Python + MJS | 20 files, **4 012 lines** |
+| Shell | 41 files — 33 under `tests/`, 4 under `scripts/`, 3 inside skills |
+| Skills directory | **39 `.md`**, and 8 non-markdown files in total |
+| Declared dependencies | **none** — no `dependencies`, `devDependencies`, `peerDependencies`, `optionalDependencies` or `engines` in `package.json` |
+| Lockfile / `node_modules` | none |
+
+**Superpowers is prose.** Roughly seven lines of methodology for every line of
+code, and the code that exists is host adapters, hook shims and its own test
+harness — not a library GalSen IA would call.
+
+**Category, stated precisely as §3 requires:** it is a **plugin distributing an
+engineering methodology as markdown skills to coding-agent CLIs**. It is not an
+AI model, not an inference engine, not a foundation model, not a video generator,
+not a production AI runtime — and, importantly for §5, **not a library either**.
+There is no import surface. Nothing in GalSen IA's runtime could depend on it
+even if someone wanted that.
+
+### Licence
+
+| | |
+|---|---|
+| `LICENSE` | **MIT**, 21 lines, `Copyright (c) 2025 Jesse Vincent` |
+| `.claude-plugin/plugin.json` | `"license": "MIT"`, author `Jesse Vincent <jesse@fsck.com>` |
+| `package.json` | version `6.3.0`, no `license` field — the licence is asserted by `LICENSE` and by `plugin.json`, which agree |
+
+Read from the clone at `b36e0829`, not from a summary. §14's full matrix —
+including the question of whether every bundled component inherits MIT, which
+§14 explicitly forbids assuming — is chapter 10 and is not answered here.
+
+### Host targets — thirteen, and one of them matters for §6
+
+The README documents installation for Claude Code, Antigravity, Codex App, Codex
+CLI, Cursor, Devin CLI, Factory Droid, Gemini CLI, GitHub Copilot CLI, Grok Build
+CLI, Kimi Code, OpenCode, Pi and Hermes Agent. The repository root carries a
+matching manifest for each (`.claude-plugin/`, `.codex-plugin/`, `.cursor-plugin/`,
+`.devin-plugin/`, `.hermes-plugin/`, `.kimi-plugin/`, `.opencode/`, `.pi/`,
+`gemini-extension.json`).
+
+**This is host-agnostic by construction, and that answers a §6 question early**:
+Superpowers is not a Claude dependency. It targets thirteen harnesses, and its
+payload is markdown that any of them reads. The Claude-specific part is one
+manifest among nine.
+
+The README also carries a **"Commercial Services"** section, noted here and read
+properly in chapter 12 (§16) rather than characterised now.
+
+---
+
+*Phases 1.1, 1.2, 1.3 and 2.1 complete. Phase 2.2 — `skills/`, `hooks/`,
+bootstrap and update mechanism — has not started, and nothing below chapter 02
+exists in this document yet.*
