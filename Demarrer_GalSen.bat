@@ -84,13 +84,21 @@ REM  Ceci n'affaiblit AUCUNE regle d'authentification : une cle reste
 REM  exigee et verifiee. Ce qui change, c'est qu'elle est fabriquee et
 REM  MONTREE au lieu d'etre devinee. Le fichier vit dans data\, que
 REM  .gitignore exclut, et n'est jamais versionne.
+REM  Aucun bloc entre parentheses ici, et c'est deliberе : en `cmd`, une
+REM  variable posee dans un bloc n'est pas relisible dans le MEME bloc sans
+REM  `enabledelayedexpansion`. La premiere version faisait
+REM  `for ... do set CLE=%%k` puis `echo %CLE%` dans le meme `else`, et
+REM  ecrivait donc un fichier VIDE. PowerShell ecrit le fichier lui-meme,
+REM  le batch se contente de le relire — plus rien a synchroniser.
 if not "%GALSEN_API_KEYS%"=="" goto :cle_prete
 if not exist "%~dp0data" mkdir "%~dp0data"
-if exist "%~dp0data\cle_locale.txt" (
-    set /p GALSEN_LOCAL_KEY=<"%~dp0data\cle_locale.txt"
-) else (
-    for /f %%k in ('powershell -NoProfile -Command "[guid]::NewGuid().ToString('N')"') do set GALSEN_LOCAL_KEY=%%k
-    > "%~dp0data\cle_locale.txt" echo %GALSEN_LOCAL_KEY%
+if not exist "%~dp0data\cle_locale.txt" powershell -NoProfile -Command "[guid]::NewGuid().ToString('N') | Out-File -Encoding ascii -NoNewline '%~dp0data\cle_locale.txt'"
+set GALSEN_LOCAL_KEY=
+set /p GALSEN_LOCAL_KEY=<"%~dp0data\cle_locale.txt"
+if "%GALSEN_LOCAL_KEY%"=="" (
+    echo [X] La cle locale n'a pas pu etre creee ^(PowerShell indisponible ?^).
+    echo     Contourne-le : set GALSEN_API_KEYS=ma-cle:admin:moi
+    pause & exit /b 1
 )
 set GALSEN_API_KEYS=%GALSEN_LOCAL_KEY%:admin:proprietaire
 echo.
