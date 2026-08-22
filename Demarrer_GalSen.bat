@@ -84,13 +84,28 @@ REM  Ceci n'affaiblit AUCUNE regle d'authentification : une cle reste
 REM  exigee et verifiee. Ce qui change, c'est qu'elle est fabriquee et
 REM  MONTREE au lieu d'etre devinee. Le fichier vit dans data\, que
 REM  .gitignore exclut, et n'est jamais versionne.
-REM  Aucun bloc entre parentheses ici, et c'est deliberе : en `cmd`, une
+REM  Aucun bloc entre parentheses ici, et c'est delibere : en `cmd`, une
 REM  variable posee dans un bloc n'est pas relisible dans le MEME bloc sans
 REM  `enabledelayedexpansion`. La premiere version faisait
 REM  `for ... do set CLE=%%k` puis `echo %CLE%` dans le meme `else`, et
 REM  ecrivait donc un fichier VIDE. PowerShell ecrit le fichier lui-meme,
 REM  le batch se contente de le relire — plus rien a synchroniser.
-if not "%GALSEN_API_KEYS%"=="" goto :cle_prete
+REM  Une variable deja posee dans le terminal appelant gagne — mais il faut
+REM  le DIRE. Mesure sur la machine du proprietaire, 2026-08-22 : un
+REM  `set GALSEN_API_KEYS=...` tape plus tot dans le meme terminal faisait
+REM  sauter la generation en silence. Le fichier contenait un GUID, le serveur
+REM  tournait avec une autre cle, et l'interface repondait "Cle API invalide"
+REM  sans que rien n'explique pourquoi. Un script qui se tait quand il saute
+REM  est un script qui ment par omission.
+if "%GALSEN_API_KEYS%"=="" goto :cle_generee
+echo.
+echo   [!] GALSEN_API_KEYS est deja definie dans ce terminal.
+echo       Le serveur utilisera CETTE cle, pas celle de
+echo       data\cle_locale.txt. C'est voulu si tu l'as posee toi-meme.
+echo       Sinon : ouvre un terminal NEUF et relance.
+echo.
+goto :cle_prete
+:cle_generee
 if not exist "%~dp0data" mkdir "%~dp0data"
 if not exist "%~dp0data\cle_locale.txt" powershell -NoProfile -Command "[guid]::NewGuid().ToString('N') | Out-File -Encoding ascii -NoNewline '%~dp0data\cle_locale.txt'"
 set GALSEN_LOCAL_KEY=
