@@ -109,4 +109,15 @@ start "GalSen-attente" /min cmd /c "for /l %%i in (1,1,60) do (curl -s -o nul -m
 
 python -m uvicorn src.api.server:app --host 127.0.0.1 --port 8000
 
+REM Sans cette pause, un crash d'uvicorn ferme la fenetre et emporte le
+REM message d'erreur avec elle. Mesure sur la machine du proprietaire,
+REM 2026-08-22 : la fenetre avait disparu et il ne restait rien a lire.
+echo.
+echo ===============================================
+echo   Le serveur s'est arrete.
+echo   Si une erreur est affichee au-dessus, elle
+echo   est la cause. Cette fenetre reste ouverte.
+echo ===============================================
+pause
+
 endlocal
