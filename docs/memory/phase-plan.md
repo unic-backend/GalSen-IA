@@ -9,8 +9,9 @@ VOLET en cours   : **SUPERPOWERS COMPATIBILITY & INTEGRATION AUDIT**
                    Brief du propriétaire, 2026-08-22, 28 sections (§0 à §27)
 Chapitres        : **17 exécutables** (5 sections sont des règles, pas des chapitres)
 Phases           : **24**
-Phase courante   : **1.1 — en attente de confirmation**
-Terminées        : aucune
+Phase courante   : **2.1 — en attente de confirmation**
+Terminées        : **1.1, 1.2** — reconnaissance GalSen IA faite,
+                   source clonée, commit `b36e082` (v6.3.0) enregistré
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md` — toute
