@@ -10,9 +10,10 @@ VOLET en cours   : **SUPERPOWERS — IMPLÉMENTATION DES 6 CANDIDATS**
                    tout »), sur la base de `docs/research/superpowers-audit.md`
 Chapitres        : **7**
 Phases           : **11**
-Phase courante   : **5.2 — ligne de base ROUGE — en attente de confirmation**
+Phase courante   : **6.1 (C6, find-polluter) — en attente de confirmation**
 Terminées        : **1 (C3)**, **2 (C4)**, **3.1/3.2 (C2)**, **4 (C5)**,
-                   **5.1 (C1, skill écrit)** — 6 sur 11.
+                   **5.1/5.2/5.3 (C1, skill écrit ET mesuré)** — 8 sur 11.
+                   **Première règle de ce dépôt jamais mesurée : ROUGE → VERT.**
                    `verification.md`, `memory.md`, `phase-protocol.md`,
                    `git-workflow.md`, `skills/systematic-debugging/`,
                    `skills/testing-instructions/`

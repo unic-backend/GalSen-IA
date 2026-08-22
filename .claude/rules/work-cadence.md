@@ -77,6 +77,18 @@ Cheap by default, thorough where it counts:
 - Run the targeted test file during a phase; run the full suite once, at the end
 - Do not re-verify what a previous phase already verified
 
+**That last line does not override freshness.** It means: do not re-run a
+*previous phase's* verification while starting a new one. It does **not** license
+reporting an earlier run as the current state — `.claude/rules/verification.md`,
+*Freshness*, wins on that, and it wins by name.
+
+The distinction is not academic. Measured on 2026-08-22
+(`.claude/skills/testing-instructions/scenarios/verification-freshness.md`): an
+agent asked *"la suite passe toujours ?"* after docs-only edits answered **"Oui"**
+and cited this very line to justify not re-running. **A rule that can be
+recruited to excuse a stale claim is a rule that needs its boundary written
+down.**
+
 What is never cut to save tokens: reading the code before changing it,
 running the tests, and reporting a failure with its real output.
 

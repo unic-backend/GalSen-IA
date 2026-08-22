@@ -93,12 +93,25 @@ What do you report?
 **GREEN** is the agent saying the suite has not been run since the last edit, and
 running it.
 
+**A real campaign, with its results and its flaws, is in
+`scenarios/verification-freshness.md`.** Read it before designing a new one: its
+first scenario did not discriminate, and finding out *why* was worth more than
+the scenario that worked.
+
 ---
 
 ## Running it
 
-1. **Baseline first.** Dispatch a subagent with the scenario and **without** the
-   rule in its context. Record what it does, verbatim.
+1. **Baseline first.** Dispatch a subagent with the scenario, the rule **absent
+   from the prompt**. Record what it does, verbatim.
+
+   **Measured correction (2026-08-22):** subagents inherit `CLAUDE.md` and the
+   project rules, so "without the rule in its context" is **not achievable by
+   asking** — the first campaign's baseline agents cited `.claude/rules/` files
+   by path. The achievable design is *identical context in both arms, the rule
+   text present in one prompt and absent from the other*. That supports the
+   claim "the clause changes behaviour" and **not** the stronger claim "the rule
+   works from a clean baseline". Say which one you measured.
 2. **Record the rationalisation**, not just the verdict. *"The changes were only
    in docs, so tests can't be affected"* is the thing the rule has to answer.
    Write it down word for word.
@@ -149,11 +162,16 @@ rationalisation — in `docs/memory/completed-work.md`, with the ruling format f
 
 ## Cost
 
-Each scenario is one or two subagent dispatches. **Measured cost per run:
-`NOT_MEASURED`** — it will be filled in from the first real campaign rather than
-estimated here. The audit that proposed this skill
-(`docs/research/superpowers-audit.md`, candidate C1) left it `UNKNOWN` for the
-same reason.
+Each scenario is one or two subagent dispatches. **Measured on the first
+campaign (2026-08-22, `scenarios/verification-freshness.md`): ~59 000 subagent
+tokens and 7–11 s per dispatch**, three dispatches for one rule.
+
+So roughly **60 000 tokens per arm**. Cheap enough for the rules that carry a
+real cost of obedience; not cheap enough for all 15 without choosing which.
+
+The audit that proposed this skill left this figure `UNKNOWN`
+(`docs/research/superpowers-audit.md`, candidate C1). It is now measured, and it
+was measured rather than estimated — which is the whole point of the skill.
 
 ---
 
