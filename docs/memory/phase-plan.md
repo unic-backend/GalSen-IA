@@ -5,119 +5,87 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **aucun — SUPERPOWERS terminé, 11 phases sur 11, ADR-038**
-                   Autorisé par le propriétaire le 2026-08-22 (« autorisation de
-                   tout »), sur la base de `docs/research/superpowers-audit.md`
-Chapitres        : **7**
-Phases           : **11**
-Phase courante   : aucune — le VOLET est clos
-Terminées        : **1 (C3)**, **2 (C4)**, **3.1/3.2 (C2)**, **4 (C5)**,
-                   **5.1/5.2/5.3 (C1, skill écrit ET mesuré)** — 8 sur 11.
-                   **6.1/6.2 (C6, `scripts/find_polluter.py`, prouvé)** — 10 sur 11.
-                   **Première règle de ce dépôt jamais mesurée : ROUGE → VERT.**
-                   `verification.md`, `memory.md`, `phase-protocol.md`,
-                   `git-workflow.md`, `skills/systematic-debugging/`,
-                   `skills/testing-instructions/`
+VOLET en cours   : **OPEN-SOURCE COMPONENT AUDIT #01 — `codebase-memory-mcp`**
+                   Brief du propriétaire, 2026-08-22, phases 0 à 12 + rapport
+Chapitres        : **13**
+Phases           : **16**
+Phase courante   : **0.1 — en attente de confirmation**
+Terminées        : aucune
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
-**Règle permanente** : `.claude/rules/post-integration-validation.md` — toute
-phase se termine par une validation de non-régression complète.
+**Règle permanente** : `.claude/rules/post-integration-validation.md`.
 
-**Ce qui reste exclu, malgré l'autorisation de tout.** L'audit a exclu cinq
-choses *nommément*, et « tout » désigne les six candidats, pas les exclusions :
-
-- la **cadence sans arrêt** (« ne pas s'arrêter entre les tâches ») — elle
-  contredit `.claude/rules/phase-protocol.md`, que tu as rendu permanent ;
-- **l'installation du plugin** — elle importerait cette cadence, un flux
-  d'instructions auto-mis-à-jour et 9 skills inutiles ;
-- `dispatching-parallel-agents` — `parallel_supported` vaut `False` ;
-- `brainstorming` — seule surface de télémétrie du dépôt ;
-- **la boucle de correction de sous-agents** — elle touche `workflows.yaml` et le
-  comportement des agents, son coût-modèle est `UNKNOWN`, et l'audit a conclu
-  qu'elle mérite son propre audit.
-
-Si tu veux l'une de ces cinq, dis-le : ce sera un autre VOLET, pas celui-ci.
+**Condition d'arrêt** : audit seulement. Aucune intégration, aucune modification
+d'architecture, de schéma, d'API ou de test. Le VOLET s'arrête à la décision
+(phase 11) ; la phase 12 ne produit qu'une conception, jamais du code.
 
 ---
 
 ## Le plan
 
 ```
-Ch. 01  C3  Clause de fraîcheur                          → 1 phase (indivisible)
-            Une phrase dans `.claude/rules/verification.md` :
-            la preuve se produit dans CE message, pas « cette session ».
+Ch. 00  Ph0   État du dépôt GalSen IA, 16 points        → 2 phases
+              0.1 mémoire, connaissance, graphe, MCP, indexation, recherche
+              0.2 structure, impact, provenance, sécurité, self-healing,
+                  tests, ADR, dépendances
 
-Ch. 02  C4  Format de décision                           → 1 phase (indivisible)
-            `Décision : <quoi> — <pourquoi> — <ce que ça coûte si c'est faux>`
-            dans `.claude/rules/memory.md` et le protocole de phases.
+Ch. 01  Ph1   Le dépôt officiel : sources, licence, CI  → 1 phase (indivisible)
+Ch. 02  Ph2   Ce que le projet fait vraiment, 16 points → 2 phases
+              2.1 indexation, graphe, nœuds, relations, requêtes, incrémental
+              2.2 persistance, MCP, ce qui exige un LLM, dépendances
 
-Ch. 03  C2  Débogage systématique                        → 2 phases
-            3.1 `.claude/skills/systematic-debugging/SKILL.md`, quatre phases
-            3.2 pointeur depuis `verification.md` + vérification
+Ch. 03  Ph3   Matrice de comparaison, 24 capacités      → 2 phases
+Ch. 04  Ph4   Deux usages : pendant vs après le déploiement → 1 phase (indivisible)
+Ch. 05  Ph5   Indépendance vis-à-vis des modèles        → 1 phase (indivisible)
+Ch. 06  Ph6   Licences : compatible / à surveiller / incompatible → 1 phase
+Ch. 07  Ph7   Sécurité, 13 surfaces                     → 1 phase (indivisible)
+Ch. 08  Ph8   Performance : leurs chiffres, puis les nôtres → 1 phase
+Ch. 09  Ph9   Feasibility gates, 14 questions           → 1 phase (indivisible)
+Ch. 10  Ph10  Quatre options A/B/C/D                    → 1 phase (indivisible)
+Ch. 11  Ph11  Décision                                  → 1 phase (indivisible)
+Ch. 12  Ph12  Si adaptation : conception seule, puis ARRÊT → 1 phase
 
-Ch. 04  C5  Fin d'une branche de développement           → 1 phase (indivisible)
-            Section dans `.claude/rules/git-workflow.md`.
-
-Ch. 05  C1  Tester les instructions                      → 3 phases
-            5.1 `.claude/skills/testing-instructions/SKILL.md`
-            5.2 **ligne de base ROUGE** sur `verification.md`
-            5.3 **VERT** + rapport de ce qui a été mesuré
-
-Ch. 06  C6  `find-polluter.sh`                           → 2 phases
-            6.1 lecture ligne à ligne, portage vers pytest, notice MIT
-            6.2 **preuve** : introduire un vrai test pollueur et le faire trouver
-
-Ch. 07      Clôture                                      → 1 phase (indivisible)
-            ADR-038, CHANGELOG, `completed-work.md`, mémoire.
+Ch. 13        Rapport final, ses 25 points              → 1 phase (indivisible)
 ```
 
-**Total : 11 phases.** Je commence par la phase 1 et je m'arrête après.
+**Total : 16 phases.**
 
 ---
 
-## Le point à voir avant de confirmer
+## Mesuré avant de planifier
 
-**C1 exige de dépêcher des sous-agents.** C'est sa méthode : faire tourner un
-scénario *sans* la règle pour observer l'échec, puis *avec*. Sans ça, C1 est un
-skill de plus dont personne ne sait s'il marche — exactement le défaut qu'il est
-censé corriger.
+`raw.githubusercontent.com/DeusData/codebase-memory-mcp` → **200**
+`api.github.com/repos/DeusData/codebase-memory-mcp` → **403**
 
-L'audit avait classé son coût par exécution en `UNKNOWN` parce qu'aucun modèle ne
-répond sur cette machine (critère C1, `ollama serve`). **Cette mesure visait le
-runtime de GalSen IA.** Pour éprouver `.claude/rules/`, l'agent concerné est
-l'agent de codage lui-même, qui a un modèle — donc C1 **est** faisable ici.
-
-Je ne dépêcherai aucun sous-agent sans que tu aies confirmé ce plan. Si tu
-préfères que C1 s'arrête à l'écriture du skill sans exécution, dis-le : le skill
-sera écrit et **marqué non éprouvé**, ce qui est honnête mais vide la moitié de
-sa valeur.
+Contenu lisible fichier par fichier ; **arborescence et commit exact non**. Comme
+pour l'audit Superpowers, la phase 1 clone via le proxy git — sinon la version
+examinée est `UNKNOWN` et il faudrait **deviner** quels fichiers existent.
 
 ---
 
-## Ce qui a été décidé, pour ne pas le re-déduire
+## Un point de contexte, pas une conclusion
 
-`docs/research/superpowers-audit.md` — 24 phases, `PARTIAL-GO`.
-Source auditée : `obra/superpowers` à `b36e0829`, **v6.3.0**, MIT.
+Ce dépôt vise la mémoire de code, le graphe et MCP. GalSen IA a déjà, mesuré au
+VOLET précédent : `src/memory_engine/` (12 modules), `src/knowledge_engine/` (19),
+`src/agent/repo_graph.py` + `repo_map.py` + `symbol_index.py`, `src/mcp/`, et le
+serveur MCP **`code-review-graph` déjà branché** sur ce dépôt.
 
-- **19 sous-systèmes sur 37 : `KEEP GALSEN`. `REPLACE` : zéro.**
-- Superpowers est **de la prose** : 29 322 lignes contre 4 012 de code, zéro
-  dépendance, **aucune surface d'import**.
-- Le constat qui porte tout : **les 15 fichiers de règles n'ont aucune preuve de
-  changer le comportement d'un agent.** C'est C1 qui répond à ça.
-- **Une seule vraie copie** dans tout le programme : `find-polluter.sh`. La
-  notice MIT et l'origine (`b36e0829`) voyagent avec.
+Le chevauchement sera donc large. **Ça ne préjuge de rien** — c'est précisément
+ce que la matrice de la phase 3 doit mesurer, capacité par capacité.
+
+Trois audits de compatibilité sur quatre se sont conclus par *ne pas intégrer*.
+Un audit dont la conclusion est écrite d'avance n'en est pas un.
 
 ---
 
 ## Programmes précédents, terminés — ne pas rouvrir
 
-1. **SUPERPOWERS AUDIT** — 24 phases, `PARTIAL-GO`.
-2. **Les quatre constats de l'audit OSS** — 4 phases. PR #34 et #35 fusionnées.
-3. **OPEN-SOURCE ECOSYSTEM AUDIT** — 22 phases. ADR-037 : zéro `INTEGRATE`.
-4. **Universal Creative Intelligence** — 44 phases.
-5. **MoneyPrinterTurbo** — 15 phases. ADR-030.
-6. **Creative Canvas** (ADR-031) et **Research Orchestration** (ADR-032).
-7. **Live Context Engine / Call.md** — 27 phases. ADR-033.
-8. **OpenClaw** — ADR-034 : **ne pas intégrer**.
-9. **DeepSeek Harness** — ADR-035 : implémentation non autorisée.
-10. **Finalisation** — ADR-036 (Apache-2.0).
+1. **SUPERPOWERS** — audit 24 phases + implémentation 11 phases. **ADR-038** :
+   6 concepts adoptés comme prose, **rien installé**.
+2. **Les quatre constats de l'audit OSS** — PR #34 et #35 fusionnées.
+3. **OPEN-SOURCE ECOSYSTEM AUDIT** — 22 phases. **ADR-037** : zéro `INTEGRATE`.
+4. **OpenClaw** — ADR-034 : ne pas intégrer.
+5. **DeepSeek Harness** — ADR-035 : implémentation non autorisée.
+6. **Live Context** (ADR-033), **Creative Canvas** (ADR-031), **Research
+   Orchestration** (ADR-032), **MoneyPrinterTurbo** (ADR-030),
+   **Apache-2.0** (ADR-036).
