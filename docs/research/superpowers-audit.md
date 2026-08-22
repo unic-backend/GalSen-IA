@@ -11,6 +11,40 @@ copied, merged or modified. No decision is implemented before the gate.
 
 ---
 
+## 1. Executive summary
+
+**Decision: `PARTIAL-GO`. Adopt five concepts natively, import one file, install
+nothing.**
+
+Superpowers at commit `b36e0829` (v6.3.0) is **29 322 lines of prose against
+4 012 lines of code**, MIT-licensed, with **zero declared dependencies and no
+import surface**. It is a plugin that distributes an engineering methodology as
+markdown skills to thirteen coding-agent CLIs — not a model, not a runtime, and
+not a library. "Integration" was therefore never a technical question, only an
+editorial one.
+
+GalSen IA is **already stronger in 19 of 37 subsystems** and has no gap in
+security, permissions, observability, memory, documentation or product testing.
+Of 37 duplication verdicts, **`REPLACE EXISTING COMPONENT` scores zero**.
+
+Five gaps are real, and one carries the decision: **GalSen IA has 15 rule files,
+14 skills and a `CLAUDE.md`, and not one line of evidence that any of them
+changes an agent's behaviour.** This repository's central discipline is that a
+guard is not believed until it has been sabotaged and seen to fail — applied
+rigorously to code, never once to the prose that governs the code. Superpowers
+supplies the missing method: RED-GREEN-REFACTOR for process documentation.
+
+One instruction inside the source — *"do not pause to check in between tasks"* —
+contradicts `.claude/rules/phase-protocol.md`, which the owner made permanent. It
+is excluded by name from every candidate, which is why the recommendation is
+native adoption rather than installation.
+
+Cost of the recommended path: **zero dependencies, ~0 bytes added to session
+start, a few KB of markdown.** Two `UNKNOWN`s remain, both about operating cost
+rather than soundness.
+
+---
+
 ## Subject and version examined
 
 | | |
@@ -1569,5 +1603,234 @@ after which **nothing is built until the owner authorises it explicitly.**
 
 ---
 
-*Phases 1.1 → 16 complete (22 of 24). Chapter 17 — the candidate list and the §26
-report block — has not started.*
+## CHAPTER 17.1 (§21) — Integration candidate list
+
+Six candidates. Each carries the eleven fields §21 requires. **None is
+authorised; this list is the output of an audit, not a plan.**
+
+---
+
+### C1 — Behaviour testing for instructions  ·  *highest value*
+
+| | |
+|---|---|
+| **Component** | The technique, reimplemented natively as `.claude/skills/testing-instructions/` |
+| **Purpose** | Produce evidence that a rule changes what an agent does |
+| **Exact source path** | `skills/writing-skills/testing-skills-with-subagents.md`, plus `skills/writing-skills/SKILL.md:30-46` (the TDD mapping) and the worked artefacts `skills/systematic-debugging/test-pressure-{1,2,3}.md` |
+| **Why useful** | GalSen IA's 15 rule files, 14 skills and `CLAUDE.md` have **zero behavioural evidence**. `verification.md` forbids pinning a fabricated value and cites four real cases; nobody has checked whether that rule prevents anything. |
+| **Dependencies** | None. Needs subagent dispatch, which exists. |
+| **Licence** | MIT — concept reused, not copied. No attribution obligation. |
+| **Security impact** | None. |
+| **Expected benefit** | The first measurement of whether this repository's methodology works. Also a way to *retire* rules that do nothing. |
+| **Complexity** | **Medium** — the highest of the six. The method is simple; running baselines is the work. |
+| **Replacement strategy** | Replaces nothing. Purely additive. |
+| **Test strategy** | Self-demonstrating: the first target is `verification.md`, and the test is whether an agent without it pins a fabricated value and with it does not. **If the rule shows no effect, that is a finding, not a failure.** |
+| **Gated by** | `UNKNOWN` cost per run — no model answers on this machine (criterion C1). **Measure before scheduling.** |
+
+---
+
+### C2 — Systematic debugging procedure
+
+| | |
+|---|---|
+| **Component** | `.claude/skills/systematic-debugging/`, native |
+| **Purpose** | Turn a debugging principle into a repeatable procedure |
+| **Exact source path** | `skills/systematic-debugging/SKILL.md` (283 lines) + `root-cause-tracing.md`, `defense-in-depth.md` |
+| **Why useful** | GalSen IA has one sentence in `verification.md` and no method. This session followed the four phases by instinct three times — vector store, the 40 pre-existing failures, the failed sabotage. **Three for three by instinct is not a process.** |
+| **Dependencies** | None. |
+| **Licence** | MIT — procedure reimplemented in French, in this repository's voice. |
+| **Security impact** | None. |
+| **Expected benefit** | Repeatability. The gap is not capability. |
+| **Complexity** | **Low.** |
+| **Replacement strategy** | Additive. `verification.md`'s regression clause stays and gains a pointer. **`src/agent/self_healer.py` is not touched** (§10). |
+| **Test strategy** | C1, on a scenario built from a real past failure. |
+
+---
+
+### C3 — The freshness clause
+
+| | |
+|---|---|
+| **Component** | One sentence in `.claude/rules/verification.md` |
+| **Purpose** | Make "verified" mean *verified now* |
+| **Exact source path** | `skills/verification-before-completion/SKILL.md:20` — *"If you haven't run the verification command in this message, you cannot claim it passes."* |
+| **Why useful** | `verification.md` says "in this session". A session is long — this one has run for hours. |
+| **Dependencies** | None. **Licence:** MIT, one idea. **Security:** none. |
+| **Expected benefit** | Closes the narrowest and cheapest gap in the audit. |
+| **Complexity** | **Trivial** — one sentence. |
+| **Replacement strategy** | Amends one line; the rest of the skill is deliberately *not* adopted, since GalSen IA's three verification rules are already stronger. |
+| **Test strategy** | C1: does an agent claim a stale pass with the clause absent, and refuse to with it present? |
+
+---
+
+### C4 — Ruling record format
+
+| | |
+|---|---|
+| **Component** | A format for `docs/memory/` and phase reports |
+| **Purpose** | Capture mid-task judgements that never reach an ADR |
+| **Exact source path** | `skills/subagent-driven-development/SKILL.md:22-25` — `Ruling: <what you decided> — <why> — <what it costs if wrong>` |
+| **Why useful** | ADRs hold decisions, `completed-work.md` holds outcomes, and nothing holds the small judgements in between. **The third clause — what it costs if wrong — exists nowhere in this repository.** |
+| **Dependencies** | None. **Licence:** MIT, a format. **Security:** none. |
+| **Expected benefit** | A reviewer can see what a decision was betting on. |
+| **Complexity** | **Trivial.** |
+| **Replacement strategy** | Additive. **Explicitly excludes** the surrounding *"rulings, not stalls"* cadence, which conflicts with the phase protocol. |
+| **Test strategy** | Not testable by C1 — it is a format, not a behaviour. Reviewed by use. |
+
+---
+
+### C5 — How a development branch ends
+
+| | |
+|---|---|
+| **Component** | A section in `.claude/rules/git-workflow.md` |
+| **Purpose** | Give branch completion the same discipline branch creation has |
+| **Exact source path** | `skills/finishing-a-development-branch/SKILL.md` (225 lines) |
+| **Why useful** | `git-workflow.md` covers naming and commits, nothing about ending. Every merge in this session performed verify-tests → check base → present options → execute **by hand**. Step 1 is *verify tests*. |
+| **Dependencies** | None. **Licence:** MIT. **Security:** none — and note the source **stops and asks** before merge, push or delete, which matches GalSen IA's approval discipline rather than straining it. |
+| **Expected benefit** | One less thing done from memory at the riskiest moment. |
+| **Complexity** | **Low.** |
+| **Replacement strategy** | Additive section. |
+| **Test strategy** | C1, plus the next real merge. |
+
+---
+
+### C6 — `find-polluter.sh`  ·  *the only actual import*
+
+| | |
+|---|---|
+| **Component** | One shell script |
+| **Purpose** | Identify which test pollutes another |
+| **Exact source path** | `skills/systematic-debugging/find-polluter.sh` (+ its test, `tests/systematic-debugging/test-find-polluter.sh`) |
+| **Why useful** | A 7 036-test suite will eventually have order-dependent failures. This repository has already fixed two latent order-dependent test defects by hand (VOLET 16). |
+| **Dependencies** | `bash`, `git` — both already required. |
+| **Licence** | **MIT — and this is the one candidate that is a genuine copy.** The notice must travel with it, and the file must record its origin and the commit it came from. |
+| **Security impact** | Reads test output and runs the suite repeatedly. No network, no writes outside a temp dir. **Must be read line by line before adoption** — it is the only executable in the list. |
+| **Expected benefit** | Minutes instead of an afternoon, on a failure mode that is coming. |
+| **Complexity** | **Low**, but non-zero: it assumes a test-runner interface that must be checked against pytest. |
+| **Replacement strategy** | Additive, under `scripts/`. |
+| **Test strategy** | Port its own test, then **verify by deliberately introducing a polluting test** and confirming the script names it. Adopting it without that proof would be adopting a tool nobody has seen work here. |
+
+---
+
+### Excluded by name, so the exclusions cannot drift
+
+| Excluded | Reason |
+|---|---|
+| **The no-pausing cadence** (`subagent-driven-development`, `executing-plans`) | Contradicts `.claude/rules/phase-protocol.md`, permanent by owner decision. |
+| **Plugin installation** | Imports the cadence, an unreviewed auto-updating instruction stream (chapter 09), and 9 unneeded skills. |
+| **`dispatching-parallel-agents`** | `parallel_supported` is `False`. Would document a capability that does not exist. |
+| **`brainstorming`** | Only telemetry surface in the repository. The pre-spec concept may return separately. |
+| **The subagent fix loop** (C-next) | Genuinely valuable — bounded rounds, scoped re-review, adjudication — but it is **orchestration**, touching `workflows/workflows.yaml` and agent behaviour, and its model cost is `UNKNOWN`. **Deliberately not in this list**: it deserves its own audit and its own authorisation, not a line in someone else's. |
+
+---
+
+## CHAPTER 17.2 (§26) — Final report block
+
+```
+STATUS:
+PARTIAL-GO
+
+SUPERPOWERS VERSION/COMMIT:
+b36e0829c6d0140e93cfef2ca599b1b07d4a7797 — release v6.3.0, 2026-08-12T09:53:21-07:00
+Obtained by shallow clone through the session git proxy; origin verified before reading.
+
+GALSEN-IA COMPONENTS ANALYZED:
+17 agents (agents/registry.yaml) · src/router/ (16 modules) · src/memory_engine/ (12)
+· src/agent/ (23, incl. self_healer.py) · src/security/ (5) · src/sandbox/ (2)
+· src/approval_engine/ (5) · src/audit_engine/ (5) · src/observability/trail.py
+· src/api/rbac.py · src/tool/authorization.py · .claude/rules/ (15)
+· .claude/skills/ (14) · .claude/settings.json (2 hook events)
+· workflows/workflows.yaml (8) · 38 ADRs · 333 test files, 7 036 tests
+
+USEFUL CAPABILITIES:
+1. Behaviour testing for instructions (RED-GREEN-REFACTOR on prose) — highest value
+2. Systematic debugging: four named phases
+3. Verification freshness: evidence in this message, not this session
+4. Ruling format: what · why · what it costs if wrong
+5. How a development branch ends
+6. find-polluter.sh
+
+DUPLICATES:
+19 of 37 subsystems KEEP GALSEN. Skill file format identical (SKILL.md + front-matter).
+Session-start hook duplicated in mechanism. Verification rules overlap heavily.
+
+CONFLICTS:
+One, material: "do not pause to check in between tasks" (subagent-driven-development,
+executing-plans) vs .claude/rules/phase-protocol.md, permanent by owner decision.
+Excluded by name from every candidate.
+
+LICENSE:
+MIT throughout — LICENSE and .claude-plugin/plugin.json agree; package.json has no
+license field. Full grant, unmodified. No copyleft. No bundled third-party code, no
+declared dependencies. Compatible with ADR-036 (Apache-2.0).
+Attribution obligation applies to C6 only.
+
+SECURITY:
+No eval, no new Function. Two execution sites, both narrow (quoted arg; execFileSync,
+no shell). One outbound request repository-wide. No vendored code, no lockfile.
+The only git-destructive skill stops and asks.
+ONE REAL FINDING: an auto-updating instruction stream injected at every session start,
+which inverts src/security/trust.py's rule. Applies to the plugin path only.
+
+PRIVACY:
+One optional <img> to primeradiant.com carrying the version, referrerpolicy=no-referrer,
+three opt-outs, four tests. README's claim verified in code and accurate.
+Not stated by the README and recorded here: any GET reveals source IP, user-agent and
+timestamp. No external account required. No blocker — the component is not adopted.
+
+PRODUCTION DEPENDENCY RISK:
+NONE. Development-time only; nothing under src/ would load it. Native adoption creates
+no dependency of any kind.
+
+RECOMMENDED INTEGRATION:
+Option B — native, six candidates (C1–C6), install nothing. Each candidate requires its
+own authorisation. C1 is gated on measuring its per-run cost.
+
+FILES MODIFIED:
+docs/memory/phase-plan.md (phase tracking, as the protocol requires)
+
+FILES CREATED:
+docs/research/superpowers-audit.md (this document)
+
+Zero files under src/, tests/, agents/, scripts/, workflows/ or .claude/ were touched.
+
+TESTS RUN:
+tests/test_published_numbers.py, tests/test_package_documentation.py — after every phase
+Full suite last run at 078e3ec: 7 036/7 039 collected
+
+TESTS PASSED:
+10 / 10 at every phase boundary (7 + 3)
+
+TESTS FAILED:
+0
+
+UNKNOWN:
+1. Model cost and latency of the subagent fix loop (worst case ~12 dispatches/task vs 2)
+2. Cost per behaviour-test run (C1)
+3. Minimum Node version (engines absent; affects two optional files no candidate uses)
+4. Licence of the primeradiant.com brand image (hosted off-repository, never redistributed)
+5. Licence of the Graphviz `dot` binary (invoked, not bundled; no candidate uses it)
+Items 1 and 2 need a model to answer; criterion C1 (`ollama serve`) is still open.
+
+KNOWN LIMITATIONS:
+- api.github.com and github.com answer 403 here; issues, PRs and release history were
+  not read. The clone gave the tree and the commit, which is what §1 required.
+- Superpowers' skills were read, never executed. No agent was run under them, so their
+  effectiveness is taken from their own artefacts, not measured here.
+- The subagent fix loop is excluded from the candidate list on purpose: it deserves its
+  own audit rather than a line in someone else's.
+
+NEXT ACTION:
+STOP. Await explicit authorisation, per §21 and §27.
+Suggested order if authorised: C3 (one sentence) → C4 (a format) → C2 → C5 → C1 → C6.
+C1 last among the concepts because it is the one that measures the others — and first in
+value, which is the tension worth deciding rather than assuming.
+```
+
+---
+
+**End of audit.** 24 phases of 24. No file under `src/`, `tests/`, `agents/`,
+`scripts/`, `workflows/` or `.claude/` was created, modified or deleted. Nothing
+was installed. The decision is `PARTIAL-GO` and **nothing is implemented until
+the owner authorises it.**

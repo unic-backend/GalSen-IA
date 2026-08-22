@@ -5,11 +5,14 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **SUPERPOWERS COMPATIBILITY & INTEGRATION AUDIT**
+VOLET en cours   : **aucun — SUPERPOWERS AUDIT terminé, 24 phases sur 24**
                    Brief du propriétaire, 2026-08-22, 28 sections (§0 à §27)
 Chapitres        : **17 exécutables** (5 sections sont des règles, pas des chapitres)
 Phases           : **24**
-Phase courante   : **17.1 (liste de candidats) — en attente de confirmation**
+Phase courante   : aucune — le VOLET est clos
+Décision         : **`PARTIAL-GO`** → `docs/research/superpowers-audit.md`
+                   6 candidats (C1–C6), **rien d'installé, rien d'implémenté**.
+                   §21/§27 : chaque candidat exige une autorisation explicite.
 Terminées        : **1.1 → 3.1** (6 sur 24). Reconnaissance complète des deux
                    côtés ; commit `b36e082` (v6.3.0), **MIT**, **zéro dépendance
                    déclarée**, 29 322 lignes de prose contre 4 012 de code ;

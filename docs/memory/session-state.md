@@ -8,36 +8,30 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ## Dernière session — 2026-08-22
 
-**En cours** : rien. Aucun VOLET ouvert, aucune phase en attente.
+**En cours** : rien. VOLET SUPERPOWERS AUDIT **terminé, 24 phases sur 24**.
 
-**Terminé** : **les quatre constats de l'audit OSS sont fermés et sur `main`** —
-**PR #34 fusionnée**, `main` à `5ce708a`. Le n°1 (matrice vectorielle) datait du
-2026-08-20 ; les n°2, 3 et 4 ont été faits en quatre phases le 2026-08-21/22.
-La branche `claude/galsen-ia-phases-ukwz7p` a été **repartie de `main`** après la
-fusion : ne jamais empiler sur de l'historique déjà fusionné.
+**Terminé** : audit de compatibilité Superpowers (`obra/superpowers` à
+`b36e0829`, v6.3.0) → **`PARTIAL-GO`**, rapport dans
+`docs/research/superpowers-audit.md` (1 836 lignes, 18 points de §25 + bloc §26).
+**Zéro fichier hors `docs/` touché, rien installé, rien implémenté.**
 
-1. ~~`SQLiteVectorStore.search()` reconstruisait la matrice.~~ **CORRIGÉ** —
-   **49,4 → 0,463 ms** à 271 vecteurs, **1 856,8 → 0,830 ms** à 10 000. Cache
-   validé par un compteur de version écrit **dans la transaction de chaque
-   écriture** (ADR-015 amendé).
-2. ~~`Role.USER` atteignait `POST /coding/task` avec n'importe quel dossier.~~
-   **CORRIGÉ** — deux moitiés. Les routes passent par le **plafond de rôle
-   existant** (`src/tool/authorization.py`, aucune permission nouvelle), et
-   `GALSEN_CODING_WORKSPACE_ROOTS` borne l'espace lui-même : **variable absente
-   = refus total**, jamais « tout l'hôte ».
-3. ~~L'approbation d'entraînement portait sur l'acte, jamais sur le contenu.~~
-   **CORRIGÉ** — empreinte SHA-256 du texte inscrite dans la demande et
-   recalculée à l'export. `export_pairs("oui")` ne passe plus.
-4. ~~`litellm` installé, déclaré par rien.~~ **CORRIGÉ EN GARDE** — trois tests
-   refusent qu'un paquet de moteur soit atteignable, déclaré ou importé. Ici il
-   est **absent** ; numpy 2.4.6, cv2 5.0.0.
+Ce qu'il faut savoir sans relire le rapport :
+- Superpowers est **de la prose** : 29 322 lignes de markdown contre 4 012 de
+  code, **MIT**, **zéro dépendance**, aucune surface d'import. Ce n'est ni un
+  modèle, ni un runtime, ni une bibliothèque.
+- **19 sous-systèmes sur 37 : `KEEP GALSEN`. `REPLACE` : zéro.**
+- **Le constat qui porte la décision** : les 15 fichiers de `.claude/rules/`, les
+  14 skills et `CLAUDE.md` n'ont **aucune preuve** de changer le comportement d'un
+  agent. Ce dépôt sabote ses gardes avant d'y croire — jamais sa prose.
+- **Un conflit direct** : « ne pas s'arrêter entre les tâches » contre
+  `phase-protocol.md`. Exclu nommément de tous les candidats.
+- **Un constat de sécurité** : un flux d'instructions auto-mis-à-jour injecté à
+  chaque session. Vise **la voie plugin uniquement**, jamais la prose.
+- **6 candidats C1–C6**, tous en réimplémentation native sauf `find-polluter.sh`
+  (seule vraie copie, la notice MIT doit voyager avec).
 
-**Prochaine étape** : **rien — au repos**, décidé par le propriétaire le
-2026-08-22 après que quatre candidats mesurés lui ont été proposés (ADR-020,
-seul ADR encore `proposed` ; la quatrième source de recherche ; la vérification
-d'identité ; ou un brief). Ils restent dans `pending-work.md`. **Ne pas ouvrir
-de VOLET de sa propre initiative** : aucun fichier VOLET suivant n'existe, et
-les quatre derniers programmes sont tous nés d'un brief du propriétaire.
+**Prochaine étape** : **attendre une autorisation explicite** (§21, §27). Aucun
+candidat n'est autorisé. Ordre suggéré si autorisé : C3 → C4 → C2 → C5 → C1 → C6.
 
 **Ce qui a servi à chaque fois** : *sabotez la garde avant de la croire.* Une
 sabotage a elle-même été fautive — la ligne ajoutée s'est collée à la
