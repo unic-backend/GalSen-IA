@@ -347,5 +347,77 @@ Phase 7 prices it. Recorded here because it was found while answering point 9.
 
 ---
 
-*Phases 0, 1 and 2 complete (5 of 16). Phase 3 — the comparison matrix — has not
-started.*
+## PHASE 3 — Comparison matrix
+
+**The comparison is three-sided, and reducing it to two would produce the wrong
+answer.** GalSen IA's structural understanding today comes from *two* places: its
+own Python modules, and **the `code-review-graph` MCP server already wired into
+this repository** (`CLAUDE.md`). Any capability the subject offers must be
+compared against both.
+
+`CRG` = code-review-graph, already in use. `GIA` = GalSen IA's own code.
+
+| # | Capability | codebase-memory-mcp | GalSen IA existing | Overlap | Advantage | Risk | Action |
+|---|---|---|---|---|---|---|---|
+| 1 | Code intelligence | 158 languages | GIA: Python only · CRG: Tree-sitter, multi-language | **CRG: high** | Subject, on breadth | Duplicates CRG | **KEEP** |
+| 2 | AST | Tree-sitter, 160 grammars | GIA: `ast`, Python · CRG: Tree-sitter | **CRG: high** | Subject, marginally | — | **KEEP** |
+| 3 | Knowledge graph | SQLite property graph, 14 node kinds | GIA: files+imports · CRG: full graph | **CRG: high** | Subject over GIA | — | **KEEP** |
+| 4 | Structural search | 15 MCP tools | CRG: `query_graph_tool` | **CRG: high** | Comparable | — | **KEEP** |
+| 5 | Semantic search | 30 MB vendored `nomic` blob, local | GIA: `semantic_index.py` + `vector_store.py` (**needs a provider, C1 open**) · CRG: `semantic_search_nodes_tool` | Partial | **Subject: works with no provider** | — | **NOTE** |
+| 6 | Symbol relations | 8 relation types | GIA: **1** (`imports`) · CRG: callers/callees | **CRG: high** | Subject over GIA | — | **KEEP** |
+| 7 | Call graph | `CALLS` edges | GIA: **none** · CRG: yes | **CRG: high** | Subject over GIA | — | **KEEP** |
+| 8 | Data flow | Not found in the schema | Neither | — | — | — | **NONE** |
+| 9 | Architecture | `get_architecture`, `project_summaries` | CRG: `get_architecture_overview_tool` | **CRG: high** | Comparable | — | **KEEP** |
+| 10 | Impact analysis | Graph traversal | GIA: `agent_reach()` (agent scope, not code) · CRG: `get_impact_radius_tool` | **CRG: high** | Comparable | — | **KEEP** |
+| 11 | Dead code | Not found | CRG: `refactor_tool` | CRG | CRG | — | **KEEP** |
+| 12 | Cross-service | `edges.url_path` index, HTTP routes | **Neither** | **None** | **Subject, uniquely** | — | **NOTE** |
+| 13 | Cross-repository | Multi-project (`projects` table) | CRG: `cross_repo_search_tool` | CRG | Comparable | — | **KEEP** |
+| 14 | MCP | Server, 15 tools, tool profiles | GIA: **server + client**, per-token identity, audit trace · CRG: server | High | GIA on governance | — | **KEEP** |
+| 15 | Persistent memory | SQLite in `~/.cbm/` | GIA: `memory_engine` (13) + `docs/memory/` | **None — different objects** | Not comparable | — | **NONE** |
+| 16 | Incremental indexing | Content hashes, `file_hashes` | GIA: `build()` **rebuilds everything** · CRG: auto-updates on file change via hooks | **CRG: high** | Subject over GIA | — | **KEEP** |
+| 17 | Synchronisation | Daemon, loopback control socket | CRG: hooks | CRG | Comparable | — | **KEEP** |
+| 18 | Long context | Not its subject | — | — | — | — | **NONE** |
+| 19 | Context reduction | Claims 10× fewer tokens (**unverified**) | CRG: `get_minimal_context_tool`, `detail_level="minimal"`, documented target ≤ 800 tokens | **CRG: high** | `UNKNOWN` until phase 8 | — | **KEEP** |
+| 20 | Targeted retrieval | `get_code_snippet` | CRG: `get_review_context_tool` | **CRG: high** | Comparable | — | **KEEP** |
+| 21 | Security | Local-only, **writes agent config files** | GIA: `trust.py`, RBAC, sandbox, ADR-018 | None | **GIA, decisively** | **The config write** | **PHASE 7** |
+| 22 | Provenance | Not found in the schema | GIA: `src/acquisition/`, per-entity and per-relation | **None** | **GIA, decisively** | — | **KEEP** |
+| 23 | Observability | `index_status` | GIA: `trail.py`, `audit_engine`, `decision_trace` | Low | **GIA** | — | **KEEP** |
+| 24 | Performance | Claims sub-1 ms, kernel in 3 min | GIA vector store: **0.463 ms at 271 vectors** (measured) | — | `UNKNOWN` until phase 8 | — | **PHASE 8** |
+
+### What the matrix says
+
+**Sixteen of 24 rows are `KEEP` because `code-review-graph` already covers them.**
+Not because GalSen IA's own Python covers them — on rows 6, 7 and 16 its own code
+is measurably behind. The thing that closes those gaps is already installed.
+
+**Three rows are not covered by anything here:**
+
+- **Row 12, cross-service links.** `edges.url_path` indexes HTTP routes across
+  services. Neither GIA nor CRG has this. Genuinely unique.
+- **Row 5, semantic search with no provider.** GalSen IA's semantic retrieval is
+  gated on criterion C1 (`ollama serve`), open since the beginning. The subject
+  ships a 30 MB quantised blob and needs nothing. **That is the one place where
+  the subject solves a problem this repository actually has today.**
+- **Row 8, data flow** — neither has it, and the subject does not claim it.
+
+**Two rows are `GIA, decisively`**: provenance (rows 22) and security
+governance (21). The subject has no provenance model at all, which for an
+indexing tool is normal and for GalSen IA would be a regression if it replaced
+anything.
+
+**One row is a risk rather than a capability**: row 21. It writes instruction
+files into `$HOME` that steer coding agents.
+
+### The comparison that decides more than the table
+
+The subject is **1.3 GB of C** producing a graph in SQLite. `code-review-graph`
+is **already running**, already hooked to file changes, and already answering the
+same questions through MCP. Adopting the subject would mean **running two code
+graphs over the same repository**.
+
+`.claude/rules/spec-driven-governance.md`: *"Prefer reuse over rebuild. A working
+component is not replaced because another approach looks cleaner."*
+
+---
+
+*Phases 0 to 3 complete (7 of 16). Phase 4 — the two usages — has not started.*

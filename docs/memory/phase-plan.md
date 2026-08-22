@@ -9,13 +9,16 @@ VOLET en cours   : **OPEN-SOURCE COMPONENT AUDIT #01 — `codebase-memory-mcp`**
                    Brief du propriétaire, 2026-08-22, phases 0 à 12 + rapport
 Chapitres        : **13**
 Phases           : **16**
-Phase courante   : **3.1 — en attente de confirmation**
+Phase courante   : **4 (deux usages) — en attente de confirmation**
 Terminées        : **0.1, 0.2, 1** — 3 sur 16. Sujet cloné à `010569fa`,
                    **1,3 Go, projet en C** (842 `.c`), **MIT**, 160 grammaires
                    tree-sitter, et **30 Mo de poids nomic-embed-code embarqués**.
                    **Ph2** : 14 types de nœuds, 8 relations, incrémental par
                    hachage, **aucun appel sortant trouvé dans `src/`**, mais il
-                   **écrit dans les configs d'agent de `$HOME`**
+                   **écrit dans les configs d'agent de `$HOME`**.
+                   **Ph3** : 16 lignes sur 24 `KEEP` — **`code-review-graph` les
+                   couvre déjà** ; 3 non couvertes (liens inter-services,
+                   sémantique sans fournisseur, data flow)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md`.
