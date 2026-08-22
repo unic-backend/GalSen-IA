@@ -226,10 +226,126 @@ Recorded here so phase 8 measures rather than repeats them.
 
 ---
 
-## PHASE 2.1 — Indexing, graph, nodes, relations, queries, incrementality
+## PHASE 2 — What the project actually does
 
-*Not started.*
+The brief's 16 points, answered from the C source rather than the README.
+
+### 1–2. Indexing and graph construction
+
+Tree-sitter AST parsing → a pipeline (`src/pipeline/`) → SQLite. The persisted
+schema, read from the `CREATE TABLE` statements in the source:
+
+```
+projects            nodes            edges            file_hashes
+node_vectors        token_vectors    project_summaries
+```
+
+with indexes on `nodes(file, label, name)` and on
+`edges(source, target, type, source_type, target_type, url_path)`.
+
+**A property graph in SQLite**, not a graph database. The `url_path` index on
+`edges` is the HTTP-route/cross-service claim made concrete.
+
+### 3. Node types
+
+Counted from string literals in the C: `function`, `class`, `method`, `struct`,
+`interface`, `enum`, `trait`, `field`, `variable`, `module`, `package`, `import`,
+`file`, `type`.
+
+**Fourteen kinds.** GalSen IA's `symbol_index.py` has three (class, function,
+async function) and `repo_graph.py` has one (file).
+
+### 4. Relation types
+
+`CALLS`, `IMPORTS`, `EXTENDS`, `IMPLEMENTS`, `DEFINES`, `CONTAINS`, `RETURNS`,
+`THROWS` — appearing in both upper and lower case in the source.
+
+**GalSen IA has exactly one relation: `imports`.** That is the single widest
+capability gap measured so far.
+
+### 5. Queries and the MCP surface
+
+Tool names read from the source: `index_repository`, `index_status`,
+`list_projects`, `get_project`, `explore_codebase`, `get_architecture`,
+`get_code_snippet`, `get_graph_schema`, `find_arch_docs`, `graph_ui`.
+
+`src/daemon/application.c` carries a **tool profile** concept
+(`CBM_MCP_TOOL_PROFILE_ALL`, `…_SCOUT`) — the exposed set is configurable.
+
+### 6–7. Change detection and incremental update
+
+`file_hashes` in the schema, and `src/pipeline/pipeline_incremental.c` —
+`cbm_store_get_file_hashes` compares stored hashes against the tree and reindexes
+only what moved. **Incremental indexing is real and content-hash-based**, not a
+timestamp heuristic.
+
+### 8–9. Persistence and location
+
+SQLite at `%s/%s.db` under a `.cbm` directory in `$HOME`. **On the user's
+machine, in their home directory.**
+
+### 10. Does data leave the machine? — verified, not taken from the README
+
+The README claims *"All processing happens 100% locally; your code never leaves
+your machine."* Checked in the C rather than believed:
+
+- `curl_*`, `getaddrinfo`, `gethostbyname`, `SSL_connect` → **no matches in
+  `src/`.**
+- Three `AF_INET` sites exist. `src/main.c:1906` sets
+  `s_addr = htonl(0x7F000001U)` — **127.0.0.1**, the daemon control socket.
+  `src/ui/httpd.c` is the local graph UI server. `src/daemon/ipc.c` uses
+  `AF_UNIX`, with a comment stating it keeps *"the only raw connect call at a
+  sockaddr_un-typed boundary"*.
+
+**The claim survives this check**: no outbound network path was found in `src/`.
+Recorded as *no outbound path found in `src/`*, which is narrower than "none
+exists" — `internal/cbm/` was not swept, and phase 7 owns that.
+
+### 11. How MCP is used
+
+It **is** an MCP server, spoken over stdio/local socket by a client. It is not an
+MCP client of anything.
+
+### 12–13. What needs an LLM, and what is deterministic
+
+Grepping `openai`, `anthropic`, `api_key`, `gemini` in `src/` returns hits in
+four files — and reading them changes the answer entirely. In
+`src/cli/agent_profiles.c` the only matches are
+`CBM_GRAPH_DIALECT_CLAUDE` and `…_GEMINI`: **output dialects**, not API clients.
+
+**Nothing in the indexing, graph or query path requires a model.** Tree-sitter
+parsing, hashing and SQLite queries are deterministic. The one model-derived
+artefact is the vendored 30 MB `nomic` token-vector blob used for semantic
+similarity — **shipped weights, computed locally, no key, no endpoint**.
+
+### 14–16. External dependencies, mandatory and optional
+
+**None external.** Everything is vendored: SQLite, mimalloc, yyjson, xxHash, TRE,
+LZ4, Zstandard, simplecpp, Verstable, wyhash, Tree-sitter and 160 grammars.
+No package manager, no language runtime — the README's *"Pure C"* claim is
+consistent with the tree.
+
+### The surface that matters most, found here rather than in phase 7
+
+`src/cli/agent_profiles.c` writes into **agent configuration files in `$HOME`**:
+
+```
+~/.claude.json                      ~/.codeium/windsurf/mcp_config.json
+~/.augment/settings.json            ~/.codeium/windsurf/memories/global_rules.md
+~/.augment/rules/codebase-memory.md ~/.config/crush/crush.json
+~/.augment/agents/codebase-memory.md ~/.config/amp/AGENTS.md
+~/.bob/rules/codebase-memory.md     ~/.config/kilo/agents/codebase-memory.md
+~/.codebuddy/CODEBUDDY.md           …
+```
+
+The README says so plainly — *"writes to your agent configuration files. That is
+what it is designed to do"* — and the code confirms it. **It writes instruction
+files that steer coding agents**, which is the same class of surface ADR-038
+weighed for Superpowers and decided against on the plugin path.
+
+Phase 7 prices it. Recorded here because it was found while answering point 9.
 
 ---
 
-*Phases 0 and 1 complete (3 of 16).*
+*Phases 0, 1 and 2 complete (5 of 16). Phase 3 — the comparison matrix — has not
+started.*
