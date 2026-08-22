@@ -5,13 +5,22 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **aucun**
-Dernier terminé  : **OPEN-SOURCE ECOSYSTEM AUDIT & INTEGRATION**
-                   **22 phases sur 22**, plan complet
-                   Rapport → `docs/oss-ecosystem/final-report.md`
-                   Décision → **ADR-037**
-Phase courante   : aucune — le VOLET est clos, en attente du suivant
+VOLET en cours   : **aucun — au repos, décidé par le propriétaire le 2026-08-22**
+Dernier terminé  : **les quatre constats de l'audit OSS**, 4 phases sur 4
+                   PR #34 et #35 fusionnées, `main` à `078e3ec`
+                   Avant lui : **OPEN-SOURCE ECOSYSTEM AUDIT & INTEGRATION**,
+                   22 phases sur 22 → `docs/oss-ecosystem/final-report.md`, ADR-037
+Phase courante   : aucune
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
+
+**Ne pas ouvrir de VOLET de sa propre initiative.** Aucun fichier VOLET suivant
+n'existe : les VOLETs 01–76 sont archivés, et les quatre derniers programmes
+sont nés d'un brief du propriétaire. Un VOLET inventé ici serait exactement la
+conversion `DESIRABLE → requested` qu'interdit
+`.claude/rules/spec-driven-governance.md`. Quatre candidats mesurés ont été
+proposés le 2026-08-22 et **écartés au profit du repos** : ADR-020 (seul ADR
+encore `proposed`), la quatrième source de recherche (vision), la vérification
+d'identité (P0), ou un brief. Ils restent dans `pending-work.md`.
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md` — toute
 phase se termine par une validation de non-régression complète.
@@ -25,16 +34,22 @@ phase se termine par une validation de non-régression complète.
 Qdrant, Unsloth), 2 conservés (LangGraph, whisper.cpp), 2 rejetés (LlamaIndex,
 Open WebUI).
 
-**Quatre constats sur GalSen IA, aucun corrigé** — suggestions, pas tâches :
-1. `SQLiteVectorStore.search()` est **3 388 × plus lent** que le design d'ADR-015
-   (13 132 ms → 3,88 ms à 100 000 vecteurs, 153,6 Mo). Une base de données
-   allait être accusée d'un défaut de cache.
-2. `Role.USER` atteint `POST /coding/task`, n'importe quel dossier de l'hôte.
-   **Latent** : aucun moteur disponible.
-3. L'entraînement garde l'exécution (ADR-006), pas le contenu du jeu de données.
-4. `litellm==1.81.10` installé, non déclaré, non importé.
+**Quatre constats sur GalSen IA — les quatre sont corrigés** (2026-08-20/22,
+PR #34). Ils avaient été consignés comme *suggestions, pas tâches* ; le
+propriétaire a demandé de les traiter.
+1. ~~`SQLiteVectorStore.search()` **3 388 × plus lent** que le design d'ADR-015.~~
+   Matrice en cache, invalidée par un compteur de version écrit **dans la
+   transaction de chaque écriture**. Mesuré : 49,4 → 0,463 ms à 271 vecteurs.
+2. ~~`Role.USER` atteint `POST /coding/task`, n'importe quel dossier de l'hôte.~~
+   Plafond de rôle existant sur les deux routes, **plus**
+   `GALSEN_CODING_WORKSPACE_ROOTS` — variable absente = refus total.
+3. ~~L'entraînement gardait l'exécution, pas le contenu du jeu de données.~~
+   Empreinte SHA-256 du texte inscrite dans la demande, recalculée à l'export.
+4. ~~`litellm` installé, non déclaré, non importé.~~ Trois gardes refusent qu'un
+   paquet de moteur soit atteignable, déclaré ou importé.
 
-**Zéro ligne de `src/`, zéro dépendance, zéro test touché** sur tout le VOLET.
+**Zéro ligne de `src/`, zéro dépendance, zéro test touché** sur tout le VOLET
+d'audit lui-même — les corrections ci-dessus sont venues après, sur demande.
 
 ---
 

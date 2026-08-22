@@ -32,8 +32,12 @@ fusion : ne jamais empiler sur de l'historique déjà fusionné.
    refusent qu'un paquet de moteur soit atteignable, déclaré ou importé. Ici il
    est **absent** ; numpy 2.4.6, cv2 5.0.0.
 
-**Prochaine étape** : attendre le prochain VOLET du propriétaire. Rien n'est en
-attente de ma part.
+**Prochaine étape** : **rien — au repos**, décidé par le propriétaire le
+2026-08-22 après que quatre candidats mesurés lui ont été proposés (ADR-020,
+seul ADR encore `proposed` ; la quatrième source de recherche ; la vérification
+d'identité ; ou un brief). Ils restent dans `pending-work.md`. **Ne pas ouvrir
+de VOLET de sa propre initiative** : aucun fichier VOLET suivant n'existe, et
+les quatre derniers programmes sont tous nés d'un brief du propriétaire.
 
 **Ce qui a servi à chaque fois** : *sabotez la garde avant de la croire.* Une
 sabotage a elle-même été fautive — la ligne ajoutée s'est collée à la
