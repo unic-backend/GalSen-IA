@@ -765,5 +765,158 @@ adopting it anyway.
 
 ---
 
-*Phases 0 to 9 complete (13 of 16). Phase 10 — the four options — has not
-started.*
+## PHASE 10 — Four options
+
+### OPTION A — Integrate nothing
+
+**Architecture.** Unchanged. The clone is deleted; this document remains as the
+record.
+
+**Advantages.** Zero cost, zero risk. `code-review-graph` keeps answering the
+structural questions, and 16 of 24 capability rows are already covered.
+
+**Disadvantages.** Three capabilities stay unavailable: cross-service HTTP
+route links, provider-free semantic search, 158-language coverage. Only one of
+those maps to a problem this repository has today.
+
+**Risks.** None. **Cost.** None. **Complexity.** None. **Reversibility.** N/A.
+**Architectural impact.** None.
+
+### OPTION B — Use it as an external tool during development only
+
+**Architecture.** Installed on the developer's machine, registered as an MCP
+server beside `code-review-graph`. Nothing enters the repository.
+
+**Advantages.** Its strengths become available where they are useful, with no
+repository change and no dependency. Reversible by uninstalling.
+
+**Disadvantages.** **Two code graphs over one tree.** Two indexes to keep warm,
+two sets of tools with overlapping names, and an agent that must choose between
+them on every question. It writes instruction files into `$HOME`, and
+**uninstalling does not remove them** (gate 10).
+
+**Risks.** The `$HOME` instruction write — the ADR-038 surface. 1.3 GB and a
+build or binary per developer machine.
+
+**Cost.** Low in code, real in setup and in daily ambiguity.
+**Complexity.** Moderate. **Reversibility.** High for the registration, partial
+for the written files. **Architectural impact.** None on the repository.
+
+### OPTION C — Adapt selected ideas into a native GalSen IA layer
+
+**Architecture.** Extend `src/agent/symbol_index.py` and `repo_graph.py` with
+relations they lack — `CALLS` first — and make `build()` incremental by content
+hash instead of rebuilding.
+
+**Advantages.** Closes the gaps measured in rows 6, 7 and 16 **in GalSen IA's own
+code**, in Python, with its own tests, provenance and governance. No dependency,
+no C, no `$HOME` write, no second graph. `ast` already provides call sites.
+
+**Disadvantages.** Work to write and maintain. And — the honest objection —
+**`code-review-graph` already answers those questions**, so the gain is limited
+to what GalSen IA's own modules must do *without* an MCP server: the self-healing
+agent, `capabilities_reach`, and anything running in the deployed platform.
+
+**Risks.** Building something the installed tool already provides. Mitigated by
+scoping it to what `src/agent/` needs at runtime, where CRG is not present.
+
+**Cost.** Medium. **Complexity.** Medium. **Reversibility.** Total — it is our
+code. **Architectural impact.** Additive, inside an existing module.
+
+### OPTION D — Integrate it as an isolated, replaceable module
+
+**Architecture.** A GalSen IA adapter speaking to the daemon over MCP, behind an
+interface, registered like a provider.
+
+**Advantages.** The full capability, behind a seam, replaceable later.
+
+**Disadvantages.** Everything phase 4B found. A 1.3 GB C dependency in a
+pure-Python platform that must serve web, Windows, macOS, Linux, Android and iOS.
+**And no user-facing consumer**: GalSen IA does not index its users' code. The
+only internal consumer is a coding engine whose three backends are unavailable
+and which currently refuses every execution.
+
+**Risks.** Platform coverage, build toolchain, binary distribution, the `$HOME`
+write inside a deployed product, and a provenance model it does not have.
+
+**Cost.** High. **Complexity.** High. **Reversibility.** Medium — the seam helps,
+the platform packaging does not. **Architectural impact.** Significant, and in
+the direction `.claude/rules/core-rules.md` forbids: coupling business capability
+to one platform's toolchain.
+
+---
+
+## PHASE 11 — Decision
+
+# USE DURING DEVELOPMENT ONLY — *conditional, and the condition is not met today*
+
+Formally: **`KEEP FOR RESEARCH`**, with a named trigger that converts it to
+Option B.
+
+### Why not `INTEGRATE` or `INTEGRATE AS OPTIONAL MODULE`
+
+Phase 4B, on architecture rather than quality. GalSen IA is a Python platform
+serving six targets and **does not index its users' code**. A 1.3 GB C
+code-intelligence engine has no user-facing function in it, and adopting one
+would be exactly the reduction the brief's closing rule forbids — *"do not reduce
+its architecture to coding"*.
+
+### Why not `ADAPT` — yet
+
+Option C is the most attractive of the four on paper, and rows 6, 7 and 16 are
+real gaps in GalSen IA's own modules: one relation type against eight, no
+`CALLS` edges, and a `build()` that rebuilds everything.
+
+But **nothing in this repository currently needs those at runtime.**
+`src/agent/`'s self-healer works, and `code-review-graph` answers the development
+questions. Building it now would be `POSSIBLE → implemented`, one of the four
+conversions `.claude/rules/spec-driven-governance.md` forbids by name.
+
+**Recorded as an `OPTIONAL SUGGESTION — NOT IMPLEMENTED`**, with its trigger: the
+day `src/agent/self_healer.py` needs a call graph to decide what a repair
+touches.
+
+### Why not `REJECT`
+
+Because two findings are real and the project is well made. Its licence hygiene
+is better than most audited here — `THIRD_PARTY.md` names paths, and the dual
+BSD/GPLv2 choice is stated. Its installer verifies checksums. Its privacy claim
+survived a code-level check. **`REJECT` would be a verdict on quality, and the
+quality is not the problem.**
+
+### Why `USE DURING DEVELOPMENT ONLY` is *conditional*
+
+Option B's honest form is not *"tool versus nothing"* but *"a second code graph
+beside the one already running"*. Gate 9 says the fallback exists and is the
+incumbent; gate 10 says removal leaves instruction files behind; gates 3 and 7 —
+the two that would justify it anyway — are **`UNKNOWN`**.
+
+**Adopting it today would mean choosing on a claim rather than a measurement**,
+which is the one thing this repository's rules refuse.
+
+### The trigger that converts this to Option B
+
+**A measured token-and-tool-call comparison against `code-review-graph`, on this
+repository, on the five recurring structural questions defined in phase 8.**
+
+If it wins materially, Option B becomes justified and the `$HOME` write is priced
+against a known gain. If it does not, `KEEP FOR RESEARCH` was right.
+
+That benchmark could not run here: its decisive arm needs CRG's MCP tools, and
+that server disconnected twice during this session.
+
+### What is decided, in one line
+
+**Nothing is installed, nothing is integrated, nothing is adapted — and the one
+thing that would change the answer is named and measurable.**
+
+### Phase 12 does not apply
+
+`ADAPT` was not chosen, so no target architecture is produced. The Option C
+sketch above is the record of what an adaptation *would* touch, and it is
+deliberately not a design.
+
+---
+
+*Phases 0 to 11 complete (15 of 16). The final report — chapter 13 — has not been
+written.*
