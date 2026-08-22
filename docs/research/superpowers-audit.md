@@ -502,7 +502,7 @@ error in this audit.
 |---|---|
 | GalSen IA | `src/router/agent_dispatcher.py` dispatches declared agents; `result_aggregator.py` merges; `src/agent/blackboard.py` gives them a shared work state — publish under a subject, with sender and optional recipient, so an agent reads what concerns it instead of guessing a position in a list. |
 | Superpowers | `subagent-driven-development` (568 lines) — the most elaborate skill in the repository. Per task: dispatch implementer → implementer implements, tests, commits, self-reviews → generate review package → dispatch task reviewer → **bounded fix loop, 5 rounds, and at round ≥ 4 a fresh implementer on a more capable model** → adjudicate residual findings → append completion to a **ledger**. |
-| Better? | **Superpowers is materially stronger here, and it is the single largest gap in the audit.** GalSen IA dispatches agents and merges results. It has no reviewer-of-the-implementer, no bounded retry with escalation, no adjudication of findings that survive the loop. |
+| Better? | **Superpowers is materially stronger here, and it is the single largest gap in the audit.** GalSen IA dispatches agents and merges results, with no bounded retry, no escalation and no adjudication of findings that survive. *(Corrected in chapter 07: this row first read "no reviewer-of-the-implementer", which is wrong — the `standard` workflow is `router → planner → researcher → coder → reviewer`. What is missing is the loop, not the reviewer.)* |
 | Duplication | The dispatch mechanism, yes. The *loop around it*, no. |
 | Conflict | **One, and it is real.** See "human approval" (area T) below. |
 | Native? | Yes — it is a procedure, expressible as a workflow in `workflows/workflows.yaml` plus a skill. |
@@ -944,5 +944,141 @@ clears its licence individually.
 
 ---
 
-*Phases 1.1 → 06 complete (12 of 24). Chapter 07 (§11 — subagents) has not
+## CHAPTER 07 (§11) — Subagent methodology
+
+### A correction to phase 3.2, made before anything is built on it
+
+Phase 3.2 said GalSen IA has *"no reviewer-of-the-implementer"*. **That is wrong.**
+`workflows/workflows.yaml` declares `standard` as
+`router → planner → researcher → coder → reviewer`, and `revue` as
+`reviewer → security`. A reviewer runs after the coder, by design, and has since
+the workflow was written.
+
+The row in area I is corrected. The finding survives in a narrower and truer
+form: **what GalSen IA lacks is not the reviewer, it is the loop around it.**
+Recorded rather than quietly edited, because a wrong premise that reaches a
+recommendation is how an audit produces the wrong build.
+
+### The nine points §11 asks about
+
+| | GalSen IA | Superpowers |
+|---|---|---|
+| **Task decomposition** | `planner` agent + `execution_planner.py` | the plan file, one task at a time |
+| **Specialisation** | **17 declared roles** — richer | 3 roles (implementer, task reviewer, re-reviewer), each with its own prompt file (154, 207, 115 lines) |
+| **Parallelism** | `parallel_supported: False` | `dispatching-parallel-agents` |
+| **Reviewer agents** | `reviewer`, `security` in the pipeline | task reviewer returns **two verdicts** — spec compliance *and* code quality — from reading the diff **once** |
+| **Implementation agents** | `coder` | implementer: implements, tests, commits, **self-reviews**, then reports |
+| **Verification agents** | `tester`, `verifier` | the re-reviewer, whose brief says explicitly *"It is not a fresh review — the full review already happened"* |
+| **Context isolation** | `AgentContext.derive(agent_id)`, per-agent context | fresh subagent per task; the ledger carries what must survive |
+| **Result aggregation** | `ResultAggregator.aggregate()` | the ledger + review packages |
+| **Failure recovery** | `retry_manager`, `workflow_checkpoint.resumable()` | **the bounded fix loop** |
+
+### What is genuinely missing, stated precisely
+
+Three things, and only three:
+
+1. **A bounded fix loop.** Rounds 1–5. At R ≤ 3 the same implementer resumes; at
+   **R ≥ 4 a fresh implementer on a more capable model** — because an agent that
+   has failed three times is now arguing with itself. At R = 5 *"the breaker
+   trips"* and every open finding is adjudicated. GalSen IA's `reviewer` reports
+   and the pipeline moves on.
+2. **Scoped re-review.** After a fix, a re-review that verifies *those findings*
+   and checks the fix diff for new breakage — explicitly not a fresh review.
+   Cheaper and more honest than re-running the reviewer.
+3. **Adjudication.** When a finding survives five rounds, someone decides
+   whether it is load-bearing, and records the ruling. GalSen IA has no vocabulary
+   for a finding that neither blocks nor gets fixed.
+
+### Two design details worth taking, whatever the decision
+
+`scripts/sdd-workspace`'s own header explains why the ledger is scoped **one
+directory per plan**: *"A stale ledger misread as current progress makes
+controllers skip whole task sequences — plan-scoping removes that failure
+structurally."* That is this repository's own idiom — a structural refusal rather
+than a convention — arrived at independently.
+
+And it lives in the working tree rather than under `.git/`, because the host
+denies agent writes there. A practical constraint, recorded because a native
+reimplementation would hit it too.
+
+### §11's two constraints, both honoured
+
+*"Do not create uncontrolled autonomous agent loops."* The loop above is bounded
+at five rounds with an explicit breaker — it is the **opposite** of uncontrolled.
+But the skill carrying it also carries *"do not pause to check in between tasks"*,
+which is uncontrolled by GalSen IA's standards. **The loop is adoptable; the
+cadence around it is not.** Same split as area T.
+
+*"Security boundaries remain immutable."* Nothing here touches them. A fix loop
+is orchestration; approval, RBAC, sandbox and ADR-018 sit underneath it unchanged.
+
+---
+
+## CHAPTER 08 (§12) — Context and memory
+
+### What Superpowers has
+
+Exactly one persistence mechanism: **the ledger**, at
+`.superpowers/sdd/<plan-basename>/` in the working tree. It holds task briefs,
+implementer reports, review packages and progress. It is **deleted when the plan
+completes** — *"Final review clean: delete this plan's workspace"*.
+
+Plus context re-injection: the `SessionStart` hook matches
+`startup|clear|compact`, so the methodology is restated after a context
+compaction.
+
+That is all. Grepping every skill for memory or persistence returns the ledger
+and the brainstorming server's session files, and nothing else.
+
+### What GalSen IA has
+
+Two memories, deliberately separate, and §12's warning about redundancy applies
+to neither:
+
+| | |
+|---|---|
+| `src/memory_engine/` | 12 modules — the **product's** memory of user content: layers, cache, indexer, ranker, retriever, summariser, quality. Persisted through `src/storage/` (ADR-005). |
+| `docs/memory/` | the **repository's** engineering memory — `session-state.md`, `phase-plan.md`, `completed-work.md`, `pending-work.md`, `priorities.md`, `vision.md`, `knowledge-index.md`. Injected at session start by `scripts/session_bootstrap.py`, governed by `.claude/rules/memory.md`. |
+
+Plus per-request working state (`src/agent/blackboard.py`) and per-agent context
+(`AgentContext.derive`).
+
+### The comparison, on §12's four points
+
+| | |
+|---|---|
+| **Context preservation** | GalSen IA re-establishes state from disk at session start. Superpowers re-injects methodology, and does it on `compact` too. **One narrow advantage to Superpowers, already recorded in area M.** |
+| **Task state** | Superpowers' ledger is richer *within one plan* — briefs, reports, review packages, rulings. GalSen IA's `phase-plan.md` records the current phase and what is done, and nothing about *why* a decision was taken mid-plan. |
+| **Project knowledge** | GalSen IA: 38 ADRs, `knowledge-index.md`, `completed-work.md` as an append-only log. Superpowers: **nothing.** |
+| **Session continuity** | GalSen IA, decisively. This audit resumed across phases from `phase-plan.md`; the ledger would have been deleted at the end of the plan. |
+
+### §12's instructions, answered
+
+*"Do not introduce redundant memory systems."* **Satisfied by doing nothing.**
+The ledger and `docs/memory/` solve different problems at different lifetimes —
+one plan versus the project — and adding the ledger as a *system* would create
+exactly the redundancy §12 forbids.
+
+*"Do not automatically add Claude-specific memory mechanisms."* Nothing here is
+Claude-specific. The ledger is a directory of markdown; the hook is bash.
+
+### The one idea worth keeping
+
+Not the ledger — **the ruling record**. `Ruling: <what you decided> — <why> —
+<what it costs if wrong>`, appended as work proceeds.
+
+GalSen IA records *decisions* in ADRs and *outcomes* in `completed-work.md`, and
+has no place for the small mid-task judgements that never reach an ADR. This
+audit made several — scoping `find-polluter.sh` as the only component candidate,
+excluding the cadence from the SDD recommendation — and they live in this
+document only because it happens to be a report. **The third clause is the one
+GalSen IA does not have anywhere: naming what a decision costs if it turns out
+wrong.**
+
+That is a format, not a system. Adopting it adds no persistence layer and no
+redundancy — it changes what gets written into files that already exist.
+
+---
+
+*Phases 1.1 → 08 complete (14 of 24). Chapter 09 (§13 — security audit) has not
 started.*
