@@ -494,5 +494,192 @@ error in this audit.
 
 ---
 
-*Phases 1.1 → 3.1 complete. Phase 3.2 (areas I–P) has not started, and nothing
-below area H exists in this document yet.*
+## PHASE 3.2 — Architectural comparison, areas I to P
+
+### I. Subagent orchestration
+
+| | |
+|---|---|
+| GalSen IA | `src/router/agent_dispatcher.py` dispatches declared agents; `result_aggregator.py` merges; `src/agent/blackboard.py` gives them a shared work state — publish under a subject, with sender and optional recipient, so an agent reads what concerns it instead of guessing a position in a list. |
+| Superpowers | `subagent-driven-development` (568 lines) — the most elaborate skill in the repository. Per task: dispatch implementer → implementer implements, tests, commits, self-reviews → generate review package → dispatch task reviewer → **bounded fix loop, 5 rounds, and at round ≥ 4 a fresh implementer on a more capable model** → adjudicate residual findings → append completion to a **ledger**. |
+| Better? | **Superpowers is materially stronger here, and it is the single largest gap in the audit.** GalSen IA dispatches agents and merges results. It has no reviewer-of-the-implementer, no bounded retry with escalation, no adjudication of findings that survive the loop. |
+| Duplication | The dispatch mechanism, yes. The *loop around it*, no. |
+| Conflict | **One, and it is real.** See "human approval" (area T) below. |
+| Native? | Yes — it is a procedure, expressible as a workflow in `workflows/workflows.yaml` plus a skill. |
+| Import needed? | **No.** |
+
+### J. Parallel execution
+
+| | |
+|---|---|
+| GalSen IA | Measured, not assumed: `src/router/execution_planner.py:61` sets `'parallel_supported': False`. Workflows may *declare* `parallel_agents`; nothing runs them in parallel. |
+| Superpowers | `dispatching-parallel-agents` (167 lines): identify independent domains → focused agent tasks → dispatch in parallel → review and integrate, with a prescribed prompt structure. |
+| Better? | **Yes, on a capability GalSen IA does not have.** |
+| Honest caveat | The gap is not the *procedure*, it is the runtime. A skill describing parallel dispatch cannot make `parallel_supported` true. Adopting the skill without building the runtime would document a capability that does not exist — precisely what this repository's rules forbid. |
+
+### K. Git / worktree workflow
+
+| | |
+|---|---|
+| GalSen IA | `.claude/rules/git-workflow.md`: never push to `main`, feature branches, Conventional Commits. No worktree practice. |
+| Superpowers | `using-git-worktrees` — detect existing isolation first, native tools preferred, git-worktree fallback, directory selection, safety verification. `finishing-a-development-branch` — verify tests → detect environment → determine base → present options → execute. |
+| Better? | **Superpowers is more complete**, and `finishing-a-development-branch` step 1 is *verify tests*, which is the step this session has been performing by hand every time. |
+| Native? | Yes. |
+
+### L. Memory
+
+| | |
+|---|---|
+| GalSen IA | Two distinct memories: `src/memory_engine/` (12 modules — the product's memory of user content) and `docs/memory/` (the repository's engineering memory — `session-state.md`, `phase-plan.md`, `completed-work.md`, `pending-work.md`, `priorities.md`, injected at session start by a hook, governed by `.claude/rules/memory.md`). |
+| Superpowers | **Nothing comparable.** Grepping every skill for memory or persistence returns the ledger and the brainstorming server's session files. The ledger is per-plan working state, deleted when the plan's workspace is deleted. |
+| Better? | **GalSen IA, decisively.** Its engineering memory survives sessions, containers and context exhaustion. Superpowers' ledger survives one plan. |
+| Duplication | None. |
+| §12's instruction — "do not introduce redundant memory systems" — is satisfied by doing nothing here. |
+
+### M. Context management
+
+| | |
+|---|---|
+| GalSen IA | Context isolation per agent (`src/agent/context.py`); the session hook re-establishes state after a compaction. |
+| Superpowers | Context isolation is the *point* of subagent-driven development: each implementer starts fresh, and the ledger carries what must survive. `using-superpowers` is force-injected on `startup\|clear\|compact` — deliberately including compaction. |
+| Better? | Comparable, by different means. |
+| Useful complement | **One, small and real**: GalSen IA's hook matches session start; Superpowers' also matches `clear` and `compact`. A methodology that evaporates on compaction is a methodology for short sessions. |
+
+### N. Hooks
+
+| | |
+|---|---|
+| GalSen IA | Two events — `SessionStart` (inject memory), `PostToolUse`. |
+| Superpowers | One event — `SessionStart`, matching `startup\|clear\|compact`. |
+| Better? | GalSen IA uses more events; Superpowers uses one event more thoroughly. |
+| Duplication | **Direct.** Both inject context at session start. They would coexist — the host concatenates — but the payloads must not contradict each other. |
+
+### O. Security
+
+| | |
+|---|---|
+| GalSen IA | `src/security/` (`trust.py` — external text is data with an origin, never an instruction; `checkpoints.py`, `isolation.py`, `posture.py`, `redaction.py`), `src/sandbox/` (`policy.py`, `runner.py`), `src/agent/policies/immutability.py` (what an autonomous repair may never touch, derived from the architecture rather than written from memory), `guarded_editor.py`, an audit journal, and ADR-018's unconditional refusals. |
+| Superpowers | No security model. It is markdown. Its only security-relevant artefacts are the brainstorming server's per-session key, loopback default and `chmod 600`. |
+| Better? | **GalSen IA, by an enormous margin — and the comparison is not really fair, because Superpowers is not trying to have one.** |
+| Conflict | Adopting Superpowers' *prose* introduces no security surface. Adopting its *distribution mechanism* — an auto-updating marketplace plugin injecting `<EXTREMELY_IMPORTANT>` instructions at every session start — introduces one, and §13 will name it. |
+
+### P. Permissions
+
+| | |
+|---|---|
+| GalSen IA | `src/api/rbac.py` — 10 roles, 24 permissions, `PERMISSIONS_HORS_PLATEFORME`; `src/tool/authorization.py` — role ceilings over declared tool capabilities. |
+| Superpowers | None, and none is expected. |
+| Better? | Not comparable. |
+| Import needed? | **No.** |
+
+---
+
+## PHASE 3.3 — Architectural comparison, areas Q to X
+
+### Q. Observability
+
+GalSen IA: `src/observability/trail.py` (one job followable end to end via
+`/observability/trail/{id}`), `src/audit_engine/` (5 modules),
+`src/router/decision_trace.py`, `workflow_history.py`.
+Superpowers: the ledger, and prose telling the agent to report.
+**GalSen IA, decisively.** No gap.
+
+### R. Self-healing
+
+GalSen IA: `src/agent/` — 23 modules, `self_healer.py`, immutability and
+integrity policies, a guarded editor, an audit journal, commands passed as lists
+so a traceback cannot become shell syntax.
+Superpowers: `systematic-debugging` is a *method for a human-supervised agent*,
+not an autonomous repair engine. **Different things.**
+The useful complement is the one already named in area F: four named phases where
+GalSen IA has one sentence. §10 forbids replacing the engine; nothing here
+suggests replacing it.
+
+### S. Autonomous execution
+
+GalSen IA: routines fire workflows through the one orchestrator; unattended tool
+execution is gated by declared `unattended` capability, and *"an approval is never
+granted by the absence of someone to refuse it"*.
+Superpowers: *"Do not pause to check in with your human partner between tasks…
+'Should I continue?' prompts and progress summaries waste their time."*
+**This is a direct philosophical conflict with `.claude/rules/phase-protocol.md`**,
+which mandates one phase per turn, each ending in `Je continue ?`.
+Recorded here, adjudicated in area T.
+
+### T. Human approval
+
+| | |
+|---|---|
+| GalSen IA | `src/approval_engine/` (5 modules), ADR-006, ADR-018's unconditional refusals evaluated *before* consent, tools declaring `requires_approval`, role ceilings, and the phase protocol's stop after every phase. |
+| Superpowers | *"Rulings, not stalls."* Four things stop the agent and only these: an irreversible or destructive operation; a security-sensitive action; a side effect outside the worktree that norms say you ask about (merge, push to a shared branch, publish); a plan so broken every path forward is a guess. Everything else: decide, record `Ruling: <what> — <why> — <what it costs if wrong>`, continue. |
+
+**This is the audit's sharpest finding, and it cuts both ways.**
+
+Superpowers' four stop conditions are *well chosen* — they are close to what
+ADR-018 and the approval engine already enforce, arrived at independently. And
+its ledger entry format is better than anything GalSen IA writes down: naming
+**what it costs if the ruling is wrong** is a discipline this repository does not
+currently require.
+
+But *"do not pause between tasks"* is the exact opposite of the phase protocol,
+which the owner made permanent and which is not the assistant's to renegotiate.
+`.claude/rules/spec-driven-governance.md` settles it: *"If a proposed change
+conflicts with an existing architectural rule: stop, document the conflict, and
+do not silently override it."*
+
+**So: the ruling format is adoptable; the no-stopping cadence is not.** Any
+integration candidate touching this area must separate the two, and a candidate
+that imports `subagent-driven-development` wholesale would import the conflict.
+
+### U. Failure recovery
+
+GalSen IA: `retry_manager.py`, `workflow_checkpoint.py` with `resumable()`,
+`done_agents()`, `next_step()` — a run resumes where it stopped.
+Superpowers: the bounded fix loop (5 rounds, escalating model), and adjudication
+of what survives it.
+**Complementary.** GalSen IA recovers *runs*; Superpowers recovers *quality*.
+Neither does the other's job.
+
+### V. Testing
+
+GalSen IA: 7 036 tests, 333 files, seven of which test the repository itself;
+`.claude/rules/verification.md` names five forbidden ways to make a test pass.
+Superpowers: `test-driven-development` (320 lines, a red-green gate) and
+`writing-skills/testing-skills-with-subagents.md` — **testing a skill by
+dispatching a subagent to follow it**, which is a technique GalSen IA has no
+equivalent of and which is directly relevant to its own 15 rule files.
+**GalSen IA is stronger on product tests; Superpowers has one technique GalSen IA
+lacks entirely.**
+
+### W. Documentation
+
+GalSen IA: 38 ADRs, `.claude/rules/documentation.md`, `test_package_documentation.py`,
+`test_published_numbers.py` — documentation that contradicts the served API fails CI.
+Superpowers: no documentation discipline of its own beyond its skills being prose.
+**GalSen IA, decisively.** No gap.
+
+### X. Long-running tasks
+
+GalSen IA: checkpointed resumable runs, plus `docs/memory/` and the phase plan,
+which is why an interrupted session resumes at the right phase.
+Superpowers: the ledger, per plan.
+**GalSen IA, decisively**, and it is the same strength as area L.
+
+---
+
+## Interim tally, areas A–X
+
+Not a conclusion — chapters 04 to 16 have not run. Stated so the shape is visible:
+
+| | Count | Areas |
+|---|---|---|
+| GalSen IA already stronger | **9** | L memory, O security, P permissions, Q observability, R self-healing (engine), U (runs), V (product tests), W documentation, X long-running |
+| Superpowers materially stronger | **5** | I subagents, J parallel dispatch, K git/worktree, and the *procedures* in F debugging and E TDD |
+| Orthogonal / complementary | **6** | A agents, C planning, D spec, H code review, M context, U (quality) |
+| Direct conflict | **1** | S/T — autonomous cadence versus the phase protocol |
+| No comparison possible | **3** | B format (identical), N hooks (same mechanism), G verification (same intent, one freshness clause differs) |
+
+---
+
+*Phases 1.1 → 3.3 complete (8 of 24). Chapter 04 (§7 — skill by skill) has not
+started, and nothing below area X exists in this document yet.*
