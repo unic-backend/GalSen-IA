@@ -1049,3 +1049,98 @@ class TestRacinesDeclarees:
         )
         assert resultat.status is CodingStatus.FAILURE
         assert "GALSEN_CODING_WORKSPACE_ROOTS" in resultat.summary
+
+
+# ======================================================================
+# 7. Isolation des dépendances (constat n°4)
+#
+# `litellm` a été mesuré installé dans l'environnement de la plateforme sur un
+# autre hôte, **déclaré par aucun fichier de dépendances et importé par aucun
+# module**. Ce n'est pas un paquet oublié : c'est l'arbre de dépendances d'un
+# moteur qui a fui dans celui de la plateforme, ce que
+# `scripts/install_coding_engines.sh` existe précisément pour empêcher.
+#
+# Le prix de cette fuite est écrit dans ADR-028 : installer `aider-chat` dans
+# l'environnement principal avait rétrogradé numpy en 1.26, cassé
+# `opencv-python-headless`, et fait échouer `import cv2` sur toute la
+# plateforme. Un paquet que rien ne déclare ne se remarque pas avant ce jour-là.
+# ======================================================================
+
+class TestIsolationDesDependances:
+    """L'arbre de dépendances d'un moteur ne touche pas celui de la plateforme."""
+
+    #: Les distributions apportées par les moteurs. Elles vivent dans les
+    #: environnements virtuels créés par le script d'installation ; GalSen IA
+    #: n'appelle que l'exécutable produit.
+    PAQUETS_DE_MOTEUR = ("litellm", "aider", "sweagent", "openhands")
+
+    def _importable(self, nom):
+        """Vrai si le paquet est atteignable depuis cet environnement."""
+        import importlib.util
+        try:
+            return importlib.util.find_spec(nom) is not None
+        except (ImportError, ValueError):
+            # Un paquet dont le parent manque n'est pas atteignable.
+            return False
+
+    def test_aucun_paquet_de_moteur_n_est_atteignable(self):
+        """
+        Le constat n°4, transformé en garde.
+
+        Si ce test échoue, l'installation n'est pas passée par
+        `scripts/install_coding_engines.sh` : le moteur a été installé dans
+        l'environnement principal, et la prochaine résolution de dépendances
+        rétrogradera quelque chose que personne ne surveille.
+        """
+        fuites = [nom for nom in self.PAQUETS_DE_MOTEUR if self._importable(nom)]
+        assert not fuites, (
+            f"Ces dépendances de moteur sont atteignables depuis "
+            f"l'environnement de la plateforme : {', '.join(fuites)}. "
+            "Elles appartiennent aux environnements isolés de "
+            "`scripts/install_coding_engines.sh` (ADR-028). Installer "
+            "`aider-chat` dans l'environnement principal avait rétrogradé numpy "
+            "et cassé `import cv2` sur toute la plateforme."
+        )
+
+    def test_aucun_fichier_de_dependances_ne_les_declare(self):
+        """
+        Les déclarer serait la même fuite, écrite exprès.
+
+        La lecture ignore les commentaires : ce fichier de test explique
+        pourquoi ces paquets sont exclus, et une recherche de mots ferait
+        échouer l'explication elle-même.
+        """
+        import glob
+        racine = os.path.join(os.path.dirname(__file__), "..")
+        for chemin in glob.glob(os.path.join(racine, "requirements*.txt")):
+            with open(chemin, encoding="utf-8") as fichier:
+                for numero, ligne in enumerate(fichier, start=1):
+                    declaration = ligne.split("#", 1)[0].strip().lower()
+                    if not declaration:
+                        continue
+                    for paquet in self.PAQUETS_DE_MOTEUR:
+                        assert not declaration.startswith(paquet), (
+                            f"{os.path.basename(chemin)}:{numero} déclare "
+                            f"« {paquet} ». Les moteurs s'installent dans leur "
+                            "propre environnement (ADR-028)."
+                        )
+
+    def test_la_plateforme_n_importe_aucun_de_ces_paquets(self):
+        """
+        Les mentionner en texte est normal ; les importer ne l'est pas.
+
+        Les adaptateurs nomment les préfixes d'erreur de litellm pour traduire
+        ce qu'aider écrit sur sa sortie d'erreur. C'est de la lecture de texte,
+        pas une dépendance — et la distinction est exactement ce que ce test
+        garde.
+        """
+        racine = os.path.join(os.path.dirname(__file__), "..", "src")
+        for dossier, _, fichiers in os.walk(racine):
+            for nom in fichiers:
+                if not nom.endswith(".py"):
+                    continue
+                chemin = os.path.join(dossier, nom)
+                contenu = open(chemin, encoding="utf-8").read()
+                for paquet in self.PAQUETS_DE_MOTEUR:
+                    for forme in (f"import {paquet}", f"from {paquet}"):
+                        assert forme not in contenu, f"{nom} : « {forme} »"

@@ -148,6 +148,20 @@ authorization model was introduced; `src/coding_engine/authorization.py` says wh
 
 Approval is untouched: it remains a property of the act, not of the actor.
 
+**Third finding, same date — dependency isolation had no guard.** `litellm==1.81.10`
+was measured installed in a platform environment, declared by no requirements file and
+imported by no module. That is not a forgotten package: it is an engine's dependency tree
+having leaked into the platform's, which is exactly what
+`scripts/install_coding_engines.sh` exists to prevent, and what the numpy/`cv2` breakage
+recorded above already cost once. The script was policy with nothing enforcing it. Three
+tests now do: no engine package is importable from the platform environment, no
+`requirements*.txt` declares one, and no module under `src/` imports one. The adapters may
+still *name* litellm's error prefixes — they translate what aider writes to stderr — and
+the tests distinguish reading text from depending on a package.
+
+On the container that measured this, `litellm` is not installed at all, `numpy` is 2.4.6
+and `cv2` is 5.0.0.
+
 ### Governance reuses what exists
 
 The Approval Engine (ADR-006) and the Audit Engine are the platform's, unchanged.
