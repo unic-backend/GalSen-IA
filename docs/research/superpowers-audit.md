@@ -1178,5 +1178,119 @@ the decision gate cannot forget it.
 
 ---
 
-*Phases 1.1 → 10 complete (16 of 24). Chapter 11 (§15 — dependency audit) has not
-started.*
+## CHAPTER 11 (§15) — Dependency audit
+
+| §15 item | Finding |
+|---|---|
+| **Runtime dependencies** | **None.** `package.json` declares no `dependencies`. |
+| **Development dependencies** | **None.** No `devDependencies`, no `peerDependencies`, no `optionalDependencies`, no `engines`. |
+| **Package-manager requirement** | **None for use.** `package.json` exists for plugin metadata and `pi` registration; there is nothing to `npm install`, and no lockfile. |
+| **Node** | Needed by **two optional files only**: `brainstorming/scripts/server.cjs` and `writing-skills/render-graphs.js`. One `#!/usr/bin/env node` shebang in the repository. No version is declared — `engines` is absent, so the minimum is **`UNKNOWN`**. |
+| **Python / Go / other** | None required. Six `.py` files exist; the only one in a shipped path is a token-usage analyser under `tests/`. |
+| **Shell** | **bash.** Eleven `#!/usr/bin/env bash` shebangs. `hooks/session-start` carries a comment naming a **bash 5.3+ heredoc hang** it works around with `printf` — so the code is aware of shell-version fragility even though it declares no minimum. |
+| **OS assumptions** | Unix by default; Windows handled by `run-hook.cmd`, a bash/batch polyglot that locates Git Bash and **exits 0 silently** if none is found — degrading rather than failing. |
+| **External tools** | Counted across shipped shell: `git` (48 references), `jq` (9), `gh` (8), `python3` (4), `node` (3), `dot` (1). |
+| **Network** | **None for the methodology.** One optional image fetch, already characterised. |
+
+### The architectural cost §15 asks me to calculate
+
+**Under native adoption (chapter 04's recommendations): zero.**
+
+Not "low" — zero. Every recommendation is prose written into files this
+repository already has: `.claude/rules/*.md` and `.claude/skills/*/SKILL.md`. No
+package, no runtime, no binary, no hook, no network call, no schema, no API. The
+only measurable cost is **words in the session-start context**, which is real but
+belongs in chapter 14, not here.
+
+`find-polluter.sh` — the single component candidate — needs `bash` and `git`, both
+already required by this repository's own workflow.
+
+**Under plugin installation: small in packages, real in governance.** No
+dependency tree arrives, which is genuinely unusual. What arrives is a
+marketplace-managed, auto-updating instruction source and a hook, and that cost
+was priced in chapter 09, not here.
+
+### One honest `UNKNOWN`
+
+The **minimum Node version is `UNKNOWN`**. `engines` is absent and no runtime
+check exists. It matters for exactly two optional files, neither of which any
+candidate uses — so it is recorded and not resolved, rather than resolved by
+guessing from syntax.
+
+---
+
+## CHAPTER 12 (§16) — Telemetry and privacy
+
+### What exists, restated exactly
+
+One outbound request in the repository, verified in code at chapter 2.2:
+
+```
+GET https://primeradiant.com/brand/superpowers-visual-brainstorming-logo.png?v=<version>
+```
+
+issued as an `<img>` with `referrerpolicy="no-referrer"`, by
+`brainstorming`'s **optional visual companion**, which the skill instructs the
+agent to offer *just-in-time* — *"NOT upfront… If no visual question ever arises,
+never offer it"* — and which opens only on the human's approval.
+
+The README's own statement, quoted rather than paraphrased because §16 asks for
+what the official source says:
+
+> *"It includes the version of Superpowers in use. It does not include any
+> details about your project, prompt, or coding agent. We don't see your clicks
+> or anything about what you're building… It's 100% optional."*
+
+### Is that accurate? Measured, not assumed
+
+| Claim | Verdict | Evidence |
+|---|---|---|
+| Carries the version | **Confirmed** | `'?v=' + encodeURIComponent(SUPERPOWERS_VERSION)` |
+| No project, prompt or agent details | **Confirmed** for what the page controls | The URL is a constant plus the version. `no-referrer` also stops the companion's own URL — which carries a per-session secret key — from leaking in the `Referer` header. |
+| Can be disabled | **Confirmed, and tested** | Three variables (`SUPERPOWERS_DISABLE_TELEMETRY`, `DISABLE_TELEMETRY`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`), four tests in `tests/brainstorm-server/branding.test.js` |
+| *"We don't see your clicks"* | **Confirmed for this request** | It is one image load. |
+
+**What the README does not say, and §16 tells me not to call harmless:** any HTTP
+GET reveals **source IP address, the browser's user-agent, and a timestamp**,
+correlated with a Superpowers version. That is not "details about your project",
+so the statement is not false — but a request from a corporate egress IP is not
+anonymous either. Recorded because §16 says so in as many words: *"Do not assume
+it is harmless."*
+
+### Other §16 surfaces
+
+| | |
+|---|---|
+| **Contacts external servers** | Only the above. |
+| **Downloads resources** | No. |
+| **Transmits project information** | No — verified by grepping every outbound URL in every executable file. |
+| **Requires external accounts** | **No.** The README's *"Commercial Services"* section is a sales email address (`sales@primeradiant.com`) for enterprise support. Nothing in the code requires, checks or offers an account. |
+| **Local state written** | `/tmp/brainstorm` (`$BRAINSTORM_DIR`), by the optional companion only: content, state, port and token files, `chmod 600`. |
+
+### Against GalSen IA's production privacy rule
+
+§16 forbids, for GalSen IA production: no user data, no private project data, no
+user references, no conversations transmitted to an external development tool.
+
+**Under native adoption: the rule is not engaged at all.** No component is
+adopted, so no request exists. Prose does not phone home.
+
+**Under plugin installation: the rule holds, with one caveat and one condition.**
+The caveat is the IP/user-agent/timestamp above. The condition is that the
+telemetry lives inside `brainstorming` — the skill chapter 04 already recommends
+**not** adopting, for this reason among others.
+
+And the deployment fact that settles it: **Superpowers is development-time.**
+Nothing under `src/` would load it, GalSen IA in production would not contain it,
+and no user's data could reach it because it would not be running where user data
+is. §6's separation is not a policy to enforce here — it is a consequence of
+where the thing lives.
+
+**Verdict: no privacy blocker.** The one network call is optional, opt-outable,
+tested, carries a version number, and belongs to a component already recommended
+against.
+
+---
+
+*Phases 1.1 → 12 complete (18 of 24). Chapter 13 (§17 — duplication matrix) has
+not started.*
