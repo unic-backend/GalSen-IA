@@ -653,4 +653,117 @@ parsers, which are Tree-sitter output.
 
 ---
 
-*Phases 0 to 7 complete (11 of 16). Phase 8 — performance — has not started.*
+## PHASE 8 — Performance
+
+### Their published numbers, and their method
+
+Unusually, the method is published rather than only the results.
+
+| Operation | Claimed | Notes given |
+|---|---|---|
+| Linux kernel full index | **3 min** | 28M LOC, 75K files → 4.81M nodes, 7.72M edges |
+| Linux kernel fast index | 1 min 12 s | 1.88M nodes |
+| Django full index | ~6 s | 49K nodes, 196K edges |
+| Graph query | **< 1 ms** | relationship traversal |
+| Name search (regex) | < 10 ms | SQL `LIKE` pre-filter |
+| Dead-code detection | ~150 ms | full graph scan |
+| Call-path trace (depth 5) | < 10 ms | BFS |
+
+**Platform: Apple M3 Pro.** Stated, which is more than most projects do.
+
+`docs/BENCHMARK.md` publishes the answer-quality method too: 63 languages, 12
+questions each, up to 5 attempts with escalating retries, real repositories
+(78–49 000 nodes), PASS/PARTIAL/FAIL grading with N/A excluded, Apple M3 Pro,
+dated 2026-03-01.
+
+The token claim: *"Five structural queries consumed ~3 400 tokens versus
+~412 000 via file-by-file grep exploration — a 99.2 % reduction."*
+The arXiv preprint (2603.27277) claims 83 % answer quality, 10× fewer tokens and
+2.1× fewer tool calls across 31 repositories.
+
+### What is wrong with taking those numbers into a decision
+
+Three things, and none is an accusation of dishonesty:
+
+1. **The baseline is chosen by the author.** *"File-by-file grep exploration"* is
+   the worst plausible alternative. The relevant baseline for GalSen IA is
+   **`code-review-graph`**, which also returns targeted graph answers and
+   documents a ≤ 800-token target per task. Against *that*, the reduction is
+   **`UNKNOWN`** — and it is the only comparison that decides anything here.
+2. **Apple M3 Pro is not this machine, and not a Senegalese deployment target.**
+3. **"Up to 5 attempts with escalating retry strategies"** is a generous grading
+   protocol. It is disclosed, which is to the project's credit, but a
+   first-attempt figure would mean something different.
+
+### The independent benchmark, defined — and not run
+
+§8 says to define one and forbids fabricating results. Defined:
+
+| | |
+|---|---|
+| **Question** | Does it answer a real GalSen IA structural question in fewer tokens than `code-review-graph`, on the same repository? |
+| **Corpus** | This repository — 333 test files, ~500 Python modules |
+| **Tasks** | The five that actually recur here: *who calls `resolve_workspace`* · *what breaks if `RunStatus` changes* · *which tests cover `src/embeddings/`* · *where is the approval gate for training exports* · *what does `/coding/task` reach* |
+| **Metric** | Tokens returned and tool calls, per task, both engines |
+| **Control** | Same questions, same day, same machine |
+| **Refusal** | No number is written that was not produced by a run |
+
+### Whether it could be run here — measured, not guessed
+
+`cc` is **GCC 13.3.0**, `make` is **GNU Make 4.3**. `Makefile.cbm` exists. So a
+build is **plausible** — and it was **not attempted**, deliberately:
+
+- Compiling 842 `.c` files plus 160 grammar parsers is a long build whose
+  duration is `UNKNOWN` here, and the container's writable disk is a fixed
+  allowance already holding a 1.3 GB clone.
+- **The benchmark's decisive arm cannot run at all**: measuring against
+  `code-review-graph` requires its MCP tools, and this session has watched that
+  server disconnect and reconnect twice. A one-sided measurement would answer the
+  question the README already answers.
+
+### Result
+
+**`NOT_MEASURED`.** No performance figure in this audit is mine, and none of
+theirs is treated as verified.
+
+**The measurement that would matter — tokens against `code-review-graph` on this
+repository — has not been made, and phase 9 must treat the context-reduction gain
+as `UNKNOWN` rather than as claimed.**
+
+---
+
+## PHASE 9 — Feasibility gates
+
+| # | Question | Answer |
+|---|---|---|
+| 1 | Technically possible? | **Yes** — MCP server, spoken by any MCP client |
+| 2 | Architecturally sound? | **For development, contested** (it duplicates CRG). **For the runtime, no** — phase 4B |
+| 3 | Performance sufficient? | **`UNKNOWN`** — phase 8, not measured here |
+| 4 | Memory cost acceptable? | **`UNKNOWN`** — RAM-first pipeline, unmeasured here |
+| 5 | Storage acceptable? | **1.3 GB source, plus a graph DB per project.** Acceptable on a workstation; not on this container's allowance |
+| 6 | Latency acceptable? | Claimed sub-ms, **`UNKNOWN` here** |
+| 7 | Context gain measurable? | **Measurable in principle, not measured.** Against CRG rather than against grep — the comparison that decides |
+| 8 | Errors detectable? | **Yes** — `index_status`, and it is a separate process |
+| 9 | Fallback exists? | **Yes, and it is the incumbent**: CRG, plus `grep`/`Glob` |
+| 10 | Easy to remove? | **Yes** for the MCP registration. **Partly, no** for the instruction files it writes into `$HOME` — removing the tool does not remove `global_rules.md` |
+| 11 | Replaceable later? | **Yes** — MCP is the seam |
+| 12 | Creates provider lock-in? | **No.** Phase 5: genuinely provider-independent |
+| 13 | Creates architectural lock-in? | **For development, no.** For the runtime, **yes** — a C dependency in a pure-Python platform serving six targets |
+| 14 | Respects provenance / privacy / security? | **Privacy yes** — nothing leaves the machine, verified. **Provenance no** — it has no provenance model. **Security: one disclosed privileged write** |
+
+### The three that decide
+
+**#9 — a fallback exists, and it is already running.** That reframes everything:
+this is not a capability GalSen IA lacks, it is a second supplier of one it has.
+
+**#10 — removal is not clean.** Uninstalling leaves instruction files it wrote
+into `$HOME`. For a component whose whole risk is *writing text that steers an
+agent*, "easy to remove" not being fully true is the gate that matters.
+
+**#3 and #7 are `UNKNOWN`** — and they are precisely the two that would justify
+adopting it anyway.
+
+---
+
+*Phases 0 to 9 complete (13 of 16). Phase 10 — the four options — has not
+started.*
