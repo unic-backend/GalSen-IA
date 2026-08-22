@@ -9,7 +9,7 @@ VOLET en cours   : **SUPERPOWERS COMPATIBILITY & INTEGRATION AUDIT**
                    Brief du propriétaire, 2026-08-22, 28 sections (§0 à §27)
 Chapitres        : **17 exécutables** (5 sections sont des règles, pas des chapitres)
 Phases           : **24**
-Phase courante   : **5 (§9, tests) — en attente de confirmation**
+Phase courante   : **7 (§11, sous-agents) — en attente de confirmation**
 Terminées        : **1.1 → 3.1** (6 sur 24). Reconnaissance complète des deux
                    côtés ; commit `b36e082` (v6.3.0), **MIT**, **zéro dépendance
                    déclarée**, 29 322 lignes de prose contre 4 012 de code ;
@@ -19,7 +19,9 @@ Terminées        : **1.1 → 3.1** (6 sur 24). Reconnaissance complète des deu
                    **1 conflit direct** (cadence autonome vs protocole de phases).
                    **§7 fait** : 14 skills notés, **5 à adopter**, 3 à considérer,
                    6 à laisser. **Aucun candidat en « importer »** — rien ici ne
-                   peut importer du markdown
+                   peut importer du markdown. **§9 et §10 faits** : zéro test de
+                   comportement d'agent côté GalSen IA (15 règles jamais éprouvées),
+                   et `find-polluter.sh` est le **seul** candidat « composant isolé »
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md` — toute

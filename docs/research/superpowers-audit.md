@@ -823,4 +823,126 @@ from a spec, which the protocol does not. Narrow, real gap.
 
 ---
 
-*Phases 1.1 → 4.2 complete (10 of 24). Chapter 05 (§9 — testing) has not started.*
+## CHAPTER 05 (§9) — Testing methodology
+
+### What each side actually tests
+
+| | GalSen IA | Superpowers |
+|---|---|---|
+| Tests of the product | **7 036**, 333 files, pytest | none — there is no product |
+| Tests of the repository's own rules | **7 files** (published numbers, release check, model sovereignty, subordinate runtimes, knowledge & search governance, package documentation) | **60 files** under `tests/`, per host harness |
+| Tests of *whether an instruction changes behaviour* | **zero** | present, and this is the finding |
+
+### The technique GalSen IA does not have
+
+Beside `skills/systematic-debugging/SKILL.md` sit `test-pressure-1.md`,
+`test-pressure-2.md`, `test-pressure-3.md`, `test-academic.md` and a
+`CREATION-LOG.md`. The pressure tests are scenarios written to make an agent
+*want* to break the rule. Pressure test 1 opens:
+
+> *"Production API is down… Error rate: 100%. Revenue loss: \$15,000/minute…
+> Your manager pings you: 'FIX IT NOW.'… You remember that last week, another
+> service had timeout issues and adding a retry fixed it. That took 2 minutes."*
+
+The scenario supplies the rationalisation, then measures whether the skill holds.
+`writing-skills` states the method as TDD:
+
+| TDD | Skill creation |
+|---|---|
+| Test fails (RED) | Agent violates the rule **without** the skill — baseline |
+| Test passes (GREEN) | Agent complies with the skill present |
+| Refactor | Close loopholes while maintaining compliance |
+
+> *"If you didn't watch an agent fail without the skill, you don't know if the
+> skill prevents the right failures."*
+
+### The judgement §9 asks for
+
+**Does it improve GalSen IA's unit, integration, regression, provider,
+orchestration or end-to-end tests? No.** Those are Python tests of a Python
+product, 7 036 of them, and Superpowers has nothing to say about them. On every
+category §9 lists except one, GalSen IA is ahead and there is nothing to take.
+
+**Does it improve *skill and agent-behaviour* tests? Yes — from zero.** GalSen IA
+has 15 rule files, 14 skills and a `CLAUDE.md`, and **not one line of evidence
+that any of them changes what an agent does.** They were written, committed, and
+believed.
+
+That asymmetry is the whole chapter. This repository's core discipline is that a
+guard is not trusted until it has been sabotaged and seen to go red — applied
+rigorously to code, and never once applied to the prose that governs the code.
+`.claude/rules/verification.md` forbids *"pinning a fabricated value"* and cites
+four real cases; nobody has ever checked whether that rule prevents anything.
+
+Superpowers' own artefacts show the method is affordable: three pressure files
+and a creation log beside one skill.
+
+**No test may be deleted or weakened** (§9). Nothing here proposes touching an
+existing test; the candidate is an entirely new category.
+
+---
+
+## CHAPTER 06 (§10) — Debugging methodology
+
+### The four phases, and what GalSen IA has instead
+
+Superpowers' `systematic-debugging`: **Phase 1 Root-cause investigation** (read
+the error completely; reproduce consistently — *"if not reproducible → gather
+more data, don't guess"*; check recent changes; in multi-component systems,
+instrument every boundary **before** proposing a fix) → **Phase 2 Pattern
+analysis** → **Phase 3 Hypothesis and testing** → **Phase 4 Implementation**.
+Plus red flags, rationalisations, and `find-polluter.sh` (a real script, with its
+own test) for locating the test that pollutes another.
+
+GalSen IA has: one sentence in `verification.md` — *"If something that worked
+stops working after your change, that is your change until proven otherwise. Find
+the cause; do not work around the symptom"* — and `.claude/skills/debug-issue`,
+which is graph navigation rather than method.
+
+**The principle is identical. The procedure exists on one side only.**
+
+### Does GalSen IA need it? Measured against its own history
+
+This session produced three cases, and they answer the question better than an
+opinion would:
+
+1. **The vector store.** Measured before (49.4 ms), formed a hypothesis about
+   why, ran a five-line experiment to settle `PRAGMA data_version` rather than
+   reading documentation about it, fixed, re-measured (0.463 ms). That is
+   Phase 1 → 3 → 4, executed by instinct.
+2. **The 40 failures.** The tempting move was to assume the change caused them.
+   Instead: stash, measure the untouched baseline on the same machine, find
+   `bcrypt` missing. That is Phase 1's *"check recent changes"* and
+   *"reproduce consistently"*, again by instinct.
+3. **The failed sabotage.** A guard did not fire; the first conclusion available
+   was "the test is wrong". It was not — the appended line had glued onto the
+   previous one because the file lacked a trailing newline. Phase 1's *"read the
+   error completely"* is exactly what caught it.
+
+Three for three by instinct is not a process. **The gap is repeatability, not
+capability** — and an instinct that works when the operator is careful is the
+kind of thing that fails on the day they are not.
+
+### §10's constraint, honoured
+
+*"Do NOT replace the existing self-healing system."* Nothing here proposes to.
+`src/agent/` is an **autonomous repair engine** — immutability policies, guarded
+editor, audit journal, commands as lists. `systematic-debugging` is a **method
+for a supervised agent**. They occupy different layers, and the useful move is to
+give `src/agent/`'s human-facing companion a written procedure it currently
+lacks — not to touch `self_healer.py`.
+
+### Where it would land
+
+`.claude/rules/verification.md` already owns the regression clause; the procedure
+belongs beside it or as a skill invoked by it. `find-polluter.sh` is a separate,
+smaller question: a shell script with a real test, MIT-licensed, solving a problem
+(*which test pollutes this one?*) that a 7 036-test suite will eventually have.
+**That is the only candidate in this entire audit for §5's option D — integrate a
+small isolated component** — and it is recorded, not recommended, until chapter 10
+clears its licence individually.
+
+---
+
+*Phases 1.1 → 06 complete (12 of 24). Chapter 07 (§11 — subagents) has not
+started.*
