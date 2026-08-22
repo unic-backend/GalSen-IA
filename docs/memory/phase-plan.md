@@ -10,8 +10,9 @@ VOLET en cours   : **SUPERPOWERS — IMPLÉMENTATION DES 6 CANDIDATS**
                    tout »), sur la base de `docs/research/superpowers-audit.md`
 Chapitres        : **7**
 Phases           : **11**
-Phase courante   : **1 — en attente de confirmation**
-Terminées        : aucune
+Phase courante   : **3.1 — en attente de confirmation**
+Terminées        : **1 (C3, clause de fraîcheur)**, **2 (C4, format de
+                   décision)** — `verification.md`, `memory.md`, `phase-protocol.md`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md` — toute
