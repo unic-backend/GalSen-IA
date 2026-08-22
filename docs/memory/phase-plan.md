@@ -9,7 +9,7 @@ VOLET en cours   : **SUPERPOWERS COMPATIBILITY & INTEGRATION AUDIT**
                    Brief du propriétaire, 2026-08-22, 28 sections (§0 à §27)
 Chapitres        : **17 exécutables** (5 sections sont des règles, pas des chapitres)
 Phases           : **24**
-Phase courante   : **13 (§17, matrice de duplication) — en attente de confirmation**
+Phase courante   : **15 (§19, trois architectures) — en attente de confirmation**
 Terminées        : **1.1 → 3.1** (6 sur 24). Reconnaissance complète des deux
                    côtés ; commit `b36e082` (v6.3.0), **MIT**, **zéro dépendance
                    déclarée**, 29 322 lignes de prose contre 4 012 de code ;
@@ -29,7 +29,9 @@ Terminées        : **1.1 → 3.1** (6 sur 24). Reconnaissance complète des deu
                    **le flux d'instructions auto-mis-à-jour**, qui vise le
                    mécanisme de distribution, jamais la prose. **§15 et §16
                    faits** : coût architectural de l'adoption native = **zéro**,
-                   aucun bloqueur de vie privée
+                   aucun bloqueur de vie privée. **§17 et §18 faits** :
+                   19 KEEP GALSEN, 10 ADAPT, 3 rien, 1 IMPORT,
+                   **0 REPLACE** ; hooks mesurés (12,9 ms vs 26,3 ms)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md` — toute

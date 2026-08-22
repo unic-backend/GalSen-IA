@@ -1292,5 +1292,125 @@ against.
 
 ---
 
-*Phases 1.1 → 12 complete (18 of 24). Chapter 13 (§17 — duplication matrix) has
+## CHAPTER 13 (§17) — Duplication matrix
+
+Verdicts use §17's vocabulary: **KEEP GALSEN** · **ADAPT SUPERPOWERS IDEA** ·
+**IMPORT COMPONENT** · **REPLACE EXISTING COMPONENT** · **DO NOTHING**.
+
+**`REPLACE EXISTING COMPONENT` appears zero times.** §17 warns against replacing a
+working GalSen IA subsystem merely because Superpowers is popular; no row below
+came close to needing that warning, because the two systems overlap far less than
+their vocabularies suggest.
+
+| Subsystem | Duplication | Verdict |
+|---|---|---|
+| Agent registry & dispatch | none — different layers | **KEEP GALSEN** |
+| Skill file format | **total** — same `SKILL.md` + front-matter | **KEEP GALSEN** (nothing to change; the format already matches) |
+| Skill *content* | near zero | **ADAPT** — five skills, chapter 04 |
+| Runtime planning (`execution_planner`) | none | **KEEP GALSEN** |
+| Engineering planning (phase protocol) | partial | **KEEP GALSEN**, plus **ADAPT** how a plan is derived from a spec |
+| Spec workflow (Spec Kit) | low | **KEEP GALSEN** |
+| Pre-spec exploration | **gap on GalSen's side** | **DO NOTHING** — the concept is real, the component carries the only telemetry |
+| TDD | partial | **ADAPT** — tighten one sentence, do not add 320 lines |
+| Debugging method | principle only | **ADAPT** — the four phases |
+| Debugging tooling (`debug-issue`, graph) | none | **KEEP GALSEN** |
+| Verification rules | **high** | **KEEP GALSEN** + **ADAPT** the freshness clause only |
+| Verification *enforcement* (7 repo tests) | none — Superpowers has no equivalent | **KEEP GALSEN** |
+| Testing instructions for behaviour | **gap on GalSen's side, total** | **ADAPT** — the highest-value item |
+| Code review tooling | none | **KEEP GALSEN** |
+| Code review protocol | gap | **ADAPT** — `receiving-code-review` |
+| Subagent dispatch | mechanism duplicated | **KEEP GALSEN** |
+| Subagent *loop* (fix rounds, re-review, adjudication) | gap | **ADAPT**, cadence excluded |
+| Parallel execution | Superpowers has it, GalSen's flag is `False` | **DO NOTHING** until the runtime exists |
+| Git workflow rules | partial | **ADAPT** — `finishing-a-development-branch` |
+| Worktrees | gap, unrealised here | **DO NOTHING** for now |
+| Product memory (`memory_engine`) | none | **KEEP GALSEN** |
+| Engineering memory (`docs/memory/`) | none — ledger dies with its plan | **KEEP GALSEN** |
+| Ruling record format | gap | **ADAPT** — a format, not a system |
+| Context isolation | comparable | **KEEP GALSEN** |
+| Session-start hook | **direct** — same event, same mechanism | **KEEP GALSEN**, **ADAPT** the `clear\|compact` matcher |
+| Security model | none — Superpowers has none | **KEEP GALSEN** |
+| Permissions / RBAC | none | **KEEP GALSEN** |
+| Observability & audit | none | **KEEP GALSEN** |
+| Self-healing engine | none — different layers | **KEEP GALSEN** |
+| Human approval | **conflicting** | **KEEP GALSEN** — the conflict is resolved against Superpowers |
+| Failure recovery (runs) | none | **KEEP GALSEN** |
+| Failure recovery (quality) | gap | covered by the subagent loop row |
+| Product tests | none | **KEEP GALSEN** |
+| Test-pollution tooling | gap | **IMPORT COMPONENT** — `find-polluter.sh`, the only one |
+| Documentation discipline & ADRs | none | **KEEP GALSEN** |
+| Long-running tasks | none | **KEEP GALSEN** |
+
+### Tally
+
+| Verdict | Count |
+|---|---:|
+| **KEEP GALSEN** | 19 |
+| **ADAPT SUPERPOWERS IDEA** | 10 |
+| **DO NOTHING** | 3 |
+| **IMPORT COMPONENT** | 1 |
+| **REPLACE EXISTING COMPONENT** | **0** |
+
+---
+
+## CHAPTER 14 (§18) — Performance and complexity
+
+Measured on this machine where measurement was possible, `UNKNOWN` where not.
+
+### Context overhead — the only cost that is not negligible
+
+This is the cost that matters, because it is paid **every session, forever**.
+
+| | Bytes injected at session start |
+|---|---:|
+| GalSen IA today (`session-state.md` + `phase-plan.md`) | **14 169** |
+| Superpowers' `using-superpowers/SKILL.md` | **3 108** |
+| Combined | 17 277 (**+22 %**) |
+
+Roughly 800 tokens for the Superpowers payload. Under **native adoption the
+figure is not 3 108** — GalSen IA would not inject a bootstrap for a plugin it
+does not have; it would add rule text loaded on demand, as its 15 rule files
+already are. **The honest native figure is ~0 added to session start**, with cost
+moving to on-demand loading.
+
+The number worth keeping is the other one: **GalSen IA already injects 14 169
+bytes at every session start**, four and a half times Superpowers' payload. If
+context budget is a concern, the existing injection is the larger target.
+
+### Startup overhead — measured, 7 runs each
+
+| Hook | Median | Range |
+|---|---:|---|
+| `superpowers/hooks/session-start` | **12.9 ms** | 12.7 – 13.3 |
+| `GalSen IA scripts/session_bootstrap.py` | **26.3 ms** | 25.4 – 27.7 |
+
+Both are noise against a session. Worth one sentence only because the bash hook
+is **twice as fast as the Python one it would sit beside** — a fact about Python
+interpreter startup, not about either design, and not a reason to change
+anything.
+
+### The rest
+
+| §18 item | Finding |
+|---|---|
+| **Dependency count** | **+0.** Measured in chapter 11. |
+| **Disk** | `skills/` 548 KB, `hooks/` 20 KB, whole repository 2.3 MB excluding `.git`. Under native adoption, **a few KB of markdown**. |
+| **Execution overhead** | **Zero at runtime.** Nothing adopted executes in GalSen IA's product. |
+| **Agent overhead** | The subagent loop costs **more model calls per task** — an implementer, a reviewer, and up to 5 fix rounds each with a scoped re-review. Worst case is roughly 12 dispatches where GalSen IA does 2. **Quantified in calls; the cost in money and latency is `UNKNOWN`** — it depends on models and providers this environment cannot exercise. |
+| **Testing overhead** | Behaviour tests for rules need subagent dispatches per scenario. Superpowers' own artefacts show the shape — 3 pressure files per skill — but **the cost per run is `UNKNOWN` here**: no model answers on this machine. |
+| **Maintenance cost** | Native adoption: 15 rule files become ~18. Real but small, and this repository already maintains them. Plugin path: **an external dependency whose content changes without review**, which is a maintenance cost of a different kind, priced in chapter 09. |
+
+### Two `UNKNOWN`s, left standing
+
+**Model cost and latency of the subagent loop**, and **cost per behaviour-test
+run.** Both need a model to answer, and criterion C1 is still open — `ollama
+serve` has never run here. Estimating them from typical prices would be inventing
+a measurement, which is what this repository's rules exist to prevent.
+
+They are not blockers: both concern *how much a recommendation costs to operate*,
+not *whether it is sound*. But a plan built on them must measure first.
+
+---
+
+*Phases 1.1 → 14 complete (20 of 24). Chapter 15 (§19 — three architectures) has
 not started.*
