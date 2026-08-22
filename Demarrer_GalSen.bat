@@ -101,7 +101,12 @@ if defined SANS_MODELE (
     echo [!] Rappel : sans Ollama, /generate repondra 503.
     echo.
 )
-start "" http://localhost:8000/ui
+REM Le navigateur s'ouvre APRES que le serveur reponde, jamais avant.
+REM Premiere version : `start` etait sur la ligne d'avant, et Edge affichait
+REM ERR_CONNECTION_REFUSED parce qu'uvicorn met quelques secondes a demarrer.
+REM Mesure sur la machine du proprietaire, 2026-08-22.
+start "GalSen-attente" /min cmd /c "for /l %%i in (1,1,60) do (curl -s -o nul -m 1 http://127.0.0.1:8000/health && (start "" http://localhost:8000/ui & exit) || timeout /t 1 /nobreak >nul)"
+
 python -m uvicorn src.api.server:app --host 127.0.0.1 --port 8000
 
 endlocal
