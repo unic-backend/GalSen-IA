@@ -420,4 +420,103 @@ component is not replaced because another approach looks cleaner."*
 
 ---
 
-*Phases 0 to 3 complete (7 of 16). Phase 4 — the two usages — has not started.*
+## PHASE 4 — Two usages, kept apart
+
+The brief insists these are different questions, and it is right: the same
+component can be excellent in one and wrong in the other.
+
+### A. Used by the coding agent while GalSen IA is being built
+
+**This is where the tool belongs, if anywhere.** It indexes a repository and
+answers structural questions over MCP — exactly the job `code-review-graph` does
+here today.
+
+The honest comparison is therefore **not** *"tool versus nothing"* but *"tool
+versus the tool already installed"*:
+
+| | codebase-memory-mcp | code-review-graph (installed) |
+|---|---|---|
+| Languages | 158 | Tree-sitter, multi-language |
+| Semantic search | **local blob, no provider** | `semantic_search_nodes_tool` |
+| Cross-service HTTP routes | **yes** | not offered |
+| Incremental | content hashes | auto-updates on file change |
+| Context reduction | claimed 10× (**unverified**) | documented ≤ 800 tokens/task |
+| Install cost | **1.3 GB, a C build or a binary**, writes to `$HOME` config | already running |
+
+**Replacing a working, wired-in tool with a 1.3 GB one to gain two capabilities —
+one of them unverified — is not a trade this repository's rules support.** Running
+both means two graphs over the same tree.
+
+**Verdict for usage A: the case is not made, and it is not close.** The one thing
+that would change it is a measured context-reduction win over CRG — phase 8.
+
+### B. Integrated into GalSen IA after deployment
+
+**No.** And the reasons are structural rather than a matter of taste.
+
+1. **GalSen IA is a Python platform with 19 pinned pure-Python dependencies and
+   no compiled extension of its own.** This is 1.3 GB of C requiring a toolchain
+   or a per-platform binary. Every platform GalSen IA must serve — web, Windows,
+   macOS, Linux, Android, iOS (`.claude/rules/core-rules.md`) — would need one.
+2. **GalSen IA does not index its users' code.** It serves agriculture, health,
+   education, administration and Wolof knowledge. A code-intelligence engine has
+   no user-facing function in it. The only in-repo consumer would be
+   `src/coding_engine/`, whose three backends are all unavailable and which
+   refuses every execution until `GALSEN_CODING_WORKSPACE_ROOTS` is declared.
+3. **It writes instruction files into `$HOME`.** In a deployed platform that is
+   not a feature; it is an unbounded write outside any workspace, and
+   `src/coding_engine/workspace.py` exists precisely to forbid that class of act.
+
+**Verdict for usage B: rejected, on architecture rather than on quality.**
+
+### The distinction that matters
+
+The subject is a **developer tool**, and a good one. GalSen IA is a **platform for
+end users**. The brief's warning — *"do not reduce its architecture to coding"* —
+cuts against usage B: adopting a code-intelligence engine into the runtime would
+be exactly that reduction.
+
+---
+
+## PHASE 5 — Model independence
+
+Checked in the C, not inferred from the README.
+
+| Provider | Found in `src/`? |
+|---|---|
+| Claude / Anthropic API | **No.** `CBM_GRAPH_DIALECT_CLAUDE` is an **output dialect**, not a client |
+| OpenAI | **No.** |
+| Gemini | **No.** `CBM_GRAPH_DIALECT_GEMINI`, same thing |
+| Any external API key | **No.** No `api_key` read, no endpoint constant |
+| Embedded LLM | **No.** |
+| Local model server | **Not required.** |
+
+`curl_*`, `getaddrinfo`, `gethostbyname`, `SSL_connect`: **no matches in `src/`.**
+The only `AF_INET` connect targets `htonl(0x7F000001)` — 127.0.0.1.
+
+### The one model-derived artefact
+
+`vendored/nomic/` — a **30 MB int8-quantised token-vector blob** derived from
+`nomic-ai/nomic-embed-code`, Apache-2.0, compiled in via `code_vectors_blob.S`.
+
+**It is weights, not a client.** No download, no key, no endpoint, no inference
+server. Semantic similarity is computed locally from a table that ships with the
+binary.
+
+### Verdict
+
+**The project is genuinely provider-independent**, and more so than GalSen IA is
+today: GalSen IA's own semantic retrieval is blocked on criterion C1
+(`ollama serve`) and answers `503` without it, while this needs nothing.
+
+Two limits stated rather than glossed:
+
+- The sweep covered **`src/`**. `internal/cbm/` (1.2 GB, mostly generated
+  grammars) was not swept; phase 7 owns it. The claim is *"no provider dependency
+  found in `src/`"*, not *"none exists anywhere"*.
+- Provider independence says nothing about the **agent-config write**. That is a
+  different risk, and it is phase 7's.
+
+---
+
+*Phases 0 to 5 complete (9 of 16). Phase 6 — licences — has not started.*
