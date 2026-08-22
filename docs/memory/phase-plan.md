@@ -9,8 +9,10 @@ VOLET en cours   : **OPEN-SOURCE COMPONENT AUDIT #01 — `codebase-memory-mcp`**
                    Brief du propriétaire, 2026-08-22, phases 0 à 12 + rapport
 Chapitres        : **13**
 Phases           : **16**
-Phase courante   : **1 (dépôt officiel) — en attente de confirmation**
-Terminées        : **0.1, 0.2** — état GalSen IA mesuré, 16 points
+Phase courante   : **2.1 — en attente de confirmation**
+Terminées        : **0.1, 0.2, 1** — 3 sur 16. Sujet cloné à `010569fa`,
+                   **1,3 Go, projet en C** (842 `.c`), **MIT**, 160 grammaires
+                   tree-sitter, et **30 Mo de poids nomic-embed-code embarqués**
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md`.

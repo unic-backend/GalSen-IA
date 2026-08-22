@@ -124,4 +124,112 @@ That is the baseline any integration cost is measured against.
 
 ---
 
-*Phase 0 complete (2 of 16). Phase 1 — the official repository — has not started.*
+## PHASE 1 — The official repository
+
+| | |
+|---|---|
+| Repository | `https://github.com/DeusData/codebase-memory-mcp` |
+| **Commit examined** | **`010569fa6ce1bc5d6430f858129243ea1a2e3fd5`** |
+| Date | 2026-08-21T10:44:22+02:00 |
+| Subject | *"Merge pull request #1678 from musichen/fix/pi-extension-tool-schemas"* |
+| How obtained | `git clone --depth 1` through the session git proxy; `origin` verified before reading |
+| **Size** | **1.3 GB** excluding `.git` — 2 052 files in the working tree |
+
+`raw.githubusercontent.com` → 200, `api.github.com` → 403. As in the previous
+audit, the clone is what makes the commit measurable instead of `UNKNOWN`.
+
+### What it is made of — measured, and the first surprise
+
+| Extension | Files |
+|---|---:|
+| `.c` | **842** |
+| `.h` | **683** |
+| `.sh` | 109 |
+| `.tsx` | 38 |
+| `.py` | 35 |
+| `.ts` | 15 |
+
+**This is a C project.** Not Python, not TypeScript. The README states it
+directly — *"Pure C — no language runtime"*.
+
+| Directory | Size |
+|---|---:|
+| `internal/cbm/` | **1.2 GB** |
+| `vendored/` | 43 MB |
+| `tests/` | 11 MB |
+| `src/` | 6.2 MB |
+| `graph-ui/` | 636 KB (the `.tsx`) |
+
+The 1.2 GB is `internal/cbm/vendored/grammars/` — **160 Tree-sitter grammars**,
+each a generated `parser.c`. That is not bloat; it is what "158 languages" costs
+on disk.
+
+### Licence — MIT, and the vendored tree is where the real work is
+
+`LICENSE`: **MIT, Copyright (c) 2025 DeusData**, 21 lines.
+
+`THIRD_PARTY.md` (154 lines) is unusually complete, and **§6 of the brief
+forbids assuming the main licence covers the rest**, so the vendored components
+are listed as they are declared:
+
+| Component | Declared licence |
+|---|---|
+| Tree-sitter runtime + 160 grammars | MIT (per-grammar summary in the file) |
+| SQLite 3 | **Public Domain** |
+| mimalloc, yyjson, Verstable | MIT |
+| xxHash, TRE, LZ4 | BSD-2-Clause |
+| Zstandard | BSD-3-Clause (**dual BSD/GPLv2 — BSD selected**) |
+| simplecpp | 0BSD |
+| wyhash | Unlicense |
+| **`vendored/nomic/`** | **Apache-2.0** — `nomic-ai/nomic-embed-code` |
+
+**`vendored/nomic/` is the finding of this phase.** It is a **30 MB int8-quantised
+token-vector blob** derived from an embedding model, compiled into the binary via
+`code_vectors_blob.S`. So the project ships model weights — Apache-2.0, with a
+`NOTICE` naming the source model and Nomic AI.
+
+Verification of each declared licence against its upstream is **phase 6**, not
+this one. What is recorded here is that the declarations exist, are specific, and
+name paths.
+
+### Security posture, as the project states it
+
+`SECURITY.md` exists. The README's own security paragraph is quoted rather than
+paraphrased, because §1 says not to use the README as proof — this is the claim,
+not the evidence:
+
+> *"This tool reads your codebase and **writes to your agent configuration
+> files**. That is what it is designed to do… All processing happens 100% locally;
+> your code never leaves your machine."*
+
+Also claimed: three executable candidates submitted to VirusTotal per release,
+SLSA 3, OpenSSF Scorecard. **Phase 7 verifies the writes and the network claim in
+code.** The configuration-file write is the surface to examine first.
+
+### CI
+
+Eight workflows: `_build`, `_lint`, `_security`, `_smoke`, `_soak`, `_test`,
+`bug-repro`, `cache-warm`. Plus `.clang-format`, `.clang-tidy`, `.cppcheck`,
+`flake.nix`, a `DCO`, `MAINTAINERS.md`, `CONTRIBUTING.md`, `install.sh`,
+`install.ps1`.
+
+### Claims recorded, not accepted
+
+The README asserts: 6 768 tests, 158 languages, full index of an average
+repository in milliseconds, the Linux kernel (28M LOC) in 3 minutes, sub-1 ms
+structural queries, 15 MCP tools, 43 client surfaces, and an arXiv preprint
+(2603.27277) reporting 83 % answer quality, 10× fewer tokens and 2.1× fewer tool
+calls across 31 repositories.
+
+**None of these is verified yet.** They are the subject of phases 2 and 8.
+Recorded here so phase 8 measures rather than repeats them.
+
+---
+
+## PHASE 2.1 — Indexing, graph, nodes, relations, queries, incrementality
+
+*Not started.*
+
+---
+
+*Phases 0 and 1 complete (3 of 16).*
