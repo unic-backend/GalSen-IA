@@ -1412,5 +1412,162 @@ not *whether it is sound*. But a plan built on them must measure first.
 
 ---
 
-*Phases 1.1 → 14 complete (20 of 24). Chapter 15 (§19 — three architectures) has
-not started.*
+## CHAPTER 15 (§19) — Three architectures
+
+### OPTION A — No integration
+
+**Architecture.** Nothing changes. The clone at `/home/user/obra/superpowers` is
+deleted; this document remains as the record of what was examined and why.
+
+**Benefits.** Zero cost, zero risk, zero maintenance. GalSen IA's methodology
+stays entirely its own, and its 19 `KEEP GALSEN` verdicts already say most of
+what matters.
+
+**Disadvantages.** Five measured gaps stay open, and one of them is not a
+preference: **GalSen IA has 15 rule files and no evidence that any of them
+changes an agent's behaviour.** A repository whose central discipline is *sabotage
+the guard before believing it* would be choosing not to apply that discipline to
+the prose that governs it. The other four — a debugging procedure, the fix loop,
+the freshness clause, branch finishing — are smaller but real.
+
+**Risks.** The risk of A is invisible: nothing breaks, and the rules keep being
+trusted without evidence.
+
+**Dependencies / maintenance / security / independence / migration.** None, none,
+none, unchanged, none.
+
+**When A would be right:** if the gaps were speculative. They are not — three of
+them were hit by hand during this very session.
+
+### OPTION B — Partial, native integration
+
+**Architecture.** No installation. No plugin, no marketplace, no hook, no
+package. Each adopted idea is **re-expressed in GalSen IA's own files**:
+
+```
+.claude/rules/verification.md         ← freshness clause (one sentence)
+.claude/rules/testing.md              ← TDD tightened from preference to gate
+.claude/rules/git-workflow.md         ← how a branch ends
+.claude/skills/systematic-debugging/  ← new skill, four phases
+.claude/skills/testing-instructions/  ← new skill, RED-GREEN-REFACTOR for prose
+docs/memory/*.md                      ← ruling format: what · why · cost if wrong
+workflows/workflows.yaml              ← review loop, if and when authorised
+```
+
+Superpowers is read at pinned commit `b36e0829` and is **not a dependency** of
+anything produced.
+
+**Benefits.** The five gaps close. Cost measured at **zero dependencies, ~0 bytes
+added to session start** (rules load on demand), a few KB of markdown on disk.
+The MIT licence permits it, and reimplementation avoids the attribution question
+entirely for everything except `find-polluter.sh`.
+
+**Disadvantages.** Writing prose that works is harder than installing prose that
+already works. Superpowers' skills carry pressure tests and creation logs — the
+evidence that they hold. A native rewrite starts with none of that, and the
+honest version of B **includes testing what it writes**, which is why the
+behaviour-testing candidate is not optional inside this option: it is what keeps
+B from being B in name only.
+
+**Risks.** Rule sprawl — 15 files becoming 18 and each one read less carefully.
+Mitigated by two of the ten adaptations being *one sentence inside an existing
+file*, not a new file.
+
+**Dependencies.** +0. **Maintenance.** Three more documents this repository
+already knows how to maintain. **Security.** No new surface: no executable, no
+network, no hook, no auto-update. **Independence.** Unaffected — nothing to
+depend on. **Migration.** None; nothing existing is replaced.
+
+### OPTION C — Full integration
+
+**Architecture.** Install the plugin (`/plugin install
+superpowers@claude-plugins-official`), accept its `SessionStart` hook, its 14
+skills and its update channel.
+
+**Benefits.** Everything works immediately, tested and maintained upstream, at
+near-zero effort. The skills are better written than a first native draft would
+be.
+
+**Disadvantages and risks — three, and the first is decisive.**
+
+1. **It imports the conflict.** `subagent-driven-development` and
+   `executing-plans` instruct the agent not to pause between tasks and to rule
+   rather than ask. `.claude/rules/phase-protocol.md` mandates one phase per turn,
+   each ending in an explicit stop. The owner made that permanent and
+   `spec-driven-governance.md` forbids silently overriding it. Installing the
+   whole set puts two contradictory instruction sets in one context window, and
+   the one injected at session start wrapped in `<EXTREMELY_IMPORTANT>` is not the
+   repository's.
+2. **An unreviewed auto-updating instruction stream** — chapter 09's only real
+   security finding.
+3. **Redundancy.** 19 subsystems are already better here. C pays context and
+   governance for all 14 skills to obtain 5.
+
+**Dependencies.** +0 packages, +1 external instruction source. **Maintenance.**
+Lower in effort, higher in governance. **Security.** The chapter 09 finding.
+**Independence.** Development-time only, so production independence is
+technically unaffected — but the *methodology* becomes externally maintained,
+which is a different kind of dependence than §6 is about, and worth naming.
+**Migration.** Low technically, high politically: it needs the phase protocol to
+be renegotiated, which is not the assistant's to propose.
+
+**C is not recommended, and popularity is not why.** The 568-line skill is genuinely
+excellent. It simply carries an instruction this repository has already decided
+against.
+
+---
+
+## CHAPTER 16 (§20) — Decision gate
+
+### The ten criteria, answered
+
+| # | Criterion | Answer |
+|---|---|---|
+| 1 | Does it materially improve GalSen IA? | **Yes, in five measured places** — chiefly that 15 rule files currently have zero behavioural evidence. |
+| 2 | Does it duplicate existing capabilities? | **Mostly yes** — 19 of 37 subsystems are `KEEP GALSEN`. Which is why the answer is partial. |
+| 3 | Does it conflict with existing architecture? | **Yes, once, and materially**: the no-pausing cadence versus the phase protocol. Excluded by name from every candidate. |
+| 4 | Can the useful parts operate independently? | **Yes.** Every one is prose. Nothing needs Superpowers to run. |
+| 5 | Unacceptable dependencies? | **No.** Zero packages. The plugin path adds an auto-updating instruction source; the native path adds nothing. |
+| 6 | Licence compatible? | **Yes.** MIT throughout, full grant, no copyleft, compatible with ADR-036's Apache-2.0. Attribution applies only to `find-polluter.sh`. |
+| 7 | Security model compatible? | **Native: yes, no new surface. Plugin: one real finding** (chapter 09). |
+| 8 | Maintenance burden justified? | **Yes for native** — three documents. **Questionable for the plugin** — governance cost for 5 useful skills out of 14. |
+| 9 | Can GalSen IA reproduce the useful concepts natively? | **Yes, all of them.** The two skill systems already use an identical file format; there is no machinery to import. |
+| 10 | Backward compatibility preserved? | **Yes.** Nothing is replaced, no API, schema or test changes. |
+
+### Decision
+
+# PARTIAL-GO
+
+**Adopt five concepts natively. Import one file. Install nothing.**
+
+The evidence, in one paragraph: Superpowers is 29 322 lines of prose against
+4 012 of code, MIT, with no dependencies and no import surface — so "integration"
+was never a technical question, only an editorial one. GalSen IA is already
+stronger in 19 of 37 subsystems and has no security, permissions, observability,
+memory or documentation gap. It has five real gaps, one of which matters more
+than the other four combined: **its 15 rule files have never been tested against
+an agent, and this repository's own discipline says an untested guard is not
+believed.** Every useful idea is reproducible natively at zero dependency cost.
+One instruction inside the source contradicts a permanent owner decision and is
+excluded by name.
+
+**Why not GO:** GO would mean installing, which imports the conflict, an
+unreviewed update channel and 9 skills GalSen IA does not need.
+
+**Why not NO-GO:** three of the five gaps were hit *by hand* during this session.
+They are measured, not speculative.
+
+**Why not DEFER:** nothing material is missing. Two `UNKNOWN`s remain — model
+cost of the subagent loop, and cost per behaviour-test run — and both are about
+*operating* a recommendation, not about whether it is sound. The one candidate
+they gate is flagged accordingly.
+
+### §21 applies: do not implement
+
+This audit stops here. The integration candidate list follows in chapter 17,
+after which **nothing is built until the owner authorises it explicitly.**
+
+---
+
+*Phases 1.1 → 16 complete (22 of 24). Chapter 17 — the candidate list and the §26
+report block — has not started.*
