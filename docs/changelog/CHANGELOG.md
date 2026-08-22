@@ -12,6 +12,51 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-22 — Superpowers audited, six concepts adopted, nothing installed (ADR-038)
+
+`obra/superpowers` at `b36e0829` (v6.3.0, MIT) audited in 24 phases →
+`docs/research/superpowers-audit.md`. Decision: **`PARTIAL-GO`**.
+
+Measured rather than characterised: **29 322 lines of prose against 4 012 of
+code**, zero dependencies, **no import surface**. Integration was never a
+technical question, only an editorial one. Of 37 subsystems compared, **19 scored
+`KEEP GALSEN` and `REPLACE` scored zero**.
+
+**The finding that decided it is about this repository**: 15 rule files, 15
+skills and a `CLAUDE.md` existed with no evidence that any of them changed an
+agent's behaviour. This repository refuses to believe a guard until it has been
+sabotaged and seen to go red — and had never applied that to its own prose.
+
+Six candidates landed, all native except one:
+
+| | | |
+|---|---|---|
+| C1 | Behaviour testing for instructions | `.claude/skills/testing-instructions/` |
+| C2 | Four-phase debugging procedure | `.claude/skills/systematic-debugging/` |
+| C3 | Freshness — evidence *in this message* | `.claude/rules/verification.md` |
+| C4 | Ruling format — what · why · **cost if wrong** | `memory.md`, `phase-protocol.md` |
+| C5 | How a development branch ends | `.claude/rules/git-workflow.md` |
+| C6 | `find_polluter.py` — the only real copy, MIT notice retained | `scripts/` |
+
+**Not installed, and that is the load-bearing half.** The plugin would import a
+cadence contradicting the permanent phase protocol, an auto-updating instruction
+stream that inverts `trust.py`'s rule, and nine unneeded skills. Four further
+exclusions are named in ADR-038 so they cannot drift back.
+
+**C3 was then measured through C1 — the first rule in this repository's history
+to be tested rather than believed.** RED without the clause, GREEN with it. The
+campaign found that C3 created a conflict with `work-cadence.md` (closed the same
+day) and that the method itself has a limit here: subagents inherit `CLAUDE.md`,
+so a rule-free baseline is not achievable by instruction, and the skill records
+the weaker claim it can actually support.
+
+**C6's proof step found a real bug in the port on its first run.** Adopting it
+without that step would have adopted a broken tool.
+
+Cost: **zero dependencies, ~0 bytes added to session start**, nothing under
+`src/`. Measured cost of a C1 campaign: ~59 000 subagent tokens per dispatch.
+Suite unchanged throughout: **7027 passed, 9 skipped, 0 failed**.
+
 ### Security — 2026-08-21/22 — three gates that were narrower than they read
 
 The three findings the OSS ecosystem audit left open, closed in order. All three

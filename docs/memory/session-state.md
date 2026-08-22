@@ -8,30 +8,33 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ## Dernière session — 2026-08-22
 
-**En cours** : rien. VOLET SUPERPOWERS AUDIT **terminé, 24 phases sur 24**.
+**En cours** : rien. VOLET SUPERPOWERS **terminé** — audit 24 phases puis
+implémentation 11 phases, **ADR-038**.
 
-**Terminé** : audit de compatibilité Superpowers (`obra/superpowers` à
-`b36e0829`, v6.3.0) → **`PARTIAL-GO`**, rapport dans
-`docs/research/superpowers-audit.md` (1 836 lignes, 18 points de §25 + bloc §26).
-**Zéro fichier hors `docs/` touché, rien installé, rien implémenté.**
+**Terminé** : `obra/superpowers` (`b36e0829`, v6.3.0, MIT) audité → **`PARTIAL-GO`**,
+puis **6 candidats adoptés**. Rapport : `docs/research/superpowers-audit.md`.
 
-Ce qu'il faut savoir sans relire le rapport :
-- Superpowers est **de la prose** : 29 322 lignes de markdown contre 4 012 de
-  code, **MIT**, **zéro dépendance**, aucune surface d'import. Ce n'est ni un
-  modèle, ni un runtime, ni une bibliothèque.
-- **19 sous-systèmes sur 37 : `KEEP GALSEN`. `REPLACE` : zéro.**
-- **Le constat qui porte la décision** : les 15 fichiers de `.claude/rules/`, les
-  14 skills et `CLAUDE.md` n'ont **aucune preuve** de changer le comportement d'un
-  agent. Ce dépôt sabote ses gardes avant d'y croire — jamais sa prose.
-- **Un conflit direct** : « ne pas s'arrêter entre les tâches » contre
-  `phase-protocol.md`. Exclu nommément de tous les candidats.
-- **Un constat de sécurité** : un flux d'instructions auto-mis-à-jour injecté à
-  chaque session. Vise **la voie plugin uniquement**, jamais la prose.
-- **6 candidats C1–C6**, tous en réimplémentation native sauf `find-polluter.sh`
-  (seule vraie copie, la notice MIT doit voyager avec).
+Ce qu'il faut savoir sans relire :
+- Superpowers est **de la prose** : 29 322 lignes contre 4 012 de code, zéro
+  dépendance, **aucune surface d'import**. **19 sous-systèmes sur 37 :
+  `KEEP GALSEN`. `REPLACE` : zéro.**
+- **Rien n'est installé**, et c'est la moitié porteuse : le plugin importerait
+  une cadence contredisant `phase-protocol.md`, un flux d'instructions
+  auto-mis-à-jour qui **inverse** `trust.py`, et 9 skills inutiles.
+- **Ce qui a atterri** : `skills/testing-instructions/`,
+  `skills/systematic-debugging/`, la clause de fraîcheur (*« dans ce message »*),
+  le format `Décision : quoi — pourquoi — coût si c'est faux`, la fin d'une
+  branche, et `scripts/find_polluter.py` (**seule copie**, notice MIT retenue).
+- **Première règle de ce dépôt jamais mesurée** : C3 éprouvée par C1,
+  **ROUGE → VERT**. La campagne a trouvé que C3 *créait* un conflit avec
+  `work-cadence.md` (fermé le jour même) et que **les sous-agents héritent de
+  `CLAUDE.md`** — une ligne de base sans la règle n'est pas atteignable par
+  instruction.
+- **L'étape de preuve de C6 a trouvé un vrai défaut dans mon propre portage.**
 
-**Prochaine étape** : **attendre une autorisation explicite** (§21, §27). Aucun
-candidat n'est autorisé. Ordre suggéré si autorisé : C3 → C4 → C2 → C5 → C1 → C6.
+**Prochaine étape** : rien en attente. Cinq exclusions restent nommées dans
+ADR-038 ; la **boucle de correction de sous-agents** mérite son propre VOLET si
+tu la veux.
 
 **Ce qui a servi à chaque fois** : *sabotez la garde avant de la croire.* Une
 sabotage a elle-même été fautive — la ligne ajoutée s'est collée à la

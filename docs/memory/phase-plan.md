@@ -5,12 +5,12 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **SUPERPOWERS — IMPLÉMENTATION DES 6 CANDIDATS**
+VOLET en cours   : **aucun — SUPERPOWERS terminé, 11 phases sur 11, ADR-038**
                    Autorisé par le propriétaire le 2026-08-22 (« autorisation de
                    tout »), sur la base de `docs/research/superpowers-audit.md`
 Chapitres        : **7**
 Phases           : **11**
-Phase courante   : **7 (clôture : ADR-038, CHANGELOG) — en attente de confirmation**
+Phase courante   : aucune — le VOLET est clos
 Terminées        : **1 (C3)**, **2 (C4)**, **3.1/3.2 (C2)**, **4 (C5)**,
                    **5.1/5.2/5.3 (C1, skill écrit ET mesuré)** — 8 sur 11.
                    **6.1/6.2 (C6, `scripts/find_polluter.py`, prouvé)** — 10 sur 11.
