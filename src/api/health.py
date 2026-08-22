@@ -327,11 +327,23 @@ class ComponentHealthChecker(HealthChecker):
 
         try:
             # Import local pour éviter les dépendances circulaires
-            from src.memory_engine.types import MemoryItem  # noqa: E402
+            from src.memory_engine.types import MemoryItem, MemoryType  # noqa: E402
 
+            # `memory_type` est une énumération, pas une chaîne. Passer
+            # "short_term" marchait avec le magasin en mémoire — qui ne lit
+            # jamais `.value` — et cassait la sonde dès que
+            # `GALSEN_STORAGE_BACKEND=sqlite` : `sqlite_store._item_to_dict()`
+            # fait `item.memory_type.value` et levait
+            # `'str' object has no attribute 'value'`.
+            #
+            # Mesuré sur la machine du propriétaire le 2026-08-22 : le tableau
+            # de bord affichait `memory_engine: unhealthy` sur une plateforme
+            # dont la mémoire fonctionnait parfaitement. **La sonde était le
+            # défaut**, pas ce qu'elle sondait — le pire cas pour un contrôle
+            # de santé, parce qu'il envoie chercher une panne inexistante.
             test_item = MemoryItem(
                 content="health_check_test",
-                memory_type="short_term",
+                memory_type=MemoryType.SHORT_TERM,
                 tags=["health_check"],
             )
             item_id = self._memory_manager.save_memory(test_item)
