@@ -103,3 +103,13 @@ until proven otherwise. Find the cause; do not work around the symptom.
 
 Say it plainly when it happens: "j'ai casse X, voici la cause, voici le
 correctif". Hiding a regression costs the project far more than admitting one.
+
+**How to find the cause: `.claude/skills/systematic-debugging`.** The sentence
+above is the principle; that skill is the procedure — four phases, root cause
+before any fix, with the red flags that mean you skipped one. Use it whenever a
+test fails, a behaviour is wrong, or something that worked stops working.
+
+The reason it exists rather than staying a principle: this repository has
+followed those phases correctly three times in one session **by instinct**, and
+an instinct that works when the operator is careful is exactly what fails on the
+day they are not.
