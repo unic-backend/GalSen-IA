@@ -16,6 +16,7 @@ import os
 import subprocess
 import sys
 import threading
+import types
 
 import pytest
 
@@ -277,3 +278,70 @@ class TestQuotasSousConcurrence:
 
         assert limiteur.is_allowed("bruyant", True)[0] is False
         assert limiteur.is_allowed("discret", True)[0] is True
+
+
+def test_le_repli_windows_utilise_un_verrou_du_noyau(tmp_path, monkeypatch):
+    """
+    Sous Windows, un arrêt brutal rendait tout redémarrage impossible.
+
+    Mesuré sur la machine du propriétaire le 2026-08-22 : `fcntl` n'existe pas
+    sous Windows, le repli testait `os.path.exists(chemin)`, et fermer la
+    fenêtre du serveur laissait le fichier derrière lui. **GalSen IA ne
+    redémarrait plus jamais** sans suppression manuelle du verrou.
+
+    Le commentaire d'origine assumait « un faux positif coûte une suppression
+    manuelle ». Sous Windows ce n'était pas un cas limite : c'était le chemin
+    normal après chaque fermeture de fenêtre.
+
+    `msvcrt.locking` est l'équivalent de `flock` — le noyau le relâche à la mort
+    du processus. Ce test vérifie que le repli « existence du fichier » n'est
+    plus emprunté quand `msvcrt` est disponible.
+    """
+    import src.api.instance_lock as verrou
+
+    monkeypatch.setenv("GALSEN_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(verrou, "fcntl", None)
+
+    faux = types.SimpleNamespace(
+        LK_NBLCK=1, LK_UNLCK=0, appels=[],
+    )
+    faux.locking = lambda fd, mode, taille: faux.appels.append(mode)
+    monkeypatch.setattr(verrou, "msvcrt", faux)
+    monkeypatch.setattr(verrou, "_descripteur", None)
+    monkeypatch.setattr(verrou, "_chemin_detenu", None)
+
+    # Un fichier de verrou traîne, comme après une fermeture brutale.
+    chemin = verrou.lock_path()
+    os.makedirs(os.path.dirname(chemin), exist_ok=True)
+    with open(chemin, "w", encoding="utf-8") as fichier:
+        fichier.write('{"instance": "morte", "pid": 999999}')
+
+    # Avant la correction, ceci levait InstanceAlreadyRunning.
+    verrou.acquire()
+    assert faux.appels == [faux.LK_NBLCK], "le verrou du noyau n'a pas été pris"
+    verrou.release()
+
+
+def test_sans_fcntl_ni_msvcrt_le_repli_prudent_reste(tmp_path, monkeypatch):
+    """
+    Le repli « existence du fichier » n'est pas supprimé, il est relégué.
+
+    Sur un système sans aucun verrou du noyau, refuser reste le bon choix : un
+    faux négatif coûte deux instances sur les mêmes données, ce qu'ADR-013
+    interdit.
+    """
+    import src.api.instance_lock as verrou
+
+    monkeypatch.setenv("GALSEN_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(verrou, "fcntl", None)
+    monkeypatch.setattr(verrou, "msvcrt", None)
+    monkeypatch.setattr(verrou, "_descripteur", None)
+    monkeypatch.setattr(verrou, "_chemin_detenu", None)
+
+    chemin = verrou.lock_path()
+    os.makedirs(os.path.dirname(chemin), exist_ok=True)
+    with open(chemin, "w", encoding="utf-8") as fichier:
+        fichier.write("{}")
+
+    with pytest.raises(verrou.InstanceAlreadyRunning):
+        verrou.acquire()

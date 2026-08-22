@@ -23,7 +23,11 @@ Deux limites, dites plutôt que tues :
 - **Sur un montage réseau (NFS), `flock` n'est pas fiable.** C'est la même
   réserve que celle déjà portée par `scaling_report()` pour SQLite : ces deux
   garanties supposent un disque local.
-- **Sans `fcntl` (Windows), la garantie est plus faible** : la présence du
+- **Sous Windows, `msvcrt.locking` remplace `flock`** — même garantie : le noyau
+  le relâche à la mort du processus. Ce n'était pas le cas avant le 2026-08-22 :
+  le repli se contentait de tester l'existence du fichier, et fermer la fenêtre
+  du serveur rendait tout redémarrage impossible sans suppression manuelle.
+- **Sans `fcntl` ni `msvcrt`, la garantie est plus faible** : la présence du
   fichier suffit à refuser le démarrage, et un arrêt brutal laisse un fichier
   qu'un opérateur doit retirer. Le refus est explicite et dit quoi faire ;
   deviner qu'un PID est mort ferait courir un risque bien pire, celui de
@@ -40,6 +44,11 @@ from typing import Any, Dict, Optional
 from src.api.scaling import instance_id
 
 logger = logging.getLogger(__name__)
+
+try:  # pragma: no cover - dépend du système, pas du code
+    import msvcrt
+except ImportError:
+    msvcrt = None
 
 try:  # pragma: no cover - dépend du système, pas du code
     import fcntl
@@ -162,10 +171,33 @@ def acquire() -> Dict[str, Any]:
     chemin = lock_path()
     os.makedirs(os.path.dirname(chemin) or ".", exist_ok=True)
 
-    if fcntl is None:
-        # Sans verrou du noyau, la présence du fichier est le seul signal
-        # disponible. On refuse plutôt que de deviner : un faux positif coûte
-        # une suppression manuelle, un faux négatif coûte deux instances.
+    if fcntl is None and msvcrt is not None:
+        # Windows : `msvcrt.locking` est l'équivalent de `flock` — un verrou du
+        # noyau, relâché à la mort du processus quelle qu'en soit la manière.
+        #
+        # La version précédente se contentait de « le fichier existe-t-il ? ».
+        # Mesuré sur la machine du propriétaire le 2026-08-22 : fermer la
+        # fenêtre du serveur tue le processus sans effacer le fichier, et
+        # **GalSen IA ne redémarrait plus jamais** sans suppression manuelle.
+        # Le commentaire d'origine acceptait « un faux positif coûte une
+        # suppression manuelle » — mais sous Windows ce n'était pas un cas
+        # limite : c'était le chemin normal, après chaque arrêt brutal.
+        descripteur = os.open(chemin, os.O_RDWR | os.O_CREAT, 0o600)
+        try:
+            msvcrt.locking(descripteur, msvcrt.LK_NBLCK, 1)
+        except OSError:
+            refus = _refus(chemin)
+            os.close(descripteur)
+            raise refus
+        precedent = read_holder(chemin)
+        if precedent and precedent.get("pid") != os.getpid():
+            logger.warning(
+                "Verrou repris à l'instance « %s » (pid %s), qui ne tourne plus.",
+                precedent.get("instance", "inconnue"), precedent.get("pid", "?"),
+            )
+    elif fcntl is None:
+        # Ni `fcntl` ni `msvcrt` : aucun verrou du noyau disponible. La présence
+        # du fichier est le seul signal, et on refuse plutôt que de deviner.
         if os.path.exists(chemin):
             raise _refus(chemin)
         descripteur = os.open(chemin, os.O_RDWR | os.O_CREAT, 0o600)
@@ -220,6 +252,9 @@ def release() -> None:
     try:
         if fcntl is not None:
             fcntl.flock(_descripteur, fcntl.LOCK_UN)
+        elif msvcrt is not None:
+            os.lseek(_descripteur, 0, os.SEEK_SET)
+            msvcrt.locking(_descripteur, msvcrt.LK_UNLCK, 1)
         os.close(_descripteur)
     except OSError as erreur:
         logger.warning("Verrou d'instance : libération incomplète (%s).", erreur)

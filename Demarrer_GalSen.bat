@@ -105,7 +105,10 @@ REM Le navigateur s'ouvre APRES que le serveur reponde, jamais avant.
 REM Premiere version : `start` etait sur la ligne d'avant, et Edge affichait
 REM ERR_CONNECTION_REFUSED parce qu'uvicorn met quelques secondes a demarrer.
 REM Mesure sur la machine du proprietaire, 2026-08-22.
-start "GalSen-attente" /min cmd /c "for /l %%i in (1,1,60) do (curl -s -o nul -m 1 http://127.0.0.1:8000/health && (start "" http://localhost:8000/ui & exit) || timeout /t 1 /nobreak >nul)"
+REM `@echo off` a l'interieur : sans lui, la fenetre d'attente affiche
+REM chaque iteration de la boucle et se remplit de bruit. Mesure sur la
+REM machine du proprietaire, 2026-08-22.
+start "GalSen-attente" /min cmd /c "@echo off & for /l %%i in (1,1,60) do (curl -s -o nul -m 1 http://127.0.0.1:8000/health >nul 2>&1 && (start "" http://localhost:8000/ui & exit) || timeout /t 1 /nobreak >nul)"
 
 python -m uvicorn src.api.server:app --host 127.0.0.1 --port 8000
 
