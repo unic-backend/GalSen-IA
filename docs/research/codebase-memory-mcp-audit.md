@@ -519,4 +519,138 @@ Two limits stated rather than glossed:
 
 ---
 
-*Phases 0 to 5 complete (9 of 16). Phase 6 — licences — has not started.*
+## PHASE 6 — Licence matrix
+
+Declared licences counted from `THIRD_PARTY.md` (154 lines), which is unusually
+specific — it names paths, not just projects.
+
+### LICENCE COMPATIBLE
+
+| Component | Licence | Note |
+|---|---|---|
+| codebase-memory-mcp itself | **MIT** © 2025 DeusData | Compatible with ADR-036 (Apache-2.0) |
+| Tree-sitter runtime + grammars | MIT (14 declarations) | |
+| mimalloc, yyjson, Verstable | MIT | |
+| SQLite 3 | **Public Domain** | |
+| wyhash | Unlicense | |
+| xxHash, TRE, LZ4 | BSD-2-Clause | |
+| Zstandard | BSD-3-Clause | Dual BSD/GPLv2 upstream — **BSD explicitly selected** |
+| simplecpp | 0BSD | |
+| Several grammars | Apache-2.0 (6), BSD-3 (3), BSD-2 (3), ISC (2) | |
+| **`vendored/nomic/`** | **Apache-2.0**, © Nomic AI | Weights, with a `NOTICE` naming the source model |
+
+### LICENCE À SURVEILLER
+
+**One, and it is a discipline note rather than a defect**: `vendored/nomic/` is
+**model weights**, not code. Apache-2.0 applies as declared, and the `NOTICE`
+file must travel with any redistribution. GalSen IA redistributes nothing here,
+so the obligation is dormant — but it would wake the moment a binary were
+shipped.
+
+### LICENCE INCOMPATIBLE
+
+**None found.**
+
+### A false finding, caught and recorded
+
+A first count reported **7 MPL matches** — MPL being weak copyleft, that would
+have been the audit's most important licence finding. Reading the matches in
+context rather than trusting the count:
+
+```
+/vendored/simplecpp/` | 0BS        ← si·mpl·ecpp
+ Reference implementation /        ← i·mpl·ementation
+```
+
+**There is no MPL anywhere**; `grep -iE "MPL-|Mozilla Public"` returns nothing.
+Recorded because a licence matrix built on that count would have been wrong in
+its headline, and because `.claude/skills/systematic-debugging` phase 1 says to
+read the output completely rather than act on a number.
+
+### The limit of this phase
+
+These are **declarations**. §6 warns against assuming a repository's licence
+covers its dependencies — that is why each is listed separately. It does **not**
+extend to verifying each of 160 grammars against its own upstream: that would be
+160 fetches, and `api.github.com` answers 403 here.
+
+**Verified-against-upstream count: `UNKNOWN`.** What is verified is that the
+declarations exist, name paths, and contain no copyleft.
+
+---
+
+## PHASE 7 — Security
+
+Thirteen surfaces, measured.
+
+| Surface | Finding |
+|---|---|
+| Filesystem read | The indexed repository — its purpose |
+| **Filesystem write** | **`~/.cbm/*.db`, and agent config files in `$HOME`** — see below |
+| Process execution | Runs as a daemon; **`internal/cbm/` swept, no outbound call** |
+| **Network** | The phase-2 debt is now paid: `curl_*`, `gethostbyname`, `SSL_connect`, `socket(AF_INET` → **no matches in `internal/cbm/`**. One `getaddrinfo` hit, in `lsp/generated/python_stdlib_data.c` — a **generated table of Python stdlib symbol names**, not a call. Second false positive of this audit, caught by reading the match. |
+| Config writes | **The finding.** See below |
+| Permissions | No privilege escalation found; `install.sh` does not call `sudo` |
+| Local storage | SQLite under `$HOME/.cbm/` |
+| Sensitive data | Source code and its graph, local |
+| Secrets | No `api_key` read, no credential constant |
+| Sandboxing | **None of its own.** It is a native binary |
+| Injection | Not assessed — `UNKNOWN` |
+| **Supply chain** | `curl … | bash`, mitigated — see below |
+| Automatic install | `install.sh` / `install.ps1` |
+
+### The privileged operation, named precisely
+
+`src/cli/agent_profiles.c` writes into **agent configuration and instruction
+files under `$HOME`**:
+
+```
+~/.claude.json                        ~/.config/crush/crush.json
+~/.augment/settings.json              ~/.config/amp/AGENTS.md
+~/.augment/rules/codebase-memory.md   ~/.config/kilo/agents/codebase-memory.md
+~/.codeium/windsurf/mcp_config.json   ~/.codeium/windsurf/memories/global_rules.md
+~/.bob/rules/codebase-memory.md       ~/.codebuddy/CODEBUDDY.md
+```
+
+Two kinds, and the second is the one that matters:
+
+1. **MCP registration** (`mcp_config.json`, `.claude.json`) — declaring itself to
+   a client. Ordinary for an MCP server.
+2. **Instruction files** (`global_rules.md`, `AGENTS.md`,
+   `codebase-memory.md`) — **text that steers a coding agent's behaviour.**
+
+The README states it without hedging: *"This tool reads your codebase and writes
+to your agent configuration files. That is what it is designed to do."* The code
+confirms it. **It is disclosed, not hidden**, which is the difference between a
+risk and a defect.
+
+But it is **the same class of surface ADR-038 weighed for Superpowers and decided
+against on the plugin path**: an external component writing instructions that
+steer the agent working on this repository, outside any review. There, the
+instructions arrived by auto-update; here they arrive by installer. The property
+that mattered — *`src/security/trust.py`: external text is data with an origin,
+never an instruction* — is inverted the same way.
+
+### Supply chain
+
+The documented install is `curl -fsSL … | bash`. Mitigations found in the script
+itself, not claimed:
+
+- Wrapped so a partial transfer cannot execute (`install.sh:14`)
+- `CBM_DOWNLOAD_URL` must be `https://` or an explicit loopback address
+- **`checksums.txt` is downloaded and verified**, with a 1 MiB sanity bound
+
+Better than most `curl | bash` installers. It remains `curl | bash`.
+
+### Verdict
+
+**No destructive or hidden operation found.** One privileged operation, disclosed
+and real: writing agent instruction files into `$HOME`.
+
+Two limits: injection resistance was **not assessed** (`UNKNOWN`), and the sweeps
+covered `src/` and `internal/cbm/` C sources — not the 160 generated grammar
+parsers, which are Tree-sitter output.
+
+---
+
+*Phases 0 to 7 complete (11 of 16). Phase 8 — performance — has not started.*
