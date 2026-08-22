@@ -55,8 +55,18 @@ tests now enforce what was only policy. On this container `litellm` is absent,
 
 Two existing tests asserted the training defect and were rewritten to go through
 a real approval — not weakened: both still assert what leaves and what does not.
-Measured: **7027 passed, 9 skipped, 3 deselected, 0 failed**; `ruff` clean. Every
-new guard was verified by sabotaging the thing it guards.
+Measured locally: **7027 passed, 9 skipped, 3 deselected, 0 failed**; `ruff` clean.
+Every new guard was verified by sabotaging the thing it guards.
+
+Merged as PR #34 (`main` at `5ce708a`). Measured on `main` after the merge:
+**`1 failed, 7020 passed, 15 skipped, 3 deselected`**, against
+`1 failed, 6964 passed, 15 skipped` at `c88b555` before it — **56 more passing,
+the same single failure**, which is the `v0.1.0` tag and not a regression.
+
+**Operator action required:** set `GALSEN_CODING_WORKSPACE_ROOTS` wherever the
+platform is deployed, or the coding engine refuses every execution. That is the
+second finding's fix behaving as designed — it previously accepted any directory
+on the host.
 
 ### Fixed — 2026-08-20 — vector search rebuilt its matrix on every query (ADR-015)
 
