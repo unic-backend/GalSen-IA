@@ -54,6 +54,14 @@ gets re-argued at every review.
   *Deciding criterion:* strategic alignment — nothing else on this list can be validated
   in production until this is true.
 
+- **Declare `GALSEN_CODING_WORKSPACE_ROOTS` wherever the platform is deployed.** Since
+  PR #34 an unset variable refuses every coding-engine execution, which is the fix for
+  the audit's second finding working as designed — it previously accepted any directory
+  on the host. Nothing is broken, but a deployment that skips this finds the engine
+  refusing everything with no obvious cause.
+  *Deciding criterion:* maintenance cost — one variable, and it belongs with the deploy
+  above rather than after it.
+
 - **Push the `v0.1.0` tag.** It exists locally on `383fcf7` with its release notes, but the
   environment that prepared it cannot push tag refs (the git proxy answers 403), so
   `git fetch --tags` finds nothing. One command from a normal clone publishes it and

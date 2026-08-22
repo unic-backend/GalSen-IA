@@ -10,9 +10,11 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 **En cours** : rien. Aucun VOLET ouvert, aucune phase en attente.
 
-**Terminé** : **les quatre constats de l'audit OSS sont fermés.** Le n°1 (matrice
-vectorielle) l'a été le 2026-08-20 ; les n°2, 3 et 4 en quatre phases, sur la
-branche `claude/galsen-ia-phases-ukwz7p`.
+**Terminé** : **les quatre constats de l'audit OSS sont fermés et sur `main`** —
+**PR #34 fusionnée**, `main` à `5ce708a`. Le n°1 (matrice vectorielle) datait du
+2026-08-20 ; les n°2, 3 et 4 ont été faits en quatre phases le 2026-08-21/22.
+La branche `claude/galsen-ia-phases-ukwz7p` a été **repartie de `main`** après la
+fusion : ne jamais empiler sur de l'historique déjà fusionné.
 
 1. ~~`SQLiteVectorStore.search()` reconstruisait la matrice.~~ **CORRIGÉ** —
    **49,4 → 0,463 ms** à 271 vecteurs, **1 856,8 → 0,830 ms** à 10 000. Cache
@@ -38,9 +40,14 @@ sabotage a elle-même été fautive — la ligne ajoutée s'est collée à la
 précédente, le fichier n'ayant pas de saut de ligne final ; le test était juste,
 pas la sabotage.
 
-**Repère de non-régression** : `7027 passed, 9 skipped, 3 deselected, 0 failed`
-sur un conteneur où l'étiquette `v0.1.0` existe en local. Sur `main` et en CI,
-`1 failed` — **l'étiquette, jamais une régression, ne pas la « corriger »**.
+**Repère de non-régression, mesuré sur `main` après la fusion** (run 32555510451) :
+`1 failed, 7020 passed, 15 skipped, 3 deselected`. Avant la fusion, `main` à
+`c88b555` donnait `1 failed, 6964 passed, 15 skipped` : **+56 verts, le même
+unique échec**. Cet échec est l'étiquette `v0.1.0` — **jamais une régression, ne
+pas la « corriger »**. En local sur un conteneur où l'étiquette existe, la suite
+est entièrement verte : `7027 passed, 9 skipped, 3 deselected, 0 failed`. L'écart
+de 6 ignorés vient de tests dépendants de l'environnement ; le total collecté est
+le même des deux côtés.
 
 **Piège d'environnement, mesuré** : un conteneur peut être provisionné **avant**
 une dépendance déclarée. `bcrypt==5.0.0` était dans `requirements.txt` et pas
@@ -52,6 +59,9 @@ clone retombe en arrière. Un dossier attendu absent = clone périmé, **jamais 
 programme perdu**. `git fetch` avant de conclure.
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
+- **`GALSEN_CODING_WORKSPACE_ROOTS` doit être renseignée** ou le moteur de codage
+  refuse tout. C'est la correction du constat n°2 qui fonctionne comme prévu —
+  avant, il acceptait l'hôte entier — mais ça se découvre mal en production.
 - `git push origin v0.1.0` sur `383fcf7` → seul test rouge. **Publie une release
   GitHub.** Refusé d'ici : `HTTP 403`, mesuré deux fois. Ne pas réessayer.
 - `ollama serve` (critère C1) ; les 3 conditions d'ADR-035 ; un nom légal dans
@@ -64,9 +74,10 @@ programme perdu**. `git fetch` avant de conclure.
 
 ### Sessions précédentes
 
-**2026-08-20 — Audit OSS (22 phases, ADR-037)** : douze projets, **zéro
+**2026-08-20 — Audit OSS (22 phases, ADR-037)**, PR #33 : douze projets, **zéro
 `INTEGRATE`**, 16 documents, zéro ligne de `src/` touchée. C'est cet audit qui a
-produit les quatre constats ci-dessus.
+produit les quatre constats ci-dessus — *le troisième audit externe d'affilée à
+trouver le défaut ici plutôt que chez son sujet.*
 
 **2026-08-20 — Branche parallèle abandonnée** : `claude/galsen-ia-phases-ukwz7p`
 avait **refait** le programme Creative Intelligence déjà fusionné en PR #28 — 21
