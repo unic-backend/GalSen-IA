@@ -681,5 +681,146 @@ Not a conclusion — chapters 04 to 16 have not run. Stated so the shape is visi
 
 ---
 
-*Phases 1.1 → 3.3 complete (8 of 24). Chapter 04 (§7 — skill by skill) has not
-started, and nothing below area X exists in this document yet.*
+## PHASE 4.1 — The real skill inventory
+
+Counted from the clone. Sizes matter here: a 63-line skill and a 679-line skill
+are not the same kind of object, and §7 asked for the inventory rather than a
+list of names.
+
+| Skill | SKILL.md | Auxiliary files |
+|---|---:|---:|
+| `writing-skills` | **679** | 6 |
+| `subagent-driven-development` | **568** | 6 |
+| `test-driven-development` | 320 | 1 |
+| `systematic-debugging` | 283 | 10 |
+| `brainstorming` | 250 | 7 |
+| `finishing-a-development-branch` | 225 | 0 |
+| `receiving-code-review` | 205 | 0 |
+| `writing-plans` | 171 | 1 |
+| `dispatching-parallel-agents` | 167 | 0 |
+| `using-git-worktrees` | 167 | 0 |
+| `verification-before-completion` | 120 | 0 |
+| `requesting-code-review` | 95 | 1 |
+| `executing-plans` | 64 | 0 |
+| `using-superpowers` | 63 | 5 |
+
+**Two observations that change how the next phase reads.**
+
+The two largest skills are **about the system itself** — how to write skills, and
+how to run subagents. Nearly a quarter of the prose is meta. That is not padding:
+it is where a methodology keeps itself from decaying.
+
+And `executing-plans` (64 lines) opens by telling the agent to use a *different*
+skill if subagents are available. Several skills are entry points that delegate.
+Adopting one in isolation can therefore silently pull in its `REQUIRED SUB-SKILL`
+chain — `executing-plans` requires `finishing-a-development-branch`;
+`testing-skills-with-subagents` requires `test-driven-development`. **A candidate
+list must name the closure, not the skill.**
+
+---
+
+## PHASE 4.2 — Skill by skill: equivalent → gap → value → compatibility → cost → recommendation
+
+`RECOMMENDATION` uses §5's vocabulary: **A** reuse the concept · **B** adapt ·
+**C** reimplement natively · **D** integrate a small isolated component ·
+**E** import the whole component · **F** do nothing.
+
+No candidate below is `E`. Nothing in this repository can import markdown; the
+only meaningful acts are *adopt the idea natively* or *do nothing*.
+
+### The five worth adopting
+
+**1. `systematic-debugging` — 283 lines**
+GalSen equivalent: `.claude/rules/verification.md`'s regression clause (one
+sentence) + `.claude/skills/debug-issue` (graph navigation, not method).
+Gap: **the procedure**. Four named phases, red flags, and a table of common
+rationalisations. GalSen IA states the principle and leaves the method to
+judgement.
+Value: **high** — this session's own vector-store fix followed roughly these
+phases by instinct, and a written procedure would have made that repeatable
+rather than lucky.
+Compatibility: total, no conflict.
+Cost: **low** — one skill or one rule section.
+**RECOMMENDATION: C (reimplement natively).**
+
+**2. `verification-before-completion` — 120 lines**
+GalSen equivalent: three rule files *and* seven repository-level tests. GalSen IA
+is stronger overall.
+Gap: **exactly one clause** — *"If you haven't run the verification command in
+this message, you cannot claim it passes."* `verification.md` says "in this
+session". A session is long; the gap is real and narrow.
+Value: **medium-high**, out of proportion to its size.
+Cost: **one sentence** amending an existing rule.
+**RECOMMENDATION: A (reuse the concept) — the freshness clause only.** The rest
+duplicates what already exists and would dilute it.
+
+**3. `writing-skills/testing-skills-with-subagents` — a technique, not a skill**
+GalSen equivalent: **none.** GalSen IA has 15 rule files and no way to know
+whether any of them changes behaviour.
+Gap: RED-GREEN-REFACTOR applied to process documentation — run the scenario
+*without* the rule, document the exact rationalisations, write the rule against
+those, verify compliance, then hunt new loopholes. *"If you didn't watch an agent
+fail without the skill, you don't know if the skill prevents the right failures."*
+Value: **the highest single item in this audit**, and the least obvious. This
+repository's whole discipline is *sabotage the guard before believing it* — this
+is that discipline applied to prose instead of code. The rules have never been
+subjected to it.
+Compatibility: total.
+Cost: **medium** — needs subagent dispatch, which exists.
+**RECOMMENDATION: C (reimplement natively).**
+
+**4. `subagent-driven-development` — 568 lines, adopted in parts**
+Gap: reviewer-of-the-implementer; bounded fix loop (5 rounds, fresh implementer
+on a stronger model at R ≥ 4); adjudication of surviving findings; the ledger
+entry format `Ruling: <what> — <why> — <what it costs if wrong>`.
+Value: **high** for the loop and the ruling format.
+**Conflict: yes, and it is load-bearing.** *"Do not pause to check in between
+tasks"* contradicts `.claude/rules/phase-protocol.md`, which the owner made
+permanent.
+Cost: medium.
+**RECOMMENDATION: B (adapt) — the review loop and the ruling format, with the
+cadence explicitly excluded.** Importing the skill whole would import the
+conflict, which is why the recommendation is B and not A.
+
+**5. `finishing-a-development-branch` — 225 lines**
+GalSen equivalent: `.claude/rules/git-workflow.md` — branch naming and commit
+style, nothing about *ending* a branch.
+Gap: verify tests → detect environment → determine base → present options →
+execute. Step 1 is *verify tests*.
+Value: **medium**, and concrete: every merge in this session performed these
+steps by hand, and the one thing that made them safe was doing them in the same
+order every time.
+Cost: low.
+**RECOMMENDATION: C (reimplement natively).**
+
+### Three worth considering, none urgent
+
+**6. `test-driven-development`** — GalSen IA's `testing.md` says "TDD or
+TDD-like", which is a preference. Superpowers' is a gate. Value medium;
+**RECOMMENDATION: A**, tightening one sentence rather than adding 320 lines.
+
+**7. `receiving-code-review`** — a response pattern (read → understand → verify →
+evaluate → respond → implement) and a list of forbidden responses, *"You're
+absolutely right!"* among them. GalSen equivalent: none; `response-style.md` bans
+praise but says nothing about how to take a review. Value medium.
+**RECOMMENDATION: A.**
+
+**8. `writing-plans`** — GalSen IA's phase protocol governs plan *structure* and
+*persistence* and is stronger there; `writing-plans` covers how a plan is derived
+from a spec, which the protocol does not. Narrow, real gap.
+**RECOMMENDATION: B (adapt into the existing phase protocol), low priority.**
+
+### Six where GalSen IA should do nothing
+
+| Skill | Why |
+|---|---|
+| `using-superpowers` | Its whole purpose is bootstrapping Superpowers. Adopting it without Superpowers is meaningless. **F.** |
+| `executing-plans` | 64 lines that mostly delegate; the phase protocol already covers execution and is stronger (persisted plan, resumable). **F.** |
+| `dispatching-parallel-agents` | The procedure is sound and `parallel_supported` is `False`. Adopting it would document a capability that does not exist — the exact failure `.claude/rules/verification.md` forbids. **F until the runtime exists**, then reconsider. |
+| `using-git-worktrees` | Genuinely useful, and this environment is a single ephemeral container with one checkout. The value is real and unrealised *here*. **F for now**, recorded rather than dismissed. |
+| `requesting-code-review` | `code-review-graph` + `review-changes` cover the mechanics better. The social half is in `receiving-code-review`, already listed. **F.** |
+| `brainstorming` | 250 lines plus a Node visual companion — and **the only telemetry surface in the repository**. Its pre-spec exploration is a real gap beside Spec Kit, but the component carrying it is the one component with a network call. **F for the component; the concept alone could return as B later.** |
+
+---
+
+*Phases 1.1 → 4.2 complete (10 of 24). Chapter 05 (§9 — testing) has not started.*
