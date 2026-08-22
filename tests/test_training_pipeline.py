@@ -91,7 +91,22 @@ def test_sans_consentement_le_retour_reste_hors_du_jeu(magasin):
     assert len(magasin.list_feedback(consent_only=True)) == 1
 
 
-def test_l_export_exige_une_approbation(magasin):
+@pytest.fixture
+def portillon():
+    """Un moteur d'approbation réel, en mémoire."""
+    from src.approval_engine.approval_manager import ApprovalManagerImpl
+    return ApprovalManagerImpl()
+
+
+def _approuver(magasin, portillon, par="responsable"):
+    """Ouvre une demande sur le contenu courant et l'accorde. Retourne son id."""
+    from src.training.feedback import request_export_approval
+    demande = request_export_approval(magasin, requested_by=par, approvals=portillon)
+    assert portillon.approve(demande.id, decided_by=par)
+    return demande.id
+
+
+def test_l_export_exige_une_approbation(magasin, portillon):
     """
     Sortir le texte de vraies personnes vers un jeu de données est une décision
     humaine (ADR-006), pas un effet de bord.
@@ -103,17 +118,165 @@ def test_l_export_exige_une_approbation(magasin):
     with pytest.raises(PermissionError, match="approbation"):
         magasin.export_pairs()
 
-    paires = magasin.export_pairs(approval_request_id="req_accorde")
+    identifiant = _approuver(magasin, portillon)
+    paires = magasin.export_pairs(identifiant, approvals=portillon)
     assert paires == [{"prompt": "q", "chosen": "bonne", "rejected": "mauvaise"}]
 
 
-def test_un_retour_sans_deux_cotes_ne_fait_pas_une_paire(magasin):
+def test_un_retour_sans_deux_cotes_ne_fait_pas_une_paire(magasin, portillon):
     """Sans réponse rejetée, il n'y a pas de préférence — seulement une réponse."""
     magasin.record(Feedback(
         prompt="q", response="r", kind=FeedbackKind.RATING, rating=5, consent_to_train=True,
     ))
 
-    assert magasin.export_pairs(approval_request_id="req") == []
+    identifiant = _approuver(magasin, portillon)
+    assert magasin.export_pairs(identifiant, approvals=portillon) == []
+
+
+class TestApprobationDuContenu:
+    """
+    L'approbation porte sur ce qui sort, pas sur le geste de sortir.
+
+    Le défaut d'origine : `export_pairs("oui")` passait. L'identifiant n'était
+    jamais vérifié, et même une vraie approbation n'aurait couvert qu'un acte —
+    or le jeu grossit chaque jour.
+    """
+
+    def _remplir(self, magasin, combien, decalage=0):
+        for index in range(combien):
+            magasin.record(Feedback(
+                prompt=f"q{index + decalage}", response="mauvaise",
+                correction="bonne", consent_to_train=True,
+            ))
+
+    def test_une_chaine_inventee_n_est_pas_une_approbation(self, magasin, portillon):
+        """Le cœur du constat n°3."""
+        self._remplir(magasin, 1)
+        with pytest.raises(PermissionError, match="n'existe"):
+            magasin.export_pairs("oui", approvals=portillon)
+
+    def test_une_demande_en_attente_n_est_pas_une_decision(self, magasin, portillon):
+        from src.training.feedback import request_export_approval
+        self._remplir(magasin, 1)
+        demande = request_export_approval(magasin, "moi", approvals=portillon)
+        with pytest.raises(PermissionError, match="pending"):
+            magasin.export_pairs(demande.id, approvals=portillon)
+
+    def test_une_demande_refusee_ne_laisse_rien_sortir(self, magasin, portillon):
+        from src.training.feedback import request_export_approval
+        self._remplir(magasin, 1)
+        demande = request_export_approval(magasin, "moi", approvals=portillon)
+        portillon.reject(demande.id, decided_by="responsable")
+        with pytest.raises(PermissionError, match="rejected"):
+            magasin.export_pairs(demande.id, approvals=portillon)
+
+    def test_une_paire_ajoutee_apres_l_approbation_la_rend_caduque(
+        self, magasin, portillon,
+    ):
+        """
+        Douze paires approuvées n'en autorisent pas treize.
+
+        C'est la moitié du constat que l'ancien code ne voyait pas : le jeu
+        grossit, l'approbation ne suivait pas.
+        """
+        self._remplir(magasin, 12)
+        identifiant = _approuver(magasin, portillon)
+        self._remplir(magasin, 1, decalage=100)
+        with pytest.raises(PermissionError, match="contenu a changé"):
+            magasin.export_pairs(identifiant, approvals=portillon)
+
+    def test_le_refus_dit_combien_avait_ete_approuve(self, magasin, portillon):
+        """Un refus qu'on ne peut pas expliquer sera contourné."""
+        self._remplir(magasin, 2)
+        identifiant = _approuver(magasin, portillon)
+        self._remplir(magasin, 5, decalage=100)
+        with pytest.raises(PermissionError) as erreur:
+            magasin.export_pairs(identifiant, approvals=portillon)
+        assert "2 paire(s) approuvée(s)" in str(erreur.value)
+        assert "7" in str(erreur.value)
+
+    def test_un_texte_change_a_nombre_egal_est_detecte(self):
+        """
+        Compter les paires n'aurait pas suffi.
+
+        Remplacer un retour par un autre laisse le compte identique et change
+        entièrement ce qui sort. L'empreinte porte sur le texte.
+        """
+        from src.training.feedback import dataset_fingerprint
+        avant = [{"prompt": "q", "chosen": "bonne", "rejected": "mauvaise"}]
+        apres = [{"prompt": "tout autre chose", "chosen": "bonne",
+                  "rejected": "mauvaise"}]
+        assert len(avant) == len(apres)
+        assert dataset_fingerprint(avant) != dataset_fingerprint(apres)
+
+    def test_un_deplacement_de_texte_entre_champs_est_detecte(self):
+        """
+        Sans séparateur, « ab » + « c » et « a » + « bc » auraient la même
+        empreinte. C'est le genre de collision qu'on ne voit qu'en la cherchant.
+        """
+        from src.training.feedback import dataset_fingerprint
+        assert dataset_fingerprint([{"prompt": "ab", "chosen": "c", "rejected": ""}]) \
+            != dataset_fingerprint([{"prompt": "a", "chosen": "bc", "rejected": ""}])
+
+    def test_une_approbation_sans_empreinte_est_refusee(self, magasin, portillon):
+        """
+        Une demande ouverte à la main, sur l'acte, ne couvre aucun contenu.
+
+        C'est exactement l'état d'avant : approuver « exporter » sans savoir
+        quoi.
+        """
+        from src.approval_engine.types import ApprovalRequest
+        self._remplir(magasin, 1)
+        demande = ApprovalRequest(
+            agent_id="training", request_id=None, action="training_dataset_export",
+        )
+        portillon.submit(demande)
+        portillon.approve(demande.id, decided_by="responsable")
+        with pytest.raises(PermissionError, match="empreinte"):
+            magasin.export_pairs(demande.id, approvals=portillon)
+
+    def test_sans_moteur_d_approbation_rien_ne_sort(self, magasin, monkeypatch):
+        """
+        L'absence de vérificateur n'accorde rien.
+
+        C'est la règle d'ADR-018 reprise ici : une approbation n'est jamais
+        accordée par l'absence de quelqu'un pour la refuser.
+        """
+        import src.training.feedback as module
+        monkeypatch.setattr(module, "_portillon", lambda: None)
+        self._remplir(magasin, 1)
+        with pytest.raises(PermissionError, match="indisponible"):
+            magasin.export_pairs("appr_quelconque")
+        with pytest.raises(PermissionError, match="indisponible"):
+            module.request_export_approval(magasin, "moi")
+
+    def test_la_demande_nomme_son_demandeur(self, magasin, portillon):
+        from src.training.feedback import CLE_NOMBRE, request_export_approval
+        self._remplir(magasin, 3)
+        demande = request_export_approval(magasin, "aminata", approvals=portillon)
+        assert demande.metadata["requested_by"] == "aminata"
+        assert demande.metadata[CLE_NOMBRE] == 3
+
+    def test_une_demande_sans_demandeur_est_refusee(self, magasin, portillon):
+        from src.training.feedback import request_export_approval
+        with pytest.raises(PermissionError, match="demandeur"):
+            request_export_approval(magasin, "   ", approvals=portillon)
+
+    def test_la_demande_decrit_ce_qui_sort_pas_le_geste(self, magasin, portillon):
+        """La file d'approbation est lue par un humain qui ne lira pas le code."""
+        from src.training.feedback import request_export_approval
+        self._remplir(magasin, 4)
+        demande = request_export_approval(magasin, "moi", approvals=portillon)
+        assert "4 paire(s)" in demande.description
+        assert "vraies personnes" in demande.description
+
+    def test_un_export_inchange_repasse(self, magasin, portillon):
+        """La borne ferme un changement, elle ne ferme pas l'export."""
+        self._remplir(magasin, 3)
+        identifiant = _approuver(magasin, portillon)
+        assert len(magasin.export_pairs(identifiant, approvals=portillon)) == 3
+        # Deux fois : l'approbation n'est pas consommée par la première lecture.
+        assert len(magasin.export_pairs(identifiant, approvals=portillon)) == 3
 
 
 def test_le_compte_utile_est_distingue_du_total(magasin):
@@ -310,3 +473,93 @@ def test_mesurer_ne_deplace_pas_ce_qu_on_mesure(monkeypatch):
     # Et l'environnement est rendu tel qu'il était : une mesure ne reconfigure
     # pas la plateforme derrière elle.
     assert os.environ[TRACK_ACCESS_VARIABLE] == "true"
+
+
+class TestScriptDEntrainement:
+    """
+    Le même trou existait dans `scripts/training/train_adapter.py`.
+
+    Il refusait un identifiant vide et acceptait n'importe quel fichier de
+    paires avec n'importe quel identifiant non vide. Les chemins éprouvés ici
+    sont ceux qui s'exécutent **avant** l'import de PyTorch — le reste demande
+    un GPU que cette machine n'a pas.
+    """
+
+    def _script(self):
+        import importlib.util
+        import pathlib
+        chemin = pathlib.Path(__file__).parent.parent / "scripts" / "training" / "train_adapter.py"
+        spec = importlib.util.spec_from_file_location("train_adapter", chemin)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def _options(self, **champs):
+        import types
+        base = {"famille": "samp", "base": "b", "licence": "apache-2.0",
+                "paires": "", "nom": "n", "sortie": "s", "approbation": "",
+                "empreinte": ""}
+        base.update(champs)
+        return types.SimpleNamespace(**base)
+
+    def _ecrire(self, tmp_path, paires):
+        import json
+        chemin = tmp_path / "pairs.jsonl"
+        chemin.write_text(
+            "\n".join(json.dumps(paire, ensure_ascii=False) for paire in paires),
+            encoding="utf-8",
+        )
+        return str(chemin)
+
+    def test_sans_approbation_le_script_refuse(self):
+        script = self._script()
+        assert script.entrainer(self._options()) == 2
+
+    def test_sans_empreinte_le_script_refuse(self, tmp_path):
+        """Le cœur du constat n°3, côté script."""
+        script = self._script()
+        fichier = self._ecrire(tmp_path, [
+            {"prompt": "q", "chosen": "b", "rejected": "m"}])
+        code = script.entrainer(
+            self._options(approbation="appr_x", paires=fichier))
+        assert code == 2
+
+    def test_une_empreinte_qui_ne_correspond_pas_refuse(self, tmp_path):
+        script = self._script()
+        fichier = self._ecrire(tmp_path, [
+            {"prompt": "q", "chosen": "b", "rejected": "m"}])
+        code = script.entrainer(self._options(
+            approbation="appr_x", paires=fichier, empreinte="0" * 64))
+        assert code == 2
+
+    def test_l_empreinte_du_fichier_est_celle_de_l_export(self, tmp_path):
+        """
+        Une seconde implémentation aurait dérivé de la première.
+
+        Le script réutilise `dataset_fingerprint` ; ce test le prouve plutôt que
+        de le supposer.
+        """
+        from src.training.feedback import dataset_fingerprint
+        script = self._script()
+        paires = [{"prompt": "q", "chosen": "b", "rejected": "m"},
+                  {"prompt": "q2", "chosen": "b2", "rejected": "m2"}]
+        fichier = self._ecrire(tmp_path, paires)
+        assert script.empreinte_du_fichier(fichier) == dataset_fingerprint(paires)
+
+    def test_une_empreinte_juste_laisse_passer_jusqu_a_l_environnement(
+        self, tmp_path,
+    ):
+        """
+        La borne ferme un contenu, elle ne ferme pas l'entraînement.
+
+        Le code 1 est celui de « PyTorch absent ici » : la vérification de
+        contenu a donc été franchie, et c'est tout ce que ce test affirme.
+        """
+        from src.training.feedback import dataset_fingerprint
+        script = self._script()
+        paires = [{"prompt": "q", "chosen": "b", "rejected": "m"}]
+        fichier = self._ecrire(tmp_path, paires)
+        code = script.entrainer(self._options(
+            approbation="appr_x", paires=fichier,
+            empreinte=dataset_fingerprint(paires)))
+        assert code == 1

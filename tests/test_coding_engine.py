@@ -30,6 +30,22 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+
+@pytest.fixture(autouse=True)
+def racines_declarees(monkeypatch, tmp_path_factory):
+    """
+    Déclare l'arborescence temporaire de pytest comme racine autorisée.
+
+    Sans cela, `resolve_workspace()` refuse tout : une variable
+    `GALSEN_CODING_WORKSPACE_ROOTS` absente ne vaut pas « tout l'hôte ». La
+    déclaration est faite ici, visible, plutôt que contournée — c'est
+    exactement le geste qu'un exploitant devra poser.
+    """
+    monkeypatch.setenv(
+        "GALSEN_CODING_WORKSPACE_ROOTS", str(tmp_path_factory.getbasetemp())
+    )
+
+
 from src.approval_engine.approval_manager import ApprovalManagerImpl  # noqa: E402
 from src.audit_engine.audit_manager import AuditManagerImpl  # noqa: E402
 from src.audit_engine.types import AuditEventType, AuditStatus  # noqa: E402
@@ -53,6 +69,7 @@ from src.coding_engine.types import TestReport as RapportDeTests  # noqa: E402
 from src.coding_engine.workspace import (  # noqa: E402
     WorkspaceError,
     confine,
+    declared_roots,
     diff_snapshots,
     inspect_instruction,
     resolve_workspace,
@@ -867,3 +884,263 @@ class TestConstatDesChangements:
         (espace / "__pycache__").mkdir()
         (espace / "__pycache__" / "bruit.pyc").write_bytes(b"\x00")
         assert not any("__pycache__" in chemin for chemin in snapshot(espace))
+
+
+# ----------------------------------------------------------------------
+# Les racines déclarées (constat n°2, seconde moitié)
+#
+# `confine()` empêche de sortir de l'espace de travail. Il n'empêchait pas d'en
+# choisir un mauvais : `resolve_workspace()` acceptait n'importe quel dossier
+# existant de l'hôte, y compris celui que l'en-tête du module promet de
+# protéger.
+# ----------------------------------------------------------------------
+
+
+class TestRacinesDeclarees:
+    """Où un moteur de codage a le droit de travailler, et qui le décide."""
+
+    def _espace(self, racine, nom="projet"):
+        espace = racine / nom
+        espace.mkdir(parents=True)
+        return espace
+
+    def test_sans_declaration_rien_n_est_acceptable(self, monkeypatch, tmp_path):
+        """Le cœur du constat : une variable absente n'est pas « tout l'hôte »."""
+        monkeypatch.delenv("GALSEN_CODING_WORKSPACE_ROOTS", raising=False)
+        espace = self._espace(tmp_path)
+        with pytest.raises(WorkspaceError) as erreur:
+            resolve_workspace(espace)
+        assert "GALSEN_CODING_WORKSPACE_ROOTS" in str(erreur.value)
+
+    def test_le_refus_dit_ce_qu_une_absence_ne_veut_pas_dire(
+        self, monkeypatch, tmp_path,
+    ):
+        """Un exploitant doit lire pourquoi, pas seulement que."""
+        monkeypatch.delenv("GALSEN_CODING_WORKSPACE_ROOTS", raising=False)
+        espace = self._espace(tmp_path)
+        with pytest.raises(WorkspaceError) as erreur:
+            resolve_workspace(espace)
+        assert "tout l'hôte" in str(erreur.value)
+
+    def test_un_espace_sous_une_racine_declaree_passe(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("GALSEN_CODING_WORKSPACE_ROOTS", str(tmp_path))
+        espace = self._espace(tmp_path, "a/b/c")
+        assert resolve_workspace(espace) == espace.resolve()
+
+    def test_la_racine_elle_meme_est_un_espace_valide(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("GALSEN_CODING_WORKSPACE_ROOTS", str(tmp_path))
+        assert resolve_workspace(tmp_path) == tmp_path.resolve()
+
+    def test_un_dossier_voisin_est_refuse(self, monkeypatch, tmp_path):
+        """Le voisin d'une racine n'est pas dedans, et « dedans » est la règle."""
+        autorise = tmp_path / "autorise"
+        autorise.mkdir()
+        interdit = tmp_path / "interdit"
+        interdit.mkdir()
+        monkeypatch.setenv("GALSEN_CODING_WORKSPACE_ROOTS", str(autorise))
+        with pytest.raises(WorkspaceError) as erreur:
+            resolve_workspace(interdit)
+        assert "aucune racine déclarée" in str(erreur.value)
+
+    def test_un_prefixe_commun_ne_suffit_pas(self, monkeypatch, tmp_path):
+        """
+        `/data/projet` ne contient pas `/data/projet-secret`.
+
+        Une comparaison de chaînes aurait dit oui. La borne compare des
+        composants de chemin, pas des préfixes.
+        """
+        racine = tmp_path / "projet"
+        racine.mkdir()
+        voisin = tmp_path / "projet-secret"
+        voisin.mkdir()
+        monkeypatch.setenv("GALSEN_CODING_WORKSPACE_ROOTS", str(racine))
+        with pytest.raises(WorkspaceError):
+            resolve_workspace(voisin)
+
+    def test_un_lien_symbolique_qui_sort_est_refuse(self, monkeypatch, tmp_path):
+        """
+        Le chemin est résolu avant d'être confronté aux racines.
+
+        Sans cela, un lien posé dans une racine autorisée désignerait n'importe
+        quoi ailleurs, et la borne ne servirait à rien.
+        """
+        autorise = tmp_path / "autorise"
+        autorise.mkdir()
+        dehors = tmp_path / "dehors"
+        dehors.mkdir()
+        (autorise / "raccourci").symlink_to(dehors, target_is_directory=True)
+        monkeypatch.setenv("GALSEN_CODING_WORKSPACE_ROOTS", str(autorise))
+        with pytest.raises(WorkspaceError):
+            resolve_workspace(autorise / "raccourci")
+
+    def test_plusieurs_racines_se_declarent_comme_un_PATH(self, monkeypatch, tmp_path):
+        premiere = tmp_path / "un"
+        premiere.mkdir()
+        seconde = tmp_path / "deux"
+        seconde.mkdir()
+        monkeypatch.setenv(
+            "GALSEN_CODING_WORKSPACE_ROOTS",
+            f"{premiere}{os.pathsep}{seconde}",
+        )
+        assert resolve_workspace(seconde) == seconde.resolve()
+
+    def test_une_racine_fautive_est_nommee_et_non_avalee(self, monkeypatch, tmp_path):
+        """
+        Une faute de frappe qui rétrécit la politique doit se voir.
+
+        Écarter l'entrée en silence produit un refus inexplicable trois
+        semaines plus tard.
+        """
+        monkeypatch.setenv(
+            "GALSEN_CODING_WORKSPACE_ROOTS", str(tmp_path / "n-existe-pas"),
+        )
+        racines, ecartees = declared_roots()
+        assert racines == []
+        assert any("n-existe-pas" in entree for entree in ecartees)
+
+    def test_une_racine_fautive_n_annule_pas_les_bonnes(self, monkeypatch, tmp_path):
+        bonne = tmp_path / "bonne"
+        bonne.mkdir()
+        monkeypatch.setenv(
+            "GALSEN_CODING_WORKSPACE_ROOTS",
+            f"{tmp_path / 'absente'}{os.pathsep}{bonne}",
+        )
+        assert resolve_workspace(bonne) == bonne.resolve()
+
+    def test_la_declaration_est_relue_a_chaque_appel(self, monkeypatch, tmp_path):
+        """
+        Une politique figée à l'import ne se corrige plus sans redémarrage.
+
+        C'est le même choix que `container_required()`, et pour la même raison.
+        """
+        espace = self._espace(tmp_path)
+        monkeypatch.setenv("GALSEN_CODING_WORKSPACE_ROOTS", str(tmp_path))
+        assert resolve_workspace(espace)
+        monkeypatch.setenv("GALSEN_CODING_WORKSPACE_ROOTS", str(tmp_path / "ailleurs"))
+        with pytest.raises(WorkspaceError):
+            resolve_workspace(espace)
+
+    def test_l_inexistence_est_signalee_avant_la_declaration(
+        self, monkeypatch, tmp_path,
+    ):
+        """
+        Une faute de frappe se répare mieux que « hors des racines ».
+
+        Le contrôle d'accès a déjà eu lieu plus haut ; ici, la question est
+        diagnostique.
+        """
+        monkeypatch.delenv("GALSEN_CODING_WORKSPACE_ROOTS", raising=False)
+        with pytest.raises(WorkspaceError) as erreur:
+            resolve_workspace(tmp_path / "absent")
+        assert "n'existe pas" in str(erreur.value)
+
+    def test_le_moteur_refuse_la_tache_et_ne_la_route_pas(self, monkeypatch, tmp_path):
+        """
+        Le refus arrive dans les préalables, avant tout choix de moteur.
+
+        Un espace hors racines ne doit pas être signalé comme une panne de
+        moteur : ce n'est pas le moteur qui manque.
+        """
+        monkeypatch.delenv("GALSEN_CODING_WORKSPACE_ROOTS", raising=False)
+        espace = self._espace(tmp_path)
+        gestionnaire = CodingEngineManager()
+        resultat = gestionnaire.execute(
+            CodingTask(instruction="corrige", workspace=str(espace))
+        )
+        assert resultat.status is CodingStatus.FAILURE
+        assert "GALSEN_CODING_WORKSPACE_ROOTS" in resultat.summary
+
+
+# ======================================================================
+# 7. Isolation des dépendances (constat n°4)
+#
+# `litellm` a été mesuré installé dans l'environnement de la plateforme sur un
+# autre hôte, **déclaré par aucun fichier de dépendances et importé par aucun
+# module**. Ce n'est pas un paquet oublié : c'est l'arbre de dépendances d'un
+# moteur qui a fui dans celui de la plateforme, ce que
+# `scripts/install_coding_engines.sh` existe précisément pour empêcher.
+#
+# Le prix de cette fuite est écrit dans ADR-028 : installer `aider-chat` dans
+# l'environnement principal avait rétrogradé numpy en 1.26, cassé
+# `opencv-python-headless`, et fait échouer `import cv2` sur toute la
+# plateforme. Un paquet que rien ne déclare ne se remarque pas avant ce jour-là.
+# ======================================================================
+
+class TestIsolationDesDependances:
+    """L'arbre de dépendances d'un moteur ne touche pas celui de la plateforme."""
+
+    #: Les distributions apportées par les moteurs. Elles vivent dans les
+    #: environnements virtuels créés par le script d'installation ; GalSen IA
+    #: n'appelle que l'exécutable produit.
+    PAQUETS_DE_MOTEUR = ("litellm", "aider", "sweagent", "openhands")
+
+    def _importable(self, nom):
+        """Vrai si le paquet est atteignable depuis cet environnement."""
+        import importlib.util
+        try:
+            return importlib.util.find_spec(nom) is not None
+        except (ImportError, ValueError):
+            # Un paquet dont le parent manque n'est pas atteignable.
+            return False
+
+    def test_aucun_paquet_de_moteur_n_est_atteignable(self):
+        """
+        Le constat n°4, transformé en garde.
+
+        Si ce test échoue, l'installation n'est pas passée par
+        `scripts/install_coding_engines.sh` : le moteur a été installé dans
+        l'environnement principal, et la prochaine résolution de dépendances
+        rétrogradera quelque chose que personne ne surveille.
+        """
+        fuites = [nom for nom in self.PAQUETS_DE_MOTEUR if self._importable(nom)]
+        assert not fuites, (
+            f"Ces dépendances de moteur sont atteignables depuis "
+            f"l'environnement de la plateforme : {', '.join(fuites)}. "
+            "Elles appartiennent aux environnements isolés de "
+            "`scripts/install_coding_engines.sh` (ADR-028). Installer "
+            "`aider-chat` dans l'environnement principal avait rétrogradé numpy "
+            "et cassé `import cv2` sur toute la plateforme."
+        )
+
+    def test_aucun_fichier_de_dependances_ne_les_declare(self):
+        """
+        Les déclarer serait la même fuite, écrite exprès.
+
+        La lecture ignore les commentaires : ce fichier de test explique
+        pourquoi ces paquets sont exclus, et une recherche de mots ferait
+        échouer l'explication elle-même.
+        """
+        import glob
+        racine = os.path.join(os.path.dirname(__file__), "..")
+        for chemin in glob.glob(os.path.join(racine, "requirements*.txt")):
+            with open(chemin, encoding="utf-8") as fichier:
+                for numero, ligne in enumerate(fichier, start=1):
+                    declaration = ligne.split("#", 1)[0].strip().lower()
+                    if not declaration:
+                        continue
+                    for paquet in self.PAQUETS_DE_MOTEUR:
+                        assert not declaration.startswith(paquet), (
+                            f"{os.path.basename(chemin)}:{numero} déclare "
+                            f"« {paquet} ». Les moteurs s'installent dans leur "
+                            "propre environnement (ADR-028)."
+                        )
+
+    def test_la_plateforme_n_importe_aucun_de_ces_paquets(self):
+        """
+        Les mentionner en texte est normal ; les importer ne l'est pas.
+
+        Les adaptateurs nomment les préfixes d'erreur de litellm pour traduire
+        ce qu'aider écrit sur sa sortie d'erreur. C'est de la lecture de texte,
+        pas une dépendance — et la distinction est exactement ce que ce test
+        garde.
+        """
+        racine = os.path.join(os.path.dirname(__file__), "..", "src")
+        for dossier, _, fichiers in os.walk(racine):
+            for nom in fichiers:
+                if not nom.endswith(".py"):
+                    continue
+                chemin = os.path.join(dossier, nom)
+                contenu = open(chemin, encoding="utf-8").read()
+                for paquet in self.PAQUETS_DE_MOTEUR:
+                    for forme in (f"import {paquet}", f"from {paquet}"):
+                        assert forme not in contenu, f"{nom} : « {forme} »"

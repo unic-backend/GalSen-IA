@@ -6,41 +6,50 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ---
 
-## Dernière session — 2026-08-20
+## Dernière session — 2026-08-22
 
 **En cours** : rien. Aucun VOLET ouvert, aucune phase en attente.
 
-**Terminé** : **VOLET OPEN-SOURCE ECOSYSTEM AUDIT — 22 phases sur 22, ADR-037.**
-Douze projets audités (Transformers, SGLang, llama.cpp, LangGraph, OpenHands,
-vLLM, LiteLLM, LlamaIndex, Qdrant, Open WebUI, Unsloth, whisper.cpp) →
-**zéro `INTEGRATE`**. 16 documents dans `docs/oss-ecosystem/`, rapport final
-inclus. **Zéro ligne de `src/`, zéro dépendance, zéro test touché.**
-Avant cela : **PR #31 et PR #32 fusionnées** (ADR-033, ADR-034, ADR-035,
-**ADR-036 Apache-2.0**, test de souveraineté des runtimes subordonnés).
+**Terminé** : **les quatre constats de l'audit OSS sont fermés.** Le n°1 (matrice
+vectorielle) l'a été le 2026-08-20 ; les n°2, 3 et 4 en quatre phases, sur la
+branche `claude/galsen-ia-phases-ukwz7p`.
 
-**Quatre constats sur GalSen IA, aucun corrigé — suggestions, pas tâches**
-1. `SQLiteVectorStore.search()` est **3 388 × plus lent** que le design
-   qu'ADR-015 décrivait : il relit et reparse chaque ligne à chaque requête.
-   13 132 ms → **3,88 ms** à 100 000 vecteurs (153,6 Mo). La moitié p95 de la
-   condition de renversement d'ADR-015 est atteinte **dès 271 vecteurs**.
-   *C'est le point le plus utile trouvé par ce programme.*
-2. `Role.USER` atteint `POST /coding/task` avec n'importe quel dossier de
-   l'hôte. **Latent** : aucun des trois moteurs n'est disponible.
-3. L'entraînement exige une approbation ADR-006 pour *l'exécution*, jamais pour
-   *le contenu* du jeu de données.
-4. `litellm==1.81.10` installé, déclaré par rien, importé par rien.
+1. ~~`SQLiteVectorStore.search()` reconstruisait la matrice.~~ **CORRIGÉ** —
+   **49,4 → 0,463 ms** à 271 vecteurs, **1 856,8 → 0,830 ms** à 10 000. Cache
+   validé par un compteur de version écrit **dans la transaction de chaque
+   écriture** (ADR-015 amendé).
+2. ~~`Role.USER` atteignait `POST /coding/task` avec n'importe quel dossier.~~
+   **CORRIGÉ** — deux moitiés. Les routes passent par le **plafond de rôle
+   existant** (`src/tool/authorization.py`, aucune permission nouvelle), et
+   `GALSEN_CODING_WORKSPACE_ROOTS` borne l'espace lui-même : **variable absente
+   = refus total**, jamais « tout l'hôte ».
+3. ~~L'approbation d'entraînement portait sur l'acte, jamais sur le contenu.~~
+   **CORRIGÉ** — empreinte SHA-256 du texte inscrite dans la demande et
+   recalculée à l'export. `export_pairs("oui")` ne passe plus.
+4. ~~`litellm` installé, déclaré par rien.~~ **CORRIGÉ EN GARDE** — trois tests
+   refusent qu'un paquet de moteur soit atteignable, déclaré ou importé. Ici il
+   est **absent** ; numpy 2.4.6, cv2 5.0.0.
 
-**Prochaine étape** : attendre le prochain VOLET du propriétaire. Tout est
-poussé sur `claude/unit-tests-notification-search-file-4z0ok1` ; **rien n'est
-fusionné sur `main` depuis la PR #32** — ouvrir une PR quand tu le décides.
+**Prochaine étape** : attendre le prochain VOLET du propriétaire. Rien n'est en
+attente de ma part.
 
-**Repère de non-régression** : `1 failed, 6967 passed, 12 skipped`. L'unique
-échec est l'étiquette `v0.1.0`, **identique sur `main` et en CI** — jamais une
-régression, ne pas la « corriger ».
+**Ce qui a servi à chaque fois** : *sabotez la garde avant de la croire.* Une
+sabotage a elle-même été fautive — la ligne ajoutée s'est collée à la
+précédente, le fichier n'ayant pas de saut de ligne final ; le test était juste,
+pas la sabotage.
+
+**Repère de non-régression** : `7027 passed, 9 skipped, 3 deselected, 0 failed`
+sur un conteneur où l'étiquette `v0.1.0` existe en local. Sur `main` et en CI,
+`1 failed` — **l'étiquette, jamais une régression, ne pas la « corriger »**.
+
+**Piège d'environnement, mesuré** : un conteneur peut être provisionné **avant**
+une dépendance déclarée. `bcrypt==5.0.0` était dans `requirements.txt` et pas
+installé : **40 échecs et 16 erreurs**, tous d'auth. Mesurer la base **intacte**
+sur la même machine avant de conclure à une régression.
 
 **Piège de l'environnement, vu trois fois** : le conteneur est recyclé et le
-clone retombe sur `8879e8b`. Un dossier attendu absent = clone périmé, **jamais
-un programme perdu**. `git fetch` avant de conclure.
+clone retombe en arrière. Un dossier attendu absent = clone périmé, **jamais un
+programme perdu**. `git fetch` avant de conclure.
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
 - `git push origin v0.1.0` sur `383fcf7` → seul test rouge. **Publie une release
@@ -49,31 +58,32 @@ un programme perdu**. `git fetch` avant de conclure.
   `LICENSE`/`NOTICE` à la place de « GalSen IA ».
 - Cet hôte : **aucun GPU**, **`ffmpeg` absent**, Hugging Face et
   `api.github.com` en **403**. `raw.githubusercontent.com` et `pypi.org`
-  répondent — c'est par là que les 12 licences ont été lues.
+  répondent.
 
 ---
 
 ### Sessions précédentes
 
-**2026-08-20 — Finalisation, PR #32** : ADR-036 (Apache-2.0, choisie pour la
-concession de brevet du §3), `tests/test_sovereignty_subordinate_runtimes.py`,
-trois mensonges de la mémoire corrigés.
+**2026-08-20 — Audit OSS (22 phases, ADR-037)** : douze projets, **zéro
+`INTEGRATE`**, 16 documents, zéro ligne de `src/` touchée. C'est cet audit qui a
+produit les quatre constats ci-dessus.
 
-**2026-08-19/20 — OpenClaw (19 phases, ADR-034 : ne pas intégrer)** et
-**DeepSeek Harness (14 phases, ADR-035 : quatrième back-end de codage,
-implémentation non autorisée)**. Même méthode, réponses différentes.
+**2026-08-20 — Branche parallèle abandonnée** : `claude/galsen-ia-phases-ukwz7p`
+avait **refait** le programme Creative Intelligence déjà fusionné en PR #28 — 21
+modules contre 38, rien d'unique. Remise sur `main`, doublons abandonnés.
 
-**2026-08-19 — Live Context Engine / Call.md**, 27 phases, **ADR-033**.
-`REPRESENTATION READY — NO LIVE PERCEPTION ON THIS MACHINE`. **PR #31.**
+**2026-08-20 — Finalisation, PR #32** : ADR-036 (Apache-2.0, pour la concession
+de brevet du §3), `tests/test_sovereignty_subordinate_runtimes.py`.
 
+**2026-08-19/20 — OpenClaw (ADR-034 : ne pas intégrer)** et **DeepSeek Harness
+(ADR-035 : quatrième back-end, implémentation non autorisée)**.
+
+**2026-08-19 — Live Context / Call.md**, 27 phases, **ADR-033**, PR #31.
 **2026-08-19 — Creative Canvas (ADR-031) et Research Orchestration (ADR-032)**,
-PR #29. *Il n'y avait rien à importer.* Puis PR #30 : gouvernance spec-driven.
-
+PR #29. Puis PR #30 : gouvernance spec-driven.
 **2026-08-18/19 — Universal Creative Intelligence (44 phases) et
-MoneyPrinterTurbo (15 phases, ADR-030)**, PR #28. **MPT ne génère pas de
-vidéo** : il assemble des rushes Pexels/Pixabay.
-
-**2026-08-18 — ADR-029 (option C) : la plateforme a des comptes.** PR #26.
+MoneyPrinterTurbo (ADR-030)**, PR #28. **MPT ne génère pas de vidéo.**
+**2026-08-18 — ADR-029 : la plateforme a des comptes.** PR #26.
 **2026-08-17 — Coding Engine et interopérabilité** (ADR-028, ADR-023). PR #25.
 **2026-08-16 — Moteur média universel**, 32 phases. Aucune synthèse vocale ici.
 

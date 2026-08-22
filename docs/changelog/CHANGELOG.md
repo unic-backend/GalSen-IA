@@ -12,6 +12,81 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Security — 2026-08-21/22 — three gates that were narrower than they read
+
+The three findings the OSS ecosystem audit left open, closed in order. All three
+had the same shape: a rule stated in prose, and a check that measured something
+smaller than the rule.
+
+**`/coding/*` was gated by `tool:execute` alone (ADR-028).** `Role.USER` holds
+that permission — it is what opens the calculator — so an ordinary user could
+name any host directory and have an engine write files and run commands in it.
+The engine now declares its capability (`data_scope: system`, read+write,
+`unattended: False`) and both routes consult the **existing** role ceiling
+(`src/tool/authorization.py`), which already refuses `system` to `user`. No
+second authorization model was introduced. The refusal precedes body validation,
+so a 404 on a missing folder cannot enumerate the host.
+
+**The workspace itself was unbounded (ADR-028).** `confine()` refuses a path that
+leaves the workspace; nothing refused `~/.ssh` *as* the workspace, so the
+guarantee the module's own header claims was not held.
+`GALSEN_CODING_WORKSPACE_ROOTS` now declares where a workspace may live, and an
+unset variable refuses every execution instead of meaning "the whole host".
+Paths are resolved before comparison, and the comparison is on path components —
+`/data/projet` does not contain `/data/projet-secret`. A mistyped root is named
+in the refusal rather than silently narrowing the policy.
+
+**The training approval covered the act, not the content (ADR-006).**
+`export_pairs("oui")` passed: the identifier was never verified, and even a
+genuine approval said "export the training set" while the set grows daily — one
+obtained over twelve pairs authorized twelve thousand a month later.
+`request_export_approval()` records a SHA-256 fingerprint of the exact text that
+would leave; `export_pairs()` recomputes it and refuses if the content moved,
+naming what changed. `scripts/training/train_adapter.py` gained the matching
+`--empreinte`, reusing the same function rather than a second implementation.
+
+**And the isolation that had no guard.** `litellm==1.81.10` was measured
+installed in a platform environment, declared by no requirements file and
+imported by no module — an engine's dependency tree leaked into the platform's,
+the exact failure `scripts/install_coding_engines.sh` exists to prevent and that
+already cost a numpy downgrade and a platform-wide `import cv2` failure. Three
+tests now enforce what was only policy. On this container `litellm` is absent,
+`numpy` is 2.4.6, `cv2` is 5.0.0.
+
+Two existing tests asserted the training defect and were rewritten to go through
+a real approval — not weakened: both still assert what leaves and what does not.
+Measured: **7027 passed, 9 skipped, 3 deselected, 0 failed**; `ruff` clean. Every
+new guard was verified by sabotaging the thing it guards.
+
+### Fixed — 2026-08-20 — vector search rebuilt its matrix on every query (ADR-015)
+
+The OSS ecosystem audit measured `SQLiteVectorStore.search()` against the design
+ADR-015 describes and found they were not the same thing. The cosine was a
+NumPy dot product as written; the matrix it multiplied was **re-read and
+re-parsed from SQLite on every call**, so the trigger condition ADR-015 wrote
+for itself was measuring JSON parsing rather than similarity.
+
+- Measured here before and after, medians over 15 queries: **49.4 → 0.463 ms**
+  at 271 vectors (today's corpus), **1 856.8 → 0.830 ms** at 10 000.
+- The matrix is cached per (collection, model) and validated by a **version
+  counter written inside each write's transaction**, not by an in-memory flag.
+  A cache only its own process can invalidate serves a stale answer the moment
+  another process writes, and one of the eleven tests writes from a second
+  store instance to prove this one does not.
+- `PRAGMA data_version` would have been exact too, but it needs a persistent
+  connection: measured here, a fresh connection always reads `1`, and this
+  store opens one per operation. That measurement is why the counter exists.
+- A collection above a declared ceiling is served **without** cache rather than
+  growing the process quietly; `stats()` reports cache entries, bytes and hits.
+- The five staleness guards were verified by **sabotaging the validation** —
+  all five go red. One of them did not discriminate and was rewritten to assert
+  the stale *score* rather than the ranking, which was identical either way.
+- ADR-015 carries the amendment, including two corrections to how the original
+  finding reads: 94.93 ms is *below* the 100 ms threshold, not beyond it, and
+  the fix does not move the trigger — it removes an overhead that was never
+  part of the decision.
+
+
 ### Added — 2026-08-20 — Twelve open-source projects audited, none integrated (ADR-037, 22 phases)
 
 Sixteen documents under `docs/oss-ecosystem/`. **Zero lines of `src/` changed,
