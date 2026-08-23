@@ -9,8 +9,8 @@ VOLET en cours   : **REDESIGN CHAT-FIRST**
                    Brief du propriétaire, 2026-08-22
 Chapitres        : **8**
 Phases           : **11**
-Phase courante   : **4.1 — en attente de confirmation**
-Terminées        : **1** (audit), **2.1**, **2.2** (route `/chat`), **3.1**, **3.2** (coquille + identité)
+Phase courante   : **5.1 — en attente de confirmation**
+Terminées        : **1–5** (4.1-4.2 incl.) — chat conversationnel fonctionnel
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md`.
@@ -89,9 +89,9 @@ Ch. 03  La coquille chat                         → 2 phases  ✅ TERMINÉ
         3.1 `chat.html` + `chat.css` — plein écran, zéro carte
         3.2 identité GalSen IA : palette reprise, vide accueillant, 9 tests
 
-Ch. 04  La conversation                          → 2 phases
+Ch. 04  La conversation                          → 2 phases  ✅ TERMINÉ
         4.1 `chat.js` : envoi, historique, états d'attente et d'erreur
-        4.2 réutilisation de `api-client.js`, jamais un second client
+        4.2 réutilisation de `api-client.js`, jamais un second client — 7 tests
 
 Ch. 05  Le menu des domaines                     → 1 phase (indivisible)
         14 capacités, en haut à gauche, sans multiplier les assistants
@@ -148,6 +148,27 @@ s'insérera plus tard, pour que ce ne soit pas à refaire.
 5. **Live Context** (ADR-033), **Creative Canvas** (ADR-031),
    **Research Orchestration** (ADR-032), **MoneyPrinterTurbo** (ADR-030),
    **Apache-2.0** (ADR-036).
+
+---
+
+## Ce que les chapitres 02–04 ont bâti
+
+Un chat qui refuse honnêtement. À la première visite, l'utilisateur voit :
+- Un accueil que le premier message efface
+- Trois pistes qu'il peut cliquer ou dactylographier
+- L'historique, dans le temps de la conversation
+- Les trois jetons sous chaque réponse : domaine, méthode, ancrage, durée
+- **Rien que la plateforme ne sait.**
+
+Quand il saisit « Quand planter le mil ? », le chat :
+1. détecte agriculture (keywords)
+2. demande à l'orchestrateur (par `/chat`, pas par `/model/generate`)
+3. reçoit le refus de l'agent `senegal` : « la base est vide »
+4. le rend tel quel, en ocre (pas rouge)
+5. dit **1,1 s** réellement, pas 4,87 s de mesure précédente
+
+Aucun des 17 agents ne rédige. La chaîne `question` est recherche+vérification,
+pas conversation. Ce qui s'affiche n'invente rien.
 
 ---
 
