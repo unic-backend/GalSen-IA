@@ -9,8 +9,8 @@ VOLET en cours   : **REDESIGN CHAT-FIRST**
                    Brief du propriétaire, 2026-08-22
 Chapitres        : **8**
 Phases           : **11**
-Phase courante   : **3.1 — en attente de confirmation**
-Terminées        : **1** (audit du frontend), **2.1** (contrat), **2.2** (route + tests)
+Phase courante   : **4.1 — en attente de confirmation**
+Terminées        : **1** (audit), **2.1**, **2.2** (route `/chat`), **3.1**, **3.2** (coquille + identité)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md`.
@@ -85,9 +85,9 @@ Ch. 02  La route de conversation                 → 2 phases  ✅ TERMINÉ
         2.1 contrat : entrée, sortie, orchestrateur, refus. Aucun code
         2.2 implémentation + tests — `POST /chat`, 14 tests
 
-Ch. 03  La coquille chat                         → 2 phases
+Ch. 03  La coquille chat                         → 2 phases  ✅ TERMINÉ
         3.1 `chat.html` + `chat.css` — plein écran, zéro carte
-        3.2 identité GalSen IA : palette, typographie, vide accueillant
+        3.2 identité GalSen IA : palette reprise, vide accueillant, 9 tests
 
 Ch. 04  La conversation                          → 2 phases
         4.1 `chat.js` : envoi, historique, états d'attente et d'erreur
