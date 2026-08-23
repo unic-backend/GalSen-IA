@@ -392,3 +392,86 @@ class TestLaGenerationNAncreRien:
             charge = reponse.json()
             assert charge["generated"] is False
             assert charge["generation_unavailable"]
+
+
+class TestPanneEtMemoire:
+    """
+    Ce qu'on dit quand ça rate, et ce dont on se souvient (§14 et §15).
+    """
+
+    def test_aucune_infrastructure_ne_fuit_dans_la_reponse(self, client):
+        """
+        **Mesuré le 2026-08-23 : ce défaut a existé.** Le motif rendu par
+        l'API portait `http://localhost:11434` — un hôte et un port livrés à
+        quiconque appelle la route. Le §14 l'interdit, et un message d'erreur
+        est le dernier endroit où l'on pense à regarder.
+        """
+        charge = client.post("/chat", json={"message": "Explique Linux."},
+                             headers=ENTETE).json()
+        motif = charge.get("generation_unavailable") or ""
+        assert "http://" not in motif
+        assert "localhost" not in motif
+        assert ":11434" not in motif
+
+    def test_la_cause_reelle_est_conservee_a_l_interieur(self):
+        """
+        Cacher une panne n'est pas la traiter. Le détail entier reste dans
+        `failure_detail`, journalisé, et il porte le geste à faire.
+        """
+        from src.chat import ContexteReponse, RedacteurConversation
+        from src.model_engine.model_manager import ModelManagerImpl
+
+        finale = RedacteurConversation(ModelManagerImpl()).rediger(
+            ContexteReponse(message="Explique Linux.")
+        )
+        assert finale.generated is False
+        assert finale.failure_detail
+        # Plus long que le motif public : c'est tout l'intérêt.
+        assert len(finale.failure_detail) > len(finale.failure_reason or "")
+
+    def test_un_motif_public_est_stable_et_court(self):
+        """
+        Une valeur énumérée ne change pas quand le fournisseur change, donc un
+        client peut s'y fier. Une prose de fournisseur, non.
+        """
+        from src.chat.response import AUCUN_FOURNISSEUR, _classer_panne
+        from src.model_engine.providers.base import ProviderUnavailableError
+
+        class FausseRaison:
+            value = "no_credentials"
+
+        erreur = ProviderUnavailableError("ollama", FausseRaison(), "http://localhost:11434")
+        assert _classer_panne(erreur) == AUCUN_FOURNISSEUR
+        assert "localhost" not in _classer_panne(erreur)
+
+    def test_le_tour_precedent_atteint_le_modele(self, client):
+        """
+        §15 : « j'apprends le Python » puis « quelle bibliothèque pour les
+        API ? » — la seconde réponse doit pouvoir se servir de la première.
+
+        Aucun second système de mémoire n'est créé : l'historique voyage de la
+        requête jusqu'à l'invite, en passant par le contexte de réponse.
+        """
+        import src.api.server as serveur
+
+        vu = {}
+
+        async def faux(prompt, task_requirements, **k):
+            vu["invite"] = prompt
+            return "FastAPI ou Flask conviennent."
+
+        precedent = serveur.model_manager.generate_text_with_fallback
+        serveur.model_manager.generate_text_with_fallback = faux
+        try:
+            client.post("/chat", json={
+                "message": "Quelle bibliothèque pour les API ?",
+                "history": [
+                    {"role": "user", "content": "J'apprends le Python."},
+                    {"role": "assistant", "content": "Par où veux-tu commencer ?"},
+                ],
+            }, headers=ENTETE)
+        finally:
+            serveur.model_manager.generate_text_with_fallback = precedent
+
+        assert "apprends le Python" in vu["invite"]
+        assert "User:" in vu["invite"] and "Assistant:" in vu["invite"]

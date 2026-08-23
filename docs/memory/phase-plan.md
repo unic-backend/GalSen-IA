@@ -9,8 +9,8 @@ VOLET en cours   : **CHAT — RÉPONSE FINALE RÉELLE**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **11**
 Phases           : **19** (18 + la 5.3 annoncée au ch. 03)
-Phase courante   : **6 — en attente de confirmation**
-Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2 · 4.1 · 4.2 · 5.1 · 5.2 · 5.3**
+Phase courante   : **7.1 — en attente de confirmation**
+Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2 · 4.1 · 4.2 · 5.1 · 5.2 · 5.3 · 6**
 Branche          : `claude/galsen-ia-phases-ukwz7p`, **repartie de `main`**
                    (`dc09303`) — la PR #36 est fusionnée, on n'empile pas
                    sur de l'historique déjà intégré.
@@ -166,7 +166,8 @@ Ch. 05  /chat, ancrage et constats (§12,13)       → 3 phases
             workflow `question` ne déclare pas `coder`, donc il ne tourne
             pas. **Décision d'exploitant, pas de détail** — voir ci-dessous.
 
-Ch. 06  Erreurs et mémoire (§14,15)               → 1 phase (indivisible)
+Ch. 06  Erreurs et mémoire (§14,15)               → 1 phase (indivisible) ✅
+        Fuite d'infrastructure corrigée ; historique vérifié jusqu'à l'invite
 
 Ch. 07  Tests A à J (§16,17)                      → 3 phases
         7.1 A, B, D — général, conversation, technique

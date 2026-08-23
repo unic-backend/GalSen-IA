@@ -17,6 +17,7 @@ réponse inventée**. Elle rend ce que les agents ont réellement rapporté, ou 
 qu'il n'y a rien — jamais autre chose.
 """
 
+import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -28,6 +29,8 @@ from ..agent.context import executer_coroutine
 GROUNDED = "GROUNDED"
 UNGROUNDED = "UNGROUNDED"
 NOT_CHECKED = "NOT_CHECKED"
+
+_JOURNAL = logging.getLogger(__name__)
 
 
 @dataclass
@@ -86,7 +89,13 @@ class ReponseFinale:
     answer: str
     generated: bool = False
     model_used: Optional[str] = None
+    # Court, stable, sans détail d'infrastructure : c'est ce qu'un appelant de
+    # l'API peut recevoir.
     failure_reason: Optional[str] = None
+    # La cause réelle, entière. **Journalisée, jamais rendue par la route.**
+    # Le §14 demande de garder l'information de panne à l'intérieur ; la perdre
+    # pour la cacher serait la mauvaise moitié de la consigne.
+    failure_detail: Optional[str] = None
     elapsed_seconds: float = 0.0
 
 
@@ -323,10 +332,13 @@ class RedacteurConversation:
                 )
             )
         except Exception as erreur:  # noqa: BLE001 — toute panne est une donnée
+            detail = _detail_complet(erreur)
+            _JOURNAL.warning("Génération de réponse impossible : %s", detail)
             return ReponseFinale(
                 answer=composer_sans_modele(contexte),
                 generated=False,
-                failure_reason=_motif_lisible(erreur),
+                failure_reason=_classer_panne(erreur),
+                failure_detail=detail,
                 elapsed_seconds=round(time.perf_counter() - debut, 3),
             )
 
@@ -337,7 +349,8 @@ class RedacteurConversation:
             return ReponseFinale(
                 answer=composer_sans_modele(contexte),
                 generated=False,
-                failure_reason="le modèle a rendu un texte vide",
+                failure_reason=TEXTE_VIDE,
+                failure_detail=TEXTE_VIDE,
                 elapsed_seconds=round(time.perf_counter() - debut, 3),
             )
 
@@ -349,18 +362,37 @@ class RedacteurConversation:
         )
 
 
-def _motif_lisible(erreur: Exception) -> str:
-    """
-    Rend une panne dicible sans exposer l'infrastructure.
+# Les motifs rendus à l'appelant. Courts, stables, et **sans rien qui décrive
+# l'infrastructure** : mesuré le 2026-08-23, le message brut du moteur contenait
+# `http://localhost:11434`, c'est-à-dire un hôte et un port livrés à quiconque
+# appelle l'API. Le §14 l'interdit.
+#
+# Une valeur énumérée vaut mieux qu'une prose de fournisseur pour une autre
+# raison : elle ne change pas quand le fournisseur change, donc un client peut
+# s'y fier.
+AUCUN_FOURNISSEUR = "aucun fournisseur de modèle n'est disponible"
+GENERATION_ECHOUEE = "la génération a échoué"
+TEXTE_VIDE = "le modèle a rendu un texte vide"
 
-    Le §14 du brief demande de garder la vraie cause à l'intérieur et de ne pas
-    laisser fuir chemins, hôtes ou secrets. Le type et le message court
-    suffisent à diagnostiquer ; la trace complète reste dans les journaux.
+
+def _classer_panne(erreur: Exception) -> str:
     """
+    Rend un motif court et sûr pour une panne de génération.
+
+    L'opérateur, lui, a besoin du détail : il est conservé dans
+    `ReponseFinale.failure_detail` et journalisé. `/health` porte déjà l'état
+    des fournisseurs, avec le geste à faire — c'est là qu'il a sa place, pas
+    dans la réponse à un message de conversation.
+    """
+    if type(erreur).__name__ == "ProviderUnavailableError":
+        return AUCUN_FOURNISSEUR
+    return GENERATION_ECHOUEE
+
+
+def _detail_complet(erreur: Exception) -> str:
+    """La cause entière, pour le journal et le diagnostic."""
     message = str(erreur).strip()
-    if not message:
-        return type(erreur).__name__
-    return f"{type(erreur).__name__}: {message[:200]}"
+    return f"{type(erreur).__name__}: {message}" if message else type(erreur).__name__
 
 
 def _modele_utilise(gestionnaire: Any) -> Optional[str]:
