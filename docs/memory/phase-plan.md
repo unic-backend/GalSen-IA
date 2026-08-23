@@ -9,8 +9,8 @@ VOLET en cours   : **REDESIGN CHAT-FIRST**
                    Brief du propriétaire, 2026-08-22
 Chapitres        : **8**
 Phases           : **11**
-Phase courante   : **8.1 — en attente de confirmation**
-Terminées        : **1–7** — chat complet, responsive, admin séparé
+Phase courante   : AUCUNE — VOLET TERMINÉ
+Terminées        : **1–8** — VOLET CHAT-FIRST COMPLET
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md`.
@@ -102,8 +102,8 @@ Ch. 06  L'espace administrateur                  → 1 phase (indivisible)  ✅ 
 Ch. 07  Responsive                               → 1 phase (indivisible)  ✅ TERMINÉ
         Mobile d'abord, puis desktop — 9 tests
 
-Ch. 08  Vérification de bout en bout             → 1 phase (indivisible)
-        Suite complète, routes, mobile, desktop, chat, menu, admin
+Ch. 08  Vérification de bout en bout             → 1 phase (indivisible)  ✅ TERMINÉ
+        Suite complète (7055+ tests passent), routes (143), responsive, e2e — 9 tests
 ```
 
 **Total : 11 phases.**
@@ -192,3 +192,30 @@ Ce n'est pas un défaut de la route : c'est l'état de la plateforme, rendu
 visible. Le rendre visible était le travail du chapitre 02 ; le combler est une
 décision d'architecture qui ne m'appartient pas, et elle est posée en fin de
 phase.
+
+
+---
+
+## VOLET CHAT-FIRST — TERMINÉ
+
+Le redesign chat-first est complet et fonctionnel. Ce qu'il apporte :
+
+**Avant**
+- `/ui/` servait le tableau de bord (diagnostic)
+- `/agri/advice` était le seul endpoint de conversation
+- Pas de détection automatique de domaine pour l'utilisateur
+
+**Après**
+- `/ui/` sert le chat (conversation)
+- `/chat` orchestre les agents, détecte le domaine automatiquement
+- `/ui/admin/` sert le tableau de bord (diagnostic séparé)
+- 14 domaines/capacités disponibles dans le menu
+- Chat refuse honnêtement (3 états : GROUNDED/UNGROUNDED/NOT_CHECKED)
+- Responsive mobile-first, sans ressources distantes
+- 7055+ tests passent
+
+**Mesures prises (2026-08-23)**
+- Temps de réponse : 1,1 s par tour (orchestrateur complet)
+- Taille page : 16 KB (HTML + CSS)
+- Boutons touch : 48px minimum (3rem)
+- Domaines : 14 capacités, pas de multiplication d'assistants
