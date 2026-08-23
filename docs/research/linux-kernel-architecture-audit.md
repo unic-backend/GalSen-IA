@@ -575,6 +575,144 @@ None of the three is an architecture change. All three add a guard or a field to
 something that already exists — which is what a research audit should hope to
 find, and the opposite of what "adopt the Linux model" would have produced.
 
+# Chapter 05 — Resource management
+
+The brief asks whether GalSen IA needs quotas, priorities, isolation, admission
+control, scheduling, backpressure, workload accounting or graceful degradation —
+and to say so explicitly when it does not.
+
+**It needs none of them. It needs something else, and the measurement is
+unambiguous.**
+
+## P10 — Blocking work must not run where everything else waits
+
+`grep` over `src/api/server.py`: **144 `async def` routes, and zero uses of
+`run_in_executor`, `to_thread` or `anyio.to_thread`.** The orchestrator is
+called synchronously from inside `async def` handlers (`server.py:1506`,
+`:2282`, `:2399`).
+
+In Starlette, an `async def` endpoint runs **on the event loop**. Blocking inside
+it stalls the whole process.
+
+Measured on this machine, 2026-08-23, with a live uvicorn on port 8123:
+
+| Request | Time |
+|---|---:|
+| `/health` alone, three times | **4.2 ms · 3.9 ms · 3.5 ms** |
+| `/health` issued 0.25 s into a `/chat` | **1 149 ms** |
+
+**A 274× slowdown**, and the 1.149 s is precisely the remainder of the `/chat`
+turn. The health check did not answer slowly — it waited for the chat to finish.
+
+Two consequences, neither hypothetical:
+
+- **The platform cannot report its own health while it is working.** A
+  supervisor polling `/health` with a 1 s timeout would declare a working
+  platform dead.
+- Every concurrent user waits for every other user's slowest agent, with no
+  queue, no priority and no way to see it happening.
+
+| Field | |
+|---|---|
+| **Linux principle** | A task that blocks is descheduled; it does not hold the CPU because it decided to. |
+| **Current solution** | None. Blocking orchestration runs on the event loop. |
+| **Potential improvement** | Run blocking orchestration off the loop — in Starlette this is one decision per endpoint, not an architecture. |
+| **Complexity** | **Low** |
+| **Risk** | Low, and testable: the measurement above is the test |
+| **Reversibility** | **Total** — it is a call-site change |
+| **Provisional class** | **A — USEFUL NOW** (candidate) |
+
+## The brief's list, answered
+
+| Mechanism | Needed? | Why |
+|---|---|---|
+| Resource quotas | **No** | One instance (ADR-009), no tenants competing for a shared budget |
+| Priorities | **No** | Nothing queues, so nothing can be prioritised |
+| Isolation | **Partly** — see chapter 06 | Covered for tool code, absent for agents |
+| Admission control | **No, not yet** | It would shed load the platform cannot currently even measure. Fix P10 first; re-ask afterwards |
+| Scheduling | **No** | Sequential by design, and the engine says so |
+| Backpressure | **No** | Requires a queue; there is none |
+| Workload accounting | **No** | `elapsed_seconds` per turn already exists where it matters |
+| Graceful degradation | **Already covered** | `src/integration/degradation.py`, three verdicts, reasons carried |
+
+**Seven of eight are not needed.** Adding any of them would be building a
+scheduler for a platform that schedules nothing — the exact failure this audit
+was told to avoid.
+
 ---
 
-*Chapters 05 to 13 pending.*
+# Chapter 06 — Agent isolation
+
+## What exists
+
+- **Tool code** crosses a process boundary and runs under six `setrlimit` bounds
+  applied before its first instruction (`src/sandbox/`).
+- **Agents** do not. They are imported and called in the orchestrator's own
+  interpreter (chapter 01, finding 3). An agent cannot be bounded, killed or
+  accounted for.
+- **Permissions** are capability-shaped: 35 named permissions, and a real
+  ceiling in `PERMISSIONS_HORS_PLATEFORME`.
+- **Untrusted input** is handled at `src/security/trust.py`: external text is
+  data with an origin, never an instruction.
+
+## P11 — A limitation asserted is not a limitation measured
+
+This is the finding of the chapter, and it is about the repository rather than
+about Linux.
+
+`src/sandbox/policy.py:57` states, as a fact, that a real per-execution process
+cap needs *"cgroups, therefore privileges the platform does not have"*.
+
+**Measured on this machine, 2026-08-23:**
+
+| Probe | Result |
+|---|---|
+| `/proc/sys/user/max_user_namespaces` | **64262** |
+| `unshare -Un true` | **succeeds** — a user + network namespace is creatable |
+| cgroup2 mount | **`cgroup2 on /sys/fs/cgroup/unified (rw)`** |
+| `cgroup.subtree_control` at that path | **absent** — delegation not usable as-is |
+| uid | 0, `CapEff: 000001fffeffffff` |
+
+So on this machine the network cut that `NON_GARANTI` calls impossible is, in
+fact, **creatable**. The assertion is not false everywhere — it is
+**environment-dependent, and was written as absolute**. This container runs as
+root with a near-full capability set; the owner's Windows machine has neither
+mechanism, and a production host is a third unknown.
+
+**And the repository already knows how to do this correctly, in another
+subsystem.** `src/media/core/capabilities.py` opens with *"What this machine can
+actually do to media — asked, never assumed"*, and explains why a boolean is
+wrong **in both directions**: this environment's `ffmpeg` is absent from `PATH`
+yet present elsewhere, and that copy is built `--disable-everything`. So the
+media engine interrogates the binary — `-encoders`, `-decoders`, `-demuxers`,
+`-protocols` — and reports capability by capability.
+
+The sandbox asserts where the media engine measures.
+
+| Field | |
+|---|---|
+| **Linux principle** | Isolation mechanisms are queryable; whether one is available is a property of the running system, not of the program's opinion. |
+| **Problem it solves** | A sandbox claiming a boundary it lacks is worse than none — and one *refusing* a boundary it has silently gives up protection it could have had. |
+| **GalSen IA equivalent problem** | Exactly this, measured above. |
+| **Current solution** | An assertion in a prose tuple. |
+| **Potential improvement** | Probe, and report what was found — the pattern `src/media/` already uses. **No new isolation mechanism is proposed here**, only that the platform stop guessing about its own. |
+| **Complexity** | Low |
+| **Risk** | **Low, and asymmetric**: today the platform under-claims, which is the safe direction. Any use of a discovered namespace is a separate decision, not part of this |
+| **Reversibility** | High |
+| **Provisional class** | **A — USEFUL NOW** (candidate, documentation-and-probe only) |
+
+## What is explicitly not recommended
+
+- **Do not sandbox agents by moving them to processes.** They are first-party
+  code loaded from a declared registry, not untrusted input. The cost is high,
+  the benefit is bounded, and P5 (a time bound) addresses the failure that
+  actually occurs.
+- **Do not add namespaces to the sandbox** on the strength of one measurement on
+  one container running as root. P4 stays **F — BLOCKED**; what changes is that
+  the *reason* must be measured rather than asserted.
+- **Do not weaken anything.** No existing check is relaxed by any candidate in
+  this audit.
+
+---
+
+*Chapters 07 to 13 pending.*
