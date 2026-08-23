@@ -104,8 +104,8 @@ body {
 
 .bouton-menu {
   flex: none;
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 3rem;
+  height: 3rem;
   font-size: 1.1rem;
   color: var(--texte);
   background: transparent;
@@ -372,8 +372,8 @@ body {
 
 .composeur button {
   flex: none;
-  width: 2.7rem;
-  height: 2.7rem;
+  width: 3rem;
+  height: 3rem;
   font-size: 1.1rem;
   color: var(--accent-contraste);
   background: var(--accent);
@@ -446,8 +446,8 @@ body {
   position: absolute;
   top: 0.6rem;
   right: 0.6rem;
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 3rem;
+  height: 3rem;
   font-size: 1.2rem;
   color: var(--texte);
   background: transparent;
