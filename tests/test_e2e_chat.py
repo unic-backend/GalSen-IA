@@ -108,9 +108,16 @@ class TestAdmin:
         assert "Tableau de bord" in r.text
 
     def test_admin_et_chat_sont_differents(self, client):
+        """
+        Deux pages distinctes, distinguées par ce qu'elles portent.
+
+        La comparaison ne peut pas se faire sur la chaîne « Tableau de bord » :
+        la conversation en porte une, dans le lien qui y mène. Un déplacement
+        sans porte serait une suppression, donc ce lien doit exister — et un
+        test qui l'interdirait pousserait à le retirer.
+        """
         chat = client.get("/ui/").text
         admin = client.get("/ui/admin/").text
-        assert "conversation" in chat
-        assert "conversation" not in admin
-        assert "Tableau de bord" in admin
-        assert "Tableau de bord" not in chat
+
+        assert 'id="composeur"' in chat and 'id="composeur"' not in admin
+        assert 'id="cles"' in admin and 'id="cles"' not in chat

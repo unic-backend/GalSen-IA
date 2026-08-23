@@ -55,7 +55,12 @@ class TestAncienChemin:
     """L'ancien chemin du tableau de bord n'existe plus à /ui/index.html."""
 
     def test_ui_avec_index_html_specifique_est_le_chat(self, client):
-        # /ui/index.html doit être le chat maintenant
+        """
+        `/ui/index.html` sert la conversation, plus le tableau de bord.
+
+        Vérifié par les points de montage, pas par un mot : la page porte le
+        lien « Tableau de bord » qui mène à `/ui/admin/`, et c'est voulu.
+        """
         page = client.get("/ui/index.html").text
         assert 'id="conversation"' in page
-        assert 'Tableau de bord' not in page
+        assert 'id="cles"' not in page

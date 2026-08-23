@@ -29,17 +29,17 @@ class TestMenu:
     """Le menu affiche 14 domaines."""
 
     def test_le_menu_est_present(self, client):
-        page = client.get("/ui/chat.html").text
+        page = client.get("/ui/").text
         assert 'id="menu-domaines"' in page
 
     def test_14_domaines_sont_listes(self, client):
-        page = client.get("/ui/chat.html").text
+        page = client.get("/ui/").text
         # Vérifier que 14 domaines sont présents avec l'attribut data-domaine
         count = page.count('class="menu-domaine"')
         assert count == 14, f"Attendu 14 domaines, trouvé {count}"
 
     def test_les_domaines_connus_sont_presents(self, client):
-        page = client.get("/ui/chat.html").text
+        page = client.get("/ui/").text
         domaines = [
             "Agriculture",
             "Santé",
@@ -60,7 +60,7 @@ class TestMenu:
             assert domaine in page, f"{domaine} absent du menu"
 
     def test_les_domaines_ont_des_identifiants(self, client):
-        page = client.get("/ui/chat.html").text
+        page = client.get("/ui/").text
         # Vérifier que chaque bouton a un data-domaine
         assert 'data-domaine="agriculture"' in page
         assert 'data-domaine="sante"' in page
@@ -71,7 +71,6 @@ class TestIntegration:
     """Le menu fonctionne avec le chat."""
 
     def test_le_script_du_menu_est_charge(self, client):
-        page = client.get("/ui/chat.html").text
         # Vérifier que le script chat.js contient la logique du menu
         script = client.get("/ui/js/chat.js").text
         assert "menu-domaines" in script
@@ -79,8 +78,8 @@ class TestIntegration:
         assert "dataset.domaine" in script
 
     def test_le_menu_se_ferme_quand_on_choisit(self, client):
-        # Ce test ne peut pas être vérifié sans un navigateur réel.
-        # On vérifier juste que le bouton de réinitialisation existe.
-        page = client.get("/ui/chat.html").text
+        # La fermeture elle-même demande un vrai navigateur ; ce qui est
+        # vérifiable ici est que le retour à « aucun filtrage » existe.
+        page = client.get("/ui/").text
         assert "menu-reinitialiser" in page
         assert "Aucun filtrage" in page

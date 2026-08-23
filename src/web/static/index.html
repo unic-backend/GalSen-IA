@@ -59,6 +59,17 @@
           <li><button type="button" class="menu-domaine" data-domaine="emploi">Emploi</button></li>
         </ul>
         <button type="button" class="menu-reinitialiser">Aucun filtrage</button>
+
+        <!-- Le tableau de bord et le studio vivaient sur cette page avant le
+             redesign. Les déplacer sans laisser de porte les aurait supprimés
+             en pratique : mesuré le 2026-08-23, sept tests du formulaire
+             agricole et un du studio sont devenus rouges parce que plus rien
+             n'y menait. -->
+        <h2 class="menu-titre">Ailleurs</h2>
+        <ul class="menu-liste">
+          <li><a class="menu-lien" href="/ui/admin/">Tableau de bord</a></li>
+          <li><a class="menu-lien" href="/ui/studio.html">Media Studio</a></li>
+        </ul>
       </nav>
 
 
@@ -133,6 +144,18 @@
            chiffre qu'on peut décider de réduire. -->
       <p class="etat" id="etat" role="status"></p>
     </div>
+
+    <!-- Sans JavaScript, cette page est un formulaire mort : le composeur ne
+         part nulle part. Le dire vaut mieux que laisser quelqu'un taper une
+         question dans le vide. Le tableau de bord porte la même garantie. -->
+    <noscript>
+      <p class="sans-js">
+        Cette conversation a besoin de JavaScript pour interroger la
+        plateforme. Son état reste consultable sur
+        <a href="/health">/health</a>, et le tableau de bord sur
+        <a href="/ui/admin/">/ui/admin/</a>.
+      </p>
+    </noscript>
 
     <script type="module" src="/ui/js/chat.js"></script>
   </body>

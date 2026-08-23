@@ -24,7 +24,7 @@ def client():
 @pytest.fixture
 def page_chat(client):
     """Charger la page de conversation."""
-    return client.get("/ui/chat.html").text
+    return client.get("/ui/").text
 
 
 class TestPageStructure:

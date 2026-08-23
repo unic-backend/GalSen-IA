@@ -6,57 +6,39 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ---
 
-## Dernière session — 2026-08-22
+## Dernière session — 2026-08-23
 
-**En cours** : rien. **AUDIT #01 `codebase-memory-mcp` terminé**, 16 phases.
+**En cours** : rien. **VOLET REDESIGN CHAT-FIRST terminé**, 8 chapitres, 11 phases,
+branche `claude/galsen-ia-phases-ukwz7p`.
 
-**Terminé** : `DeusData/codebase-memory-mcp` à `010569fa` audité →
-**`KEEP FOR RESEARCH`**. Rapport : `docs/research/codebase-memory-mcp-audit.md`.
-**Rien installé, rien intégré, rien adapté. Zéro fichier hors `docs/`.**
+**Terminé** : la plateforme a une conversation. `POST /chat` (143 routes), le chat
+sert `/ui/`, le tableau de bord passe sous `/ui/admin/`, menu de 14 domaines,
+responsive mobile d'abord.
 
 À savoir sans relire :
-- **Projet en C, 1,3 Go** (842 `.c`, 160 grammaires tree-sitter), **MIT**, aucun
-  copyleft, **30 Mo de poids `nomic` embarqués** (Apache-2.0).
-- **Réellement indépendant des fournisseurs** — vérifié dans le C : aucun client
-  d'API, aucun appel sortant, la seule socket `AF_INET` vise `127.0.0.1`.
-- **16 lignes sur 24 sont `KEEP`** parce que **`code-review-graph`, déjà branché
-  ici, les couvre**. Ce n'est pas une capacité qui manque : c'est un **second
-  fournisseur** d'une capacité existante.
-- **Le risque** : il écrit des **fichiers d'instructions** dans `$HOME`
-  (`global_rules.md`, `AGENTS.md`). Même classe de surface qu'ADR-038 a écartée.
-  **Le retrait n'est pas propre** : désinstaller ne les efface pas.
-- **`NOT_MEASURED`** sur la performance : la mesure qui déciderait est contre
-  `code-review-graph`, et son serveur MCP s'est déconnecté deux fois ici.
-- **Deux faux positifs écartés en lisant les correspondances** : « 7 MPL » était
-  *simplecpp*, et `getaddrinfo` était une table générée de symboles Python.
+- **Aucun des 17 agents ne rédige.** Seuls `planner` et `coder` appellent le
+  modèle, pour planifier et pour coder. Le workflow `question` est
+  `planner → researcher → senegal → verifier` : recherche et vérification, pas
+  conversation. **`/chat` rend donc le refus des agents, jamais une phrase
+  fabriquée** — c'est honnête, et ça ne converse pas encore. Rendre le chat
+  *conversant* demande une étape de rédaction : **non autorisée, non faite.**
+- L'orchestrateur a l'honnêteté que `/agri/advice` n'a pas : l'agent `senegal`
+  répond `empty_base` avec « la base est vide sur ce sujet — ce n'est pas une
+  réponse négative ». **1,1 s** par tour, mesuré.
+- **Trois défauts trouvés en relisant du travail déjà déclaré terminé** :
+  le jeton d'ancrage fabriquait sa classe par interpolation (`jeton.grounded`,
+  invalide) et **n'a jamais eu sa couleur** ; `grounding.reason` était jeté ;
+  le déplacement du tableau de bord avait rendu le formulaire agricole et le
+  Media Studio **inatteignables en cliquant**. `tests/test_ui_chat.py`
+  (`TestJetonAncrage`) tient le premier, sabotage vérifiée.
 
-**Prochaine étape** : rien d'autorisé. Le déclencheur nommé, si tu le veux :
-mesurer tokens et appels contre `code-review-graph` sur les 5 questions de la
-phase 8. Suggestion optionnelle non implémentée : arêtes `CALLS` et incrémental
-par hachage dans `src/agent/`, le jour où `self_healer.py` en aura besoin.
+**Prochaine étape** : rien d'autorisé. La branche n'est pas fusionnée et aucune PR
+n'a été demandée pour ce volet. Décision en attente du propriétaire : ouvrir ou
+non l'étape de rédaction qui ferait vraiment converser le chat.
 
-**Ce qui a servi à chaque fois** : *sabotez la garde avant de la croire.* Une
-sabotage a elle-même été fautive — la ligne ajoutée s'est collée à la
-précédente, le fichier n'ayant pas de saut de ligne final ; le test était juste,
-pas la sabotage.
-
-**Repère de non-régression, mesuré sur `main` après la fusion** (run 32555510451) :
-`1 failed, 7020 passed, 15 skipped, 3 deselected`. Avant la fusion, `main` à
-`c88b555` donnait `1 failed, 6964 passed, 15 skipped` : **+56 verts, le même
-unique échec**. Cet échec est l'étiquette `v0.1.0` — **jamais une régression, ne
-pas la « corriger »**. En local sur un conteneur où l'étiquette existe, la suite
-est entièrement verte : `7027 passed, 9 skipped, 3 deselected, 0 failed`. L'écart
-de 6 ignorés vient de tests dépendants de l'environnement ; le total collecté est
-le même des deux côtés.
-
-**Piège d'environnement, mesuré** : un conteneur peut être provisionné **avant**
-une dépendance déclarée. `bcrypt==5.0.0` était dans `requirements.txt` et pas
-installé : **40 échecs et 16 erreurs**, tous d'auth. Mesurer la base **intacte**
-sur la même machine avant de conclure à une régression.
-
-**Piège de l'environnement, vu trois fois** : le conteneur est recyclé et le
-clone retombe en arrière. Un dossier attendu absent = clone périmé, **jamais un
-programme perdu**. `git fetch` avant de conclure.
+**Ce qui a servi** : *une suite lancée avec `| tail -4` cache ses échecs.* Un run
+a rapporté « 25 failed » dont **3 seulement étaient visibles**, et les 22 autres
+ont été déclarés verts. Rediriger la sortie vers un fichier, jamais la tronquer.
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
 - **`GALSEN_CODING_WORKSPACE_ROOTS` doit être renseignée** ou le moteur de codage
@@ -73,6 +55,9 @@ programme perdu**. `git fetch` avant de conclure.
 ---
 
 ### Sessions précédentes
+
+**2026-08-22 — AUDIT #01 `codebase-memory-mcp`**, 16 phases → `KEEP FOR RESEARCH`.
+Rapport : `docs/research/codebase-memory-mcp-audit.md`. Rien installé, rien intégré.
 
 **2026-08-20 — Audit OSS (22 phases, ADR-037)**, PR #33 : douze projets, **zéro
 `INTEGRATE`**, 16 documents, zéro ligne de `src/` touchée. C'est cet audit qui a

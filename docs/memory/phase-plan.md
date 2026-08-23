@@ -9,7 +9,7 @@ VOLET en cours   : **REDESIGN CHAT-FIRST**
                    Brief du propriétaire, 2026-08-22
 Chapitres        : **8**
 Phases           : **11**
-Phase courante   : AUCUNE — VOLET TERMINÉ
+Phase courante   : AUCUNE — VOLET TERMINÉ, branche non fusionnée
 Terminées        : **1–8** — VOLET CHAT-FIRST COMPLET
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
@@ -103,7 +103,7 @@ Ch. 07  Responsive                               → 1 phase (indivisible)  ✅ 
         Mobile d'abord, puis desktop — 9 tests
 
 Ch. 08  Vérification de bout en bout             → 1 phase (indivisible)  ✅ TERMINÉ
-        Suite complète (7055+ tests passent), routes (143), responsive, e2e — 9 tests
+        Suite complète (mesurée, pas estimée), routes (143), responsive, e2e — 9 tests
 ```
 
 **Total : 11 phases.**
@@ -212,10 +212,33 @@ Le redesign chat-first est complet et fonctionnel. Ce qu'il apporte :
 - 14 domaines/capacités disponibles dans le menu
 - Chat refuse honnêtement (3 états : GROUNDED/UNGROUNDED/NOT_CHECKED)
 - Responsive mobile-first, sans ressources distantes
-- 7055+ tests passent
+- 7099 tests passent, 9 ignorés, 3 désélectionnés (mesuré 2026-08-23)
 
 **Mesures prises (2026-08-23)**
 - Temps de réponse : 1,1 s par tour (orchestrateur complet)
 - Taille page : 16 KB (HTML + CSS)
 - Boutons touch : 48px minimum (3rem)
 - Domaines : 14 capacités, pas de multiplication d'assistants
+
+---
+
+## Ce que la relecture a trouvé après coup
+
+Trois défauts dans du travail déjà rapporté comme terminé. Aucun n'aurait été vu
+en se servant de la page :
+
+1. **Le jeton d'ancrage n'a jamais eu sa couleur.** La classe était fabriquée par
+   `` `jeton.${statut.toLowerCase()}` `` — un nom contenant un point, qui ne
+   correspond à aucune règle. Invisible parce que `GROUNDED` reste rare tant que
+   le corpus est vide, et qu'un jeton gris parmi des jetons gris ne se remarque
+   pas. `tests/test_ui_chat.py::TestJetonAncrage` le tient, sabotage vérifiée.
+2. **`grounding.reason` était jeté.** L'agent écrit ce qui manque et ce qui
+   trancherait ; la page n'affichait que le statut.
+3. **Le tableau de bord déplacé n'avait plus de porte.** Le formulaire agricole
+   et le Media Studio sont devenus inatteignables en cliquant — huit tests rouges
+   pour cette seule raison. Un déplacement sans porte est une suppression.
+
+Et une leçon de méthode, à l'origine des trois : **une suite lancée à travers
+`| tail -4` cache ses propres échecs.** Un run a rapporté `25 failed` dont trois
+lignes seulement étaient visibles, et les vingt-deux autres ont été déclarées
+vertes. Rediriger vers un fichier, jamais tronquer.

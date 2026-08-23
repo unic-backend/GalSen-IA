@@ -22,6 +22,36 @@ let etatConversation = {
 /** Le domaine imposé par l'utilisateur, ou null si automatique. */
 let domaineImposeParUtilisateur = null;
 
+/**
+ * Les trois issues d'ancrage, avec leur classe CSS et leur libellé.
+ *
+ * **Cette table existe parce que son absence a déjà cassé la page.** La
+ * première version fabriquait la classe par `` `jeton.${statut.toLowerCase()}` ``,
+ * ce qui produisait le jeton `jeton.grounded` — un nom de classe contenant un
+ * point, qui ne correspond à aucune règle. Le jeton le plus important de la
+ * page s'affichait donc sans sa couleur, et personne ne le voyait puisque
+ * `GROUNDED` reste rare tant que le corpus est vide.
+ *
+ * Un lien explicite entre le statut du serveur et la classe se casse
+ * bruyamment : un statut inconnu n'a pas d'entrée, et le test le dit.
+ */
+const ANCRAGE = {
+  GROUNDED: { classe: "ancre", libelle: "Fondé sur des sources" },
+  UNGROUNDED: { classe: "sans-ancre", libelle: "Rien ne fonde cette réponse" },
+  NOT_CHECKED: { classe: "non-verifie", libelle: "Non vérifié" },
+};
+
+/**
+ * Retourne la classe CSS d'un statut d'ancrage.
+ *
+ * Un statut que le serveur ajouterait sans que cette page le sache tombe sur
+ * `non-verifie` — l'issue la plus prudente des trois. Se taire vaut mieux que
+ * peindre en vert quelque chose qu'on n'a pas compris.
+ */
+function classeAncrage(statut) {
+  return (ANCRAGE[statut] || ANCRAGE.NOT_CHECKED).classe;
+}
+
 // --- Point d'entrée ---
 
 if (document.readyState === "loading") {
@@ -165,7 +195,7 @@ async function aller(message, domaine) {
       etat.classList.remove("echec");
     }
   } catch (erreur) {
-    afficherErreur(erreur);
+    retirerAttente();
     if (etat) {
       etat.textContent = `Erreur : ${erreur.message || "impossible de répondre"}`;
       etat.classList.add("echec");
@@ -243,52 +273,62 @@ function afficherReponse(charge) {
 
   if (charge.grounding) {
     const jeton = document.createElement("span");
-    jeton.className = `jeton ancrage jeton.${charge.grounding.status.toLowerCase()}`;
-    jeton.textContent = charge.grounding.status;
+    jeton.className = `jeton ${classeAncrage(charge.grounding.status)}`;
+    jeton.textContent = ANCRAGE[charge.grounding.status]
+      ? ANCRAGE[charge.grounding.status].libelle
+      : charge.grounding.status;
     marges.appendChild(jeton);
   }
 
   if (charge.detection && charge.detection.domain.length > 0) {
     const jeton = document.createElement("span");
     jeton.className = "jeton domaine";
-    jeton.textContent = charge.detection.domain.join(", ");
+    // Le domaine ne s'affiche jamais seul : « agriculture » et « agriculture,
+    // par mots-clés » ne se valent pas. Sans la méthode, une heuristique
+    // s'affiche comme une certitude.
+    jeton.textContent = charge.detection.forced_by_user
+      ? `${charge.detection.domain.join(", ")} · imposé`
+      : `${charge.detection.domain.join(", ")}${
+          charge.detection.method ? ` · par ${charge.detection.method}` : ""
+        }`;
     marges.appendChild(jeton);
-
-    if (charge.detection.method && !charge.detection.forced_by_user) {
-      const motif = document.createElement("p");
-      motif.className = "motif";
-      motif.textContent = `par ${charge.detection.method}`;
-      marges.appendChild(motif);
-    }
   }
 
   if (charge.elapsed_seconds) {
     const jeton = document.createElement("span");
-    jeton.className = "jeton";
-    jeton.style.color = "var(--texte-doux)";
-    jeton.textContent = `${charge.elapsed_seconds.toFixed(2)}s`;
+    jeton.className = "jeton duree";
+    jeton.textContent = `${charge.elapsed_seconds.toFixed(2)} s`;
     marges.appendChild(jeton);
   }
 
   bulle.appendChild(marges);
+
+  // La raison, sous les jetons et non dedans. C'est le texte que l'agent a
+  // écrit lui-même pour dire ce qui manque — le jeter en gardant son seul
+  // statut reviendrait à afficher « UNGROUNDED » sans dire pourquoi, ce qui
+  // n'aide personne à corriger quoi que ce soit.
+  if (charge.grounding && charge.grounding.reason) {
+    const motif = document.createElement("p");
+    motif.className = "motif";
+    motif.textContent = charge.grounding.reason;
+    bulle.appendChild(motif);
+  }
   tour.appendChild(bulle);
   conversation.appendChild(tour);
   conversation.scrollTop = conversation.scrollHeight;
 }
 
 /**
- * Affiche une erreur sous le composeur.
+ * Retire l'indicateur d'attente quand le tour a échoué.
+ *
+ * Aucune bulle d'erreur n'est ajoutée à la conversation : le message d'échec
+ * vit dans la ligne d'état, sous le composeur. Une panne de réseau n'est pas
+ * une chose que la plateforme a *dite*, et la placer dans le fil la ferait
+ * relire comme une réponse.
  */
-function afficherErreur(erreur) {
-  const conversation = document.getElementById("conversation");
-  if (!conversation) return;
-
+function retirerAttente() {
   const tourAttente = document.getElementById("tour-attente");
   if (tourAttente) tourAttente.remove();
-
-  // L'erreur s'affiche dans la ligne d'état, déjà gérée dans `aller()`.
-  // On n'ajoute pas un tour complet d'erreur dans la conversation : ce serait
-  // du bruit. La ligne d'état suffit.
 }
 
 /**
