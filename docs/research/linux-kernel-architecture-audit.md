@@ -178,7 +178,151 @@ And one likely `D — ALREADY COVERED` in advance: the platform's habit of
 declaring what it does *not* guarantee is the discipline this audit came to
 recommend, already practised.
 
+## 1.3 — Self-healing, observability, memory, configuration, degradation
+
+### Self-healing already exists, and it is built as a chain of gates
+
+`src/agent/self_healer.py` states its own design premise:
+
+> *"the dangerous part of automated repair is not writing the patch, it is
+> **deciding the patch worked**. So the lifecycle separates the two, and
+> everything after `propose_patch` is a gate rather than a step."*
+
+```
+diagnose → workspace → propose → validate scope → apply (isolated)
+         → tests → security tests → ruff → integrity → merge | rollback
+```
+
+Two of its four rules are directly comparable to kernel practice:
+
+- **A traceback is data.** It arrives from a crashing program, and a crashing
+  program can be made to say anything. Text inside it is parsed for a file, a
+  line and an exception type — never read as an instruction.
+- **`UNKNOWN_DIAGNOSIS` is a real answer.** A guess dressed as a diagnosis sends
+  a repair at the wrong file, which is worse than stopping.
+
+There is a **rollback path**, and the merge is conditional on every gate. This
+is closer to a transactional recovery model than to a retry loop.
+
+### Degradation is probed, with a three-value vocabulary
+
+`src/integration/degradation.py` (382 lines) probes nine subsystems and answers
+per subsystem:
+
+| Verdict | Meaning, in the module's own words |
+|---|---|
+| `AVAILABLE` | it answered, and it has what it needs |
+| `DEGRADED` | it answered, and **it says what it is missing** |
+| `UNAVAILABLE` | the probe raised; **the exception is carried as the reason** |
+
+And the probing follows the rule it measures: *"a subsystem that fails while
+being probed is reported, never [hidden]"*. `src/api/health.py` is 656 lines —
+health is not a boolean here.
+
+### Observability: one identifier that survives the boundaries
+
+`src/observability/trail.py` exists because every subsystem already recorded
+what it did — audit events, checkpoints, routine journal, workflow history —
+and none could answer *"what happened to this one job?"*. A routine turn's
+`correlation_id` becomes the workflow's `request_id`, which becomes the
+`request_id` of its audit events, and the trail is reassembled by reading the
+identifier back out of each store.
+
+That is the same idea as a correlation identifier in kernel tracing, arrived at
+for the same reason: per-subsystem logs cannot be joined after the fact unless
+something was carried across.
+
+Also present: `src/router/decision_trace.py`, `src/api/metrics.py`, and a
+`RotatingFileHandler` bounding the log.
+
+### Configuration
+
+`src/config/environment.py` is the single module. Behaviour is selected by
+environment variable — `GALSEN_STORAGE_BACKEND`, `GALSEN_DATA_DIR`,
+`GALSEN_API_KEYS`, `GALSEN_CODING_WORKSPACE_ROOTS` — and an unset
+`GALSEN_CODING_WORKSPACE_ROOTS` **refuses every execution** rather than meaning
+"the whole host".
+
+### Chapter 01 verdict
+
+The platform already has: fault detection, diagnosis with an explicit unknown,
+isolated repair, gated validation, rollback, per-subsystem degradation with
+reasons, a cross-subsystem trail, health beyond a boolean, and a
+refuse-by-default configuration.
+
+**What it does not have, measured:** a timeout on any agent, a boundary around
+an agent, a queue, and any notion of one piece of work costing more than
+another.
+
 ---
 
-*Chapters 02 to 13 pending. No recommendation is made before the feasibility
+# Chapter 02 — Linux architecture, read at the source
+
+All quotations below are from `Documentation/` in `torvalds/linux` at `master`,
+fetched 2026-08-23. Nothing is quoted from memory.
+
+## 2.1 — Resource distribution, scheduling, capabilities
+
+### The four resource-distribution models (`admin-guide/cgroup-v2.rst`)
+
+The kernel does not have *a* resource limit. It has four distinct models, and
+the distinction is the useful part:
+
+| Model | Kernel's definition (abridged) |
+|---|---|
+| **Weights** | a parent's resource is split by the ratio of each active child's weight to the sum |
+| **Limits** | a child can consume up to a configured amount; **limits can be over-committed** |
+| **Protections** | a cgroup is protected up to a configured amount as long as its ancestors are under theirs; hard or best-effort |
+| **Allocations** | exclusive amount of a finite resource; **cannot be over-committed** |
+
+The principle worth extracting is not "add limits". It is that **a limit and a
+guarantee are different promises**, and over-commitment is allowed for one and
+forbidden for the other. A platform that only has limits can starve a
+subsystem it never intended to starve.
+
+### Delegation containment
+
+> *"A delegated sub-hierarchy is contained in the sense that processes can't be
+> moved into or out of the sub-hierarchy by the delegatee."*
+
+Delegating control over a subtree does not delegate the ability to escape it.
+This is the same shape as `GALSEN_CODING_WORKSPACE_ROOTS`: declaring where a
+workspace may live is not the same as letting the workspace choose.
+
+### Scheduling — EEVDF (`scheduler/sched-eevdf.rst`)
+
+Linux moved from CFS to EEVDF in 6.6. Its mechanism, in the document's terms: a
+virtual runtime per task produces a **lag** — positive means the task is owed
+CPU time, negative means it has had more than its share. Only tasks with
+lag ≥ 0 are eligible; among those, the earliest virtual deadline runs next.
+
+> *"this allows latency-sensitive tasks with shorter time slices to be
+> prioritized, which helps with their responsiveness."*
+
+The extractable principle: **fairness is computed from what a task has already
+received**, not from a static priority number. Whether GalSen IA has anything
+to schedule is chapter 05's question — it currently has no queue, so it may not.
+
+### Capabilities (`security/credentials.rst`)
+
+A task carries four sets: permitted, inheritable, effective, and a **capability
+bounding set**.
+
+> *"They indicate superior capabilities granted piecemeal to a task that an
+> ordinary task wouldn't otherwise have."*
+
+Two principles, and the second is the one usually missed:
+
+- **Piecemeal, not all-or-nothing.** Privilege is a set of named powers, not a
+  boolean.
+- **A bounding set exists** — a ceiling that a task cannot raise, only lower.
+
+GalSen IA already has the first (35 named permissions in `src/api/rbac.py`) and
+already has a form of the second (`PERMISSIONS_HORS_PLATEFORME` keeps publishing
+and learner reads out of every platform role, admin included). Whether the
+ceiling is enforced as consistently as the kernel's is chapter 06's question.
+
+---
+
+*Chapters 02.2 to 13 pending. No recommendation is made before the feasibility
 gates of chapter 11.*
