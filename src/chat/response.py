@@ -330,6 +330,19 @@ class RedacteurConversation:
         agents.
         """
         debut = time.perf_counter()
+                # Une conversation simple ne nécessite pas de génération par modèle.
+        # Le Planner a déjà déterminé qu'aucun agent n'est requis.
+        type_tache = contexte.axe("task_type")
+        if type_tache == "conversation" or (
+            isinstance(type_tache, list) and "conversation" in type_tache
+        ):
+            return ReponseFinale(
+                answer=composer_sans_modele(contexte),
+                generated=False,
+                failure_reason=None,
+                failure_detail=None,
+                elapsed_seconds=round(time.perf_counter() - debut, 3),
+            )
         invite = construire_invite(contexte)
 
         try:

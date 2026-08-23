@@ -150,21 +150,54 @@ class PlannerAgent(BaseAgent):
         """
         request = context.request_text()
 
+        # 1. Détecter l'intention avant d'appeler les moteurs coûteux.
         detected_intents = self._detect_intents(request)
-        prior_knowledge = context.search_knowledge(request, limit=3)
-        prior_memories = context.recall(request, limit=3)
+
+        # 2. Une conversation simple ne nécessite ni recherche de connaissances
+        # ni recherche mémoire.
+        if detected_intents == ["conversation"]:
+            prior_knowledge = []
+            prior_memories = []
+        else:
+            prior_knowledge = context.search_knowledge(request, limit=3)
+            prior_memories = context.recall(request, limit=3)
 
         tasks = self._build_tasks(detected_intents, request)
 
-        # Le plan est mémorisé pour que les agents suivants sachent ce qui est attendu d'eux
-        context.remember(
-            content={"objective": request, "tasks": tasks},
-            memory_type="agent_shared",
-            tags=["plan", "planner"],
+        # 3. Une conversation simple ne produit aucune tâche pour les agents.
+        # Il est donc inutile de l'enregistrer comme plan partagé.
+        if detected_intents != ["conversation"]:
+            context.remember(
+                content={"objective": request, "tasks": tasks},
+                memory_type="agent_shared",
+                tags=["plan", "planner"],
+            )
+
+        axes = self._axes(
+            request,
+            detected_intents,
+            prior_knowledge,
+            context,
         )
 
-        axes = self._axes(request, detected_intents, prior_knowledge, context)
-        agents, effets = self._agents_avec_axes(detected_intents, axes)
+        agents, effets = self._agents_avec_axes(
+            detected_intents,
+            axes,
+        )
+
+        # 4. Le raffinement par modèle est inutile pour une conversation simple.
+        if detected_intents == ["conversation"]:
+            model_assisted = {
+                "status": "skipped",
+                "suggestion": "",
+                "reason": "Raffinement modèle inutile pour une conversation simple.",
+            }
+        else:
+            model_assisted = self._try_model_refinement(
+                context,
+                request,
+                tasks,
+            )
 
         return {
             "objective": request,
@@ -172,19 +205,15 @@ class PlannerAgent(BaseAgent):
             "task_count": len(tasks),
             "tasks": tasks,
             "agents_required": agents,
-            # Les dix axes de la demande (VOLET 36, ch. F). Deux agissent, huit
-            # sont observés — et `axes_effect` dit lequel a ajouté quel agent :
-            # un axe qui changerait le routage sans se voir est exactement
-            # ce qui rend un planificateur inexplicable.
             "axes": axes,
             "axes_effect": effets,
             "context_used": {
                 "knowledge_items": len(prior_knowledge),
                 "memories": len(prior_memories),
             },
-            "model_assisted": self._try_model_refinement(context, request, tasks),
+            "model_assisted": model_assisted,
         }
-
+    
     def _axes(self, request: str, intents: List[str], prior_knowledge: List[Any],
               context: AgentContext) -> Dict[str, Any]:
         """
