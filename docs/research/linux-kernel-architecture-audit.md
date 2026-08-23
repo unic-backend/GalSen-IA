@@ -713,6 +713,114 @@ The sandbox asserts where the media engine measures.
 - **Do not weaken anything.** No existing check is relaxed by any candidate in
   this audit.
 
+# Chapter 07 — Observability
+
+The brief asks for **measurable** improvements only. Two hypotheses were tested
+and one of them was wrong, which is recorded here rather than quietly dropped.
+
+## What was expected to be missing, and is not
+
+The audit expected no per-agent timing — the natural companion of P5, since a
+bound you cannot measure is a bound you cannot choose. **It exists.**
+`src/router/router_engine.py:235` declares `agent_durations`, commented in the
+repository's own words as *"Durée observée de chaque agent, reprises comprises"*,
+measured with `time.perf_counter()` around each dispatch (`:310`, `:316`).
+
+The hypothesis was wrong. The measurement corrected it, which is the only reason
+this audit is worth anything.
+
+## What is measurably missing
+
+**1. Per-agent durations are recorded but not returned.** `agent_durations`
+reaches `workflow_history` and stops there: `grep -rln agent_durations src/`
+matches `router_engine.py` and `workflow_history.py` and nothing else. The
+response payload carries `execution_time_seconds` and a `metadata` block with
+agent counts — **not the per-agent breakdown**. An operator holding a slow
+response cannot see which agent was slow without going to the history store.
+
+**2. A bounded execution reports how long it ran, never what it consumed.**
+`SandboxResult` carries `exit_code`, `stdout`, `stderr`, `timed_out`,
+`killed_by`, `truncated`, `duration_seconds`, `notes`. There is **no CPU time
+and no peak memory**.
+
+### P12 — Account what was consumed, not only how long it took
+
+| Field | |
+|---|---|
+| **Linux principle** | The kernel accounts resource usage per process and hands it back — user time, system time, peak resident set — independently of whether the process succeeded. |
+| **Problem it solves** | *"It worked"* and *"it worked with 2 MB of headroom"* are different facts, and only the second one predicts tomorrow's failure. |
+| **GalSen IA equivalent problem** | The sandbox enforces six bounds and reports which one killed a process — but a **successful** run says nothing about how close it came. Limits cannot be tuned from data that is not collected. |
+| **Current solution** | `duration_seconds` only. |
+| **Potential improvement** | The sandbox already crosses a process boundary and already imports `resource`; the usage of a reaped child is available at the point where the result is already being assembled. |
+| **Complexity** | **Low** |
+| **Risk** | Very low — additive fields; no behaviour depends on them |
+| **Reversibility** | **Total** |
+| **Provisional class** | **A — USEFUL NOW** (candidate) |
+
+Surfacing `agent_durations` in the response is smaller still and rides along
+with the same reasoning; it is folded into P12 rather than given a number of its
+own.
+
+## What is already covered, and stated so it is not re-proposed
+
+| Concern | Where |
+|---|---|
+| Orchestration traces | `src/router/decision_trace.py` |
+| Cross-subsystem trace | `src/observability/trail.py`, one identifier surviving boundaries |
+| Failures | Audit engine, `killed_by`, `UNAVAILABLE` carrying its exception |
+| Latency | `agent_durations`, `execution_time_seconds`, `elapsed_seconds` |
+| Provenance | Corpus registry; every entity and relation carries its own |
+| Self-healing decisions | Gate-by-gate, with rollback recorded |
+
+And `trail.py` distinguishes *"no audit event carries this identifier"* from
+*"the audit engine is unavailable"* — the `ABSENT` versus `UNKNOWN` discipline,
+applied where most systems collapse the two.
+
 ---
 
-*Chapters 07 to 13 pending.*
+# Chapter 08 — Architectural boundaries
+
+The brief lists thirteen candidate boundaries and instructs: **do not restructure
+unless the audit proves it necessary.**
+
+## Measured
+
+| | |
+|---|---:|
+| Module directories under `src/` | **43** |
+| `src/api/server.py` | **4 689 lines**, 78 imports from `src/` |
+| Files importing `src/tool` from outside it | **39** |
+| Files importing `src/security` from outside it | **14** |
+| `knowledge_engine` · `memory_engine` · `sandbox` · `model_engine` | 8 · 5 · 4 · 4 |
+| `router` · `media` | 2 · 2 |
+
+**Eleven of the brief's thirteen boundaries already exist as directories**, and
+coupling across them is low — the orchestrator is imported from two files
+outside itself, the media engine from two. This is not a codebase whose
+subsystems have leaked into each other.
+
+## Verdict: no restructuring is justified
+
+The one large object is `src/api/server.py`. `.claude/rules/coding-standards.md`
+says *"Avoid large monolithic files"* and *"Avoid God Objects"*, and 4 689 lines
+with 78 imports is both. **But the audit found no defect caused by it**, and a
+maintainability preference is not measurable evidence. Splitting it would be
+precisely the *"opportunistic refactoring"* that
+`.claude/rules/spec-driven-governance.md` forbids.
+
+**Recorded as an observation, generating no task.**
+
+## The one boundary worth stating rather than building
+
+P8, from chapter 03: Linux keeps two interface classes with **opposite**
+promises — in-kernel interfaces deliberately unstable, the userspace interface
+never broken. GalSen IA has the same split in fact (43 refactorable modules
+behind 143 HTTP routes) but holds it by habit: a route-count test, the ADRs, and
+one line of governance.
+
+Naming it once would cost a document and no code. **`B — USEFUL LATER`**, and
+only if the owner wants it; nothing depends on it today.
+
+---
+
+*Chapters 09 to 13 pending.*

@@ -9,8 +9,8 @@ VOLET en cours   : **LINUX KERNEL ARCHITECTURE RESEARCH AUDIT**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **13**
 Phases           : **18**
-Phase courante   : **7 — en attente de confirmation**
-Terminées        : **1.1 · 1.2 · 1.3 · 2.1 · 2.2 · 3.1 · 3.2 · 4 · 5 · 6** → `docs/research/linux-kernel-architecture-audit.md`
+Phase courante   : **9 — en attente de confirmation**
+Terminées        : **1.1 · 1.2 · 1.3 · 2.1 · 2.2 · 3.1 · 3.2 · 4 · 5 · 6 · 7 · 8** → `docs/research/linux-kernel-architecture-audit.md`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Ce que le brief interdit** : copier du code noyau, vendorer un composant,
@@ -63,8 +63,8 @@ Ch. 03  Extraction des principes                 → 2 phases
 Ch. 04  Auto-réparation                          → 1 phase (indivisible) ✅
 Ch. 05  Gestion des ressources                   → 1 phase (indivisible) ✅
 Ch. 06  Isolation des agents                     → 1 phase (indivisible) ✅
-Ch. 07  Observabilité                            → 1 phase (indivisible)
-Ch. 08  Frontières architecturales               → 1 phase (indivisible)
+Ch. 07  Observabilité                            → 1 phase (indivisible) ✅
+Ch. 08  Frontières architecturales               → 1 phase (indivisible) ✅
 Ch. 09  Licences                                 → 1 phase (indivisible)
 Ch. 10  Preuve qu'aucun code n'a été copié       → 1 phase (indivisible)
 Ch. 11  Portes de faisabilité (10 questions)     → 1 phase (indivisible)
