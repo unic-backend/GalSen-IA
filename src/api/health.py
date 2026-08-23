@@ -386,11 +386,10 @@ class ComponentHealthChecker(HealthChecker):
             )
 
         try:
-            provider_status = self._model_manager.get_provider_status()
             available_providers = sum(
-                1 for info in provider_status.values()
-                if info.get("available", False)
-            )
+    1 for info in provider_status.values()
+    if info.get("status") == "ready"
+)
             total_providers = len(provider_status)
 
             details = {

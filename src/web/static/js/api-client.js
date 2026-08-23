@@ -67,21 +67,25 @@ export function oublierCle() {
  * Exécute un appel vers l'API.
  *
  * @param {string} chemin Chemin de la route, commençant par `/`.
- * @param {object} options `methode` et `corps`.
+ * @param {object} options `methode`, `corps` et `params` (paramètres de requête).
  * @returns {Promise<any>} La réponse décodée.
  * @throws {ErreurAPI} Toujours une ErreurAPI : jamais une exception brute de
  *   `fetch`, pour que l'appelant n'ait qu'une forme d'erreur à traiter.
  */
-async function appeler(chemin, { methode = "GET", corps = null } = {}) {
+async function appeler(chemin, { methode = "GET", corps = null, params = null } = {}) {
   const entetes = { "Content-Type": "application/json" };
   const cle = lireCle();
   if (cle) {
     entetes["X-API-Key"] = cle;
   }
 
+  // Les routes en GET (ex. `/knowledge/ask`) transportent leurs arguments dans
+  // la chaîne de requête, jamais dans un corps.
+  const url = params === null ? chemin : `${chemin}?${new URLSearchParams(params)}`;
+
   let reponse;
   try {
-    reponse = await fetch(chemin, {
+    reponse = await fetch(url, {
       method: methode,
       headers: entetes,
       body: corps === null ? undefined : JSON.stringify(corps),
@@ -178,6 +182,38 @@ export const api = {
 
   notifications: {
     statistiques: () => appeler("/notification/stats"),
+  },
+
+  /** L'orchestration : le chat lui confie une demande, elle détecte le domaine. */
+  workflow: {
+    /**
+     * Exécute une demande à travers l'orchestrateur.
+     *
+     * @param {string} demande Texte de la demande, en langage naturel.
+     * @param {object} options `workflowId` et `sessionId`, tous deux facultatifs.
+     */
+    run: (demande, { workflowId = null, sessionId = null } = {}) => {
+      const corps = { request: demande };
+      if (workflowId) corps.workflow_id = workflowId;
+      if (sessionId) corps.session_id = sessionId;
+      return appeler("/workflow/run", { methode: "POST", corps });
+    },
+  },
+
+  /** La connaissance : interrogation directe du moteur, sans orchestration. */
+  knowledge: {
+    /**
+     * Pose une question au moteur de connaissance.
+     *
+     * @param {string} question Question en français, wolof ou anglais.
+     * @param {object} options `scope` et `subject`, tous deux facultatifs.
+     */
+    ask: (question, { scope = null, subject = null } = {}) => {
+      const params = { q: question };
+      if (scope) params.scope = scope;
+      if (subject) params.subject = subject;
+      return appeler("/knowledge/ask", { params });
+    },
   },
 
   /**

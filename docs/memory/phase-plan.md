@@ -5,97 +5,65 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **aucun — AUDIT #01 terminé, 16 phases sur 16**
-                   Brief du propriétaire, 2026-08-22, phases 0 à 12 + rapport
-Chapitres        : **13**
-Phases           : **16**
-Phase courante   : aucune — le VOLET est clos
-Terminées        : **0.1, 0.2, 1** — 3 sur 16. Sujet cloné à `010569fa`,
-                   **1,3 Go, projet en C** (842 `.c`), **MIT**, 160 grammaires
-                   tree-sitter, et **30 Mo de poids nomic-embed-code embarqués**.
-                   **Ph2** : 14 types de nœuds, 8 relations, incrémental par
-                   hachage, **aucun appel sortant trouvé dans `src/`**, mais il
-                   **écrit dans les configs d'agent de `$HOME`**.
-                   **Ph3** : 16 lignes sur 24 `KEEP` — **`code-review-graph` les
-                   couvre déjà** ; 3 non couvertes (liens inter-services,
-                   sémantique sans fournisseur, data flow).
-                   **Ph4** : usage A pas démontré (CRG déjà là), **usage B rejeté
-                   sur l'architecture**. **Ph5** : réellement indépendant des
-                   fournisseurs — aucun client d'API, poids embarqués.
-                   **Ph6** : **aucune licence incompatible**, aucun copyleft
-                   (7 « MPL » = faux positif : *simplecpp*). **Ph7** : aucune
-                   opération cachée ; **une opération privilégiée assumée** —
-                   il écrit des fichiers d'instructions dans `$HOME`.
-                   **Ph8** : banc défini, **`NOT_MEASURED`** — la mesure qui
-                   déciderait est contre CRG, pas contre `grep`. **Ph9** : un
-                   repli existe déjà (CRG) ; **le retrait n'est pas propre**.
-                   **Ph10/11 — DÉCISION : `KEEP FOR RESEARCH`**, avec un
-                   déclencheur nommé vers l'option B. Rien installé, rien intégré,
-                   rien adapté. Ph12 ne s'applique pas
-Cadence          : **deux phases par tour** (convenu le 2026-08-19)
+VOLET en cours   : **Interface conversationnelle « chat-first »**
+                   Brief du propriétaire, 2026-08-22 : à l'ouverture, GalSen IA doit
+                   ressembler à un assistant IA généraliste, pas à un tableau de bord.
+                   Arrivée directe sur le chat ; un menu discret liste les domaines
+                   (modes d'un même assistant, pas des assistants séparés) ; par défaut
+                   l'orchestration détecte elle-même le domaine. Le contenu du tableau
+                   de bord actuel (santé, connecteurs, clés, moteurs) n'est **pas
+                   supprimé** : il est déplacé vers ADMIN → DIAGNOSTICS, caché des
+                   utilisateurs normaux. Aucune réécriture du backend ; orchestration,
+                   agents, mémoire, connaissance, ModelRouter, outils et sécurité
+                   restent intacts.
+Chapitres        : **5**
+Phases           : **8**
+Phase courante   : 2.1 — en cours
+Terminées        : 1.1, 1.2
+Cadence          : **continu automatique** (décision du propriétaire 2026-08-22 :
+                   « ne me demande pas de confirmation entre les phases sauf si une
+                   décision réellement bloquante ou irréversible est nécessaire »).
+                   Arrêt uniquement pour une décision bloquante/irréversible.
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md`.
 
-**Condition d'arrêt** : audit seulement. Aucune intégration, aucune modification
-d'architecture, de schéma, d'API ou de test. Le VOLET s'arrête à la décision
-(phase 11) ; la phase 12 ne produit qu'une conception, jamais du code.
+**Condition d'arrêt** : landing sur le chat, menu domaines + auto-détection branchés
+sur l'orchestration existante, espace admin séparé et fonctionnel, backend intact,
+tests verts.
 
 ---
 
 ## Le plan
 
 ```
-Ch. 00  Ph0   État du dépôt GalSen IA, 16 points        → 2 phases
-              0.1 mémoire, connaissance, graphe, MCP, indexation, recherche
-              0.2 structure, impact, provenance, sécurité, self-healing,
-                  tests, ADR, dépendances
+Ch. 01  La page d'accueil devient un chat      → 2 phases
+        Ph1.1  index.html → structure du chat : en-tête minimal, menu domaines,
+               zone de conversation, barre de saisie (🎙 / ➤).
+        Ph1.2  chat.js → logique d'affichage : bulles utilisateur/assistant,
+               état « en cours », erreurs, saisie vocale Web Speech avec repli.
 
-Ch. 01  Ph1   Le dépôt officiel : sources, licence, CI  → 1 phase (indivisible)
-Ch. 02  Ph2   Ce que le projet fait vraiment, 16 points → 2 phases
-              2.1 indexation, graphe, nœuds, relations, requêtes, incrémental
-              2.2 persistance, MCP, ce qui exige un LLM, dépendances
+Ch. 02  Câblage sur l'orchestration existante  → 2 phases
+        Ph2.1  api-client.js → ajouter workflow.run (et knowledge.ask), sans
+               casser les routes existantes.
+        Ph2.2  Brancher la boîte de chat sur POST /workflow/run (auto-détection) ;
+               gérer les appels longs et la réponse.
 
-Ch. 03  Ph3   Matrice de comparaison, 24 capacités      → 2 phases
-Ch. 04  Ph4   Deux usages : pendant vs après le déploiement → 1 phase (indivisible)
-Ch. 05  Ph5   Indépendance vis-à-vis des modèles        → 1 phase (indivisible)
-Ch. 06  Ph6   Licences : compatible / à surveiller / incompatible → 1 phase
-Ch. 07  Ph7   Sécurité, 13 surfaces                     → 1 phase (indivisible)
-Ch. 08  Ph8   Performance : leurs chiffres, puis les nôtres → 1 phase
-Ch. 09  Ph9   Feasibility gates, 14 questions           → 1 phase (indivisible)
-Ch. 10  Ph10  Quatre options A/B/C/D                    → 1 phase (indivisible)
-Ch. 11  Ph11  Décision                                  → 1 phase (indivisible)
-Ch. 12  Ph12  Si adaptation : conception seule, puis ARRÊT → 1 phase
+Ch. 03  L'espace admin (diagnostics)           → 2 phases
+        Ph3.1  admin.html + admin.js → déplacer santé / connecteurs / clés hors
+               du chat.
+        Ph3.2  Retirer ces panneaux du chat ; lien discret vers l'admin ; clé API
+               déplacée dans l'admin ; Media Studio conservé tel quel.
 
-Ch. 13        Rapport final, ses 25 points              → 1 phase (indivisible)
+Ch. 04  Design et responsive                   → 1 phase (indivisible)
+        Ph4.1  chat.css → identité GalSen IA, mobile-first, thème clair/sombre,
+               plus de look « dashboard SaaS ».
+
+Ch. 05  Vérification complète                  → 1 phase (indivisible)
+        Ph5.1  pytest + vérifier les routes (/ui/, /ui/admin.html, /ui/studio.html),
+               responsive mobile/desktop, fonctions existantes, non-régression.
 ```
 
-**Total : 16 phases.**
-
----
-
-## Mesuré avant de planifier
-
-`raw.githubusercontent.com/DeusData/codebase-memory-mcp` → **200**
-`api.github.com/repos/DeusData/codebase-memory-mcp` → **403**
-
-Contenu lisible fichier par fichier ; **arborescence et commit exact non**. Comme
-pour l'audit Superpowers, la phase 1 clone via le proxy git — sinon la version
-examinée est `UNKNOWN` et il faudrait **deviner** quels fichiers existent.
-
----
-
-## Un point de contexte, pas une conclusion
-
-Ce dépôt vise la mémoire de code, le graphe et MCP. GalSen IA a déjà, mesuré au
-VOLET précédent : `src/memory_engine/` (12 modules), `src/knowledge_engine/` (19),
-`src/agent/repo_graph.py` + `repo_map.py` + `symbol_index.py`, `src/mcp/`, et le
-serveur MCP **`code-review-graph` déjà branché** sur ce dépôt.
-
-Le chevauchement sera donc large. **Ça ne préjuge de rien** — c'est précisément
-ce que la matrice de la phase 3 doit mesurer, capacité par capacité.
-
-Trois audits de compatibilité sur quatre se sont conclus par *ne pas intégrer*.
-Un audit dont la conclusion est écrite d'avance n'en est pas un.
+**Total : 8 phases.**
 
 ---
 
@@ -110,3 +78,13 @@ Un audit dont la conclusion est écrite d'avance n'en est pas un.
 6. **Live Context** (ADR-033), **Creative Canvas** (ADR-031), **Research
    Orchestration** (ADR-032), **MoneyPrinterTurbo** (ADR-030),
    **Apache-2.0** (ADR-036).
+7. **AUDIT #01 codebase-memory-mcp** — 16 phases sur 16. **`KEEP FOR RESEARCH`**.
+   Rapport : `docs/research/codebase-memory-mcp-audit.md`. Rien installé, rien
+   intégré, rien adapté.
+
+## Programme interrompu (pas terminé — changements non commités, à reprendre ou trancher)
+
+8. **Ancrage de /agri/advice sur le moteur de connaissance** — interrompu après
+   les phases 1.1 et 2.1 (phase 3.1 non faite). Changements non commités dans
+   `src/api/server.py`, `src/tools/agri_advice/tool.py`, `tests/test_agri_advice.py`,
+   `tests/test_agri_advice_tool.py`. Reprendre ou trancher explicitement.

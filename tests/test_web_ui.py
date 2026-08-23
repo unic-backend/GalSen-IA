@@ -55,8 +55,10 @@ class TestFichiersServis:
         "chemin, type_attendu",
         [
             ("/ui/js/api-client.js", "javascript"),
+            ("/ui/js/chat.js", "javascript"),
             ("/ui/js/dashboard.js", "javascript"),
             ("/ui/js/studio.js", "javascript"),
+            ("/ui/css/chat.css", "css"),
             ("/ui/css/dashboard.css", "css"),
             ("/ui/css/studio.css", "css"),
             ("/ui/studio.html", "html"),
@@ -81,16 +83,16 @@ class TestContenuDeLaPage:
     """Vérifie que la page porte ce dont le script a besoin."""
 
     def test_les_points_de_montage_existent(self, client):
-        """Les trois panneaux doivent exister, sinon le script écrit dans le vide."""
+        """La conversation, la saisie et le menu doivent exister, sinon le script écrit dans le vide."""
         page = client.get(f"{UI_PREFIX}/").text
-        for identifiant in ('id="sante"', 'id="connecteurs"', 'id="cles"'):
+        for identifiant in ('id="conversation"', 'id="saisie"', 'id="menu-domaines"'):
             assert identifiant in page
 
     def test_le_script_est_charge_comme_module(self, client):
         """Le client d'API utilise `import` : sans `type="module"`, rien ne s'exécute."""
         page = client.get(f"{UI_PREFIX}/").text
         assert 'type="module"' in page
-        assert "/ui/js/dashboard.js" in page
+        assert "/ui/js/chat.js" in page
 
     def test_page_en_francais(self, client):
         """L'interface s'adresse à des utilisateurs francophones."""
@@ -152,8 +154,8 @@ class TestSourcesLivrees:
     def test_les_fichiers_existent(self):
         """Les fichiers annoncés par l'ADR-008 doivent être présents."""
         for relatif in (
-            "index.html", "js/api-client.js", "js/dashboard.js",
-            "css/dashboard.css", "studio.html", "js/studio.js",
+            "index.html", "js/api-client.js", "js/chat.js", "js/dashboard.js",
+            "css/chat.css", "css/dashboard.css", "studio.html", "js/studio.js",
             "css/studio.css",
         ):
             assert os.path.isfile(os.path.join(STATIC_DIRECTORY, relatif)), relatif

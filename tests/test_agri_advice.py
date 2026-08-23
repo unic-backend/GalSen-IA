@@ -80,12 +80,16 @@ def mock_generation():
 def _outil_avec(gestionnaire):
     """Retourne un outil branché sur un gestionnaire de modèles donné.
 
-    L'outil résout son gestionnaire par le registre partagé de la plateforme :
+    L'outil résout ses gestionnaires par le registre partagé de la plateforme :
     on injecte donc directement, plutôt que de remplacer une classe que le
-    module n'importe pas.
+    module n'importe pas. Le gestionnaire de connaissances est simulé avec une
+    connaissance fiable, sinon la garde de fiabilité refuserait de générer.
     """
     tool = AgriAdviceTool()
     tool._model_manager = gestionnaire
+    connaissance = MagicMock()
+    connaissance.retrieve_reliable.return_value = {"items": [], "reliable": True}
+    tool._knowledge_manager = connaissance
     return tool
 
 

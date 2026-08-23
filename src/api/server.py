@@ -710,6 +710,10 @@ class AgriAdviceResponse(BaseModel):
     answer: str = Field(..., description="Conseil agricole généré")
     language: str = Field(..., description="Langue de la réponse")
     model_used: str = Field(..., description="Modèle utilisé")
+    provenance: str = Field("", description="Phrase qui dit d'où vient la réponse")
+    sources: List[Dict[str, Any]] = Field(
+        default_factory=list, description="Sources citées par la réponse"
+    )
 
 class WorkflowRunRequest(BaseModel):
     """Demande d'exécution d'un workflow."""
@@ -1414,6 +1418,8 @@ async def agri_advice(request: AgriAdviceRequest):
             answer=result["answer"],
             language=result["language"],
             model_used=result["model_used"],
+            provenance=result.get("provenance", ""),
+            sources=result.get("sources", []),
         )
     except HTTPException:
         raise

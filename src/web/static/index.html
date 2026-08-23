@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GalSen IA — Tableau de bord</title>
+    <title>GalSen IA</title>
     <meta
       name="description"
-      content="État de la plateforme GalSen IA : moteurs, connecteurs externes et clés d'accès."
+      content="GalSen IA, un assistant unique pour tous vos domaines : agriculture, santé, éducation, création multimédia et bien d'autres."
     />
     <!-- Icône embarquée : évite une requête supplémentaire, et un 404 dans la
          console à chaque chargement. -->
@@ -14,96 +14,153 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b6e4f'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='white' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="/ui/css/dashboard.css" />
+    <link rel="stylesheet" href="/ui/css/chat.css" />
   </head>
   <body>
-    <header>
-      <h1>
-        GalSen IA
-        <small>Tableau de bord de la plateforme</small>
-      </h1>
+    <!-- En-tête minimal : un menu à gauche, le nom au centre de l'attention. -->
+    <header class="entete">
+      <button
+        id="menu-domaines"
+        class="bouton-menu"
+        type="button"
+        aria-expanded="false"
+        aria-controls="liste-domaines"
+        aria-label="Ouvrir le menu des domaines"
+      >
+        <span aria-hidden="true">☰</span>
+      </button>
+      <h1 class="marque">GalSen IA</h1>
 
-      <!-- La clé reste dans le navigateur : elle n'est jamais écrite dans une page -->
-      <div class="barre-cle">
-        <label for="cle-api" class="discret">Clé API</label>
-        <input
-          id="cle-api"
-          type="password"
-          autocomplete="off"
-          placeholder="X-API-Key"
-          aria-label="Clé API"
-        />
-        <button id="enregistrer-cle" type="button">Appliquer</button>
-        <button id="recharger" type="button" class="secondaire">Recharger</button>
-        <a href="/ui/studio.html" class="lien-retour">Media Studio</a>
-      </div>
+      <!-- Les domaines sont des modes d'un même assistant, pas des assistants
+           séparés. Par défaut, l'orchestration détecte elle-même le domaine. -->
+      <nav id="liste-domaines" class="menu-domaines" hidden aria-label="Domaines">
+        <ul>
+          <li>
+            <button type="button" class="domaine domaine--actif" data-domaine="auto">
+              <span aria-hidden="true">✨</span> Détection automatique
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="discussion">
+              <span aria-hidden="true">💬</span> Discussion générale
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="multimedia">
+              <span aria-hidden="true">🎬</span> Création multimédia
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="agriculture">
+              <span aria-hidden="true">🌾</span> Agriculture
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="sante">
+              <span aria-hidden="true">🏥</span> Santé
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="education">
+              <span aria-hidden="true">📚</span> Éducation
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="programmation">
+              <span aria-hidden="true">💻</span> Programmation
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="science">
+              <span aria-hidden="true">🔬</span> Science
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="architecture">
+              <span aria-hidden="true">🏗️</span> Architecture
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="entreprise">
+              <span aria-hidden="true">📊</span> Entreprise
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="senegal">
+              <span aria-hidden="true">🌍</span> Sénégal
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="analyse">
+              <span aria-hidden="true">📈</span> Analyse
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="recherche">
+              <span aria-hidden="true">🔎</span> Recherche
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="connaissance">
+              <span aria-hidden="true">🧠</span> Connaissance
+            </button>
+          </li>
+          <li>
+            <button type="button" class="domaine" data-domaine="outils">
+              <span aria-hidden="true">⚙️</span> Outils
+            </button>
+          </li>
+        </ul>
+      </nav>
     </header>
 
-    <main>
-      <!-- Le conseil agricole passe en premier : c'est la fonctionnalité que la
-           plateforme rend à ses utilisateurs, le reste sert à l'exploiter. -->
-      <section aria-labelledby="titre-conseil" class="pleine-largeur">
-        <h2 id="titre-conseil">Conseil agricole</h2>
-        <p class="discret">
-          Une réponse adaptée au contexte agricole sénégalais, en français ou en
-          wolof.
-        </p>
-
-        <form id="formulaire-conseil">
-          <label for="question-agricole" class="discret">Votre question</label>
-          <textarea
-            id="question-agricole"
-            rows="3"
-            placeholder="Ex. : Quand planter le mil à Thiès ?"
-          ></textarea>
-
-          <div class="barre-conseil">
-            <label for="langue-conseil" class="discret">Langue</label>
-            <select id="langue-conseil">
-              <option value="fr">Français</option>
-              <option value="wo">Wolof</option>
-            </select>
-            <button id="demander-conseil" type="submit">Obtenir un conseil</button>
-          </div>
-        </form>
-
-        <div id="conseil"></div>
-      </section>
-
-      <section aria-labelledby="titre-sante">
-        <h2 id="titre-sante">Santé de la plateforme</h2>
-        <div id="sante">
-          <p class="discret">Chargement…</p>
+    <main class="chat">
+      <!-- La conversation : un accueil au premier chargement, des bulles ensuite. -->
+      <section id="conversation" class="conversation" aria-live="polite">
+        <div class="accueil">
+          <h2>Comment puis-je vous aider ?</h2>
+          <p class="discret">
+            Posez votre question : l'assistant détecte le domaine tout seul, ou
+            choisissez-en un dans le menu.
+          </p>
         </div>
       </section>
 
-      <section aria-labelledby="titre-connecteurs">
-        <h2 id="titre-connecteurs">Connecteurs externes</h2>
-        <p>
-          <button id="verifier-connecteurs" type="button" class="secondaire">
-            Vérifier les services
-          </button>
-        </p>
-        <div id="connecteurs">
-          <p class="discret">Chargement…</p>
-        </div>
-      </section>
-
-      <section aria-labelledby="titre-cles">
-        <h2 id="titre-cles">Clés d'accès</h2>
-        <div id="cles">
-          <p class="discret">Chargement…</p>
-        </div>
-      </section>
+      <!-- La barre de saisie : un champ, la voix, l'envoi. -->
+      <form id="formulaire-saisie" class="barre-saisie">
+        <label for="saisie" class="visuellement-cache">Votre message</label>
+        <textarea
+          id="saisie"
+          rows="1"
+          placeholder="Écrire un message…"
+          autocomplete="off"
+        ></textarea>
+        <button
+          id="bouton-vocal"
+          type="button"
+          aria-label="Saisie vocale"
+          title="Saisie vocale"
+        >
+          <span aria-hidden="true">🎙</span>
+        </button>
+        <button
+          id="bouton-envoyer"
+          type="submit"
+          aria-label="Envoyer"
+          title="Envoyer"
+        >
+          <span aria-hidden="true">➤</span>
+        </button>
+      </form>
     </main>
 
     <noscript>
       <p class="message message--info">
-        Cette interface a besoin de JavaScript pour interroger l'API. L'état de la
-        plateforme reste consultable sur <a href="/health">/health</a>.
+        Cette interface a besoin de JavaScript pour dialoguer avec l'API. L'état
+        de la plateforme reste consultable sur <a href="/health">/health</a>.
       </p>
     </noscript>
 
-    <script type="module" src="/ui/js/dashboard.js"></script>
+    <script type="module" src="/ui/js/chat.js"></script>
   </body>
 </html>
