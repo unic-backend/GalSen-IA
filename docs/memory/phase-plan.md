@@ -9,8 +9,8 @@ VOLET en cours   : **REDESIGN CHAT-FIRST**
                    Brief du propriétaire, 2026-08-22
 Chapitres        : **8**
 Phases           : **11**
-Phase courante   : **5.1 — en attente de confirmation**
-Terminées        : **1–5** (4.1-4.2 incl.) — chat conversationnel fonctionnel
+Phase courante   : **6.1 — en attente de confirmation**
+Terminées        : **1–5** (jusqu'à 5.1 incl.) — chat + menu des domaines
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md`.
@@ -93,8 +93,8 @@ Ch. 04  La conversation                          → 2 phases  ✅ TERMINÉ
         4.1 `chat.js` : envoi, historique, états d'attente et d'erreur
         4.2 réutilisation de `api-client.js`, jamais un second client — 7 tests
 
-Ch. 05  Le menu des domaines                     → 1 phase (indivisible)
-        14 capacités, en haut à gauche, sans multiplier les assistants
+Ch. 05  Le menu des domaines                     → 1 phase (indivisible)  ✅ TERMINÉ
+        14 capacités, en haut à gauche, sans multiplier les assistants — 6 tests
 
 Ch. 06  L'espace administrateur                  → 1 phase (indivisible)
         Le tableau de bord actuel déplacé sous `/ui/admin`, rien supprimé

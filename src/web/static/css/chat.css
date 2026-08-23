@@ -415,3 +415,125 @@ body {
     width: 13rem;
   }
 }
+
+/* ---------------------------------------------------------- menu domaines */
+
+.menu-domaines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(280px, 85vw);
+  height: 100dvh;
+  background: var(--fond);
+  border-right: 1px solid var(--bordure);
+  padding: 0.6rem 0;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .menu-domaines {
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.menu-domaines[hidden] {
+  display: none;
+}
+
+.menu-fermer {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 1.2rem;
+  color: var(--texte);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.menu-fermer:hover,
+.menu-fermer:focus-visible {
+  background: var(--fond-doux);
+  border-color: var(--bordure);
+}
+
+.menu-titre {
+  margin: 2.2rem 0.8rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texte-doux);
+}
+
+.menu-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu-domaine {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  font-size: 0.95rem;
+  color: var(--texte);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.menu-domaine:hover,
+.menu-domaine:focus-visible {
+  background: var(--fond-doux);
+}
+
+.menu-domaine.actif {
+  background: var(--accent);
+  color: var(--accent-contraste);
+  font-weight: 600;
+}
+
+.menu-reinitialiser {
+  margin-top: 1rem;
+  margin-left: 0.8rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.85rem;
+  color: var(--texte-doux);
+  background: transparent;
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.menu-reinitialiser:hover,
+.menu-reinitialiser:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Quand le menu est ouvert, le contenu décale légèrement à droite. */
+.menu-domaines:not([hidden]) ~ .entete,
+.menu-domaines:not([hidden]) ~ main,
+.menu-domaines:not([hidden]) ~ .composeur {
+  margin-left: min(280px, 85vw);
+}
+
+@media (max-width: 600px) {
+  .menu-domaines:not([hidden]) ~ .entete,
+  .menu-domaines:not([hidden]) ~ main,
+  .menu-domaines:not([hidden]) ~ .composeur {
+    margin-left: 0;
+  }
+
+  /* Sur mobile, le menu couvre tout. */
+  .menu-domaines {
+    width: 100vw;
+    z-index: 10000;
+  }
+}

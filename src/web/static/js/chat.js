@@ -77,6 +77,61 @@ function initialiser() {
 
   // Ajuster la hauteur du textarea à la saisie.
   textarea.addEventListener("input", () => ajusterHauteurTextarea(textarea));
+
+  // Menu des domaines
+  const boutonMenu = document.getElementById("bouton-menu");
+  const menu = document.getElementById("menu-domaines");
+  const boutonFermer = document.getElementById("menu-fermer");
+  const boutonReinitialiser = document.querySelector(".menu-reinitialiser");
+  const boutonsDomine = document.querySelectorAll(".menu-domaine");
+
+  if (boutonMenu && menu) {
+    boutonMenu.addEventListener("click", () => {
+      const estOuvert = !menu.hasAttribute("hidden");
+      if (estOuvert) {
+        menu.setAttribute("hidden", "");
+        boutonMenu.setAttribute("aria-expanded", "false");
+      } else {
+        menu.removeAttribute("hidden");
+        boutonMenu.setAttribute("aria-expanded", "true");
+      }
+    });
+  }
+
+  if (boutonFermer && menu) {
+    boutonFermer.addEventListener("click", () => {
+      menu.setAttribute("hidden", "");
+      boutonMenu.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  boutonsDomine.forEach((bouton) => {
+    bouton.addEventListener("click", () => {
+      const domaine = bouton.dataset.domaine;
+      domaineImposeParUtilisateur = domaine;
+
+      // Mettre le domaine en évidence
+      boutonsDomine.forEach((b) => b.classList.remove("actif"));
+      bouton.classList.add("actif");
+
+      // Fermer le menu
+      menu.setAttribute("hidden", "");
+      boutonMenu.setAttribute("aria-expanded", "false");
+
+      // Optionnel : autofocus sur le textarea
+      textarea.focus();
+    });
+  });
+
+  if (boutonReinitialiser) {
+    boutonReinitialiser.addEventListener("click", () => {
+      domaineImposeParUtilisateur = null;
+      boutonsDomine.forEach((b) => b.classList.remove("actif"));
+      menu.setAttribute("hidden", "");
+      boutonMenu.setAttribute("aria-expanded", "false");
+      textarea.focus();
+    });
+  }
 }
 
 /**
