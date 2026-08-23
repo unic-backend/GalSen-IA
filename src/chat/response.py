@@ -354,11 +354,24 @@ class RedacteurConversation:
                 elapsed_seconds=round(time.perf_counter() - debut, 3),
             )
 
+        duree = round(time.perf_counter() - debut, 3)
+        modele = _modele_utilise(self._modeles)
+        # Trace symétrique de celle des pannes : sans elle, un exploitant voit
+        # les échecs et jamais les réussites, ce qui donne d'une plateforme qui
+        # marche l'image d'une plateforme qui tombe.
+        #
+        # Aucune métrique n'est inventée ici (§20). La durée, le modèle et
+        # l'issue voyagent aussi dans `ChatResponse` ; ce qui n'existe pas —
+        # un compteur dans `/metrics`, un événement d'audit dédié — n'est pas
+        # fabriqué pour faire nombre.
+        _JOURNAL.info(
+            "Réponse générée en %.3f s par %s", duree, modele or "modèle non nommé",
+        )
         return ReponseFinale(
             answer=texte,
             generated=True,
-            model_used=_modele_utilise(self._modeles),
-            elapsed_seconds=round(time.perf_counter() - debut, 3),
+            model_used=modele,
+            elapsed_seconds=duree,
         )
 
 

@@ -9,8 +9,8 @@ VOLET en cours   : **CHAT — RÉPONSE FINALE RÉELLE**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **11**
 Phases           : **19** (18 + la 5.3 annoncée au ch. 03)
-Phase courante   : **7.3 — en attente de confirmation**
-Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2 · 4.1 · 4.2 · 5.1 · 5.2 · 5.3 · 6 · 7.1 · 7.2**
+Phase courante   : **9 — en attente de confirmation**
+Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2 · 4.1 · 4.2 · 5.1 · 5.2 · 5.3 · 6 · 7.1 · 7.2 · 7.3 · 8**
 Branche          : `claude/galsen-ia-phases-ukwz7p`, **repartie de `main`**
                    (`dc09303`) — la PR #36 est fusionnée, on n'empile pas
                    sur de l'historique déjà intégré.
@@ -173,9 +173,10 @@ Ch. 07  Tests A à J (§16,17)                      → 3 phases
         7.1 A, B, D — général, conversation, technique ✅
         7.2 C, E, F — Sénégal, code, historique multi-tours ✅
         → `tests/test_chat_general_purpose.py`, 18 tests
-        7.3 G, H, I, J — pas de modèle, non vérifié, vérifié, échec
+        7.3 G, H, I, J — pas de modèle, non vérifié, vérifié, échec ✅
 
-Ch. 08  Sécurité, observabilité, coût (§18,19,20) → 1 phase (indivisible)
+Ch. 08  Sécurité, observabilité, coût (§18,19,20) → 1 phase (indivisible) ✅
+        34 tests au total dans `tests/test_chat_general_purpose.py`
 Ch. 09  Vérification complète (§23)               → 1 phase (indivisible)
 Ch. 10  Documentation et décision d'ADR (§21)     → 1 phase (indivisible)
 Ch. 11  Rapport final, 12 points (§24)            → 1 phase (indivisible)
