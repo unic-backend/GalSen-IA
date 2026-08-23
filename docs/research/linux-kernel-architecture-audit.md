@@ -493,6 +493,88 @@ problem GalSen IA actually has are carried forward.
 **Two candidates so far, both small and both reversible.** Neither is confirmed
 before the feasibility gates of chapter 11.
 
+## 3.2 — Faults, observability, boundaries
+
+### P7 — A taint is permanent, because the damage may not be undoable
+
+| Field | |
+|---|---|
+| **Linux principle** | *"the kernel will remain tainted even after you undo what caused the taint […] to indicate the kernel remains not trustworthy"*, and it **prints the tainted state** whenever it reports a bug, an oops or a panic. |
+| **Problem it solves** | A system that has been in an untrustworthy state cannot become trustworthy again by leaving it: the consequences may already be in the output. Reporting the state at the moment of failure is what lets an investigator find the real cause. |
+| **GalSen IA equivalent problem** | An answer produced while a subsystem was `DEGRADED` is **indistinguishable** from one produced while everything was `AVAILABLE`. |
+| **Current solution** | `src/integration/degradation.py` reports degradation **at probe time**. `grep -rln "tainted\|degradation_snapshot\|produced_while_degraded" src/` returns **zero files**: no result carries the platform state it was produced under. A workflow response carries `status`, `run_id` and `metadata`, and none of them says *"the knowledge engine was DEGRADED when this was answered"*. |
+| **Potential improvement** | Attach the degradation verdict of the subsystems a run actually used to that run's record — and keep it, even after they recover. |
+| **Complexity** | Medium — the probe and the trail both exist; this joins them |
+| **Risk** | Low. It adds information and removes none. The real risk is the opposite one: it will make some past answers look worse than they did, which is the point |
+| **Reversibility** | High — one field, ignorable by any reader that does not want it |
+| **Provisional class** | **A — USEFUL NOW** (candidate) |
+
+This is the principle that fits GalSen IA's existing philosophy most exactly.
+The platform already refuses to present an ungrounded answer as grounded; it
+does not yet refuse to present a **degraded** answer as healthy.
+
+### P8 — Two interface classes, with opposite promises
+
+| Field | |
+|---|---|
+| **Linux principle** | In-kernel interfaces are deliberately unstable. The kernel-to-userspace interface *"is **very** stable over time, and will not break"*. |
+| **Problem it solves** | Freezing internals prevents repair; breaking the external contract breaks every user. The two need opposite rules, stated. |
+| **GalSen IA equivalent problem** | Same shape: `src/` modules are refactored freely, while 143 HTTP routes are what callers depend on. |
+| **Current solution** | Partly, and by habit rather than statement: `tests/test_published_numbers.py` pins the route count, ADRs govern compatibility, `.claude/rules/spec-driven-governance.md` requires that *"existing APIs remain compatible unless explicitly authorised"*. |
+| **Potential improvement** | State the boundary once, as Linux does: which surfaces are contracts and which are internals. Chapter 08 decides whether that is worth an ADR. |
+| **Complexity** | Low — a document, not code |
+| **Risk** | Very low |
+| **Reversibility** | Total |
+| **Provisional class** | **B — USEFUL LATER** |
+
+### P9 — Tracing is built in, not compiled in for the occasion
+
+| Field | |
+|---|---|
+| **Linux principle** | ftrace is present in the running kernel and switched on at runtime. |
+| **Problem it solves** | A failure that only appears in production cannot be investigated by a build that is not in production. |
+| **GalSen IA equivalent problem** | Same. |
+| **Current solution** | `src/router/decision_trace.py`, `src/observability/trail.py`, the audit engine, `src/api/metrics.py`, and one identifier carried across subsystem boundaries. Always on. |
+| **Potential improvement** | None identified. |
+| **Complexity** | — |
+| **Risk** | — |
+| **Reversibility** | — |
+| **Provisional class** | **D — ALREADY COVERED** |
+
 ---
 
-*Chapters 03.2 to 13 pending.*
+# Chapter 04 — Self-healing, compared
+
+The brief calls this out as particularly important. Nine points, each measured
+on both sides.
+
+| | Linux | GalSen IA | Verdict |
+|---|---|---|---|
+| **Fault detection** | BUG, oops, panic; the state is printed with the fault | Degradation probes; traceback parsed for file, line, exception type — and *"a traceback is data […] never read as an instruction"* | **Covered**, and hardened against a class of attack the kernel does not face |
+| **Isolation of the fault** | The faulting task dies; the kernel survives where it can | Repair is applied in an isolated workspace, merged only if every gate passes | **Covered** |
+| **Resource exhaustion** | OOM killer; cgroup limits | `setrlimit` for sandboxed tool code. **Nothing for agents** | **Gap** — P5 |
+| **Process failure** | Parent reaps; group semantics | Group killed after *every* sandbox execution, not only on timeout | **Covered** |
+| **Subsystem failure** | Taint flag, permanent | Probe says `UNAVAILABLE` and carries the exception as the reason — **but nothing marks the results produced meanwhile** | **Gap** — P7 |
+| **Restart** | The kernel does not restart itself | Rollback, then merge or refuse | **Covered, differently and deliberately** |
+| **Recovery decision** | Left to the operator | *"the dangerous part of automated repair is not writing the patch, it is deciding the patch worked"* — everything after `propose_patch` is a gate | **Covered, and better stated** |
+| **Observability of the decision** | dmesg, taint state printed at the fault | `decision_trace.py`, audit events, the trail | **Covered** |
+| **Fault injection** | A parameterised facility | **Nothing.** The habit exists; the facility does not | **Gap** — P6 |
+
+### What this chapter concludes
+
+**Six of nine are covered, and two of those are better stated here than in the
+kernel** — because GalSen IA faces an adversary the kernel does not: text that
+arrives from a failing component and may have been written to be read as an
+instruction.
+
+The three gaps are exactly the three candidates already carried: **P5** (a bound
+on an agent), **P6** (fault injection as a facility), **P7** (a result remembers
+the state it was produced under).
+
+None of the three is an architecture change. All three add a guard or a field to
+something that already exists — which is what a research audit should hope to
+find, and the opposite of what "adopt the Linux model" would have produced.
+
+---
+
+*Chapters 05 to 13 pending.*

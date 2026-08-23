@@ -9,8 +9,8 @@ VOLET en cours   : **LINUX KERNEL ARCHITECTURE RESEARCH AUDIT**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **13**
 Phases           : **18**
-Phase courante   : **3.2 — en attente de confirmation**
-Terminées        : **1.1 · 1.2 · 1.3 · 2.1 · 2.2 · 3.1** → `docs/research/linux-kernel-architecture-audit.md`
+Phase courante   : **5 — en attente de confirmation**
+Terminées        : **1.1 · 1.2 · 1.3 · 2.1 · 2.2 · 3.1 · 3.2 · 4** → `docs/research/linux-kernel-architecture-audit.md`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Ce que le brief interdit** : copier du code noyau, vendorer un composant,
@@ -58,9 +58,9 @@ Ch. 02  Étude de l'architecture Linux            → 2 phases
 
 Ch. 03  Extraction des principes                 → 2 phases
         3.1 les huit champs, pour les concepts d'isolation et de ressources ✅
-        3.2 les huit champs, pour fautes, observabilité et frontières
+        3.2 les huit champs, pour fautes, observabilité et frontières ✅
 
-Ch. 04  Auto-réparation                          → 1 phase (indivisible)
+Ch. 04  Auto-réparation                          → 1 phase (indivisible) ✅
 Ch. 05  Gestion des ressources                   → 1 phase (indivisible)
 Ch. 06  Isolation des agents                     → 1 phase (indivisible)
 Ch. 07  Observabilité                            → 1 phase (indivisible)
