@@ -5,108 +5,146 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **aucun — AUDIT #01 terminé, 16 phases sur 16**
-                   Brief du propriétaire, 2026-08-22, phases 0 à 12 + rapport
-Chapitres        : **13**
-Phases           : **16**
-Phase courante   : aucune — le VOLET est clos
-Terminées        : **0.1, 0.2, 1** — 3 sur 16. Sujet cloné à `010569fa`,
-                   **1,3 Go, projet en C** (842 `.c`), **MIT**, 160 grammaires
-                   tree-sitter, et **30 Mo de poids nomic-embed-code embarqués**.
-                   **Ph2** : 14 types de nœuds, 8 relations, incrémental par
-                   hachage, **aucun appel sortant trouvé dans `src/`**, mais il
-                   **écrit dans les configs d'agent de `$HOME`**.
-                   **Ph3** : 16 lignes sur 24 `KEEP` — **`code-review-graph` les
-                   couvre déjà** ; 3 non couvertes (liens inter-services,
-                   sémantique sans fournisseur, data flow).
-                   **Ph4** : usage A pas démontré (CRG déjà là), **usage B rejeté
-                   sur l'architecture**. **Ph5** : réellement indépendant des
-                   fournisseurs — aucun client d'API, poids embarqués.
-                   **Ph6** : **aucune licence incompatible**, aucun copyleft
-                   (7 « MPL » = faux positif : *simplecpp*). **Ph7** : aucune
-                   opération cachée ; **une opération privilégiée assumée** —
-                   il écrit des fichiers d'instructions dans `$HOME`.
-                   **Ph8** : banc défini, **`NOT_MEASURED`** — la mesure qui
-                   déciderait est contre CRG, pas contre `grep`. **Ph9** : un
-                   repli existe déjà (CRG) ; **le retrait n'est pas propre**.
-                   **Ph10/11 — DÉCISION : `KEEP FOR RESEARCH`**, avec un
-                   déclencheur nommé vers l'option B. Rien installé, rien intégré,
-                   rien adapté. Ph12 ne s'applique pas
+VOLET en cours   : **REDESIGN CHAT-FIRST**
+                   Brief du propriétaire, 2026-08-22
+Chapitres        : **8**
+Phases           : **11**
+Phase courante   : **2.1 — en attente de confirmation**
+Terminées        : **1 — audit du frontend** (ci-dessous)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md`.
 
-**Condition d'arrêt** : audit seulement. Aucune intégration, aucune modification
-d'architecture, de schéma, d'API ou de test. Le VOLET s'arrête à la décision
-(phase 11) ; la phase 12 ne produit qu'une conception, jamais du code.
+**Ce que le brief interdit de casser** : orchestration, agents, mémoire,
+connaissance, `ModelRouter`, runtimes, outils, multimodalité, recherche,
+sécurité, backend, API internes.
+
+---
+
+## Chapitre 1 — Audit du frontend (TERMINÉ)
+
+Mesuré, pas rappelé.
+
+### Ce qui existe
+
+| Fichier | Lignes | Rôle |
+|---|---:|---|
+| `src/web/static/index.html` | 109 | Le tableau de bord actuel |
+| `js/dashboard.js` | 282 | Sa logique |
+| `css/dashboard.css` | 262 | Son style |
+| `js/api-client.js` | **236** | **Client HTTP partagé — à réutiliser** |
+| `studio.html` + `studio.js` + `studio.css` | 725 | Le Media Studio, séparé |
+
+**1 614 lignes au total. Aucune étape de build**, aucun framework : HTML, CSS et
+JavaScript servis tels quels par `StaticFiles` sous `/ui` (ADR-008). C'est une
+force ici — le redesign n'ajoute aucune chaîne d'outils.
+
+### Les routes que le frontend appelle aujourd'hui
+
+`/health` · `/connectors` · `/connectors/status` · `/auth/keys` ·
+`/auth/keys/reload` · `/memory/store` · `/notification/stats` ·
+`/media/capabilities` · `/media/projects` · **`/agri/advice`**
+
+### Le constat qui décide du plan
+
+**Il n'existe aucune route de conversation générale.** Ni `/chat`, ni
+`/conversation`, ni `/ask`. Grep sur `src/api/server.py` : zéro occurrence.
+
+Les seules routes qui produisent du texte sont :
+
+| Route | Ce qu'elle fait |
+|---|---|
+| `/model/generate` | Génération brute — **court-circuite l'orchestration** |
+| `/agri/advice` | L'outil agricole, un domaine unique |
+| `/workflow/run` | **Passe par l'orchestrateur** (`router → planner → …`) |
+| `/knowledge/search` | Récupération, pas conversation |
+
+**Conséquence** : l'expérience demandée ne peut pas être livrée en touchant
+seulement le frontend. Il manque **une** route. Le brief dit *« ne réécris pas le
+backend inutilement »* — ce n'est pas inutile, c'est le minimum, et c'est une
+seule route.
+
+### Et la détection automatique de domaine existe déjà
+
+Le brief demande que *« Comment planter le mil ? »* active l'agriculture sans que
+l'utilisateur choisisse. **C'est de l'orchestration**, et `src/router/` la fait :
+l'agent `router` est le premier du workflow `standard`.
+
+Donc la route de chat doit passer par **l'orchestrateur existant**, pas par
+`model.generate`. Réutiliser plutôt que reconstruire — et c'est ce qui donne la
+détection automatique gratuitement.
 
 ---
 
 ## Le plan
 
 ```
-Ch. 00  Ph0   État du dépôt GalSen IA, 16 points        → 2 phases
-              0.1 mémoire, connaissance, graphe, MCP, indexation, recherche
-              0.2 structure, impact, provenance, sécurité, self-healing,
-                  tests, ADR, dépendances
+Ch. 01  Audit du frontend                        → 1 phase  ✅ TERMINÉE
 
-Ch. 01  Ph1   Le dépôt officiel : sources, licence, CI  → 1 phase (indivisible)
-Ch. 02  Ph2   Ce que le projet fait vraiment, 16 points → 2 phases
-              2.1 indexation, graphe, nœuds, relations, requêtes, incrémental
-              2.2 persistance, MCP, ce qui exige un LLM, dépendances
+Ch. 02  La route de conversation                 → 2 phases
+        2.1 contrat : entrée, sortie, orchestrateur, refus. Aucun code
+        2.2 implémentation + tests
 
-Ch. 03  Ph3   Matrice de comparaison, 24 capacités      → 2 phases
-Ch. 04  Ph4   Deux usages : pendant vs après le déploiement → 1 phase (indivisible)
-Ch. 05  Ph5   Indépendance vis-à-vis des modèles        → 1 phase (indivisible)
-Ch. 06  Ph6   Licences : compatible / à surveiller / incompatible → 1 phase
-Ch. 07  Ph7   Sécurité, 13 surfaces                     → 1 phase (indivisible)
-Ch. 08  Ph8   Performance : leurs chiffres, puis les nôtres → 1 phase
-Ch. 09  Ph9   Feasibility gates, 14 questions           → 1 phase (indivisible)
-Ch. 10  Ph10  Quatre options A/B/C/D                    → 1 phase (indivisible)
-Ch. 11  Ph11  Décision                                  → 1 phase (indivisible)
-Ch. 12  Ph12  Si adaptation : conception seule, puis ARRÊT → 1 phase
+Ch. 03  La coquille chat                         → 2 phases
+        3.1 `chat.html` + `chat.css` — plein écran, zéro carte
+        3.2 identité GalSen IA : palette, typographie, vide accueillant
 
-Ch. 13        Rapport final, ses 25 points              → 1 phase (indivisible)
+Ch. 04  La conversation                          → 2 phases
+        4.1 `chat.js` : envoi, historique, états d'attente et d'erreur
+        4.2 réutilisation de `api-client.js`, jamais un second client
+
+Ch. 05  Le menu des domaines                     → 1 phase (indivisible)
+        14 capacités, en haut à gauche, sans multiplier les assistants
+
+Ch. 06  L'espace administrateur                  → 1 phase (indivisible)
+        Le tableau de bord actuel déplacé sous `/ui/admin`, rien supprimé
+
+Ch. 07  Responsive                               → 1 phase (indivisible)
+        Mobile d'abord, puis desktop
+
+Ch. 08  Vérification de bout en bout             → 1 phase (indivisible)
+        Suite complète, routes, mobile, desktop, chat, menu, admin
 ```
 
-**Total : 16 phases.**
+**Total : 11 phases.**
 
 ---
 
-## Mesuré avant de planifier
+## Ce que je dois te dire avant que tu confirmes
 
-`raw.githubusercontent.com/DeusData/codebase-memory-mcp` → **200**
-`api.github.com/repos/DeusData/codebase-memory-mcp` → **403**
+**Ce redesign amplifie un défaut non résolu.**
 
-Contenu lisible fichier par fichier ; **arborescence et commit exact non**. Comme
-pour l'audit Superpowers, la phase 1 clone via le proxy git — sinon la version
-examinée est `UNKNOWN` et il faudrait **deviner** quels fichiers existent.
+Il y a une heure, `/agri/advice` a répondu à *« quand semer »* en plaçant
+l'hivernage de fin mars à mi-août — trois mois trop tôt — et en inventant une
+troisième saison. **Sans source, sans provenance, sans `UNKNOWN`.** La cause est
+mesurée : la route ne consulte jamais le corpus, et le corpus agricole est vide.
 
----
+Aujourd'hui ce défaut est enfermé dans **un formulaire**. Une interface
+chat-first en fait **l'expérience principale** : chaque question, sur n'importe
+quel domaine, passera par le même chemin non ancré.
 
-## Un point de contexte, pas une conclusion
+Une belle interface qui invente couramment est plus dangereuse qu'un formulaire
+laid qui invente rarement — parce qu'on lui fait confiance.
 
-Ce dépôt vise la mémoire de code, le graphe et MCP. GalSen IA a déjà, mesuré au
-VOLET précédent : `src/memory_engine/` (12 modules), `src/knowledge_engine/` (19),
-`src/agent/repo_graph.py` + `repo_map.py` + `symbol_index.py`, `src/mcp/`, et le
-serveur MCP **`code-review-graph` déjà branché** sur ce dépôt.
+**Deux ordres possibles, et c'est ta décision :**
 
-Le chevauchement sera donc large. **Ça ne préjuge de rien** — c'est précisément
-ce que la matrice de la phase 3 doit mesurer, capacité par capacité.
+- **Grounding d'abord** — brancher le mécanisme `UNKNOWN` qui existe déjà
+  (`retrieve_reliable`, `routing.ask`), puis construire le chat par-dessus.
+  Plus lent à voir, honnête dès le premier jour.
+- **Chat d'abord** — livrer l'interface, puis le grounding. Tu vois ton produit
+  tout de suite, et tu portes le risque en attendant.
 
-Trois audits de compatibilité sur quatre se sont conclus par *ne pas intégrer*.
-Un audit dont la conclusion est écrite d'avance n'en est pas un.
+Si tu choisis « chat d'abord », la phase 2.1 devra prévoir **où** le refus
+s'insérera plus tard, pour que ce ne soit pas à refaire.
 
 ---
 
 ## Programmes précédents, terminés — ne pas rouvrir
 
-1. **SUPERPOWERS** — audit 24 phases + implémentation 11 phases. **ADR-038** :
-   6 concepts adoptés comme prose, **rien installé**.
-2. **Les quatre constats de l'audit OSS** — PR #34 et #35 fusionnées.
-3. **OPEN-SOURCE ECOSYSTEM AUDIT** — 22 phases. **ADR-037** : zéro `INTEGRATE`.
-4. **OpenClaw** — ADR-034 : ne pas intégrer.
-5. **DeepSeek Harness** — ADR-035 : implémentation non autorisée.
-6. **Live Context** (ADR-033), **Creative Canvas** (ADR-031), **Research
-   Orchestration** (ADR-032), **MoneyPrinterTurbo** (ADR-030),
+1. **AUDIT #01 `codebase-memory-mcp`** — 16 phases, `KEEP FOR RESEARCH`.
+2. **SUPERPOWERS** — audit 24 phases + 11 d'implémentation. **ADR-038**.
+3. **OPEN-SOURCE ECOSYSTEM AUDIT** — 22 phases. **ADR-037**.
+4. **OpenClaw** (ADR-034), **DeepSeek Harness** (ADR-035) : non intégrés.
+5. **Live Context** (ADR-033), **Creative Canvas** (ADR-031),
+   **Research Orchestration** (ADR-032), **MoneyPrinterTurbo** (ADR-030),
    **Apache-2.0** (ADR-036).
