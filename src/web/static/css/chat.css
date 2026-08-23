@@ -1,4 +1,5 @@
 /*
+<<<<<<< HEAD
  * Feuille de style de l'interface conversationnelle GalSen IA.
  *
  * Cette version pose la structure du chat : en-tête, conversation, barre de
@@ -6,6 +7,29 @@
  * clair/sombre et le travail mobile-first arrivent avec le chapitre 04.
  * Aucune police n'est téléchargée : sur une connexion lente, une police
  * distante retarde l'affichage du texte.
+=======
+ * Feuille de style de la conversation GalSen IA (VOLET chat-first, ch. 03).
+ *
+ * ## Ce qui est repris, et pourquoi
+ *
+ * Les couleurs viennent de `dashboard.css`, à l'identique. Une seconde palette
+ * pour le même produit aurait dérivé au premier ajustement, et deux verts
+ * légèrement différents se remarquent plus qu'un seul bien choisi.
+ *
+ * Aucune police n'est téléchargée. Sur une connexion lente — le cas courant
+ * ici — une police distante retarde l'affichage du texte, et la première chose
+ * qu'un utilisateur voit d'une conversation est du texte.
+ *
+ * ## Ce que cette feuille refuse
+ *
+ * **Aucune carte.** Le tableau de bord était fait de panneaux ; une
+ * conversation est une colonne. Rien n'encadre les messages, rien ne les met en
+ * grille, et la page ne défile jamais horizontalement.
+ *
+ * **Aucune animation d'attente déguisée en progression.** Les trois points qui
+ * pulsent disent « ça travaille » ; ils ne prétendent pas savoir combien de
+ * temps il reste, parce que personne ne le sait.
+>>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
  */
 
 :root {
@@ -15,7 +39,17 @@
   --texte: #16191d;
   --texte-doux: #5b6570;
   --accent: #0b6e4f; /* vert, comme le drapeau */
+<<<<<<< HEAD
   --rayon: 12px;
+=======
+  --accent-contraste: #ffffff;
+  --ancre: #0b6e4f; /* la réponse repose sur des sources */
+  --sans-ancre: #9a6700; /* rien ne la fonde — ocre, pas rouge */
+  --non-verifie: #5b6570; /* personne n'a regardé */
+  --erreur: #b42318;
+  --rayon: 14px;
+  --colonne: 46rem;
+>>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,6 +60,14 @@
     --texte: #e8eaed;
     --texte-doux: #9aa4ae;
     --accent: #35c08c;
+<<<<<<< HEAD
+=======
+    --accent-contraste: #0d1512;
+    --ancre: #35c08c;
+    --sans-ancre: #e0a800;
+    --non-verifie: #9aa4ae;
+    --erreur: #ff6b5e;
+>>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
   }
 }
 
@@ -40,6 +82,7 @@ body {
 
 body {
   margin: 0;
+<<<<<<< HEAD
   display: flex;
   flex-direction: column;
   background: var(--fond);
@@ -225,4 +268,500 @@ body {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+=======
+  background: var(--fond);
+  color: var(--texte);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* `100dvh` et non `100vh` : sur mobile, `vh` compte la barre d'adresse
+   rétractée, ce qui pousse le composeur sous le bord de l'écran. */
+.application {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+/* Lu par les lecteurs d'écran, invisible à l'œil. Jamais `display: none`, qui
+   retirerait l'élément de l'arbre d'accessibilité. */
+.invisible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ entête */
+
+.entete {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--bordure);
+  background: var(--fond);
+}
+
+.bouton-menu {
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.1rem;
+  color: var(--texte);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.bouton-menu:hover,
+.bouton-menu:focus-visible {
+  background: var(--fond-doux);
+  border-color: var(--bordure);
+}
+
+.marque {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.sceau {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-contraste);
+  background: var(--accent);
+  border-radius: 7px;
+}
+
+.cle {
+  margin-left: auto;
+}
+
+.cle input {
+  width: 9rem;
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--texte);
+  background: var(--fond-doux);
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+}
+
+/* ----------------------------------------------------------- conversation */
+
+.conversation {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 1rem;
+}
+
+.conversation > * {
+  max-width: var(--colonne);
+  margin-inline: auto;
+}
+
+/* --------------------------------------------------------------- accueil */
+
+.accueil {
+  padding: 2.5rem 0 1rem;
+}
+
+.salutation {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.accueil h1 {
+  margin: 0.2rem 0 0.5rem;
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.promesse {
+  margin: 0 0 1.75rem;
+  max-width: 34rem;
+  color: var(--texte-doux);
+}
+
+.pistes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.piste {
+  padding: 0.5rem 0.85rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--texte);
+  text-align: left;
+  background: var(--fond-doux);
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.piste:hover,
+.piste:focus-visible {
+  border-color: var(--accent);
+}
+
+/* --------------------------------------------------------------- messages */
+
+.tour {
+  margin-bottom: 1.5rem;
+}
+
+.tour.de-moi {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.tour.de-moi .bulle {
+  max-width: 85%;
+  padding: 0.65rem 1rem;
+  color: var(--accent-contraste);
+  background: var(--accent);
+  border-radius: var(--rayon) var(--rayon) 4px var(--rayon);
+}
+
+/* Le tour de la plateforme n'a pas de bulle : le texte respire à pleine
+   largeur, comme une réponse et non comme une réplique. */
+.tour.de-galsen .bulle {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tour.de-galsen .bulle ul {
+  margin: 0.5rem 0;
+  padding-left: 1.2rem;
+}
+
+/* --------------------------------------------------- ancrage et détection */
+
+/*
+ * La ligne la plus importante de la page.
+ *
+ * Elle dit sur quoi la réponse repose, et par quelle méthode le domaine a été
+ * trouvé. Sans elle, une heuristique par mots-clés s'affiche comme une
+ * certitude — et une réponse que rien ne fonde ressemble à une réponse fondée.
+ */
+.marges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+}
+
+.jeton {
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}
+
+.jeton.ancre {
+  color: var(--ancre);
+}
+
+.jeton.sans-ancre {
+  color: var(--sans-ancre);
+}
+
+.jeton.non-verifie {
+  color: var(--non-verifie);
+}
+
+.jeton.domaine,
+.jeton.duree {
+  color: var(--texte-doux);
+}
+
+.motif {
+  margin: 0.45rem 0 0;
+  font-size: 0.85rem;
+  color: var(--texte-doux);
+  border-left: 2px solid var(--bordure);
+  padding-left: 0.7rem;
+}
+
+/* --------------------------------------------------------------- attente */
+
+.attente {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.attente span {
+  width: 0.4rem;
+  height: 0.4rem;
+  background: var(--texte-doux);
+  border-radius: 50%;
+  animation: respire 1.2s infinite ease-in-out;
+}
+
+.attente span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.attente span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes respire {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* Respecter un système réglé sur « moins d'animations » n'est pas une
+   politesse : pour certaines personnes, une pulsation continue est un
+   symptôme. */
+@media (prefers-reduced-motion: reduce) {
+  .attente span {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* ------------------------------------------------------------- composeur */
+
+.composeur {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  width: min(100%, var(--colonne));
+  margin-inline: auto;
+  padding: 0.5rem 1rem 0;
+}
+
+.composeur textarea {
+  flex: 1;
+  max-height: 40vh;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  color: var(--texte);
+  background: var(--fond-doux);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  resize: none;
+}
+
+.composeur textarea:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.composeur button {
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.1rem;
+  color: var(--accent-contraste);
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.composeur button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.etat {
+  width: min(100%, var(--colonne));
+  margin: 0.4rem auto 0.7rem;
+  padding-inline: 1rem;
+  min-height: 1.2rem;
+  font-size: 0.8rem;
+  color: var(--texte-doux);
+}
+
+.etat.echec {
+  color: var(--erreur);
+}
+
+/* ------------------------------------------------------------ grand écran */
+
+@media (min-width: 40rem) {
+  .conversation {
+    padding: 2rem 1.5rem;
+  }
+
+  .accueil h1 {
+    font-size: 2.3rem;
+  }
+
+  .cle input {
+    width: 13rem;
+  }
+}
+
+/* ---------------------------------------------------------- menu domaines */
+
+.menu-domaines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(280px, 85vw);
+  height: 100dvh;
+  background: var(--fond);
+  border-right: 1px solid var(--bordure);
+  padding: 0.6rem 0;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .menu-domaines {
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.menu-domaines[hidden] {
+  display: none;
+}
+
+.menu-fermer {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.2rem;
+  color: var(--texte);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.menu-fermer:hover,
+.menu-fermer:focus-visible {
+  background: var(--fond-doux);
+  border-color: var(--bordure);
+}
+
+.menu-titre {
+  margin: 2.2rem 0.8rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texte-doux);
+}
+
+.menu-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu-domaine {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  font-size: 0.95rem;
+  color: var(--texte);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.menu-lien {
+  display: block;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+  color: var(--texte);
+  text-decoration: none;
+}
+
+.menu-domaine:hover,
+.menu-domaine:focus-visible,
+.menu-lien:hover,
+.menu-lien:focus-visible {
+  background: var(--fond-doux);
+}
+
+.menu-domaine.actif {
+  background: var(--accent);
+  color: var(--accent-contraste);
+  font-weight: 600;
+}
+
+.menu-reinitialiser {
+  margin-top: 1rem;
+  margin-left: 0.8rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.85rem;
+  color: var(--texte-doux);
+  background: transparent;
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.menu-reinitialiser:hover,
+.menu-reinitialiser:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Quand le menu est ouvert, le contenu décale légèrement à droite. */
+.menu-domaines:not([hidden]) ~ .entete,
+.menu-domaines:not([hidden]) ~ main,
+.menu-domaines:not([hidden]) ~ .composeur {
+  margin-left: min(280px, 85vw);
+}
+
+@media (max-width: 600px) {
+  .menu-domaines:not([hidden]) ~ .entete,
+  .menu-domaines:not([hidden]) ~ main,
+  .menu-domaines:not([hidden]) ~ .composeur {
+    margin-left: 0;
+  }
+
+  /* Sur mobile, le menu couvre tout. */
+  .menu-domaines {
+    width: 100vw;
+    z-index: 10000;
+  }
+}
+
+/* ------------------------------------------------------- sans JavaScript */
+
+.sans-js {
+  width: min(100%, var(--colonne));
+  margin: 1rem auto;
+  padding: 0.9rem 1rem;
+  color: var(--texte);
+  background: var(--fond-doux);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+>>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
 }

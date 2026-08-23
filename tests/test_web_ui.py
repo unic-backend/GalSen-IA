@@ -82,17 +82,28 @@ class TestFichiersServis:
 class TestContenuDeLaPage:
     """Vérifie que la page porte ce dont le script a besoin."""
 
+<<<<<<< HEAD
     def test_les_points_de_montage_existent(self, client):
         """La conversation, la saisie et le menu doivent exister, sinon le script écrit dans le vide."""
         page = client.get(f"{UI_PREFIX}/").text
         for identifiant in ('id="conversation"', 'id="saisie"', 'id="menu-domaines"'):
+=======
+    def test_le_chat_existe_a_ui(self, client):
+        """Le chat doit exister à /ui/, avec conversation et composeur."""
+        page = client.get(f"{UI_PREFIX}/").text
+        for identifiant in ('id="conversation"', 'id="composeur"', 'id="message"'):
+>>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
             assert identifiant in page
 
-    def test_le_script_est_charge_comme_module(self, client):
+    def test_le_script_du_chat_est_module(self, client):
         """Le client d'API utilise `import` : sans `type="module"`, rien ne s'exécute."""
         page = client.get(f"{UI_PREFIX}/").text
         assert 'type="module"' in page
         assert "/ui/js/chat.js" in page
+<<<<<<< HEAD
+=======
+        assert 'type="module"' in page
+>>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
 
     def test_page_en_francais(self, client):
         """L'interface s'adresse à des utilisateurs francophones."""
@@ -102,9 +113,9 @@ class TestContenuDeLaPage:
         """Sans `viewport`, la page est illisible sur un téléphone."""
         assert "width=device-width" in client.get(f"{UI_PREFIX}/").text
 
-    def test_message_sans_javascript(self, client):
-        """Un navigateur sans JavaScript doit être orienté, pas laissé devant du vide."""
-        page = client.get(f"{UI_PREFIX}/").text
+    def test_le_dashboard_a_noscript(self, client):
+        """Un navigateur sans JavaScript sur le dashboard doit être orienté."""
+        page = client.get(f"{UI_PREFIX}/admin/").text
         assert "<noscript>" in page
         assert "/health" in page
 

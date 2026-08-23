@@ -12,6 +12,116 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-23 — The chat writes, and writing still grounds nothing (ADR-039)
+
+Measured before touching anything: `POST /chat` returned the identical text,
+word for word, for *« bonjour »* and *« Qui était Albert Einstein ? »*. Tracing
+the real calls showed only `planner` and `researcher` ever ran, and that
+**nothing in the chain wrote** — between the agents' structured results and
+`ChatResponse.answer` sat one function that renders data.
+
+`src/chat/` is that missing stage. It receives an assembled context and returns
+text: it fetches nothing, calls no tool, opens no connection, and calls
+`ModelManagerImpl` and nothing else. Being a pure composer is what makes it
+testable on a machine with **zero models registered**, which is this one.
+
+**Writing never grounds.** Grounding is computed from the agents' evidence
+before generation and never touched by it. `ChatResponse.generated` is true only
+when a model produced the text — without it, a refusal composed by the platform
+would be indistinguishable from an answer, the exact lie this repository
+refuses everywhere else. Verified by sabotage: making generation overwrite
+grounding fails a test.
+
+Evidence keeps its origin all the way into the prompt, marked `VERIFIED` or
+`UNVERIFIED` with its scope, never melted into a paragraph. That follows
+ADR-019, which had already refused a global base and a Senegalese one. Machinery
+— plan, task list, timings — never enters: a model given machinery writes an
+execution report instead of an answer.
+
+**A greeting went from 1 092 ms to 77 ms.** A `conversation` intent mobilises no
+agent, which required restoring a distinction the repository already stated and
+then collapsed: `recommended_agents()` says *deciding to mobilise nobody is a
+decision, not deciding is not one*, and `selection_appliquee()` threw that away
+one function later. Three cases now, and the deliberate fallback it guards is
+intact.
+
+**Two defects were found by re-reading this same work.** `/chat` was returning
+`http://localhost:11434` in its failure message — a host and a port handed to
+any caller; the route now returns a short enumerated reason and keeps the whole
+cause in the log. And setting an intent with no agents raised `IndexError` in
+the planner: an intent that mobilises nobody is a valid plan, not a failure.
+
+Two things the brief asked for are **not** done, and are recorded rather than
+quietly dropped. The coding capability is still unreachable, because the
+`question` workflow does not declare `coder` and wiring a chat message to an
+agent that writes files is an operator decision. And a verified researcher
+finding does not ground a Senegalese question whose national base is empty —
+the `senegal` agent's verdict wins, which is defensible. Both are pinned by
+tests that will fail the day either changes.
+
+44 tests added, none removed, none weakened. `pytest -q` → **7 148 passed, 9
+skipped, 3 deselected, 0 failed**. `ruff check src tests scripts agents` → all
+checks passed. No dependency added, no secret introduced, no unrelated file
+touched.
+
+**What stays UNKNOWN**: everything needing a real model — answer quality, real
+latency, provider fallback. Zero models are registered here.
+
+### Added — 2026-08-23 — A conversation, and what it refuses to say (chat-first redesign)
+
+The platform had no general conversation endpoint. Measured before touching
+anything: no `/chat`, no `/conversation`, no `/ask`; the only routes producing
+text either bypassed orchestration (`/model/generate`) or served a single domain
+(`/agri/advice`). A chat-first interface could not be built on either.
+
+**`POST /chat`** (143 routes now) goes through the existing orchestrator rather
+than calling the model directly. That is what gives automatic domain detection
+for free: *"Quand planter le mil à Thiès ?"* is classified as `agriculture` **by
+keywords**, and the response says it was done by keywords. A domain shown without
+its method turns a heuristic into a certainty. 1.1 s per turn, measured.
+
+**The finding that shapes the whole thing: none of the seventeen agents writes.**
+Only `planner` and `coder` call the model, for planning and for coding. The
+`question` workflow is `planner → researcher → senegal → verifier` — a research
+and verification chain, not a conversation one. So `/chat` returns **what the
+agents actually reported**: the `senegal` agent's *"the base is empty on this
+subject — this is not a negative answer"*, or the `researcher`'s three named
+gaps. `/agri/advice` placed the rainy season three months early because it had to
+answer something; this route does not have to. **The interface is honest, and it
+does not converse yet.** Making it converse needs a redaction step, which is a
+decision the owner has not taken.
+
+The interface: `/ui/` is now the conversation, one column and no cards; the
+diagnostic dashboard moves to `/ui/admin/` — moved, not deleted; a menu of 14
+domains that filter one assistant rather than multiplying assistants; mobile
+first, no remote font or script, ~16 KB a page.
+
+Under every answer sits the smallest and most important element, a grounding
+chip with three outcomes and never two: `GROUNDED`, `UNGROUNDED`, `NOT_CHECKED`,
+followed by the agent's own reason. An empty knowledge base is ochre, not red —
+the agent says in its own words that it is not a negative answer, and painting
+its refusal as a failure would contradict the one sentence this platform cares
+about being understood.
+
+**Three defects were found by re-reading work already reported as finished**, and
+they are worth recording because none of them would have been noticed by using
+the page:
+
+- The grounding chip built its class by interpolating the status, producing
+  `jeton.grounded` — a class name containing a dot, matching no rule. **The most
+  important element on the page never had its colour**, and nobody saw it
+  because `GROUNDED` stays rare while the corpus is empty. `TestJetonAncrage`
+  now holds the mapping, verified by re-introducing the defect.
+- `grounding.reason` was dropped entirely. `UNGROUNDED` without its reason tells
+  nobody what to fix.
+- Moving the dashboard left **no door to it**: the agricultural form and the
+  Media Studio became unreachable by clicking. A move without a door is a
+  deletion. Both are linked from the conversation menu, and a test asserts it.
+
+One process lesson, recorded because it caused the above: **a suite run through
+`| tail -4` hides its own failures.** One run reported `25 failed` with only 3
+lines visible, and the 22 others were reported as green.
+
 ### Added — 2026-08-22 — Superpowers audited, six concepts adopted, nothing installed (ADR-038)
 
 `obra/superpowers` at `b36e0829` (v6.3.0, MIT) audited in 24 phases →

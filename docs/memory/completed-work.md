@@ -56,6 +56,18 @@ Entrées antérieures au 2026-08-19 → `docs/memory/archive/completed-work-2026
 - **30 scénarios exécutables** (`golden.py`) — 24 `VERIFIED`, 6 `BLOCKED`, 0 échec. Vérifié : 376 tests dans `tests/live_context`, suite complète **6 958 passent, 12 ignorés, 1 échec** (`v0.1.0`), `ruff check .` propre.
 ### 2026-08-20 (OPENCLAW — audit, 19 phases sur 19, ADR-034 : ne pas intégrer)
 
+- 2026-08-23 - `/chat` rédige (`src/chat/`, ADR-039) - 19 phases. Couche de réponse branchée sur `ModelManagerImpl`, ancrage calculé avant génération.
+- 2026-08-23 - Décision : écrire n'ancre jamais, et `ChatResponse.generated` le prouve - un refus composé doit rester distinguable d'une réponse - si c'est faux, la plateforme ment exactement là où elle prétend ne pas mentir.
+- 2026-08-23 - Décision : rétablir les trois cas de `selection_appliquee()` au lieu d'affaiblir la garde du pipeline - `recommended_agents()` faisait déjà la distinction dans sa docstring - si c'est faux, une heuristique muette n'exécute plus rien du tout.
+- 2026-08-23 - Décision : ne plus rendre la prose du fournisseur dans `generation_unavailable` - elle livrait `http://localhost:11434` à tout appelant - si c'est faux, l'exploitant perd le message actionnable, qui reste au journal et dans `/health`.
+- 2026-08-23 - Constat non corrigé : `coder` n'est pas déclaré dans le workflow `question`, donc une demande de code ne l'atteint pas. Décision d'exploitant (§19), épinglée par un test.
+- 2026-08-23 - Constat non corrigé : sur une question sénégalaise à base vide, le verdict de `senegal` prime sur un constat vérifié du chercheur (`_ancrage_de`). Épinglé par un test.
+- 2026-08-23 - Audit architecture noyau Linux terminé et fusionné (PR #36) - `docs/research/linux-kernel-architecture-audit.md`, verdict SELECTIVE ARCHITECTURAL IMPROVEMENTS RECOMMENDED, aucune recommandation autorisée.
+- 2026-08-23 - Redesign chat-first (`src/api/server.py` `POST /chat`, `src/web/static/`) - 8 chapitres, 11 phases. `/ui/` sert la conversation, `/ui/admin/` le tableau de bord.
+- 2026-08-23 - Décision : `/chat` passe par l'orchestrateur, pas par `model.generate` - la détection de domaine existe déjà dans `src/router/` - si c'est faux, chaque tour paie 1,1 s d'un pipeline d'agents pour une question qui n'en avait pas besoin.
+- 2026-08-23 - Décision : rendre le refus des agents plutôt que de générer pour combler - l'agent `senegal` dit déjà « la base est vide, ce n'est pas une réponse négative » - si c'est faux, le chat est honnête mais ne converse pas, et l'utilisateur le voit dès la première bulle.
+- 2026-08-23 - Constat : aucun des 17 agents ne rédige (`agents/`) - seuls `planner` et `coder` appellent le modèle. Une étape de rédaction reste à décider, non autorisée.
+- 2026-08-23 - Défaut corrigé : le jeton d'ancrage fabriquait sa classe par interpolation et n'a jamais eu sa couleur - `tests/test_ui_chat.py::TestJetonAncrage` le tient, sabotage vérifiée.
 - 2026-08-20 — **Audit OpenClaw terminé, décision : ne pas intégrer** (ADR-034, 19 phases, 13 volets). Rapport → `docs/openclaw/feasibility-gates.md`. **Zéro ligne de `src/` modifiée, zéro dépendance, zéro test touché.**
 - **Trois des douze portes du §19 répondent `NON`** : le bac à sable (désactivé par défaut, passerelle non isolée, `tools.elevated` sur l'hôte — *« This is not a perfect security boundary »*, leurs mots) ; l'isolation multi-utilisateurs (*« Session IDs select routing; they do not authorize one tenant against another »*) ; et la complexité (treize des quatorze capacités du §5 existent déjà ici).
 - **La couche d'isolation qu'exige le §8 est impossible ici** : elle demande des espaces de noms et des cgroups que `src/sandbox/policy.py` consigne déjà comme absents. Le blocage précède ce programme.

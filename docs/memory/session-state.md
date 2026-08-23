@@ -6,57 +6,53 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ---
 
-## Dernière session — 2026-08-22
+## Dernière session — 2026-08-23
 
-**En cours** : rien. **AUDIT #01 `codebase-memory-mcp` terminé**, 16 phases.
+**En cours** : rien. **VOLET « CHAT — RÉPONSE FINALE RÉELLE » : 17 phases sur
+19 faites**, il reste la 10 (docs, en cours) et la 11 (rapport final).
+Branche `claude/galsen-ia-phases-ukwz7p`, repartie de `main` après la fusion
+de la PR #36.
 
-**Terminé** : `DeusData/codebase-memory-mcp` à `010569fa` audité →
-**`KEEP FOR RESEARCH`**. Rapport : `docs/research/codebase-memory-mcp-audit.md`.
-**Rien installé, rien intégré, rien adapté. Zéro fichier hors `docs/`.**
+**Terminé** : **`/chat` rédige enfin.** `src/chat/` compose une réponse à
+partir de ce que l'orchestration a trouvé et appelle `ModelManagerImpl`.
+Décision → **ADR-039**. Contrat et flux réel →
+`docs/architecture/chat-final-response.md`.
 
 À savoir sans relire :
-- **Projet en C, 1,3 Go** (842 `.c`, 160 grammaires tree-sitter), **MIT**, aucun
-  copyleft, **30 Mo de poids `nomic` embarqués** (Apache-2.0).
-- **Réellement indépendant des fournisseurs** — vérifié dans le C : aucun client
-  d'API, aucun appel sortant, la seule socket `AF_INET` vise `127.0.0.1`.
-- **16 lignes sur 24 sont `KEEP`** parce que **`code-review-graph`, déjà branché
-  ici, les couvre**. Ce n'est pas une capacité qui manque : c'est un **second
-  fournisseur** d'une capacité existante.
-- **Le risque** : il écrit des **fichiers d'instructions** dans `$HOME`
-  (`global_rules.md`, `AGENTS.md`). Même classe de surface qu'ADR-038 a écartée.
-  **Le retrait n'est pas propre** : désinstaller ne les efface pas.
-- **`NOT_MEASURED`** sur la performance : la mesure qui déciderait est contre
-  `code-review-graph`, et son serveur MCP s'est déconnecté deux fois ici.
-- **Deux faux positifs écartés en lisant les correspondances** : « 7 MPL » était
-  *simplecpp*, et `getaddrinfo` était une table générée de symboles Python.
+- **Le brief se trompait deux fois, et la mesure l'a corrigé.** Le routage
+  généraliste existait déjà (5 questions globales sur 5 n'appellent pas
+  `senegal`), et le planner appelait déjà le modèle. La vraie cause était plus
+  étroite : **rien ne rédigeait**.
+- **Écrire n'ancre jamais.** L'ancrage est calculé avant la génération.
+  `ChatResponse.generated` vaut vrai seulement si un modèle a écrit — sans ce
+  champ, un refus composé serait indiscernable d'une réponse.
+- **« bonjour » : 1 092 ms → 77 ms.** Une intention `conversation` ne mobilise
+  aucun agent, et `selection_appliquee()` distingue enfin les trois cas.
+  `recommended_agents()` faisait déjà cette distinction dans sa docstring ;
+  elle a été **rétablie, pas inventée**.
+- **Deux défauts trouvés en relisant mon propre travail** : `/chat` livrait
+  `http://localhost:11434` dans son message d'erreur, et `_build_tasks`
+  levait `IndexError` sur une intention sans agent.
+- **Zéro modèle enregistré ici**, mesuré après le démarrage complet. Toute la
+  chaîne est vérifiée avec un fournisseur simulé ; qualité, latence réelle et
+  repli entre fournisseurs restent `UNKNOWN`.
 
-**Prochaine étape** : rien d'autorisé. Le déclencheur nommé, si tu le veux :
-mesurer tokens et appels contre `code-review-graph` sur les 5 questions de la
-phase 8. Suggestion optionnelle non implémentée : arêtes `CALLS` et incrémental
-par hachage dans `src/agent/`, le jour où `self_healer.py` en aura besoin.
+**Prochaine étape** : phase 11 — rapport final en 12 points (§24 du brief).
 
-**Ce qui a servi à chaque fois** : *sabotez la garde avant de la croire.* Une
-sabotage a elle-même été fautive — la ligne ajoutée s'est collée à la
-précédente, le fichier n'ayant pas de saut de ligne final ; le test était juste,
-pas la sabotage.
+**Décisions en attente du propriétaire** (ni l'une ni l'autre faite) :
+1. **Déclarer `coder` dans le workflow `question`** — l'intention est corrigée
+   mais l'agent n'est pas atteint. Brancher un chat sur un agent qui écrit des
+   fichiers est une décision d'exploitant (§19). Un test épingle l'état réel.
+2. **P10 de l'audit Linux devient urgente** : ajouter une génération allonge le
+   tour, donc aggrave le blocage de la boucle d'événements (`/health` :
+   3,5 ms → 1 149 ms pendant un `/chat`). Trois sites d'appel.
 
-**Repère de non-régression, mesuré sur `main` après la fusion** (run 32555510451) :
-`1 failed, 7020 passed, 15 skipped, 3 deselected`. Avant la fusion, `main` à
-`c88b555` donnait `1 failed, 6964 passed, 15 skipped` : **+56 verts, le même
-unique échec**. Cet échec est l'étiquette `v0.1.0` — **jamais une régression, ne
-pas la « corriger »**. En local sur un conteneur où l'étiquette existe, la suite
-est entièrement verte : `7027 passed, 9 skipped, 3 deselected, 0 failed`. L'écart
-de 6 ignorés vient de tests dépendants de l'environnement ; le total collecté est
-le même des deux côtés.
+**Ce qui a servi** : *sabotez la garde avant de la croire* — cinq fois
+aujourd'hui, dont une qui a montré qu'un test cassé avait raison contre moi.
 
-**Piège d'environnement, mesuré** : un conteneur peut être provisionné **avant**
-une dépendance déclarée. `bcrypt==5.0.0` était dans `requirements.txt` et pas
-installé : **40 échecs et 16 erreurs**, tous d'auth. Mesurer la base **intacte**
-sur la même machine avant de conclure à une régression.
-
-**Piège de l'environnement, vu trois fois** : le conteneur est recyclé et le
-clone retombe en arrière. Un dossier attendu absent = clone périmé, **jamais un
-programme perdu**. `git fetch` avant de conclure.
+**Repère mesuré le 2026-08-23** : `pytest -q` → **7 148 passent, 9 ignorés,
+3 désélectionnés, 0 échec**. `ruff check src tests scripts agents` → tout passe.
+44 tests ajoutés, **0 supprimé**.
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
 - **`GALSEN_CODING_WORKSPACE_ROOTS` doit être renseignée** ou le moteur de codage
@@ -73,6 +69,9 @@ programme perdu**. `git fetch` avant de conclure.
 ---
 
 ### Sessions précédentes
+
+**2026-08-22 — AUDIT #01 `codebase-memory-mcp`**, 16 phases → `KEEP FOR RESEARCH`.
+Rapport : `docs/research/codebase-memory-mcp-audit.md`. Rien installé, rien intégré.
 
 **2026-08-20 — Audit OSS (22 phases, ADR-037)**, PR #33 : douze projets, **zéro
 `INTEGRATE`**, 16 documents, zéro ligne de `src/` touchée. C'est cet audit qui a
