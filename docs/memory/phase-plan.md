@@ -9,8 +9,8 @@ VOLET en cours   : **REDESIGN CHAT-FIRST**
                    Brief du propriétaire, 2026-08-22
 Chapitres        : **8**
 Phases           : **11**
-Phase courante   : **6.1 — en attente de confirmation**
-Terminées        : **1–5** (jusqu'à 5.1 incl.) — chat + menu des domaines
+Phase courante   : **7.1 — en attente de confirmation**
+Terminées        : **1–6** — chat complet avec admin à part
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md`.
@@ -96,8 +96,8 @@ Ch. 04  La conversation                          → 2 phases  ✅ TERMINÉ
 Ch. 05  Le menu des domaines                     → 1 phase (indivisible)  ✅ TERMINÉ
         14 capacités, en haut à gauche, sans multiplier les assistants — 6 tests
 
-Ch. 06  L'espace administrateur                  → 1 phase (indivisible)
-        Le tableau de bord actuel déplacé sous `/ui/admin`, rien supprimé
+Ch. 06  L'espace administrateur                  → 1 phase (indivisible)  ✅ TERMINÉ
+        Le tableau de bord actuel déplacé sous `/ui/admin`, rien supprimé — 6 tests
 
 Ch. 07  Responsive                               → 1 phase (indivisible)
         Mobile d'abord, puis desktop
