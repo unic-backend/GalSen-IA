@@ -5,240 +5,114 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **REDESIGN CHAT-FIRST**
-                   Brief du propriétaire, 2026-08-22
-Chapitres        : **8**
-Phases           : **11**
-Phase courante   : AUCUNE — VOLET TERMINÉ, branche non fusionnée
-Terminées        : **1–8** — VOLET CHAT-FIRST COMPLET
+VOLET en cours   : **LINUX KERNEL ARCHITECTURE RESEARCH AUDIT**
+                   Brief du propriétaire, 2026-08-23
+Chapitres        : **13**
+Phases           : **18**
+Phase courante   : **1.1 — en attente de confirmation**
+Terminées        : aucune
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
-**Règle permanente** : `.claude/rules/post-integration-validation.md`.
-
-**Ce que le brief interdit de casser** : orchestration, agents, mémoire,
-connaissance, `ModelRouter`, runtimes, outils, multimodalité, recherche,
-sécurité, backend, API internes.
+**Ce que le brief interdit** : copier du code noyau, vendorer un composant,
+introduire une dépendance Linux, modifier l'architecture existante. Rien n'est
+implémenté pendant cet audit. `RESEARCH → EVALUATE → DOCUMENT → COMPARE →
+RECOMMEND`, et pas un pas de plus (`.claude/rules/spec-driven-governance.md`).
 
 ---
 
-## Chapitre 1 — Audit du frontend (TERMINÉ)
+## Ce qui a été mesuré avant d'écrire ce plan
 
-Mesuré, pas rappelé.
+Un plan qui suppose ses sources accessibles n'est pas un plan. Mesuré le
+2026-08-23, depuis cette machine :
 
-### Ce qui existe
+| Source | Réponse |
+|---|---:|
+| `raw.githubusercontent.com/torvalds/linux/…` | **200** |
+| `github.com/torvalds/linux` | 403 |
+| `docs.kernel.org` | **000** |
+| `www.kernel.org` · `git.kernel.org` | 000 |
+| `spdx.org` | 000 |
 
-| Fichier | Lignes | Rôle |
-|---|---:|---|
-| `src/web/static/index.html` | 109 | Le tableau de bord actuel |
-| `js/dashboard.js` | 282 | Sa logique |
-| `css/dashboard.css` | 262 | Son style |
-| `js/api-client.js` | **236** | **Client HTTP partagé — à réutiliser** |
-| `studio.html` + `studio.js` + `studio.css` | 725 | Le Media Studio, séparé |
+**L'audit est faisable, et par la meilleure source.** `docs.kernel.org` n'est que
+le rendu de `Documentation/` dans l'arbre ; cet arbre répond. Vérifié fichier par
+fichier : `COPYING` (496 o), `cgroup-v2.rst` (135 502 o), `ftrace.rst`
+(145 229 o), `fault-injection.rst` (19 325 o), `credentials.rst` (20 875 o),
+`license-rules.rst` (18 477 o).
 
-**1 614 lignes au total. Aucune étape de build**, aucun framework : HTML, CSS et
-JavaScript servis tels quels par `StaticFiles` sous `/ui` (ADR-008). C'est une
-force ici — le redesign n'ajoute aucune chaîne d'outils.
-
-### Les routes que le frontend appelle aujourd'hui
-
-`/health` · `/connectors` · `/connectors/status` · `/auth/keys` ·
-`/auth/keys/reload` · `/memory/store` · `/notification/stats` ·
-`/media/capabilities` · `/media/projects` · **`/agri/advice`**
-
-### Le constat qui décide du plan
-
-**Il n'existe aucune route de conversation générale.** Ni `/chat`, ni
-`/conversation`, ni `/ask`. Grep sur `src/api/server.py` : zéro occurrence.
-
-Les seules routes qui produisent du texte sont :
-
-| Route | Ce qu'elle fait |
-|---|---|
-| `/model/generate` | Génération brute — **court-circuite l'orchestration** |
-| `/agri/advice` | L'outil agricole, un domaine unique |
-| `/workflow/run` | **Passe par l'orchestrateur** (`router → planner → …`) |
-| `/knowledge/search` | Récupération, pas conversation |
-
-**Conséquence** : l'expérience demandée ne peut pas être livrée en touchant
-seulement le frontend. Il manque **une** route. Le brief dit *« ne réécris pas le
-backend inutilement »* — ce n'est pas inutile, c'est le minimum, et c'est une
-seule route.
-
-### Et la détection automatique de domaine existe déjà
-
-Le brief demande que *« Comment planter le mil ? »* active l'agriculture sans que
-l'utilisateur choisisse. **C'est de l'orchestration**, et `src/router/` la fait :
-l'agent `router` est le premier du workflow `standard`.
-
-Donc la route de chat doit passer par **l'orchestrateur existant**, pas par
-`model.generate`. Réutiliser plutôt que reconstruire — et c'est ce qui donne la
-détection automatique gratuitement.
+Ce qui reste hors d'atteinte et devra être dit `UNKNOWN` plutôt que deviné :
+le texte SPDX canonique et tout ce qui ne vit que sur `kernel.org`.
 
 ---
 
 ## Le plan
 
 ```
-Ch. 01  Audit du frontend                        → 1 phase  ✅ TERMINÉE
+Ch. 01  Audit du GalSen IA réel                  → 3 phases
+        1.1 orchestration, agents, ordonnancement, cycle de vie, files
+        1.2 ressources, isolation, bac à sable, sécurité, permissions
+        1.3 auto-réparation, observabilité, mémoire, config, dégradation
 
-Ch. 02  La route de conversation                 → 2 phases  ✅ TERMINÉ
-        2.1 contrat : entrée, sortie, orchestrateur, refus. Aucun code
-        2.2 implémentation + tests — `POST /chat`, 14 tests
+Ch. 02  Étude de l'architecture Linux            → 2 phases
+        2.1 processus, ordonnancement, mémoire, namespaces, cgroups, capabilities
+        2.2 modules, VFS, traçage, injection de fautes, frontières, synchronisation
 
-Ch. 03  La coquille chat                         → 2 phases  ✅ TERMINÉ
-        3.1 `chat.html` + `chat.css` — plein écran, zéro carte
-        3.2 identité GalSen IA : palette reprise, vide accueillant, 9 tests
+Ch. 03  Extraction des principes                 → 2 phases
+        3.1 les huit champs, pour les concepts d'isolation et de ressources
+        3.2 les huit champs, pour fautes, observabilité et frontières
 
-Ch. 04  La conversation                          → 2 phases  ✅ TERMINÉ
-        4.1 `chat.js` : envoi, historique, états d'attente et d'erreur
-        4.2 réutilisation de `api-client.js`, jamais un second client — 7 tests
+Ch. 04  Auto-réparation                          → 1 phase (indivisible)
+Ch. 05  Gestion des ressources                   → 1 phase (indivisible)
+Ch. 06  Isolation des agents                     → 1 phase (indivisible)
+Ch. 07  Observabilité                            → 1 phase (indivisible)
+Ch. 08  Frontières architecturales               → 1 phase (indivisible)
+Ch. 09  Licences                                 → 1 phase (indivisible)
+Ch. 10  Preuve qu'aucun code n'a été copié       → 1 phase (indivisible)
+Ch. 11  Portes de faisabilité (10 questions)     → 1 phase (indivisible)
+Ch. 12  Classement A–F + plus petite implémentation réversible
+                                                 → 1 phase (indivisible)
 
-Ch. 05  Le menu des domaines                     → 1 phase (indivisible)  ✅ TERMINÉ
-        14 capacités, en haut à gauche, sans multiplier les assistants — 6 tests
-
-Ch. 06  L'espace administrateur                  → 1 phase (indivisible)  ✅ TERMINÉ
-        Le tableau de bord actuel déplacé sous `/ui/admin`, rien supprimé — 6 tests
-
-Ch. 07  Responsive                               → 1 phase (indivisible)  ✅ TERMINÉ
-        Mobile d'abord, puis desktop — 9 tests
-
-Ch. 08  Vérification de bout en bout             → 1 phase (indivisible)  ✅ TERMINÉ
-        Suite complète (mesurée, pas estimée), routes (143), responsive, e2e — 9 tests
+Ch. 13  Rapport final, 22 points                 → 2 phases
+        13.1 points 1 à 11
+        13.2 points 12 à 22, verdict
 ```
 
-**Total : 11 phases.**
+**Total : 18 phases.**
 
 ---
 
 ## Ce que je dois te dire avant que tu confirmes
 
-**Ce redesign amplifie un défaut non résolu.**
+**Le chapitre 01 décide de tout le reste.** Le brief le dit lui-même : *« ne
+suppose pas qu'une capacité est absente parce qu'elle porte un autre nom »*.
+Cette plateforme a déjà un bac à sable qui applique des limites du noyau
+(`src/sandbox/`), une dégradation mesurée (`src/integration/degradation.py`), une
+piste d'exécution suivable de bout en bout (`/observability/trail/{id}`) et une
+auto-réparation. La plupart des principes Linux vont probablement tomber en
+**D — DÉJÀ COUVERT**, et ce sera le résultat, pas un échec de l'audit.
 
-Il y a une heure, `/agri/advice` a répondu à *« quand semer »* en plaçant
-l'hivernage de fin mars à mi-août — trois mois trop tôt — et en inventant une
-troisième saison. **Sans source, sans provenance, sans `UNKNOWN`.** La cause est
-mesurée : la route ne consulte jamais le corpus, et le corpus agricole est vide.
+**Deux choses que je ne peux pas mesurer ici**, et qui resteront `UNKNOWN` :
+tout ce qui concerne le GPU (cette machine n'en a pas) et le comportement sous
+charge réelle (aucun fournisseur de modèle n'y répond).
 
-Aujourd'hui ce défaut est enfermé dans **un formulaire**. Une interface
-chat-first en fait **l'expérience principale** : chaque question, sur n'importe
-quel domaine, passera par le même chemin non ancré.
-
-Une belle interface qui invente couramment est plus dangereuse qu'un formulaire
-laid qui invente rarement — parce qu'on lui fait confiance.
-
-**Deux ordres possibles, et c'est ta décision :**
-
-- **Grounding d'abord** — brancher le mécanisme `UNKNOWN` qui existe déjà
-  (`retrieve_reliable`, `routing.ask`), puis construire le chat par-dessus.
-  Plus lent à voir, honnête dès le premier jour.
-- **Chat d'abord** — livrer l'interface, puis le grounding. Tu vois ton produit
-  tout de suite, et tu portes le risque en attendant. **← choisi le 2026-08-22.**
-
-Si tu choisis « chat d'abord », la phase 2.1 devra prévoir **où** le refus
-s'insérera plus tard, pour que ce ne soit pas à refaire.
+**Un point d'intendance** : la PR #36 est ouverte et non fusionnée, et je n'ai
+autorisation de pousser que sur `claude/galsen-ia-phases-ukwz7p`. Cet audit
+produit des documents ; ils atterriront donc dans cette PR, à côté du redesign
+chat-first. Si tu préfères qu'ils vivent seuls, fusionne #36 d'abord — c'est ta
+décision, pas la mienne, et elle ne bloque pas le démarrage.
 
 ---
 
 ## Programmes précédents, terminés — ne pas rouvrir
 
-1. **AUDIT #01 `codebase-memory-mcp`** — 16 phases, `KEEP FOR RESEARCH`.
-2. **SUPERPOWERS** — audit 24 phases + 11 d'implémentation. **ADR-038**.
-3. **OPEN-SOURCE ECOSYSTEM AUDIT** — 22 phases. **ADR-037**.
-4. **OpenClaw** (ADR-034), **DeepSeek Harness** (ADR-035) : non intégrés.
-5. **Live Context** (ADR-033), **Creative Canvas** (ADR-031),
+1. **REDESIGN CHAT-FIRST** — 8 chapitres, 11 phases. `POST /chat`, `/ui/` sert la
+   conversation, `/ui/admin/` le tableau de bord, menu de 14 domaines.
+   **Constat qui reste vrai** : aucun des 17 agents ne rédige ; `/chat` rend le
+   refus des agents et ne converse pas encore. L'étape de rédaction qui le
+   rendrait conversant **n'est pas autorisée**.
+2. **AUDIT #01 `codebase-memory-mcp`** — 16 phases, `KEEP FOR RESEARCH`.
+3. **SUPERPOWERS** — audit 24 phases + 11 d'implémentation. **ADR-038**.
+4. **OPEN-SOURCE ECOSYSTEM AUDIT** — 22 phases. **ADR-037**.
+5. **OpenClaw** (ADR-034), **DeepSeek Harness** (ADR-035) : non intégrés.
+6. **Live Context** (ADR-033), **Creative Canvas** (ADR-031),
    **Research Orchestration** (ADR-032), **MoneyPrinterTurbo** (ADR-030),
    **Apache-2.0** (ADR-036).
-
----
-
-## Ce que les chapitres 02–04 ont bâti
-
-Un chat qui refuse honnêtement. À la première visite, l'utilisateur voit :
-- Un accueil que le premier message efface
-- Trois pistes qu'il peut cliquer ou dactylographier
-- L'historique, dans le temps de la conversation
-- Les trois jetons sous chaque réponse : domaine, méthode, ancrage, durée
-- **Rien que la plateforme ne sait.**
-
-Quand il saisit « Quand planter le mil ? », le chat :
-1. détecte agriculture (keywords)
-2. demande à l'orchestrateur (par `/chat`, pas par `/model/generate`)
-3. reçoit le refus de l'agent `senegal` : « la base est vide »
-4. le rend tel quel, en ocre (pas rouge)
-5. dit **1,1 s** réellement, pas 4,87 s de mesure précédente
-
-Aucun des 17 agents ne rédige. La chaîne `question` est recherche+vérification,
-pas conversation. Ce qui s'affiche n'invente rien.
-
----
-
-## Ce que le chapitre 02 a mesuré, et qui change la suite
-
-**Aucun des 17 agents ne rédige.** Seuls `planner` et `coder` appellent le
-modèle, pour planifier et pour coder. Le workflow `question` est
-`planner → researcher → senegal → verifier` : une chaîne de recherche et de
-vérification, pas une chaîne de conversation.
-
-Conséquence sur `POST /chat`, mesurée le 2026-08-22 :
-
-| Message | Ce que la route rend |
-|---|---|
-| « Quand planter le mil à Thiès ? » | Le refus de l'agent `senegal` : *« la base est vide sur ce sujet — ce n'est pas une réponse négative »*, `UNGROUNDED` |
-| « bonjour » | Les trois lacunes du `researcher`, `UNGROUNDED` |
-
-**La route est honnête et ne fabrique rien. Elle ne converse pas non plus.**
-
-Ce n'est pas un défaut de la route : c'est l'état de la plateforme, rendu
-visible. Le rendre visible était le travail du chapitre 02 ; le combler est une
-décision d'architecture qui ne m'appartient pas, et elle est posée en fin de
-phase.
-
-
----
-
-## VOLET CHAT-FIRST — TERMINÉ
-
-Le redesign chat-first est complet et fonctionnel. Ce qu'il apporte :
-
-**Avant**
-- `/ui/` servait le tableau de bord (diagnostic)
-- `/agri/advice` était le seul endpoint de conversation
-- Pas de détection automatique de domaine pour l'utilisateur
-
-**Après**
-- `/ui/` sert le chat (conversation)
-- `/chat` orchestre les agents, détecte le domaine automatiquement
-- `/ui/admin/` sert le tableau de bord (diagnostic séparé)
-- 14 domaines/capacités disponibles dans le menu
-- Chat refuse honnêtement (3 états : GROUNDED/UNGROUNDED/NOT_CHECKED)
-- Responsive mobile-first, sans ressources distantes
-- 7099 tests passent, 9 ignorés, 3 désélectionnés (mesuré 2026-08-23)
-
-**Mesures prises (2026-08-23)**
-- Temps de réponse : 1,1 s par tour (orchestrateur complet)
-- Taille page : 16 KB (HTML + CSS)
-- Boutons touch : 48px minimum (3rem)
-- Domaines : 14 capacités, pas de multiplication d'assistants
-
----
-
-## Ce que la relecture a trouvé après coup
-
-Trois défauts dans du travail déjà rapporté comme terminé. Aucun n'aurait été vu
-en se servant de la page :
-
-1. **Le jeton d'ancrage n'a jamais eu sa couleur.** La classe était fabriquée par
-   `` `jeton.${statut.toLowerCase()}` `` — un nom contenant un point, qui ne
-   correspond à aucune règle. Invisible parce que `GROUNDED` reste rare tant que
-   le corpus est vide, et qu'un jeton gris parmi des jetons gris ne se remarque
-   pas. `tests/test_ui_chat.py::TestJetonAncrage` le tient, sabotage vérifiée.
-2. **`grounding.reason` était jeté.** L'agent écrit ce qui manque et ce qui
-   trancherait ; la page n'affichait que le statut.
-3. **Le tableau de bord déplacé n'avait plus de porte.** Le formulaire agricole
-   et le Media Studio sont devenus inatteignables en cliquant — huit tests rouges
-   pour cette seule raison. Un déplacement sans porte est une suppression.
-
-Et une leçon de méthode, à l'origine des trois : **une suite lancée à travers
-`| tail -4` cache ses propres échecs.** Un run a rapporté `25 failed` dont trois
-lignes seulement étaient visibles, et les vingt-deux autres ont été déclarées
-vertes. Rediriger vers un fichier, jamais tronquer.
