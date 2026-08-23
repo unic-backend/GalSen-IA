@@ -22,6 +22,7 @@ import uuid
 # Import des moteurs existants
 from src.memory_engine.memory_manager import MemoryManager
 from src.memory_engine.types import MemoryItem
+from src.chat import ContexteReponse, RedacteurConversation
 from src.model_engine.model_manager import ModelManagerImpl
 from src.knowledge_engine.knowledge_manager import KnowledgeManagerImpl
 from src.approval_engine.approval_manager import ApprovalManagerImpl
@@ -775,6 +776,18 @@ class ChatResponse(BaseModel):
     grounding: ChatGrounding
     run_id: Optional[str] = Field(None, description="Suivable via /observability/trail/{id}")
     elapsed_seconds: float = Field(..., description="Durée réelle, jamais estimée")
+    generated: bool = Field(
+        False,
+        description=(
+            "Vrai seulement si un modèle a rédigé cette réponse. Faux quand la "
+            "plateforme a composé ce que les agents ont rapporté. Sans ce champ, "
+            "un refus composé serait indiscernable d'une réponse du modèle."
+        ),
+    )
+    generation_unavailable: Optional[str] = Field(
+        None,
+        description="Pourquoi aucun modèle n'a rédigé, quand c'est le cas",
+    )
 
 
 class WorkflowRunRequest(BaseModel):
@@ -1525,7 +1538,24 @@ async def chat(request: ChatRequest):
         forced_by_user=request.domain is not None,
     )
 
-    reponse = _texte_de_reponse(resultat)
+    # L'ancrage est calculé **avant** la rédaction, à partir de ce que les
+    # agents ont trouvé. Un modèle qui écrit bien ne rend rien plus sourcé :
+    # la génération ne touche jamais ce champ (§12 du brief).
+    ancrage = _ancrage_de(resultat)
+
+    finale = RedacteurConversation(model_manager).rediger(
+        _contexte_de_reponse(resultat, request.message, request.history, ancrage)
+    )
+
+    if finale.generated:
+        reponse = finale.answer
+    else:
+        # Aucun modèle n'a rédigé : on rend exactement ce que la plateforme
+        # rendait avant cette couche. La génération est **additive** — sans
+        # modèle, le comportement est inchangé, ce qui rend la régression
+        # vérifiable plutôt que promise.
+        reponse = _texte_de_reponse(resultat) or finale.answer
+
     if not reponse:
         # Un pipeline qui n'a rien produit ne doit pas rendre une chaîne vide
         # dans une bulle de conversation : ce serait une panne déguisée en
@@ -1539,9 +1569,11 @@ async def chat(request: ChatRequest):
         answer=reponse,
         conversation_id=conversation,
         detection=detection,
-        grounding=_ancrage_de(resultat),
+        grounding=ancrage,
         run_id=resultat.get("run_id"),
         elapsed_seconds=round(time.time() - debut, 3),
+        generated=finale.generated,
+        generation_unavailable=None if finale.generated else finale.failure_reason,
     )
 
 
@@ -1681,6 +1713,77 @@ def _lacunes(chercheur: Dict[str, Any]) -> str:
         return ""
     return "Je n'ai rien trouvé de fiable pour répondre.\n\n" + "\n".join(
         f"- {ligne}" for ligne in lignes
+    )
+
+
+def _contexte_de_reponse(
+    resultat: Dict[str, Any],
+    message: str,
+    historique: List[Any],
+    ancrage: "ChatGrounding",
+) -> ContexteReponse:
+    """
+    Rassemble ce que la rédaction doit voir, et rien de plus.
+
+    Les preuves viennent de deux endroits, et leur différence est le cœur de
+    l'affaire : les constats du `researcher` portent leur propre `verified`,
+    tandis que les éléments de `senegal` viennent du corpus de la plateforme —
+    où rien n'entre sans source (ADR-019) et où `apply_scope_policy` a déjà
+    tranché. Ces derniers sont donc vérifiés, et le disent.
+
+    Ce qui n'entre pas : le plan, la liste des tâches, les durées. Ce sont des
+    rouages (§8 du brief), et un modèle à qui on donne des rouages écrit un
+    rapport d'exécution au lieu d'une réponse.
+    """
+    chercheur = _resultat_agent(resultat, "researcher")
+    senegal = _resultat_agent(resultat, "senegal")
+
+    preuves: List[Dict[str, Any]] = [
+        c for c in (chercheur.get("findings") or []) if isinstance(c, dict)
+    ]
+
+    for element in (senegal.get("elements") or []):
+        if not isinstance(element, dict):
+            continue
+        contenu = str(element.get("content") or "").strip()
+        if not contenu:
+            continue
+        preuves.append({
+            "content": contenu,
+            "source": str(element.get("id") or "corpus"),
+            "scope": element.get("scope"),
+            # Vérifié parce que le corpus l'exige, pas parce que c'est pratique.
+            "verified": True,
+        })
+
+    notes: List[str] = [
+        str(g).strip() for g in (chercheur.get("gaps") or []) if str(g).strip()
+    ]
+
+    statut = str(senegal.get("status") or "")
+    if statut and statut != "grounded":
+        # L'agent a écrit son refus lui-même. On le transporte mot pour mot :
+        # le reformuler, c'est déjà commencer à l'adoucir.
+        raison = str(senegal.get("reason") or "").strip()
+        if raison:
+            notes.append(raison)
+        trancherait = senegal.get("what_would_settle_it")
+        if trancherait:
+            notes.append(f"Ce qui permettrait d'y répondre : {trancherait}")
+
+    tours = [
+        {"role": m.role, "content": m.content}
+        for m in (historique or [])
+        if getattr(m, "content", None)
+    ]
+
+    return ContexteReponse(
+        message=message,
+        history=tours,
+        axes=_resultat_agent(resultat, "planner").get("axes") or {},
+        evidence=preuves,
+        agent_notes=notes,
+        grounding_status=ancrage.status,
     )
 
 

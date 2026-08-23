@@ -8,9 +8,9 @@ phase attend une confirmation.
 VOLET en cours   : **CHAT — RÉPONSE FINALE RÉELLE**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **11**
-Phases           : **18**
-Phase courante   : **5.1 — en attente de confirmation**
-Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2 · 4.1 · 4.2**
+Phases           : **19** (18 + la 5.3 annoncée au ch. 03)
+Phase courante   : **5.3 — en attente de confirmation**
+Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2 · 4.1 · 4.2 · 5.1 · 5.2**
 Branche          : `claude/galsen-ia-phases-ukwz7p`, **repartie de `main`**
                    (`dc09303`) — la PR #36 est fusionnée, on n'empile pas
                    sur de l'historique déjà intégré.
@@ -158,9 +158,13 @@ Ch. 04  Implémentation de la couche (§7,11)       → 2 phases
         4.1 le composant et sa consigne de génération ✅ → `src/chat/`
         4.2 branchement sur `ModelManagerImpl`, repli compris ✅
 
-Ch. 05  /chat, ancrage et constats (§12,13)       → 2 phases
-        5.1 le contexte de réponse construit depuis les résultats d'agents
-        5.2 ancrage préservé : la génération ne rend jamais `GROUNDED`
+Ch. 05  /chat, ancrage et constats (§12,13)       → 3 phases
+        5.1 le contexte de réponse construit depuis les résultats d'agents ✅
+        5.2 ancrage préservé : la génération ne rend jamais `GROUNDED` ✅
+        5.3 les deux intentions du planner repliées du ch. 03 :
+            « bonjour » ne lance pas de recherche, « écris du code »
+            atteint la capacité de codage
+            → **phase annoncée, pas ajoutée en silence** (total : 19)
 
 Ch. 06  Erreurs et mémoire (§14,15)               → 1 phase (indivisible)
 

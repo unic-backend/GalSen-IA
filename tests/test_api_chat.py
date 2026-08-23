@@ -278,3 +278,117 @@ class TestQuandLeChercheurTrouve:
             self._resultat([{"source": "https://exemple.org", "content": ""}])
         )
         assert "1 élément(s)" in texte
+
+
+class TestContexteDeReponse:
+    """
+    Ce que la rédaction reçoit — et ce qu'elle ne doit jamais recevoir.
+
+    Le contexte est le seul endroit où l'on choisit ce que le modèle voit. Un
+    rouage qui s'y glisse ressort en prose : donner à un modèle la liste des
+    tâches du planner, c'est lui demander d'écrire un rapport d'exécution.
+    """
+
+    @staticmethod
+    def _resultat(senegal=None, chercheur=None):
+        agents = [{"agent": "planner", "result": {"axes": {"language": {"value": "fr"}}}}]
+        if chercheur is not None:
+            agents.append({"agent": "researcher", "result": chercheur})
+        if senegal is not None:
+            agents.append({"agent": "senegal", "result": senegal})
+        return {"agent_results": agents, "aggregated_result": {}}
+
+    def test_un_element_du_corpus_est_une_preuve_verifiee(self):
+        """
+        Rien n'entre dans le corpus sans source (ADR-019), et
+        `apply_scope_policy` a déjà tranché. Ces éléments sont donc vérifiés —
+        parce que le corpus l'exige, pas parce que c'est pratique.
+        """
+        import src.api.server as serveur
+
+        contexte = serveur._contexte_de_reponse(
+            self._resultat(senegal={
+                "status": "grounded",
+                "elements": [{"id": "sn-001", "content": "14 régions.",
+                              "scope": "country:sn"}],
+            }),
+            "Combien de régions ?", [], serveur.ChatGrounding(status="GROUNDED"),
+        )
+        assert len(contexte.constats_verifies) == 1
+        assert contexte.constats_verifies[0]["scope"] == "country:sn"
+        assert contexte.constats_verifies[0]["source"] == "sn-001"
+
+    def test_un_refus_est_transporte_mot_pour_mot(self):
+        """Reformuler un refus, c'est déjà commencer à l'adoucir."""
+        import src.api.server as serveur
+
+        raison = "La base ne contient rien sur ce sujet — ce n'est pas une réponse négative."
+        contexte = serveur._contexte_de_reponse(
+            self._resultat(senegal={"status": "empty_base", "reason": raison,
+                                    "what_would_settle_it": "ingérer le corpus"}),
+            "Question", [], serveur.ChatGrounding(status="UNGROUNDED"),
+        )
+        assert raison in contexte.agent_notes
+        assert any("ingérer le corpus" in n for n in contexte.agent_notes)
+
+    def test_aucun_rouage_n_entre_dans_le_contexte(self):
+        """
+        Le plan, les tâches et les durées restent dehors (§8 du brief).
+
+        Ce test regarde l'invite réellement construite, pas le contexte : c'est
+        l'invite que le modèle lit, et c'est donc là que la fuite se verrait.
+        """
+        import src.api.server as serveur
+        from src.chat import construire_invite
+
+        resultat = self._resultat(chercheur={"findings": [], "gaps": []})
+        resultat["agent_results"][0]["result"]["tasks"] = ["étape secrète"]
+        resultat["agent_results"][0]["result"]["task_count"] = 7
+
+        invite = construire_invite(serveur._contexte_de_reponse(
+            resultat, "Bonjour", [], serveur.ChatGrounding(status="NOT_CHECKED")))
+        assert "étape secrète" not in invite
+        assert "task_count" not in invite
+
+
+class TestLaGenerationNAncreRien:
+    """
+    L'invariant que ce VOLET ne doit jamais casser.
+
+    Le §12 du brief le dit, et c'est la seule phrase de tout le document qui
+    protège l'utilisateur : *« the system must never claim that a response is
+    grounded simply because a model generated it »*. Un modèle qui écrit bien
+    ne rend rien plus sourcé.
+    """
+
+    def _reponse(self, client, texte):
+        import src.api.server as serveur
+
+        async def faux(prompt, task_requirements, **k):
+            return texte
+
+        precedent = serveur.model_manager.generate_text_with_fallback
+        serveur.model_manager.generate_text_with_fallback = faux
+        try:
+            return client.post("/chat", json={"message": "Qui était Einstein ?"},
+                               headers=ENTETE)
+        finally:
+            serveur.model_manager.generate_text_with_fallback = precedent
+
+    def test_une_reponse_generee_reste_non_ancree(self, client):
+        reponse = self._reponse(client, "Einstein était un physicien.")
+        assert reponse.status_code == 200
+        charge = reponse.json()
+        assert charge["generated"] is True
+        assert charge["answer"].startswith("Einstein")
+        # La fluidité n'ancre pas.
+        assert charge["grounding"]["status"] != "GROUNDED"
+
+    def test_sans_modele_la_reponse_n_est_pas_marquee_generee(self, client):
+        """Le champ qui empêche de confondre un refus composé et une réponse."""
+        reponse = client.post("/chat", json={"message": "Qui était Einstein ?"},
+                              headers=ENTETE)
+        if reponse.status_code == 200:
+            charge = reponse.json()
+            assert charge["generated"] is False
+            assert charge["generation_unavailable"]
