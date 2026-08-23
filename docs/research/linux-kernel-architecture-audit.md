@@ -1121,14 +1121,14 @@ Ten `Documentation/` files, **421 031 characters read**.
 
 ## 4–9. The six comparisons
 
-| Area | Result |
-|---|---|
-| **Architecture** | 11 of the brief's 13 boundaries already exist; coupling is low; **no restructuring justified** |
-| **Resource management** | **7 of 8 mechanisms not needed.** The real defect is elsewhere and measured: 274× |
-| **Isolation** | Covered for tool code, absent for agents — **and deliberately left absent** |
-| **Self-healing** | **6 of 9 points covered**, two better stated here than in the kernel |
-| **Observability** | Covered, including a distinction most systems collapse; two small gaps |
-| **Security** | Capability-shaped already; **nothing weakened by any recommendation** |
+| # | Comparison | Result |
+|---:|---|---|
+| **4.** | Architecture | 11 of the brief's 13 boundaries already exist; coupling is low; **no restructuring justified** |
+| **5.** | Resource management | **7 of 8 mechanisms not needed.** The real defect is elsewhere and measured: 274× |
+| **6.** | Isolation | Covered for tool code, absent for agents — **and deliberately left absent** |
+| **7.** | Self-healing | **6 of 9 points covered**, two better stated here than in the kernel |
+| **8.** | Observability | Covered, including a distinction most systems collapse; two small gaps |
+| **9.** | Security | Capability-shaped already; **nothing weakened by any recommendation** |
 
 ## 10. Licence findings
 

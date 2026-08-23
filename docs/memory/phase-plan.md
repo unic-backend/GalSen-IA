@@ -9,8 +9,8 @@ VOLET en cours   : **LINUX KERNEL ARCHITECTURE RESEARCH AUDIT**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **13**
 Phases           : **18**
-Phase courante   : **13.1 — en attente de confirmation**
-Terminées        : **1.1 · 1.2 · 1.3 · 2.1 · 2.2 · 3.1 · 3.2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 11 · 12** → `docs/research/linux-kernel-architecture-audit.md`
+Phase courante   : AUCUNE — VOLET TERMINÉ
+Terminées        : **1.1 · 1.2 · 1.3 · 2.1 · 2.2 · 3.1 · 3.2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 11 · 12 · 13.1 · 13.2** — les 18 → `docs/research/linux-kernel-architecture-audit.md`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Ce que le brief interdit** : copier du code noyau, vendorer un composant,
@@ -71,9 +71,10 @@ Ch. 11  Portes de faisabilité (10 questions)     → 1 phase (indivisible) ✅
 Ch. 12  Classement A–F + plus petite implémentation réversible
                                                  → 1 phase (indivisible) ✅
 
-Ch. 13  Rapport final, 22 points                 → 2 phases
+Ch. 13  Rapport final, 22 points                 → 2 phases  ✅ TERMINÉ
         13.1 points 1 à 11
         13.2 points 12 à 22, verdict
+        → **SELECTIVE ARCHITECTURAL IMPROVEMENTS RECOMMENDED**
 ```
 
 **Total : 18 phases.**
