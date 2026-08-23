@@ -821,6 +821,125 @@ one line of governance.
 Naming it once would cost a document and no code. **`B — USEFUL LATER`**, and
 only if the owner wants it; nothing depends on it today.
 
+# Chapter 09 — Licence findings
+
+**Not legal advice.** What follows is measured fact plus a reading; where the
+reading is a legal question, it is marked `UNKNOWN` rather than answered.
+
+## What Linux is, from its own `COPYING`
+
+> `SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note`
+>
+> *"Being under the terms of the GNU General Public License version 2 only"*
+
+**GPL-2.0 *only***, with an explicit syscall exception. The brief's statement
+that Linux is "primarily GPL-2.0" is confirmed at the source.
+
+## The licence of each file this audit actually read
+
+Checked per file, searching the whole file and not only its header:
+
+| File | SPDX tag |
+|---|---|
+| `filesystems/vfs.rst` | **`GPL-2.0`** |
+| `locking/locktypes.rst` | **`GPL-2.0`** |
+| `process/license-rules.rst` | **`GPL-2.0`** (rst comment form) |
+| `admin-guide/cgroup-v2.rst` | none |
+| `security/credentials.rst` | none |
+| `scheduler/sched-eevdf.rst` | none |
+| `trace/ftrace.rst` | none |
+| `fault-injection/fault-injection.rst` | none |
+| `admin-guide/tainted-kernels.rst` | none |
+| `process/stable-api-nonsense.rst` | none |
+
+Six files carry no tag anywhere. `license-rules.rst` states the tree-wide rule —
+*"The Linux Kernel is provided under the terms of the GNU General Public License
+version 2"* — so the reasonable reading is that untagged files fall under it.
+
+**`UNKNOWN`:** the canonical SPDX licence texts are unreachable from this
+machine (`spdx.org` → `000`, measured), so nothing here rests on the exact
+wording of the licence itself.
+
+## GalSen IA is Apache-2.0 (ADR-036)
+
+GPL-2.0-only and Apache-2.0 do not combine into one work. This is exactly why
+the brief forbids copying, and the prohibition is the right one.
+
+## Why this audit creates no licence obligation
+
+Two distinct things were done, and they have different answers.
+
+**1. Principles were extracted.** Copyright protects expression, not ideas,
+procedures or methods of operation. *"A limit and a guarantee are different
+promises"*, *"a taint is permanent"*, *"privilege is a set of named powers with a
+ceiling"* — these are ideas. Reading them creates no obligation, and none of
+them arrived as code.
+
+**2. Passages were quoted.** Measured, not estimated:
+
+| | |
+|---|---:|
+| Kernel quotations verified verbatim against the fetched source | **7** |
+| Longest single quotation | **132 characters** |
+| Total kernel text quoted | **624 characters** |
+| Total kernel text read | **421 031 characters** |
+| Proportion quoted | **0.148 %** |
+
+Every one is attributed to its file, used for commentary, and none substitutes
+for reading the original.
+
+**`UNKNOWN`:** whether that constitutes fair use, fair dealing, or the quotation
+right of any particular jurisdiction is a legal question this audit cannot
+settle. What it can do is keep the quantity measured and small, and it has.
+
+## Conclusion
+
+No licence concern is created by any recommendation in this audit, because every
+recommendation is a principle applied to GalSen IA's own code — **not one line
+of kernel source is proposed for inclusion, adaptation or reference.** If any
+future phase proposes otherwise, this chapter is void and the question must be
+re-asked.
+
 ---
 
-*Chapters 09 to 13 pending.*
+# Chapter 10 — Proof that no code was copied
+
+The brief prohibits copying, vendoring and importing. A prohibition is worth
+what its verification is worth, so this chapter measures rather than asserts.
+
+| Check | Result |
+|---|---|
+| Kernel files tracked by git (`.rst`, `.c`, `.h`, `COPYING`) | **none** — `git ls-files` matches nothing |
+| Where the 12 fetched kernel files live | `/tmp/…/scratchpad/`, **outside the working tree** |
+| File extensions added by this whole branch | `md` 19 · `py` 17 · `html` 2 · `js` 1 · `css` 1 · `bat` 1 |
+| Kernel-shaped extensions among them | **zero** |
+| Longest kernel quotation | 132 characters |
+| Total kernel text in the repository | 624 characters, all attributed |
+
+**No dependency was added.** No `requirements` file was touched by this audit;
+no kernel component is vendored, imported, adapted or reimplemented.
+
+**No architecture was changed by this audit.** It has written exactly two
+files: this document and `docs/memory/phase-plan.md`.
+
+**And the check that proves it caught the claim being too broad.** Measured
+`git diff --name-only 3c8022a^..HEAD`, four files have changed since the VOLET
+opened — the two above, plus `src/api/server.py` and `tests/test_api_chat.py`.
+
+Those two are **not** the audit. They are the fix for a CI failure that arrived
+mid-VOLET: `/chat` returned `503` whenever the researcher found something,
+because the web search succeeds on GitHub runners and cannot on this machine.
+The fix and its five tests were committed separately (`bf1853b`) and are
+described in that commit, not here.
+
+The first version of this paragraph said *"nothing under `src/`, nothing under
+`tests/`"*. That was false, and the verification is what said so — which is the
+whole reason a prohibition is worth what its check is worth. Corrected rather
+than quietly narrowed.
+
+Re-check this at the end of chapter 13: it is the claim an audit most easily
+stops being able to make.
+
+---
+
+*Chapters 11 to 13 pending.*
