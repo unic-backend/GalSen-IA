@@ -379,6 +379,7 @@ class ComponentHealthChecker(HealthChecker):
         Consulte l'état des fournisseurs pour déterminer si le moteur
         peut fonctionner.
         """
+
         if self._model_manager is None:
             return ComponentHealth(
                 status="unhealthy",
@@ -386,10 +387,14 @@ class ComponentHealthChecker(HealthChecker):
             )
 
         try:
+            provider_status = self._model_manager.get_provider_status()
+
             available_providers = sum(
-    1 for info in provider_status.values()
-    if info.get("status") == "ready"
-)
+                1
+                for info in provider_status.values()
+                if info.get("status") == "ready"
+            )
+
             total_providers = len(provider_status)
 
             details = {
@@ -404,19 +409,25 @@ class ComponentHealthChecker(HealthChecker):
                     details=details,
                     error="Aucun fournisseur de modèles configuré",
                 )
+
             elif available_providers == 0:
                 return ComponentHealth(
                     status="degraded",
                     details=details,
                     error="Aucun fournisseur de modèles disponible",
                 )
+
             else:
                 return ComponentHealth(
                     status="healthy",
                     details=details,
                 )
+
         except Exception as e:
-            logger.warning("Échec de la vérification du moteur de modèles : %s", e)
+            logger.warning(
+                "Échec de la vérification du moteur de modèles : %s",
+                e,
+            )
             return ComponentHealth(
                 status="unhealthy",
                 error=f"Échec de la vérification : {str(e)}",
@@ -448,12 +459,14 @@ class ComponentHealthChecker(HealthChecker):
                 },
             )
         except Exception as e:
-            logger.warning("Échec de la vérification du moteur de connaissances : %s", e)
+            logger.warning(
+                "Échec de la vérification du moteur de connaissances : %s",
+                e,
+            )
             return ComponentHealth(
                 status="unhealthy",
                 error=f"Échec de la vérification : {str(e)}",
             )
-
     def _check_tool_engine(self) -> ComponentHealth:
         """Vérifie le moteur d'outils.
 
@@ -476,12 +489,14 @@ class ComponentHealthChecker(HealthChecker):
                 },
             )
         except Exception as e:
-            logger.warning("Échec de la vérification du moteur d'outils : %s", e)
+            logger.warning(
+                "Échec de la vérification du moteur d'outils : %s",
+                e,
+            )
             return ComponentHealth(
                 status="unhealthy",
                 error=f"Échec de la vérification : {str(e)}",
             )
-
     @staticmethod
     def _check_storage() -> ComponentHealth:
         """Vérifie la configuration du backend de stockage."""
