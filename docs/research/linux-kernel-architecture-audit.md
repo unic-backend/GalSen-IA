@@ -940,6 +940,150 @@ than quietly narrowed.
 Re-check this at the end of chapter 13: it is the claim an audit most easily
 stops being able to make.
 
+# Chapter 11 — Feasibility gates
+
+Six candidates reached this chapter. Two gates could not be answered by
+reasoning, so they were measured — and both measurements changed a
+recommendation.
+
+## Measurement 1 — a Python thread cannot be preempted
+
+P5 was carried as *"put a timeout on an agent"*. Demonstrated on this machine:
+
+```
+un fil qui dort 3 s, rejoint avec un délai de 0,5 s
+après 0,5 s : le fil est-il encore vivant ? True
+3,5 s plus tard : ["l'agent a terminé quand même"]
+```
+
+There is no way to kill a running thread from outside in CPython. **A deadline
+is observable; it is not enforceable in-process.**
+
+So P5 is reformulated, and it is a better recommendation for it:
+
+> **The caller is freed and told the deadline was exceeded. The agent is not
+> killed — it is abandoned and *reported as abandoned*.**
+
+Never a fabricated result, never a silent leak. True preemption needs a process
+boundary, which `src/sandbox/` already crosses for tool code and which this
+audit explicitly does **not** recommend extending to agents (chapter 06).
+
+P5 and P10 compose: move the blocking call to a worker thread and the event loop
+is free, which is what makes the deadline observable at all.
+
+## Measurement 2 — a full degradation probe costs 342 ms
+
+P7 was carried as *"attach the degradation state to the result"*. Measured, the
+nine probes cost **341.6 ms cold and 102.9 ms warm**, against a `/chat` turn of
+~1.1 s. Probing per request would add **10 % to 30 % latency**.
+
+So P7 is reformulated too:
+
+> **Attach the *last known* verdict, with the timestamp of when it was taken.**
+
+A stale snapshot that says how stale it is remains information. A fresh one that
+costs a third of the response is a different feature nobody asked for.
+
+## The ten gates
+
+| | P5 deadline | P6 fault injection | P7 state on result | P10 off the loop | P11 probe not assert | P12 accounting |
+|---|---|---|---|---|---|---|
+| 1. Already have it? | No | No (habit only) | No | No | No | No |
+| 2. Better than today? | Yes | Yes | Yes | **Yes, measured 274×** | Yes | Yes |
+| 3. Measurable? | Yes | Yes | Yes | **Already measured** | Yes | Yes |
+| 4. Feasible? | **Partly** — observe, not preempt | Yes | **Yes, with last-known** | Yes | Yes | Yes |
+| 5. More complexity? | Low | Medium | Low | **Very low** | Low | Very low |
+| 6. Security risk? | No | **Yes — mitigable** | No | No | **No — it under-claims today** | No |
+| 7. Licensing risk? | No | No | No | No | No | No |
+| 8. Failure detectable? | Yes | Yes | Yes | **Yes — the same test** | Yes | Yes |
+| 9. Fallback? | Report, never fabricate | Off by default | Omit the field | Unchanged behaviour | Keep the assertion | Omit the fields |
+| 10. Removable? | Yes | Yes | Yes | **Yes — call sites** | Yes | Yes |
+
+**Gate 6 on P6 is the only red cell.** A fault-injection switch reachable in
+production is a weapon. The mitigation already has a precedent in this
+repository: `GALSEN_CODING_WORKSPACE_ROOTS` **refuses everything when unset**
+rather than defaulting to permissive. Fault injection must be inert unless
+explicitly enabled, and never enabled by a request.
+
 ---
 
-*Chapters 11 to 13 pending.*
+# Chapter 12 — Classification, and the smallest reversible step
+
+## Every principle, classified
+
+| | Principle | Class |
+|---|---|---|
+| **P10** | Blocking work off the event loop | **A — USEFUL NOW** |
+| **P12** | Account what was consumed, not only how long | **A — USEFUL NOW** |
+| **P11** | The sandbox probes instead of asserting | **A — USEFUL NOW** |
+| **P7** | A result remembers the state it was produced under | **A — USEFUL NOW** |
+| **P5** | An observed deadline on an agent | **A — USEFUL NOW** |
+| **P6** | Fault injection as a facility | **B — USEFUL LATER** |
+| **P8** | Name which surfaces are contracts | **B — USEFUL LATER** |
+| **P2** | Delegation containment | **D — ALREADY COVERED** |
+| **P3** | Capabilities with a bounding set | **D — ALREADY COVERED** |
+| **P9** | Tracing built in, always on | **D — ALREADY COVERED** |
+| — | VFS: name an operation, not an implementation | **D — ALREADY COVERED** |
+| **P1** | Four resource-distribution models | **E — NOT RELEVANT** |
+| **P4** | Namespaces in the sandbox | **F — BLOCKED** |
+
+**P6 was demoted from A to B** by gate 6. It is the audit's most interesting
+finding and still the wrong thing to build first: it needs a safety design
+before it needs an implementation, and this audit is not authorised to design
+it.
+
+## The smallest reversible implementation for each A
+
+Nothing below is implemented. Each is described so a future phase could do it
+in under an hour and undo it in minutes.
+
+### P10 — off the event loop
+
+Change the blocking call sites, nothing else. In Starlette, `anyio.to_thread.run_sync`
+around `moteur.process_request` at `server.py:1506`, `:2282`, `:2399`.
+**Test that proves it:** the measurement of chapter 05 — `/health` during a
+`/chat` must stay under 50 ms instead of 1 149 ms.
+**Undo:** revert three call sites.
+
+### P12 — accounting
+
+`resource.getrusage(RUSAGE_CHILDREN)` is available where `SandboxResult` is
+already assembled, and `resource` is already imported. Add `cpu_seconds` and
+`max_rss_bytes`; surface `agent_durations` in the orchestrator response.
+**Test:** a run that allocates 100 MB reports a peak above 100 MB.
+**Undo:** delete the fields; nothing reads them.
+
+### P11 — probe, do not assert
+
+One function in `src/sandbox/policy.py` answering *what this machine can
+actually isolate*, on the pattern of `src/media/core/capabilities.py`.
+`NON_GARANTI` becomes what was measured here rather than an absolute.
+**Test:** on a host without user namespaces the report says so; sabotage by
+forcing the probe to fail and check the report degrades rather than lies.
+**Undo:** restore the constant tuple.
+
+### P7 — the result remembers
+
+One field on the workflow response carrying the last known degradation verdict
+and its timestamp.
+**Test:** with a subsystem forced to `UNAVAILABLE`, a run started afterwards
+carries that verdict; and the timestamp is never `None` pretending to be fresh.
+**Undo:** drop the field.
+
+### P5 — an observed deadline
+
+Depends on P10. Once the orchestrator runs off the loop, the caller waits with a
+deadline and returns `AGENT_DEADLINE_EXCEEDED` — naming the agent, and saying
+the work was **abandoned, not stopped**.
+**Test:** an agent that sleeps past the deadline produces the status, and the
+response never contains a fabricated result.
+**Undo:** remove the deadline; the wait becomes unbounded again.
+
+## Order, if any of this is ever authorised
+
+**P10 first**, alone. It is measured, it is three call sites, and **P5 is
+impossible without it**. Everything else can wait for a separate decision.
+
+---
+
+*Chapter 13 pending.*
