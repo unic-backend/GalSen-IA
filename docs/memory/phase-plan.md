@@ -5,49 +5,115 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **aucun**
-Dernier terminé  : **OPEN-SOURCE ECOSYSTEM AUDIT & INTEGRATION**
-                   **22 phases sur 22**, plan complet
-                   Rapport → `docs/oss-ecosystem/final-report.md`
-                   Décision → **ADR-037**
-Phase courante   : aucune — le VOLET est clos, en attente du suivant
+VOLET en cours   : **LINUX KERNEL ARCHITECTURE RESEARCH AUDIT**
+                   Brief du propriétaire, 2026-08-23
+Chapitres        : **13**
+Phases           : **18**
+Phase courante   : AUCUNE — VOLET TERMINÉ
+Terminées        : **1.1 · 1.2 · 1.3 · 2.1 · 2.2 · 3.1 · 3.2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 11 · 12 · 13.1 · 13.2** — les 18 → `docs/research/linux-kernel-architecture-audit.md`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
-**Règle permanente** : `.claude/rules/post-integration-validation.md` — toute
-phase se termine par une validation de non-régression complète.
+**Ce que le brief interdit** : copier du code noyau, vendorer un composant,
+introduire une dépendance Linux, modifier l'architecture existante. Rien n'est
+implémenté pendant cet audit. `RESEARCH → EVALUATE → DOCUMENT → COMPARE →
+RECOMMEND`, et pas un pas de plus (`.claude/rules/spec-driven-governance.md`).
 
 ---
 
-## La décision à ne pas re-déduire — ADR-037
+## Ce qui a été mesuré avant d'écrire ce plan
 
-**Zéro `INTEGRATE` sur douze.** 3 déjà présents (Transformers, vLLM, OpenHands),
-2 atteignables par un seuil existant (SGLang, llama.cpp), 3 différés (LiteLLM,
-Qdrant, Unsloth), 2 conservés (LangGraph, whisper.cpp), 2 rejetés (LlamaIndex,
-Open WebUI).
+Un plan qui suppose ses sources accessibles n'est pas un plan. Mesuré le
+2026-08-23, depuis cette machine :
 
-**Quatre constats sur GalSen IA, aucun corrigé** — suggestions, pas tâches :
-1. `SQLiteVectorStore.search()` est **3 388 × plus lent** que le design d'ADR-015
-   (13 132 ms → 3,88 ms à 100 000 vecteurs, 153,6 Mo). Une base de données
-   allait être accusée d'un défaut de cache.
-2. `Role.USER` atteint `POST /coding/task`, n'importe quel dossier de l'hôte.
-   **Latent** : aucun moteur disponible.
-3. L'entraînement garde l'exécution (ADR-006), pas le contenu du jeu de données.
-4. `litellm==1.81.10` installé, non déclaré, non importé.
+| Source | Réponse |
+|---|---:|
+| `raw.githubusercontent.com/torvalds/linux/…` | **200** |
+| `github.com/torvalds/linux` | 403 |
+| `docs.kernel.org` | **000** |
+| `www.kernel.org` · `git.kernel.org` | 000 |
+| `spdx.org` | 000 |
 
-**Zéro ligne de `src/`, zéro dépendance, zéro test touché** sur tout le VOLET.
+**L'audit est faisable, et par la meilleure source.** `docs.kernel.org` n'est que
+le rendu de `Documentation/` dans l'arbre ; cet arbre répond. Vérifié fichier par
+fichier : `COPYING` (496 o), `cgroup-v2.rst` (135 502 o), `ftrace.rst`
+(145 229 o), `fault-injection.rst` (19 325 o), `credentials.rst` (20 875 o),
+`license-rules.rst` (18 477 o).
+
+Ce qui reste hors d'atteinte et devra être dit `UNKNOWN` plutôt que deviné :
+le texte SPDX canonique et tout ce qui ne vit que sur `kernel.org`.
+
+---
+
+## Le plan
+
+```
+Ch. 01  Audit du GalSen IA réel                  → 3 phases
+        1.1 orchestration, agents, ordonnancement, cycle de vie, files ✅
+        1.2 ressources, isolation, bac à sable, sécurité, permissions ✅
+        1.3 auto-réparation, observabilité, mémoire, config, dégradation ✅
+
+Ch. 02  Étude de l'architecture Linux            → 2 phases
+        2.1 processus, ordonnancement, mémoire, namespaces, cgroups, capabilities ✅
+        2.2 modules, VFS, traçage, injection de fautes, frontières, synchronisation ✅
+
+Ch. 03  Extraction des principes                 → 2 phases
+        3.1 les huit champs, pour les concepts d'isolation et de ressources ✅
+        3.2 les huit champs, pour fautes, observabilité et frontières ✅
+
+Ch. 04  Auto-réparation                          → 1 phase (indivisible) ✅
+Ch. 05  Gestion des ressources                   → 1 phase (indivisible) ✅
+Ch. 06  Isolation des agents                     → 1 phase (indivisible) ✅
+Ch. 07  Observabilité                            → 1 phase (indivisible) ✅
+Ch. 08  Frontières architecturales               → 1 phase (indivisible) ✅
+Ch. 09  Licences                                 → 1 phase (indivisible) ✅
+Ch. 10  Preuve qu'aucun code n'a été copié       → 1 phase (indivisible) ✅
+Ch. 11  Portes de faisabilité (10 questions)     → 1 phase (indivisible) ✅
+Ch. 12  Classement A–F + plus petite implémentation réversible
+                                                 → 1 phase (indivisible) ✅
+
+Ch. 13  Rapport final, 22 points                 → 2 phases  ✅ TERMINÉ
+        13.1 points 1 à 11
+        13.2 points 12 à 22, verdict
+        → **SELECTIVE ARCHITECTURAL IMPROVEMENTS RECOMMENDED**
+```
+
+**Total : 18 phases.**
+
+---
+
+## Ce que je dois te dire avant que tu confirmes
+
+**Le chapitre 01 décide de tout le reste.** Le brief le dit lui-même : *« ne
+suppose pas qu'une capacité est absente parce qu'elle porte un autre nom »*.
+Cette plateforme a déjà un bac à sable qui applique des limites du noyau
+(`src/sandbox/`), une dégradation mesurée (`src/integration/degradation.py`), une
+piste d'exécution suivable de bout en bout (`/observability/trail/{id}`) et une
+auto-réparation. La plupart des principes Linux vont probablement tomber en
+**D — DÉJÀ COUVERT**, et ce sera le résultat, pas un échec de l'audit.
+
+**Deux choses que je ne peux pas mesurer ici**, et qui resteront `UNKNOWN` :
+tout ce qui concerne le GPU (cette machine n'en a pas) et le comportement sous
+charge réelle (aucun fournisseur de modèle n'y répond).
+
+**Un point d'intendance** : la PR #36 est ouverte et non fusionnée, et je n'ai
+autorisation de pousser que sur `claude/galsen-ia-phases-ukwz7p`. Cet audit
+produit des documents ; ils atterriront donc dans cette PR, à côté du redesign
+chat-first. Si tu préfères qu'ils vivent seuls, fusionne #36 d'abord — c'est ta
+décision, pas la mienne, et elle ne bloque pas le démarrage.
 
 ---
 
 ## Programmes précédents, terminés — ne pas rouvrir
 
-1. **Universal Creative Intelligence** — 44 phases. `docs/creative/final-report.md`
-2. **Master Update Directive V4 (MoneyPrinterTurbo)** — 15 phases. ADR-030.
-3. **Creative Canvas & Cinema Orchestration** — 17 phases. ADR-031.
-4. **Research Orchestration Integration** — 18 phases. ADR-032.
-5. **Live Context Engine / Call.md** — 27 phases. ADR-033. **PR #31 fusionnée.**
-6. **OpenClaw Compatibility & Safe Integration** — 19 phases. ADR-034 :
-   **ne pas intégrer**.
-7. **DeepSeek Harness Compatibility Audit** — 14 phases. ADR-035 : quatrième
-   back-end de codage, **implémentation non autorisée**.
-8. **Finalisation** — ADR-036 (Apache-2.0), test de souveraineté des runtimes
-   subordonnés, mémoire réalignée. **PR #32 fusionnée.**
+1. **REDESIGN CHAT-FIRST** — 8 chapitres, 11 phases. `POST /chat`, `/ui/` sert la
+   conversation, `/ui/admin/` le tableau de bord, menu de 14 domaines.
+   **Constat qui reste vrai** : aucun des 17 agents ne rédige ; `/chat` rend le
+   refus des agents et ne converse pas encore. L'étape de rédaction qui le
+   rendrait conversant **n'est pas autorisée**.
+2. **AUDIT #01 `codebase-memory-mcp`** — 16 phases, `KEEP FOR RESEARCH`.
+3. **SUPERPOWERS** — audit 24 phases + 11 d'implémentation. **ADR-038**.
+4. **OPEN-SOURCE ECOSYSTEM AUDIT** — 22 phases. **ADR-037**.
+5. **OpenClaw** (ADR-034), **DeepSeek Harness** (ADR-035) : non intégrés.
+6. **Live Context** (ADR-033), **Creative Canvas** (ADR-031),
+   **Research Orchestration** (ADR-032), **MoneyPrinterTurbo** (ADR-030),
+   **Apache-2.0** (ADR-036).

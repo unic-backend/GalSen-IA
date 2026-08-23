@@ -96,6 +96,46 @@ Update that entry instead of creating a near-duplicate.
 
 ---
 
+# Rulings
+
+An ADR holds a decision. `completed-work.md` holds an outcome. Between them sits
+everything a piece of work actually decided on the way - which library to reuse,
+which of two readings of a spec to follow, what to leave out - and none of it was
+written anywhere.
+
+Those are **rulings**, and they have one format:
+
+```
+Décision : <ce qui a été décidé> — <pourquoi> — <ce que ça coûte si c'est faux>
+```
+
+The third clause is the one that does not exist anywhere else in this repository,
+and it is the reason the format is worth having. "I chose X because Y" is a
+justification, and a justification is written by someone who already believes
+they are right. **Naming the cost of being wrong is the only part that can be
+checked later**, and it is the part a reader needs in order to decide whether to
+revisit the ruling or leave it alone.
+
+A ruling whose third clause is "nothing" is not a ruling - it was not a decision,
+it was a step. Do not write it down.
+
+Where rulings go: in the phase report that made them, and in `completed-work.md`
+when the work is logged. Not in an ADR - an ADR that absorbed every mid-task
+judgement would stop being readable, which is what killed the practice of writing
+them down in the first place.
+
+**What is deliberately not adopted with it.** The source of this format pairs it
+with *"rulings, not stalls"* - decide rather than ask, do not pause between
+tasks. That contradicts `.claude/rules/phase-protocol.md`, which is permanent.
+**The format is adopted; the cadence is refused.** A ruling here records a
+judgement that was the assistant's to make; it never converts a question the user
+should have answered into a decision taken without them.
+
+Where this came from: `subagent-driven-development`, via the Superpowers audit
+(`docs/research/superpowers-audit.md`, candidate C4).
+
+---
+
 # Size
 
 `completed-work.md` grows forever and is loaded by humans and agents alike.

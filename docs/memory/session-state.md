@@ -6,57 +6,39 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ---
 
-## Dernière session — 2026-08-22
+## Dernière session — 2026-08-23
 
-**En cours** : rien. Aucun VOLET ouvert, aucune phase en attente.
+**En cours** : rien. **VOLET REDESIGN CHAT-FIRST terminé**, 8 chapitres, 11 phases,
+branche `claude/galsen-ia-phases-ukwz7p`.
 
-**Terminé** : **les quatre constats de l'audit OSS sont fermés et sur `main`** —
-**PR #34 fusionnée**, `main` à `5ce708a`. Le n°1 (matrice vectorielle) datait du
-2026-08-20 ; les n°2, 3 et 4 ont été faits en quatre phases le 2026-08-21/22.
-La branche `claude/galsen-ia-phases-ukwz7p` a été **repartie de `main`** après la
-fusion : ne jamais empiler sur de l'historique déjà fusionné.
+**Terminé** : la plateforme a une conversation. `POST /chat` (143 routes), le chat
+sert `/ui/`, le tableau de bord passe sous `/ui/admin/`, menu de 14 domaines,
+responsive mobile d'abord.
 
-1. ~~`SQLiteVectorStore.search()` reconstruisait la matrice.~~ **CORRIGÉ** —
-   **49,4 → 0,463 ms** à 271 vecteurs, **1 856,8 → 0,830 ms** à 10 000. Cache
-   validé par un compteur de version écrit **dans la transaction de chaque
-   écriture** (ADR-015 amendé).
-2. ~~`Role.USER` atteignait `POST /coding/task` avec n'importe quel dossier.~~
-   **CORRIGÉ** — deux moitiés. Les routes passent par le **plafond de rôle
-   existant** (`src/tool/authorization.py`, aucune permission nouvelle), et
-   `GALSEN_CODING_WORKSPACE_ROOTS` borne l'espace lui-même : **variable absente
-   = refus total**, jamais « tout l'hôte ».
-3. ~~L'approbation d'entraînement portait sur l'acte, jamais sur le contenu.~~
-   **CORRIGÉ** — empreinte SHA-256 du texte inscrite dans la demande et
-   recalculée à l'export. `export_pairs("oui")` ne passe plus.
-4. ~~`litellm` installé, déclaré par rien.~~ **CORRIGÉ EN GARDE** — trois tests
-   refusent qu'un paquet de moteur soit atteignable, déclaré ou importé. Ici il
-   est **absent** ; numpy 2.4.6, cv2 5.0.0.
+À savoir sans relire :
+- **Aucun des 17 agents ne rédige.** Seuls `planner` et `coder` appellent le
+  modèle, pour planifier et pour coder. Le workflow `question` est
+  `planner → researcher → senegal → verifier` : recherche et vérification, pas
+  conversation. **`/chat` rend donc le refus des agents, jamais une phrase
+  fabriquée** — c'est honnête, et ça ne converse pas encore. Rendre le chat
+  *conversant* demande une étape de rédaction : **non autorisée, non faite.**
+- L'orchestrateur a l'honnêteté que `/agri/advice` n'a pas : l'agent `senegal`
+  répond `empty_base` avec « la base est vide sur ce sujet — ce n'est pas une
+  réponse négative ». **1,1 s** par tour, mesuré.
+- **Trois défauts trouvés en relisant du travail déjà déclaré terminé** :
+  le jeton d'ancrage fabriquait sa classe par interpolation (`jeton.grounded`,
+  invalide) et **n'a jamais eu sa couleur** ; `grounding.reason` était jeté ;
+  le déplacement du tableau de bord avait rendu le formulaire agricole et le
+  Media Studio **inatteignables en cliquant**. `tests/test_ui_chat.py`
+  (`TestJetonAncrage`) tient le premier, sabotage vérifiée.
 
-**Prochaine étape** : attendre le prochain VOLET du propriétaire. Rien n'est en
-attente de ma part.
+**Prochaine étape** : rien d'autorisé. La branche n'est pas fusionnée et aucune PR
+n'a été demandée pour ce volet. Décision en attente du propriétaire : ouvrir ou
+non l'étape de rédaction qui ferait vraiment converser le chat.
 
-**Ce qui a servi à chaque fois** : *sabotez la garde avant de la croire.* Une
-sabotage a elle-même été fautive — la ligne ajoutée s'est collée à la
-précédente, le fichier n'ayant pas de saut de ligne final ; le test était juste,
-pas la sabotage.
-
-**Repère de non-régression, mesuré sur `main` après la fusion** (run 32555510451) :
-`1 failed, 7020 passed, 15 skipped, 3 deselected`. Avant la fusion, `main` à
-`c88b555` donnait `1 failed, 6964 passed, 15 skipped` : **+56 verts, le même
-unique échec**. Cet échec est l'étiquette `v0.1.0` — **jamais une régression, ne
-pas la « corriger »**. En local sur un conteneur où l'étiquette existe, la suite
-est entièrement verte : `7027 passed, 9 skipped, 3 deselected, 0 failed`. L'écart
-de 6 ignorés vient de tests dépendants de l'environnement ; le total collecté est
-le même des deux côtés.
-
-**Piège d'environnement, mesuré** : un conteneur peut être provisionné **avant**
-une dépendance déclarée. `bcrypt==5.0.0` était dans `requirements.txt` et pas
-installé : **40 échecs et 16 erreurs**, tous d'auth. Mesurer la base **intacte**
-sur la même machine avant de conclure à une régression.
-
-**Piège de l'environnement, vu trois fois** : le conteneur est recyclé et le
-clone retombe en arrière. Un dossier attendu absent = clone périmé, **jamais un
-programme perdu**. `git fetch` avant de conclure.
+**Ce qui a servi** : *une suite lancée avec `| tail -4` cache ses échecs.* Un run
+a rapporté « 25 failed » dont **3 seulement étaient visibles**, et les 22 autres
+ont été déclarés verts. Rediriger la sortie vers un fichier, jamais la tronquer.
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
 - **`GALSEN_CODING_WORKSPACE_ROOTS` doit être renseignée** ou le moteur de codage
@@ -73,6 +55,9 @@ programme perdu**. `git fetch` avant de conclure.
 ---
 
 ### Sessions précédentes
+
+**2026-08-22 — AUDIT #01 `codebase-memory-mcp`**, 16 phases → `KEEP FOR RESEARCH`.
+Rapport : `docs/research/codebase-memory-mcp-audit.md`. Rien installé, rien intégré.
 
 **2026-08-20 — Audit OSS (22 phases, ADR-037)**, PR #33 : douze projets, **zéro
 `INTEGRATE`**, 16 documents, zéro ligne de `src/` touchée. C'est cet audit qui a

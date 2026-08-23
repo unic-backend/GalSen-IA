@@ -1047,3 +1047,55 @@ class TestRobustness:
         result = checker._check_knowledge_engine()
         # Ne doit pas planter — le except dans la méthode capture tout
         assert result.status == "healthy"
+
+
+def test_la_sonde_memoire_survit_au_backend_sqlite(tmp_path, monkeypatch):
+    """
+    La sonde de santé passait une chaîne là où une énumération est attendue.
+
+    Avec le magasin **en mémoire** — celui de toute la suite — `.value` n'est
+    jamais lu, donc rien ne cassait. Avec `GALSEN_STORAGE_BACKEND=sqlite`,
+    `sqlite_store._item_to_dict()` fait `item.memory_type.value` et levait
+    `'str' object has no attribute 'value'`.
+
+    Mesuré sur la machine du propriétaire le 2026-08-22 : le tableau de bord
+    affichait `memory_engine: unhealthy` alors que la mémoire fonctionnait.
+    **La sonde était le défaut**, ce qui est le pire cas — elle envoyait
+    chercher une panne inexistante.
+
+    Ce test exerce le chemin que la suite n'empruntait jamais.
+    """
+    monkeypatch.setenv("GALSEN_STORAGE_BACKEND", "sqlite")
+    monkeypatch.setenv("GALSEN_DATA_DIR", str(tmp_path))
+
+    from src.memory_engine.memory_manager import MemoryManager
+    from src.memory_engine.types import MemoryItem, MemoryType
+
+    gestionnaire = MemoryManager()
+    identifiant = gestionnaire.save_memory(
+        MemoryItem(
+            content="health_check_test",
+            memory_type=MemoryType.SHORT_TERM,
+            tags=["health_check"],
+        )
+    )
+    relu = gestionnaire.get_memory(identifiant)
+    assert relu is not None and relu.content == "health_check_test"
+
+
+def test_la_sonde_memoire_n_utilise_pas_une_chaine_pour_le_type():
+    """
+    Garde de source : c'est la ligne exacte qui a cassé.
+
+    Un test de comportement seul ne suffit pas ici — quelqu'un pourrait
+    réintroduire la chaîne dans `health.py` sans que le test ci-dessus le voie,
+    puisqu'il construit son propre élément.
+    """
+    import pathlib
+
+    source = pathlib.Path(__file__).parent.parent / "src" / "api" / "health.py"
+    texte = source.read_text(encoding="utf-8")
+    assert 'memory_type="short_term"' not in texte, (
+        "La sonde repasse une chaîne ; `sqlite_store` fait `.value` et casse."
+    )
+    assert "memory_type=MemoryType.SHORT_TERM" in texte

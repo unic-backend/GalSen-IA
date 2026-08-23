@@ -57,9 +57,19 @@ After finishing a phase:
 ```
 Phase 2.1 terminée — <ce qui a été fait, 2 lignes max>
 Vérifié : <commande> → <résultat réel>
+Décision : <ce qui a été tranché> — <pourquoi> — <ce que ça coûte si c'est faux>
 Suivante : phase 2.2 — <ce qu'elle fera>
 Je continue ?
 ```
+
+The `Décision` line appears **only when the phase actually decided something** —
+a reading of the spec chosen over another, a component reused instead of written,
+something deliberately left out. Format and reasoning →
+`.claude/rules/memory.md`, *Rulings*. A phase that only executed has no ruling,
+and inventing one to fill the shape is worse than omitting it.
+
+`Vérifié` follows the freshness rule: the command ran **in the message reporting
+it** (`.claude/rules/verification.md`).
 
 3. Wait. Do not start phase 2.2. Do not "prepare" it, do not read files for it,
    do not open a plan for it.

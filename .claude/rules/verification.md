@@ -9,12 +9,41 @@ The difference between a platform and a pile of code is that someone ran it.
 A phase is done when **all** of these are true:
 
 1. The code imports without error
-2. Its tests exist and pass - you ran them, in this session
+2. Its tests exist and pass - you ran them, **in this message**
 3. It is integrated (registry, API, config) where the architecture says it belongs
 4. `docs/memory/` reflects it
 
 Not done: "should work", "the logic is correct", "tests will pass".
 If you did not run it, say so in those words.
+
+---
+
+# Freshness
+
+**If you have not run the verification command in this message, you cannot claim
+it passes.**
+
+Point 2 used to say "in this session". A session is long - this file has been
+edited in sessions that ran for hours - and "I ran the suite" quietly comes to
+mean "I ran the suite at some point, before three more edits". That claim is not
+false to the person making it, which is exactly why it is the easy one to make.
+
+The command is cheap. The claim is not: it is what a reader acts on.
+
+Three consequences, and none of them is a courtesy:
+
+- A result from earlier in the conversation is **evidence about the past**. Cite
+  it as such ("the suite passed before this change"), never as the current state.
+- A claim that survives an edit needs a run **after** that edit. Editing a file
+  and reporting the previous run is how a broken change gets reported as
+  finished.
+- "Nothing I touched could affect it" is a prediction. Predictions are what
+  running the command replaces.
+
+Where this came from: `verification-before-completion`, from the Superpowers
+audit (`docs/research/superpowers-audit.md`, candidate C3). The rest of that
+skill was **not** adopted - this repository's three verification rules were
+already stronger. One clause was missing, and this is it.
 
 ---
 
@@ -74,3 +103,13 @@ until proven otherwise. Find the cause; do not work around the symptom.
 
 Say it plainly when it happens: "j'ai casse X, voici la cause, voici le
 correctif". Hiding a regression costs the project far more than admitting one.
+
+**How to find the cause: `.claude/skills/systematic-debugging`.** The sentence
+above is the principle; that skill is the procedure — four phases, root cause
+before any fix, with the red flags that mean you skipped one. Use it whenever a
+test fails, a behaviour is wrong, or something that worked stops working.
+
+The reason it exists rather than staying a principle: this repository has
+followed those phases correctly three times in one session **by instinct**, and
+an instinct that works when the operator is careful is exactly what fails on the
+day they are not.

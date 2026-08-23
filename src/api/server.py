@@ -711,6 +711,72 @@ class AgriAdviceResponse(BaseModel):
     language: str = Field(..., description="Langue de la réponse")
     model_used: str = Field(..., description="Modèle utilisé")
 
+class ChatMessage(BaseModel):
+    """Un tour de conversation déjà échangé."""
+    role: str = Field(..., description="'user' ou 'assistant'")
+    content: str = Field(..., description="Le texte du tour")
+
+
+class ChatRequest(BaseModel):
+    """Un message adressé à GalSen IA, sans domaine imposé."""
+    message: str = Field(..., description="Ce que l'utilisateur écrit")
+    history: List[ChatMessage] = Field(
+        default_factory=list, description="Tours précédents, du plus ancien au plus récent")
+    domain: Optional[str] = Field(
+        None, description="Domaine forcé par l'utilisateur ; sinon détecté")
+    conversation_id: Optional[str] = Field(
+        None, description="Fil existant ; un nouveau est créé sinon")
+
+
+class ChatDetection(BaseModel):
+    """
+    Ce que l'orchestration a cru comprendre — **et par quel moyen**.
+
+    `method` n'est pas décoratif : « keywords » et « intent_rules » ne méritent
+    pas la même confiance, et une interface qui affiche le domaine sans dire
+    comment il a été trouvé transforme une heuristique en certitude.
+    """
+    domain: List[str] = Field(default_factory=list)
+    task_type: List[str] = Field(default_factory=list)
+    method: str = Field("", description="Comment le domaine a été déterminé")
+    forced_by_user: bool = Field(False, description="L'utilisateur a imposé le domaine")
+
+
+class ChatGrounding(BaseModel):
+    """
+    L'ancrage de la réponse dans une source vérifiable.
+
+    **Trois issues, jamais deux** — même vocabulaire que le contrôle qualité du
+    moteur média : `GROUNDED`, `UNGROUNDED`, `NOT_CHECKED`.
+
+    Aujourd'hui c'est toujours `NOT_CHECKED`, et c'est la vérité : la route de
+    conversation ne consulte aucun corpus, exactement comme `/agri/advice`.
+    Mesuré le 2026-08-22 — une réponse agricole plaçait l'hivernage trois mois
+    trop tôt et inventait une saison.
+
+    **Ce champ est la place réservée du travail d'ancrage**, décidé mais pas
+    encore fait. Il existe dès maintenant pour deux raisons : l'interface peut
+    afficher l'avertissement sans attendre, et le jour où `retrieve_reliable`
+    sera branché, aucun appelant n'aura à changer.
+
+    `NOT_CHECKED` ne veut pas dire « faux ». Il veut dire **personne n'a
+    vérifié**, ce qui est une information et non un aveu.
+    """
+    status: str = Field("NOT_CHECKED", description="GROUNDED, UNGROUNDED ou NOT_CHECKED")
+    sources: List[str] = Field(default_factory=list)
+    reason: str = Field("", description="Pourquoi cet état, en clair")
+
+
+class ChatResponse(BaseModel):
+    """La réponse d'un tour de conversation."""
+    answer: str
+    conversation_id: str
+    detection: ChatDetection
+    grounding: ChatGrounding
+    run_id: Optional[str] = Field(None, description="Suivable via /observability/trail/{id}")
+    elapsed_seconds: float = Field(..., description="Durée réelle, jamais estimée")
+
+
 class WorkflowRunRequest(BaseModel):
     """Demande d'exécution d'un workflow."""
     request: str = Field(..., min_length=1, description="La demande à traiter")
@@ -1381,6 +1447,302 @@ async def generate_text(request: ModelGenerateRequest):
         )
     except Exception as e:
         raise erreur_interne("Erreur lors de la génération", e)
+
+@app.post("/chat", response_model=ChatResponse, tags=["chat"],
+          dependencies=[Depends(rate_limit_dependency),
+                        Depends(require_permission(Permission.MODEL_GENERATE))])
+async def chat(request: ChatRequest):
+    """
+    Un tour de conversation, sans domaine imposé.
+
+    ## Pourquoi cette route passe par l'orchestrateur
+
+    Le chemin court aurait été `model.generate()` : rapide, et sans aucune des
+    capacités que cette plateforme a construites. Le brief demande que
+    « Comment planter le mil ? » active l'agriculture **sans que l'utilisateur
+    choisisse** — c'est de l'orchestration, et `src/router/` la fait déjà :
+    mesuré le 2026-08-22, le workflow `question` classe cette phrase en
+    `agriculture` par mots-clés, et **dit qu'il l'a fait par mots-clés**.
+
+    Réutiliser plutôt que reconstruire (`spec-driven-governance.md`) : une
+    seconde détection de domaine aurait divergé de la première.
+
+    ## Le coût, mesuré et non estimé
+
+    **1,1 s** pour un tour sur cette machine, mesuré le 2026-08-22.
+    `elapsed_seconds` porte la durée réelle à chaque réponse : un chiffre qu'on
+    voit est un chiffre qu'on peut décider de réduire.
+
+    ## Ce que cette route ne fait pas
+
+    **Elle ne rédige pas.** Aucun des 17 agents ne produit de prose
+    conversationnelle — seuls `planner` et `coder` appellent le modèle, et pour
+    autre chose. Quand le pipeline ne trouve rien, la route rend **le constat
+    des agents**, pas une phrase fabriquée pour combler le vide.
+
+    C'est la différence avec `/agri/advice`, qui a placé l'hivernage trois mois
+    trop tôt le 2026-08-22 parce qu'il devait répondre quelque chose. Ici,
+    `grounding.status` dit `GROUNDED`, `UNGROUNDED` ou `NOT_CHECKED`, et
+    `reason` dit pourquoi.
+    """
+    if not request.message.strip():
+        raise HTTPException(status_code=422, detail="Le message ne peut pas être vide")
+
+    conversation = request.conversation_id or f"conv_{uuid.uuid4().hex[:12]}"
+    debut = time.time()
+
+    # L'historique est aplati devant la demande : l'orchestrateur prend une
+    # chaîne. Tronqué aux six derniers tours — un fil de cent messages
+    # dépasserait la fenêtre du modèle et ferait échouer le tour entier plutôt
+    # que d'en perdre le début.
+    contexte = ""
+    if request.history:
+        recents = request.history[-6:]
+        contexte = "\n".join(f"{m.role} : {m.content}" for m in recents) + "\n"
+    demande = f"{contexte}{request.message}" if contexte else request.message
+
+    try:
+        moteur = get_router_engine()
+        resultat = moteur.process_request(demande, workflow_id="question")
+    except Exception as erreur:  # noqa: BLE001 — un agent tiers peut tout lever
+        raise erreur_interne("Erreur pendant la conversation", erreur)
+
+    # Les axes vivent dans le résultat du `planner`, pas dans l'agrégat — lu
+    # dans la sortie réelle le 2026-08-22, après avoir d'abord cherché au
+    # mauvais endroit et obtenu un domaine vide.
+    axes = _resultat_agent(resultat, "planner").get("axes") or {}
+
+    def _axe(nom: str) -> List[str]:
+        valeur = (axes.get(nom) or {}).get("value") if isinstance(axes, dict) else None
+        if isinstance(valeur, list):
+            return [str(v) for v in valeur]
+        return [str(valeur)] if valeur else []
+
+    detection = ChatDetection(
+        domain=[request.domain] if request.domain else _axe("domain"),
+        task_type=_axe("task_type"),
+        method=((axes.get("domain") or {}).get("method", "") if isinstance(axes, dict) else ""),
+        forced_by_user=request.domain is not None,
+    )
+
+    reponse = _texte_de_reponse(resultat)
+    if not reponse:
+        # Un pipeline qui n'a rien produit ne doit pas rendre une chaîne vide
+        # dans une bulle de conversation : ce serait une panne déguisée en
+        # silence.
+        raise HTTPException(
+            status_code=503,
+            detail="Aucun agent n'a produit de réponse pour ce message.",
+        )
+
+    return ChatResponse(
+        answer=reponse,
+        conversation_id=conversation,
+        detection=detection,
+        grounding=_ancrage_de(resultat),
+        run_id=resultat.get("run_id"),
+        elapsed_seconds=round(time.time() - debut, 3),
+    )
+
+
+def _resultat_agent(resultat: Dict[str, Any], nom: str) -> Dict[str, Any]:
+    """Le résultat d'un agent nommé, ou un dictionnaire vide s'il n'a pas tourné."""
+    for entree in resultat.get("agent_results") or []:
+        if isinstance(entree, dict) and entree.get("agent") == nom:
+            sortie = entree.get("result")
+            return sortie if isinstance(sortie, dict) else {}
+    return {}
+
+
+def _ancrage_de(resultat: Dict[str, Any]) -> "ChatGrounding":
+    """
+    Traduit ce que l'agent `senegal` a constaté en état d'ancrage.
+
+    **Cette honnêteté n'est pas écrite ici : elle est reprise.** Mesuré le
+    2026-08-22, l'agent `senegal` répond déjà `status: "empty_base"` avec, en
+    toutes lettres : *« La base est vide sur ce sujet — ce n'est pas une réponse
+    négative »*, et il dit ce qui trancherait la question.
+
+    `/agri/advice` n'a pas ce garde-fou et invente ; l'orchestrateur l'a. Faire
+    remonter son verdict, plutôt qu'en écrire un second, est la seule chose à
+    faire — et c'est ce que `spec-driven-governance.md` appelle réutiliser au
+    lieu de reconstruire.
+    """
+    senegal = _resultat_agent(resultat, "senegal")
+    if not senegal:
+        # Le `senegal` ne tourne pas sur tous les messages — mesuré le
+        # 2026-08-22 : « bonjour » n'active que `planner` et `researcher`. Le
+        # chercheur, lui, compte ses sources ; zéro source consultée est un
+        # constat, pas une absence de constat.
+        chercheur = _resultat_agent(resultat, "researcher")
+        if chercheur:
+            constats = chercheur.get("findings") or []
+            # `verified` vient du chercheur lui-même : un constat de la base de
+            # connaissance est vérifié, un extrait web ne l'est pas. Compter les
+            # sources *consultées* dirait `GROUNDED` pour trois extraits web —
+            # c'est-à-dire exactement le défaut que cette route existe pour ne
+            # pas reproduire. La fiabilité vient du registre de sources, jamais
+            # du document qui l'affirme.
+            verifies = [c for c in constats if isinstance(c, dict) and c.get("verified")]
+            if verifies:
+                return ChatGrounding(
+                    status="GROUNDED",
+                    sources=[str(c.get("source")) for c in verifies][:10],
+                )
+            if constats:
+                return ChatGrounding(
+                    status="UNGROUNDED",
+                    sources=[],
+                    reason=(
+                        f"{len(constats)} élément(s) trouvé(s), aucun vérifié : "
+                        "ce sont des sources externes, pas des connaissances "
+                        "validées de la plateforme."
+                    ),
+                )
+            return ChatGrounding(
+                status="UNGROUNDED",
+                reason=_lacunes(chercheur)
+                or "Aucune source n'a été consultée pour ce message.",
+            )
+        return ChatGrounding(
+            status="NOT_CHECKED",
+            reason="Aucun agent de connaissance n'a été retenu pour ce message.",
+        )
+
+    statut = str(senegal.get("status") or "")
+    elements = senegal.get("elements") or []
+    if statut and statut != "empty_base" and elements:
+        return ChatGrounding(
+            status="GROUNDED",
+            sources=[str(e) for e in elements][:10],
+            reason="",
+        )
+
+    trancherait = senegal.get("what_would_settle_it")
+    return ChatGrounding(
+        status="UNGROUNDED",
+        sources=[],
+        reason=(
+            str(senegal.get("reason") or "La base ne contient rien sur ce sujet.")
+            + (f" Ce qui trancherait : {trancherait}" if trancherait else "")
+        ),
+    )
+
+
+def _constats(constats: List[Dict[str, Any]]) -> str:
+    """
+    Rend les constats du chercheur, chacun attribué à sa source.
+
+    **Aucun n'est fondu dans un paragraphe.** Recopier trois extraits web dans
+    une prose continue les ferait lire comme une réponse de la plateforme, alors
+    qu'ils viennent d'ailleurs et que le chercheur les marque `verified: False`.
+    Chaque ligne garde donc son origine, et un constat non vérifié le dit.
+
+    Un constat sans texte est compté, jamais deviné : « 2 élément(s) sans texte »
+    est une information ; inventer leur contenu n'en serait pas une.
+    """
+    lignes: List[str] = []
+    sans_texte = 0
+    for constat in constats:
+        if not isinstance(constat, dict):
+            sans_texte += 1
+            continue
+        contenu = str(constat.get("content") or "").strip()
+        if not contenu:
+            sans_texte += 1
+            continue
+        source = str(constat.get("source") or "source inconnue")
+        marque = "" if constat.get("verified") else " — non vérifié"
+        lignes.append(f"- {contenu}\n  ({source}{marque})")
+
+    if not lignes:
+        return (
+            f"{sans_texte} élément(s) trouvé(s), aucun ne porte de texte "
+            "exploitable."
+        )
+
+    texte = "Voici ce qui a été trouvé, avec l'origine de chaque élément :\n\n"
+    texte += "\n".join(lignes)
+    if sans_texte:
+        texte += f"\n\n{sans_texte} autre(s) élément(s) sans texte exploitable."
+    return texte
+
+
+def _lacunes(chercheur: Dict[str, Any]) -> str:
+    """
+    Rend les lacunes du chercheur telles qu'il les a écrites.
+
+    Une seule fonction pour l'ancrage et pour le texte : deux formulations de la
+    même absence divergeraient, et l'interface afficherait un motif de refus qui
+    ne serait pas celui porté par `grounding.reason`.
+    """
+    lignes = [str(g).strip() for g in (chercheur.get("gaps") or []) if str(g).strip()]
+    if not lignes:
+        return ""
+    return "Je n'ai rien trouvé de fiable pour répondre.\n\n" + "\n".join(
+        f"- {ligne}" for ligne in lignes
+    )
+
+
+def _texte_de_reponse(resultat: Dict[str, Any]) -> str:
+    """
+    Extrait le texte destiné à l'utilisateur du résultat d'orchestration.
+
+    L'agrégat porte des structures d'analyse ; l'utilisateur attend une phrase.
+    On cherche donc, dans l'ordre, les endroits où un agent dépose une réponse
+    rédigée, et on ne fabrique rien quand il n'y en a pas.
+
+    Returns:
+        Le texte, ou une chaîne vide. **Jamais un résumé inventé** : l'appelant
+        transforme le vide en 503, parce qu'une bulle de conversation vide fait
+        passer une panne pour une réponse.
+    """
+    agrege = resultat.get("aggregated_result")
+    if isinstance(agrege, dict):
+        for cle in ("answer", "response", "text", "summary", "content"):
+            valeur = agrege.get(cle)
+            if isinstance(valeur, str) and valeur.strip():
+                return valeur.strip()
+    if isinstance(agrege, str) and agrege.strip():
+        return agrege.strip()
+
+    # L'agent `senegal` refuse en clair quand la base est vide. Ce refus **est**
+    # la réponse à rendre : le remplacer par une génération non ancrée
+    # reproduirait le défaut mesuré sur `/agri/advice` le 2026-08-22, où
+    # l'hivernage était placé trois mois trop tôt.
+    senegal = _resultat_agent(resultat, "senegal")
+    if senegal and str(senegal.get("status") or "") == "empty_base":
+        raison = str(senegal.get("reason") or "").strip()
+        trancherait = senegal.get("what_would_settle_it")
+        texte = raison or "La base ne contient rien sur ce sujet."
+        if trancherait:
+            texte += f"\n\nCe qui permettrait d'y répondre : {trancherait}"
+        return texte
+
+    # Aucun des 17 agents de la plateforme ne rédige de prose conversationnelle
+    # — mesuré le 2026-08-22 : seuls `planner` et `coder` appellent le modèle,
+    # pour planifier et pour coder. Quand le pipeline a tourné sans rien
+    # trouver, ce qu'il a constaté **est** la réponse. Les lacunes sont celles
+    # que le chercheur a écrites ; aucune n'est reformulée ni inventée.
+    chercheur = _resultat_agent(resultat, "researcher")
+    constats = chercheur.get("findings") or []
+    if constats:
+        return _constats(constats)
+    lacunes = _lacunes(chercheur)
+    if lacunes:
+        return lacunes
+
+    for entree in reversed(resultat.get("agent_results") or []):
+        sortie = entree.get("result") if isinstance(entree, dict) else None
+        if isinstance(sortie, dict):
+            for cle in ("answer", "response", "text", "summary", "content"):
+                valeur = sortie.get(cle)
+                if isinstance(valeur, str) and valeur.strip():
+                    return valeur.strip()
+        elif isinstance(sortie, str) and sortie.strip():
+            return sortie.strip()
+    return ""
+
 
 # Endpoint conseil agricole (première feature pour les utilisateurs sénégalais)
 @app.post("/agri/advice", response_model=AgriAdviceResponse, tags=["agri"],

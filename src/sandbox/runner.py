@@ -22,7 +22,6 @@ qui laisse croire à une frontière qu'il n'a pas est plus dangereux que pas de 
 import logging
 import os
 import platform
-import resource
 import shutil
 import subprocess
 import sys
@@ -31,6 +30,19 @@ import time
 from typing import Dict, List, Optional
 
 from .policy import NON_GARANTI, SandboxPolicy, SandboxResult
+
+# `resource` n'existe que sur les systèmes POSIX. L'importer en haut de fichier
+# faisait échouer **tout** `import src.api.server` sous Windows — mesuré sur la
+# machine du propriétaire le 2026-08-22 : `ModuleNotFoundError: No module named
+# 'resource'`, et la plateforme entière refusait de démarrer.
+#
+# Le module prévoyait déjà ce cas (`unavailable_reason()` refuse sur Windows) ;
+# c'est l'import qui échouait **avant** que cette garde puisse servir. Un
+# `try/except` ici la laisse faire son travail, et `run()` refuse toujours.
+try:
+    import resource
+except ImportError:  # pragma: no cover — dépend du système, pas du code
+    resource = None
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +66,28 @@ def unavailable_reason() -> Optional[str]:
     Sur Windows, `resource` n'existe pas : exécuter quand même reviendrait à
     lancer du code d'agent **sans aucune borne** en croyant en avoir. Refuser est
     le seul comportement honnête tant qu'un équivalent n'est pas écrit.
+
+    **Deux conditions, et l'ordre n'est pas indifférent.** Windows d'abord, parce
+    qu'un test existant simule Windows en remplaçant `platform.system()` et que
+    remplacer ce contrôle par le seul « `resource` est-il là ? » l'aurait rendu
+    silencieusement inopérant — une garde de sécurité rétrécie sans que personne
+    le voie. C'est arrivé le 2026-08-22 et le test l'a attrapé.
+
+    L'absence du module ensuite, parce qu'un système POSIX exotique sans
+    `resource` mérite la même réponse : ce qui compte est l'absence des bornes,
+    pas seulement le nom de la plateforme.
     """
     if platform.system() == "Windows":
         return (
             "Les limites du noyau (`setrlimit`) n'existent pas sur Windows. "
             "Exécuter sans elles reviendrait à croire à des bornes absentes ; "
             "un équivalent (Job Objects) reste à écrire."
+        )
+    if resource is None:
+        return (
+            "Le module `resource` est absent de cet interpréteur, donc "
+            "`setrlimit` est inapplicable. Exécuter sans bornes en croyant en "
+            "avoir est précisément ce que ce refus empêche."
         )
     return None
 

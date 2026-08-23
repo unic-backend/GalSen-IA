@@ -397,3 +397,51 @@ def test_aucun_shell_n_est_utilise():
     resultat = run([sys.executable, "-c", "import sys; print(sys.argv[1])", "salut; id"])
 
     assert resultat.stdout.strip() == "salut; id"
+
+
+def test_l_api_demarre_sans_le_module_resource():
+    """
+    `resource` est POSIX ; sous Windows, son absence bloquait TOUT.
+
+    Mesuré sur la machine du propriétaire le 2026-08-22 :
+    `import src.api.server` échouait sur `ModuleNotFoundError: No module named
+    'resource'`, et la plateforme entière refusait de démarrer — alors que
+    `unavailable_reason()` prévoyait déjà le cas. C'est l'import en haut de
+    fichier qui échouait **avant** que la garde puisse servir.
+
+    Le test tourne dans un **sous-processus** : manipuler `sys.meta_path` et
+    réimporter `src.api.server` dans celui-ci laisserait des modules à moitié
+    chargés derrière lui, et ce serait exactement le pollueur que
+    `scripts/find_polluter.py` sert à traquer.
+    """
+    import subprocess
+    import sys
+
+    programme = (
+        "import sys\n"
+        "class B:\n"
+        "    def find_module(self, n, p=None):\n"
+        "        return self if n == 'resource' else None\n"
+        "    def load_module(self, n):\n"
+        "        raise ImportError(\"No module named 'resource'\")\n"
+        "sys.meta_path.insert(0, B())\n"
+        "from src.api.server import app\n"
+        "from src.sandbox.runner import unavailable_reason, run\n"
+        "assert len(app.routes) > 100, 'API vide'\n"
+        "raison = unavailable_reason()\n"
+        "assert raison, 'le bac a sable devrait se declarer indisponible'\n"
+        "assert 'resource' in raison\n"
+        "try:\n"
+        "    run(['echo', 'x'])\n"
+        "    raise AssertionError('run() aurait du refuser')\n"
+        "except Exception as e:\n"
+        "    assert type(e).__name__ == 'SandboxUnavailable', type(e).__name__\n"
+        "print('OK')\n"
+    )
+    acheve = subprocess.run(
+        [sys.executable, "-c", programme],
+        capture_output=True, text=True, timeout=180,
+        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    )
+    assert acheve.returncode == 0, acheve.stderr[-2000:]
+    assert "OK" in acheve.stdout

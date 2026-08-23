@@ -41,8 +41,14 @@ def client():
 
 @pytest.fixture
 def page(client):
-    """Le tableau de bord tel qu'un navigateur le reçoit."""
-    return client.get(f"{UI_PREFIX}/").text
+    """
+    Le tableau de bord tel qu'un navigateur le reçoit.
+
+    Il vit sous `/ui/admin/` depuis le redesign chat-first (2026-08-23) : la
+    racine de `/ui` sert désormais la conversation. Seule l'adresse change —
+    le formulaire, ses champs et ses étiquettes sont vérifiés à l'identique.
+    """
+    return client.get(f"{UI_PREFIX}/admin/").text
 
 
 class TestPointsDeMontage:
@@ -140,4 +146,14 @@ class TestRouteServie:
 
     def test_la_page_reste_servie(self, client):
         """Ajouter une section ne doit pas casser le tableau de bord."""
-        assert client.get(f"{UI_PREFIX}/").status_code == 200
+        assert client.get(f"{UI_PREFIX}/admin/").status_code == 200
+
+    def test_le_formulaire_reste_atteignable_depuis_la_conversation(self, client):
+        """
+        Un déplacement sans porte est une suppression.
+
+        Mesuré le 2026-08-23 : après le passage du tableau de bord sous
+        `/ui/admin/`, plus rien n'y menait depuis la page d'accueil, et sept
+        tests de ce fichier sont devenus rouges pour cette seule raison.
+        """
+        assert "/ui/admin/" in client.get(f"{UI_PREFIX}/").text

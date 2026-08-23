@@ -80,17 +80,18 @@ class TestFichiersServis:
 class TestContenuDeLaPage:
     """Vérifie que la page porte ce dont le script a besoin."""
 
-    def test_les_points_de_montage_existent(self, client):
-        """Les trois panneaux doivent exister, sinon le script écrit dans le vide."""
+    def test_le_chat_existe_a_ui(self, client):
+        """Le chat doit exister à /ui/, avec conversation et composeur."""
         page = client.get(f"{UI_PREFIX}/").text
-        for identifiant in ('id="sante"', 'id="connecteurs"', 'id="cles"'):
+        for identifiant in ('id="conversation"', 'id="composeur"', 'id="message"'):
             assert identifiant in page
 
-    def test_le_script_est_charge_comme_module(self, client):
+    def test_le_script_du_chat_est_module(self, client):
         """Le client d'API utilise `import` : sans `type="module"`, rien ne s'exécute."""
         page = client.get(f"{UI_PREFIX}/").text
         assert 'type="module"' in page
-        assert "/ui/js/dashboard.js" in page
+        assert "/ui/js/chat.js" in page
+        assert 'type="module"' in page
 
     def test_page_en_francais(self, client):
         """L'interface s'adresse à des utilisateurs francophones."""
@@ -100,9 +101,9 @@ class TestContenuDeLaPage:
         """Sans `viewport`, la page est illisible sur un téléphone."""
         assert "width=device-width" in client.get(f"{UI_PREFIX}/").text
 
-    def test_message_sans_javascript(self, client):
-        """Un navigateur sans JavaScript doit être orienté, pas laissé devant du vide."""
-        page = client.get(f"{UI_PREFIX}/").text
+    def test_le_dashboard_a_noscript(self, client):
+        """Un navigateur sans JavaScript sur le dashboard doit être orienté."""
+        page = client.get(f"{UI_PREFIX}/admin/").text
         assert "<noscript>" in page
         assert "/health" in page
 

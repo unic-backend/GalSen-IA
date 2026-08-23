@@ -12,6 +12,106 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-23 — A conversation, and what it refuses to say (chat-first redesign)
+
+The platform had no general conversation endpoint. Measured before touching
+anything: no `/chat`, no `/conversation`, no `/ask`; the only routes producing
+text either bypassed orchestration (`/model/generate`) or served a single domain
+(`/agri/advice`). A chat-first interface could not be built on either.
+
+**`POST /chat`** (143 routes now) goes through the existing orchestrator rather
+than calling the model directly. That is what gives automatic domain detection
+for free: *"Quand planter le mil à Thiès ?"* is classified as `agriculture` **by
+keywords**, and the response says it was done by keywords. A domain shown without
+its method turns a heuristic into a certainty. 1.1 s per turn, measured.
+
+**The finding that shapes the whole thing: none of the seventeen agents writes.**
+Only `planner` and `coder` call the model, for planning and for coding. The
+`question` workflow is `planner → researcher → senegal → verifier` — a research
+and verification chain, not a conversation one. So `/chat` returns **what the
+agents actually reported**: the `senegal` agent's *"the base is empty on this
+subject — this is not a negative answer"*, or the `researcher`'s three named
+gaps. `/agri/advice` placed the rainy season three months early because it had to
+answer something; this route does not have to. **The interface is honest, and it
+does not converse yet.** Making it converse needs a redaction step, which is a
+decision the owner has not taken.
+
+The interface: `/ui/` is now the conversation, one column and no cards; the
+diagnostic dashboard moves to `/ui/admin/` — moved, not deleted; a menu of 14
+domains that filter one assistant rather than multiplying assistants; mobile
+first, no remote font or script, ~16 KB a page.
+
+Under every answer sits the smallest and most important element, a grounding
+chip with three outcomes and never two: `GROUNDED`, `UNGROUNDED`, `NOT_CHECKED`,
+followed by the agent's own reason. An empty knowledge base is ochre, not red —
+the agent says in its own words that it is not a negative answer, and painting
+its refusal as a failure would contradict the one sentence this platform cares
+about being understood.
+
+**Three defects were found by re-reading work already reported as finished**, and
+they are worth recording because none of them would have been noticed by using
+the page:
+
+- The grounding chip built its class by interpolating the status, producing
+  `jeton.grounded` — a class name containing a dot, matching no rule. **The most
+  important element on the page never had its colour**, and nobody saw it
+  because `GROUNDED` stays rare while the corpus is empty. `TestJetonAncrage`
+  now holds the mapping, verified by re-introducing the defect.
+- `grounding.reason` was dropped entirely. `UNGROUNDED` without its reason tells
+  nobody what to fix.
+- Moving the dashboard left **no door to it**: the agricultural form and the
+  Media Studio became unreachable by clicking. A move without a door is a
+  deletion. Both are linked from the conversation menu, and a test asserts it.
+
+One process lesson, recorded because it caused the above: **a suite run through
+`| tail -4` hides its own failures.** One run reported `25 failed` with only 3
+lines visible, and the 22 others were reported as green.
+
+### Added — 2026-08-22 — Superpowers audited, six concepts adopted, nothing installed (ADR-038)
+
+`obra/superpowers` at `b36e0829` (v6.3.0, MIT) audited in 24 phases →
+`docs/research/superpowers-audit.md`. Decision: **`PARTIAL-GO`**.
+
+Measured rather than characterised: **29 322 lines of prose against 4 012 of
+code**, zero dependencies, **no import surface**. Integration was never a
+technical question, only an editorial one. Of 37 subsystems compared, **19 scored
+`KEEP GALSEN` and `REPLACE` scored zero**.
+
+**The finding that decided it is about this repository**: 15 rule files, 15
+skills and a `CLAUDE.md` existed with no evidence that any of them changed an
+agent's behaviour. This repository refuses to believe a guard until it has been
+sabotaged and seen to go red — and had never applied that to its own prose.
+
+Six candidates landed, all native except one:
+
+| | | |
+|---|---|---|
+| C1 | Behaviour testing for instructions | `.claude/skills/testing-instructions/` |
+| C2 | Four-phase debugging procedure | `.claude/skills/systematic-debugging/` |
+| C3 | Freshness — evidence *in this message* | `.claude/rules/verification.md` |
+| C4 | Ruling format — what · why · **cost if wrong** | `memory.md`, `phase-protocol.md` |
+| C5 | How a development branch ends | `.claude/rules/git-workflow.md` |
+| C6 | `find_polluter.py` — the only real copy, MIT notice retained | `scripts/` |
+
+**Not installed, and that is the load-bearing half.** The plugin would import a
+cadence contradicting the permanent phase protocol, an auto-updating instruction
+stream that inverts `trust.py`'s rule, and nine unneeded skills. Four further
+exclusions are named in ADR-038 so they cannot drift back.
+
+**C3 was then measured through C1 — the first rule in this repository's history
+to be tested rather than believed.** RED without the clause, GREEN with it. The
+campaign found that C3 created a conflict with `work-cadence.md` (closed the same
+day) and that the method itself has a limit here: subagents inherit `CLAUDE.md`,
+so a rule-free baseline is not achievable by instruction, and the skill records
+the weaker claim it can actually support.
+
+**C6's proof step found a real bug in the port on its first run.** Adopting it
+without that step would have adopted a broken tool.
+
+Cost: **zero dependencies, ~0 bytes added to session start**, nothing under
+`src/`. Measured cost of a C1 campaign: ~59 000 subagent tokens per dispatch.
+Suite unchanged throughout: **7027 passed, 9 skipped, 0 failed**.
+
 ### Security — 2026-08-21/22 — three gates that were narrower than they read
 
 The three findings the OSS ecosystem audit left open, closed in order. All three
