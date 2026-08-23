@@ -9,8 +9,8 @@ VOLET en cours   : **REDESIGN CHAT-FIRST**
                    Brief du propriétaire, 2026-08-22
 Chapitres        : **8**
 Phases           : **11**
-Phase courante   : **2.1 — en attente de confirmation**
-Terminées        : **1 — audit du frontend** (ci-dessous)
+Phase courante   : **3.1 — en attente de confirmation**
+Terminées        : **1** (audit du frontend), **2.1** (contrat), **2.2** (route + tests)
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Règle permanente** : `.claude/rules/post-integration-validation.md`.
@@ -81,9 +81,9 @@ détection automatique gratuitement.
 ```
 Ch. 01  Audit du frontend                        → 1 phase  ✅ TERMINÉE
 
-Ch. 02  La route de conversation                 → 2 phases
+Ch. 02  La route de conversation                 → 2 phases  ✅ TERMINÉ
         2.1 contrat : entrée, sortie, orchestrateur, refus. Aucun code
-        2.2 implémentation + tests
+        2.2 implémentation + tests — `POST /chat`, 14 tests
 
 Ch. 03  La coquille chat                         → 2 phases
         3.1 `chat.html` + `chat.css` — plein écran, zéro carte
@@ -132,7 +132,7 @@ laid qui invente rarement — parce qu'on lui fait confiance.
   (`retrieve_reliable`, `routing.ask`), puis construire le chat par-dessus.
   Plus lent à voir, honnête dès le premier jour.
 - **Chat d'abord** — livrer l'interface, puis le grounding. Tu vois ton produit
-  tout de suite, et tu portes le risque en attendant.
+  tout de suite, et tu portes le risque en attendant. **← choisi le 2026-08-22.**
 
 Si tu choisis « chat d'abord », la phase 2.1 devra prévoir **où** le refus
 s'insérera plus tard, pour que ce ne soit pas à refaire.
@@ -148,3 +148,26 @@ s'insérera plus tard, pour que ce ne soit pas à refaire.
 5. **Live Context** (ADR-033), **Creative Canvas** (ADR-031),
    **Research Orchestration** (ADR-032), **MoneyPrinterTurbo** (ADR-030),
    **Apache-2.0** (ADR-036).
+
+---
+
+## Ce que le chapitre 02 a mesuré, et qui change la suite
+
+**Aucun des 17 agents ne rédige.** Seuls `planner` et `coder` appellent le
+modèle, pour planifier et pour coder. Le workflow `question` est
+`planner → researcher → senegal → verifier` : une chaîne de recherche et de
+vérification, pas une chaîne de conversation.
+
+Conséquence sur `POST /chat`, mesurée le 2026-08-22 :
+
+| Message | Ce que la route rend |
+|---|---|
+| « Quand planter le mil à Thiès ? » | Le refus de l'agent `senegal` : *« la base est vide sur ce sujet — ce n'est pas une réponse négative »*, `UNGROUNDED` |
+| « bonjour » | Les trois lacunes du `researcher`, `UNGROUNDED` |
+
+**La route est honnête et ne fabrique rien. Elle ne converse pas non plus.**
+
+Ce n'est pas un défaut de la route : c'est l'état de la plateforme, rendu
+visible. Le rendre visible était le travail du chapitre 02 ; le combler est une
+décision d'architecture qui ne m'appartient pas, et elle est posée en fin de
+phase.
