@@ -130,4 +130,77 @@ floor the platform already stands on. What changes is that it stops being the
 
 ---
 
-*Chapters 03 onward extend this document. Nothing here is implemented.*
+## 9. What the routing already does — measured, not assumed
+
+Chapter 03. The eight examples below are **the brief's own**, run through
+`RouterEngine.process_request(workflow_id="question")` on 2026-08-23.
+
+| Message | Agents selected | `geographic_scope` |
+|---|---|---|
+| Bonjour | `['researcher']` | global |
+| Qui était Albert Einstein ? | `['researcher']` | global |
+| Explique Linux. | `['researcher']` | global |
+| Écris une fonction Python qui trie une liste. | `['researcher']` | global |
+| Compare Python et Rust. | `['researcher']` | global |
+| Quelles sont les régions du Sénégal ? | `['researcher', 'senegal']` | **country** |
+| Donne-moi un conseil sur l'agriculture sénégalaise. | `['researcher', 'senegal']` | **country** |
+| Quel est le prix du ciment à Dakar ? | `['researcher', 'senegal']` | **country** |
+
+**Five global out of five, three Senegalese out of three.** Sections 9 and 10 of
+the brief ask for exactly this behaviour, and it is already the behaviour.
+
+**Conclusion: the Senegal agent is already a specialization.** Nothing in this
+VOLET needs to make it one. That part of the brief is `ALREADY COVERED`, and
+saying so is worth more than implementing it twice.
+
+## 10. The two routing gaps that are real
+
+The same measurement exposes what the table above hides, on the `task_type`
+axis:
+
+| Message | `task_type` | `research_required` |
+|---|---|---|
+| Bonjour | `['research']` | **True** |
+| Explique Linux. | `['research']` | True |
+| Écris une fonction Python… | `['research']` | True |
+| Corrige ce bug dans mon code. | `['quality']` | True |
+
+**Gap 1 — a greeting runs a full research pass.** « Bonjour » is classified
+`research`, and chapter 01 measured what that costs: **1 095 ms** in the
+researcher, searching for evidence about a greeting, finding none, every time.
+Section 9 names this: *"Do not unnecessarily launch the full research pipeline
+for simple conversation."*
+
+**Gap 2 — asking for code is classified as research.** *« Écris une fonction
+Python »* lands on `research`, identical to *« Explique Linux »*. The platform
+has a `coder` agent and an entire coding engine, and neither is reached. Only
+*« Corrige ce bug »* moves the axis, and only to `quality`.
+
+### The smallest correct fix, and where it belongs
+
+Both gaps live in **one place**: the planner's intent detection. Neither needs a
+new router, a new axis or a branch in `/chat`.
+
+- A `conversation` intent, recognised before `research`, whose selection is
+  **no agent at all** — the response layer answers from the message and the
+  history alone.
+- The existing `coding` capability reached when the intent is to *write* code,
+  not only to fix it.
+
+**Both are orchestration changes, made inside the planner**, which is what
+ADR-022 requires: *"unattended work uses the same orchestrator as a person's
+request"*, and a person's request is no different.
+
+### Scope, stated rather than assumed
+
+The plan gave chapter 03 two phases for design and **no implementation slot**.
+Rather than silently add phases, the two planner changes are folded into
+chapter 05, which already touches the `/chat` path — and they are named here so
+the scope audit at the end can check them.
+
+**What is *not* in scope**: making the planner good at intent detection in
+general. Two named intents, measured before and after, and nothing more.
+
+---
+
+*Chapters 04 onward extend this document. Nothing here is implemented.*

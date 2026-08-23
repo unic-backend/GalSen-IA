@@ -9,8 +9,8 @@ VOLET en cours   : **CHAT — RÉPONSE FINALE RÉELLE**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **11**
 Phases           : **18**
-Phase courante   : **3.1 — en attente de confirmation**
-Terminées        : **1.1 · 1.2 · 2.1 · 2.2**
+Phase courante   : **4.1 — en attente de confirmation**
+Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2**
 Branche          : `claude/galsen-ia-phases-ukwz7p`, **repartie de `main`**
                    (`dc09303`) — la PR #36 est fusionnée, on n'empile pas
                    sur de l'historique déjà intégré.
@@ -149,8 +149,10 @@ Ch. 02  Contrat de la couche de réponse (§6,7,8)  → 2 phases
         → `docs/architecture/chat-final-response.md`
 
 Ch. 03  Routage généraliste (§9,10)               → 2 phases
-        3.1 ce que le routage fait aujourd'hui, mesuré sur 8 messages types
-        3.2 comment le Sénégal redevient une spécialité, pas un passage obligé
+        3.1 ce que le routage fait aujourd'hui, mesuré sur 8 messages types ✅
+        3.2 le Sénégal EST déjà une spécialité (5/5 et 3/3) ; deux vrais ✅
+            manques : « bonjour » lance une recherche, « écris du code »
+            est classé recherche. Corrigés dans le planner, au ch. 05
 
 Ch. 04  Implémentation de la couche (§7,11)       → 2 phases
         4.1 le composant et sa consigne de génération
