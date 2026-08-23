@@ -9,8 +9,8 @@ VOLET en cours   : **CHAT — RÉPONSE FINALE RÉELLE**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **11**
 Phases           : **18**
-Phase courante   : **2.1 — en attente de confirmation**
-Terminées        : **1.1 · 1.2**
+Phase courante   : **3.1 — en attente de confirmation**
+Terminées        : **1.1 · 1.2 · 2.1 · 2.2**
 Branche          : `claude/galsen-ia-phases-ukwz7p`, **repartie de `main`**
                    (`dc09303`) — la PR #36 est fusionnée, on n'empile pas
                    sur de l'historique déjà intégré.
@@ -144,8 +144,9 @@ Ch. 01  Confirmer la cause racine (§3)            → 2 phases
         1.2 confirmer ou réfuter le diagnostic du brief, avec les preuves ✅
 
 Ch. 02  Contrat de la couche de réponse (§6,7,8)  → 2 phases
-        2.1 chercher un composant existant avant d'en créer un ; lire les ADR
-        2.2 le contrat : entrées, sortie, frontière async, échecs. Aucun code
+        2.1 chercher un composant existant avant d'en créer un ; lire les ADR ✅
+        2.2 le contrat : entrées, sortie, frontière async, échecs. Aucun code ✅
+        → `docs/architecture/chat-final-response.md`
 
 Ch. 03  Routage généraliste (§9,10)               → 2 phases
         3.1 ce que le routage fait aujourd'hui, mesuré sur 8 messages types
