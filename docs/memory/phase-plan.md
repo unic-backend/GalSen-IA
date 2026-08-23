@@ -9,8 +9,8 @@ VOLET en cours   : **CHAT — RÉPONSE FINALE RÉELLE**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **11**
 Phases           : **19** (18 + la 5.3 annoncée au ch. 03)
-Phase courante   : **11 — en attente de confirmation**
-Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2 · 4.1 · 4.2 · 5.1 · 5.2 · 5.3 · 6 · 7.1 · 7.2 · 7.3 · 8 · 9 · 10**
+Phase courante   : AUCUNE — VOLET TERMINÉ
+Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2 · 4.1 · 4.2 · 5.1 · 5.2 · 5.3 · 6 · 7.1 · 7.2 · 7.3 · 8 · 9 · 10 · 11** — les 19
 Branche          : `claude/galsen-ia-phases-ukwz7p`, **repartie de `main`**
                    (`dc09303`) — la PR #36 est fusionnée, on n'empile pas
                    sur de l'historique déjà intégré.
@@ -181,7 +181,8 @@ Ch. 09  Vérification complète (§23)               → 1 phase (indivisible) �
         7 148 passent, 0 échec · 44 tests ajoutés, 0 supprimé · lint vert
 Ch. 10  Documentation et décision d'ADR (§21)     → 1 phase (indivisible) ✅
         **ADR-039** · contrat marqué implémenté · mémoire et CHANGELOG à jour
-Ch. 11  Rapport final, 12 points (§24)            → 1 phase (indivisible)
+Ch. 11  Rapport final, 12 points (§24)            → 1 phase (indivisible) ✅
+        → `docs/chat/final-response-report.md`
 ```
 
 **Total : 18 phases.**
