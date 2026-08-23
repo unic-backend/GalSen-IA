@@ -1,7 +1,10 @@
 # Linux kernel architecture — research audit
 
-**Status: IN PROGRESS.** Chapter 01 of 13. Nothing is implemented by this audit,
-no kernel source is copied, no dependency is introduced.
+**Status: COMPLETE.** 13 chapters, 18 phases. Nothing is implemented by this
+audit, no kernel source is copied, no dependency is introduced.
+
+**Verdict: SELECTIVE ARCHITECTURAL IMPROVEMENTS RECOMMENDED** — five, all
+measured, all reversible, none an architecture change. See chapter 13.
 
 Started 2026-08-23. Owner's brief: study the Linux kernel as an example of mature
 systems engineering, extract **engineering principles**, and determine which ones
@@ -1084,6 +1087,131 @@ response never contains a fabricated result.
 **P10 first**, alone. It is measured, it is three call sites, and **P5 is
 impossible without it**. Everything else can wait for a separate decision.
 
----
+# Chapter 13 — Final report
 
-*Chapter 13 pending.*
+## 1. Repository state
+
+Measured 2026-08-23: **143 API routes**, **17 agents**, **8 workflows**,
+**43 modules** under `src/`, **39 ADRs**, `src/api/server.py` at 4 689 lines.
+Branch `claude/galsen-ia-phases-ukwz7p`, PR #36 open and unmerged.
+
+**Re-check demanded by chapter 10.** Four files changed since the VOLET opened:
+this document, `docs/memory/phase-plan.md`, and — for the unrelated `/chat` 503
+fix committed at `bf1853b` — `src/api/server.py` and `tests/test_api_chat.py`.
+**The audit itself wrote two documents and no code.** The claim still holds, and
+it holds because it was checked twice rather than asserted once.
+
+## 2. Existing architecture relevant to this audit
+
+An orchestrator of 16 modules and 3 010 lines that states its own limits in its
+docstring. A sandbox applying six `setrlimit` bounds before the guest's first
+instruction, and naming what it does not guarantee. A self-healer whose
+lifecycle is a chain of gates because *"the dangerous part of automated repair
+is deciding the patch worked"*. Degradation probed across nine subsystems with
+three verdicts. A trail assembled from one identifier that survives boundaries.
+35 named permissions with a real ceiling. A trust boundary treating external
+text as data with an origin.
+
+## 3. Linux concepts studied
+
+cgroup-v2 resource distribution and delegation · EEVDF scheduling · capabilities
+and the bounding set · namespaces · `setrlimit` · the VFS · ftrace · fault
+injection · tainted kernels · the two interface classes · lock types.
+Ten `Documentation/` files, **421 031 characters read**.
+
+## 4–9. The six comparisons
+
+| Area | Result |
+|---|---|
+| **Architecture** | 11 of the brief's 13 boundaries already exist; coupling is low; **no restructuring justified** |
+| **Resource management** | **7 of 8 mechanisms not needed.** The real defect is elsewhere and measured: 274× |
+| **Isolation** | Covered for tool code, absent for agents — **and deliberately left absent** |
+| **Self-healing** | **6 of 9 points covered**, two better stated here than in the kernel |
+| **Observability** | Covered, including a distinction most systems collapse; two small gaps |
+| **Security** | Capability-shaped already; **nothing weakened by any recommendation** |
+
+## 10. Licence findings
+
+Linux is `GPL-2.0 WITH Linux-syscall-note`, version 2 **only**. GalSen IA is
+Apache-2.0; the two do not combine into one work. **No obligation is created**:
+principles are ideas, and 624 characters were quoted out of 421 031 read
+(0.148 %), each attributed. Whether that is fair use in a given jurisdiction is
+**UNKNOWN** and not settled here.
+
+## 11. Useful principles · 12. Already covered · 13. Later · 14. Rejected
+
+**Useful (A):** P10 off the event loop · P12 accounting · P11 probe not assert ·
+P7 the result remembers · P5 an observed deadline.
+**Already covered (D):** delegation containment · capabilities with a ceiling ·
+tracing always on · the VFS pattern.
+**Later (B):** P6 fault injection as a facility · P8 naming the contract
+surfaces.
+**Rejected (E):** the four cgroup distribution models — they solve contention,
+and nothing here contends.
+**Blocked (F):** namespaces in the sandbox.
+
+## 15. UNKNOWN items
+
+- Behaviour under real load — no model provider answers here.
+- Anything GPU — this machine has none.
+- Whether the namespace and cgroup availability measured here holds on the
+  owner's Windows machine or on a production host. **One root container is not
+  a deployment.**
+- The canonical SPDX text (`spdx.org` unreachable) and the legal
+  characterisation of quotation.
+
+## 16. Known limitations
+
+Every measurement in this audit was taken on **one machine, in a container,
+running as uid 0 with a near-full capability set, with no outbound network to
+most of the internet**. The 274× event-loop finding and the 342 ms probe cost
+will differ elsewhere in magnitude — but not in kind, since both follow from the
+code rather than the host.
+
+## 17. Recommended improvements · 18. Smallest reversible step
+
+Five, detailed in chapter 12 with their test and their undo. **P10 first and
+alone**: three call sites, already measured, and P5 is impossible without it.
+
+## 19. Tests required
+
+One per recommendation, and each is a *sabotage* rather than a confirmation —
+the discipline this repository already uses. P10's test **already exists as the
+measurement**: `/health` during a `/chat` must drop from 1 149 ms to under 50 ms.
+
+## 20. Measurement plan
+
+Every A candidate has a number to move, taken before and after:
+`/health` latency under concurrent load · peak RSS and CPU per sandboxed run ·
+the isolation probe's report on two different hosts · the staleness of the
+degradation timestamp · the count of deadline-exceeded results.
+
+**No recommendation without a number, and no number without a run.**
+
+## 21. Rollback strategy
+
+Each A is one field, one function or three call sites. None changes a schema,
+an API contract or a security boundary. Rollback is a revert, and nothing reads
+the added fields, so removing them breaks nothing.
+
+## 22. Final verdict
+
+> ## SELECTIVE ARCHITECTURAL IMPROVEMENTS RECOMMENDED
+
+Five improvements, all measured, all reversible, **none an architectural
+change**. The largest is three call sites.
+
+The audit's real result is the ratio: **of thirteen kernel principles examined,
+four were already implemented, one was irrelevant, one was blocked, and two more
+need a design decision the owner has not made.** The platform did not need a
+Linux-shaped rebuild, and this report does not propose one.
+
+**And two of the five findings are about the repository disagreeing with
+itself**, not about Linux at all: the sandbox asserts where the media engine
+measures (P11), and results carry no trace of the state they were produced under
+though the platform refuses ungrounded answers everywhere else (P7). An audit
+that went looking for a kernel found a mirror.
+
+**Nothing here is authorised. Nothing here is implemented.** If the owner wants
+any of it, the repository's convention would be an ADR recording the decision —
+which is the owner's to write or to ask for, not this audit's to assume.
