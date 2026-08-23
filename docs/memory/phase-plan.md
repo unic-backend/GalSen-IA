@@ -9,8 +9,8 @@ VOLET en cours   : **CHAT — RÉPONSE FINALE RÉELLE**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **11**
 Phases           : **18**
-Phase courante   : **1.1 — en attente de confirmation**
-Terminées        : aucune
+Phase courante   : **2.1 — en attente de confirmation**
+Terminées        : **1.1 · 1.2**
 Branche          : `claude/galsen-ia-phases-ukwz7p`, **repartie de `main`**
                    (`dc09303`) — la PR #36 est fusionnée, on n'empile pas
                    sur de l'historique déjà intégré.
@@ -81,12 +81,67 @@ après ce VOLET qu'avant. Je ne la fais pas ici — elle n'est pas dans le brief
 
 ---
 
+## Chapitre 01 — Cause racine confirmée (mesurée, pas lue)
+
+### Le chemin réel, tracé en instrumentant `RouterEngine._dispatch_agent`
+
+| Message | Agents réellement exécutés |
+|---|---|
+| « bonjour » | `planner` 114 ms · `researcher` **1 095 ms** |
+| « Qui était Albert Einstein ? » | `planner` 3 ms · `researcher` **1 071 ms** |
+
+**`senegal` et `verifier` ne tournent jamais**, alors qu'ils sont déclarés dans
+le pipeline. Et le `researcher` consomme ~97 % du tour.
+
+### Deux corrections au diagnostic du brief
+
+**1. Le routage généraliste que le §9 demande existe déjà.** Le workflow porte
+`agent_selection: planner`, et son propre commentaire l'explique : *« une
+question sénégalaise fait entrer `senegal`, un sujet à risque fait entrer
+`verifier`, et une question ordinaire n'en retient aucun des deux »*. Mesuré sur
+« Einstein » : `agents_required: ['researcher']`, `geographic_scope: 'global'`.
+
+**Le Sénégal n'est donc pas forcé aujourd'hui.** Le §10 du brief demande de le
+rendre spécialisé — il l'est déjà. Ce qui reste à faire est ailleurs.
+
+**2. Le planner appelle déjà le modèle, et échoue honnêtement.**
+`model_assisted: {'status': 'unavailable', 'reason': 'Aucun modèle enregistré ne
+correspond à la tâche'}`. Le motif d'intégration existe donc déjà dans un agent.
+
+### La cause racine, elle, est confirmée — et plus étroite que le brief
+
+**Rien dans la chaîne ne rédige.** Entre les résultats structurés des agents et
+`ChatResponse.answer` il n'y a que `_texte_de_reponse()`, qui **rend des données**
+et n'en produit pas. Aucun agent, aucun workflow, aucun module ne transforme un
+contexte en phrase.
+
+### Le symptôme que le brief n'avait pas nommé
+
+`_texte_de_reponse()` rend les **lacunes du chercheur** dès qu'il n'a rien trouvé.
+Sur cette machine — sans réseau, corpus vide — c'est le cas de *toutes* les
+questions. D'où le fait mesuré que **« bonjour » et « Qui était Albert Einstein ? »
+reçoivent la réponse identique**, mot pour mot.
+
+### Ce qui existe déjà et sera réutilisé plutôt que réécrit
+
+| Besoin | Ce qui existe |
+|---|---|
+| Pont sync → async | **`AgentContext._run_async()`** (`src/agent/context.py:1233`), qui gère déjà le cas « une boucle tourne déjà » |
+| Génération avec repli | `ModelManagerImpl.generate_text_with_fallback()` |
+| Validation de réponse | `src/model_engine/response_validator.py`, `response_ranker.py` |
+| Axes de routage | `domain`, `task_type`, `complexity`, `risk`, `freshness`, `language`, `geographic_scope` — déjà calculés par le planner |
+
+**Aucun composant de rédaction conversationnelle n'existe** : le §7 autorise donc
+d'en créer un.
+
+---
+
 ## Le plan
 
 ```
 Ch. 01  Confirmer la cause racine (§3)            → 2 phases
-        1.1 tracer le chemin d'exécution réel de /chat, bout en bout
-        1.2 confirmer ou réfuter le diagnostic du brief, avec les preuves
+        1.1 tracer le chemin d'exécution réel de /chat, bout en bout ✅
+        1.2 confirmer ou réfuter le diagnostic du brief, avec les preuves ✅
 
 Ch. 02  Contrat de la couche de réponse (§6,7,8)  → 2 phases
         2.1 chercher un composant existant avant d'en créer un ; lire les ADR
