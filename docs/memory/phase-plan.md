@@ -9,8 +9,8 @@ VOLET en cours   : **CHAT — RÉPONSE FINALE RÉELLE**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **11**
 Phases           : **18**
-Phase courante   : **4.1 — en attente de confirmation**
-Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2**
+Phase courante   : **5.1 — en attente de confirmation**
+Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2 · 4.1 · 4.2**
 Branche          : `claude/galsen-ia-phases-ukwz7p`, **repartie de `main`**
                    (`dc09303`) — la PR #36 est fusionnée, on n'empile pas
                    sur de l'historique déjà intégré.
@@ -155,8 +155,8 @@ Ch. 03  Routage généraliste (§9,10)               → 2 phases
             est classé recherche. Corrigés dans le planner, au ch. 05
 
 Ch. 04  Implémentation de la couche (§7,11)       → 2 phases
-        4.1 le composant et sa consigne de génération
-        4.2 branchement sur `ModelManagerImpl`, repli compris
+        4.1 le composant et sa consigne de génération ✅ → `src/chat/`
+        4.2 branchement sur `ModelManagerImpl`, repli compris ✅
 
 Ch. 05  /chat, ancrage et constats (§12,13)       → 2 phases
         5.1 le contexte de réponse construit depuis les résultats d'agents
@@ -200,7 +200,7 @@ changent le produit et pas seulement le code :
    respecterai, et l'interface devra distinguer clairement « fondé sur nos
    sources » de « connaissance du modèle, non vérifiée ».
 
-Je commence par la phase 1.1 et je m'arrête après. **Je continue ?**
+Une phase à la fois, deux par tour, chacune vérifiée avant la suivante.
 
 ---
 
