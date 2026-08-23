@@ -5,76 +5,116 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **LINUX KERNEL ARCHITECTURE RESEARCH AUDIT**
+VOLET en cours   : **CHAT — RÉPONSE FINALE RÉELLE**
                    Brief du propriétaire, 2026-08-23
-Chapitres        : **13**
+Chapitres        : **11**
 Phases           : **18**
-Phase courante   : AUCUNE — VOLET TERMINÉ
-Terminées        : **1.1 · 1.2 · 1.3 · 2.1 · 2.2 · 3.1 · 3.2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 11 · 12 · 13.1 · 13.2** — les 18 → `docs/research/linux-kernel-architecture-audit.md`
+Phase courante   : **1.1 — en attente de confirmation**
+Terminées        : aucune
+Branche          : `claude/galsen-ia-phases-ukwz7p`, **repartie de `main`**
+                   (`dc09303`) — la PR #36 est fusionnée, on n'empile pas
+                   sur de l'historique déjà intégré.
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
-**Ce que le brief interdit** : copier du code noyau, vendorer un composant,
-introduire une dépendance Linux, modifier l'architecture existante. Rien n'est
-implémenté pendant cet audit. `RESEARCH → EVALUATE → DOCUMENT → COMPARE →
-RECOMMEND`, et pas un pas de plus (`.claude/rules/spec-driven-governance.md`).
+**Ce que le brief interdit** : reconstruire l'architecture, créer une seconde
+sélection de modèle, contourner l'orchestration, l'ancrage, la vérification, la
+mémoire, la sécurité, les permissions d'outils, le repli de fournisseur ou
+l'observabilité. Et : **aucune mesure inventée**.
 
 ---
 
 ## Ce qui a été mesuré avant d'écrire ce plan
 
-Un plan qui suppose ses sources accessibles n'est pas un plan. Mesuré le
-2026-08-23, depuis cette machine :
+Le brief dit lui-même : *« DO NOT assume this diagnosis is automatically
+correct. VERIFY IT against the actual current code. »* Trois vérifications ont
+déjà corrigé sa prémisse.
 
-| Source | Réponse |
-|---|---:|
-| `raw.githubusercontent.com/torvalds/linux/…` | **200** |
-| `github.com/torvalds/linux` | 403 |
-| `docs.kernel.org` | **000** |
-| `www.kernel.org` · `git.kernel.org` | 000 |
-| `spdx.org` | 000 |
+**1. `ModelManager` est une classe abstraite.** L'implémentation est
+`ModelManagerImpl` (`src/model_engine/model_manager.py:37`), et l'API l'obtient
+par `_moteur_partage("model", ModelManagerImpl)` (`server.py:518`). Instancier
+`ModelManager` lève `TypeError`. Le brief nomme la bonne classe pour la mauvaise
+raison — c'est l'implémentation qu'il faut réutiliser, pas l'interface.
 
-**L'audit est faisable, et par la meilleure source.** `docs.kernel.org` n'est que
-le rendu de `Documentation/` dans l'arbre ; cet arbre répond. Vérifié fichier par
-fichier : `COPYING` (496 o), `cgroup-v2.rst` (135 502 o), `ftrace.rst`
-(145 229 o), `fault-injection.rst` (19 325 o), `credentials.rst` (20 875 o),
-`license-rules.rst` (18 477 o).
+**2. `generate_text` et `generate_text_with_fallback` sont `async`**
+(`:254`, `:283`). L'orchestrateur, lui, est **synchrone**. La couche de réponse
+finale se tient donc exactement sur une frontière async/sync, et c'est un point
+de conception, pas un détail.
 
-Ce qui reste hors d'atteinte et devra être dit `UNKNOWN` plutôt que deviné :
-le texte SPDX canonique et tout ce qui ne vit que sur `kernel.org`.
+**3. Et le plus important — il n'y a AUCUN modèle enregistré ici.**
+
+```
+modèles après démarrage complet de l'application : 0
+modèles actifs                                    : 0
+```
+
+Mesuré à travers `TestClient(app)`, donc après le `lifespan`. Ce n'est pas
+« Ollama est éteint » : c'est qu'aucun modèle n'est déclaré dans cet
+environnement.
+
+### Ce que cela impose au plan, et qu'il faut dire maintenant
+
+**L'objectif final — « une vraie réponse en langue naturelle » — ne sera pas
+vérifiable de bout en bout sur cette machine.** Ce qui est vérifiable ici :
+
+- le câblage complet `/chat → contexte → ModelManagerImpl → ChatResponse` ;
+- la construction du contexte de réponse ;
+- la sémantique d'ancrage préservée ;
+- le chemin d'erreur quand aucun fournisseur ne répond ;
+- **toute la chaîne avec un fournisseur simulé** — ce que le §17 du brief
+  demande explicitement.
+
+Ce qui restera `UNKNOWN` jusqu'à ce que **tu** lances un modèle : la qualité
+réelle des réponses, la latence réelle, et le comportement du repli entre
+fournisseurs.
+
+### Un risque à signaler avant de commencer
+
+L'audit Linux a mesuré que `/health` passe de **3,5 ms à 1 149 ms** pendant un
+`/chat`, parce que le travail bloquant tourne sur la boucle d'événements
+(144 routes `async`, zéro délégation à un fil). **Ajouter une génération de
+modèle allonge le tour**, donc aggrave ce blocage — d'une seconde aujourd'hui à
+potentiellement dix.
+
+Ce n'est pas une raison de ne pas faire le travail. C'est une raison de le
+savoir : la correction P10 (trois sites d'appel) devient nettement plus urgente
+après ce VOLET qu'avant. Je ne la fais pas ici — elle n'est pas dans le brief.
 
 ---
 
 ## Le plan
 
 ```
-Ch. 01  Audit du GalSen IA réel                  → 3 phases
-        1.1 orchestration, agents, ordonnancement, cycle de vie, files ✅
-        1.2 ressources, isolation, bac à sable, sécurité, permissions ✅
-        1.3 auto-réparation, observabilité, mémoire, config, dégradation ✅
+Ch. 01  Confirmer la cause racine (§3)            → 2 phases
+        1.1 tracer le chemin d'exécution réel de /chat, bout en bout
+        1.2 confirmer ou réfuter le diagnostic du brief, avec les preuves
 
-Ch. 02  Étude de l'architecture Linux            → 2 phases
-        2.1 processus, ordonnancement, mémoire, namespaces, cgroups, capabilities ✅
-        2.2 modules, VFS, traçage, injection de fautes, frontières, synchronisation ✅
+Ch. 02  Contrat de la couche de réponse (§6,7,8)  → 2 phases
+        2.1 chercher un composant existant avant d'en créer un ; lire les ADR
+        2.2 le contrat : entrées, sortie, frontière async, échecs. Aucun code
 
-Ch. 03  Extraction des principes                 → 2 phases
-        3.1 les huit champs, pour les concepts d'isolation et de ressources ✅
-        3.2 les huit champs, pour fautes, observabilité et frontières ✅
+Ch. 03  Routage généraliste (§9,10)               → 2 phases
+        3.1 ce que le routage fait aujourd'hui, mesuré sur 8 messages types
+        3.2 comment le Sénégal redevient une spécialité, pas un passage obligé
 
-Ch. 04  Auto-réparation                          → 1 phase (indivisible) ✅
-Ch. 05  Gestion des ressources                   → 1 phase (indivisible) ✅
-Ch. 06  Isolation des agents                     → 1 phase (indivisible) ✅
-Ch. 07  Observabilité                            → 1 phase (indivisible) ✅
-Ch. 08  Frontières architecturales               → 1 phase (indivisible) ✅
-Ch. 09  Licences                                 → 1 phase (indivisible) ✅
-Ch. 10  Preuve qu'aucun code n'a été copié       → 1 phase (indivisible) ✅
-Ch. 11  Portes de faisabilité (10 questions)     → 1 phase (indivisible) ✅
-Ch. 12  Classement A–F + plus petite implémentation réversible
-                                                 → 1 phase (indivisible) ✅
+Ch. 04  Implémentation de la couche (§7,11)       → 2 phases
+        4.1 le composant et sa consigne de génération
+        4.2 branchement sur `ModelManagerImpl`, repli compris
 
-Ch. 13  Rapport final, 22 points                 → 2 phases  ✅ TERMINÉ
-        13.1 points 1 à 11
-        13.2 points 12 à 22, verdict
-        → **SELECTIVE ARCHITECTURAL IMPROVEMENTS RECOMMENDED**
+Ch. 05  /chat, ancrage et constats (§12,13)       → 2 phases
+        5.1 le contexte de réponse construit depuis les résultats d'agents
+        5.2 ancrage préservé : la génération ne rend jamais `GROUNDED`
+
+Ch. 06  Erreurs et mémoire (§14,15)               → 1 phase (indivisible)
+
+Ch. 07  Tests A à J (§16,17)                      → 3 phases
+        7.1 A, B, D — général, conversation, technique
+        7.2 C, E, F — Sénégal, code, historique multi-tours
+        7.3 G, H, I, J — pas de modèle, non vérifié, vérifié, échec
+
+Ch. 08  Sécurité, observabilité, coût (§18,19,20) → 1 phase (indivisible)
+Ch. 09  Vérification complète (§23)               → 1 phase (indivisible)
+Ch. 10  Documentation et décision d'ADR (§21)     → 1 phase (indivisible)
+Ch. 11  Rapport final, 12 points (§24)            → 1 phase (indivisible)
 ```
 
 **Total : 18 phases.**
@@ -83,36 +123,40 @@ Ch. 13  Rapport final, 22 points                 → 2 phases  ✅ TERMINÉ
 
 ## Ce que je dois te dire avant que tu confirmes
 
-**Le chapitre 01 décide de tout le reste.** Le brief le dit lui-même : *« ne
-suppose pas qu'une capacité est absente parce qu'elle porte un autre nom »*.
-Cette plateforme a déjà un bac à sable qui applique des limites du noyau
-(`src/sandbox/`), une dégradation mesurée (`src/integration/degradation.py`), une
-piste d'exécution suivable de bout en bout (`/observability/trail/{id}`) et une
-auto-réparation. La plupart des principes Linux vont probablement tomber en
-**D — DÉJÀ COUVERT**, et ce sera le résultat, pas un échec de l'audit.
+**Je suis d'accord avec le brief sur le fond**, et l'audit précédent disait déjà
+la même chose dans ses propres termes : *« aucun des 17 agents ne rédige ; seuls
+`planner` et `coder` appellent le modèle »*. Le brief ajoute ce que l'audit
+n'avait pas le droit de décider — **que la couche de rédaction doit exister**.
 
-**Deux choses que je ne peux pas mesurer ici**, et qui resteront `UNKNOWN` :
-tout ce qui concerne le GPU (cette machine n'en a pas) et le comportement sous
-charge réelle (aucun fournisseur de modèle n'y répond).
+**Deux points où je demanderai ton arbitrage en cours de route**, parce qu'ils
+changent le produit et pas seulement le code :
 
-**Un point d'intendance** : la PR #36 est ouverte et non fusionnée, et je n'ai
-autorisation de pousser que sur `claude/galsen-ia-phases-ukwz7p`. Cet audit
-produit des documents ; ils atterriront donc dans cette PR, à côté du redesign
-chat-first. Si tu préfères qu'ils vivent seuls, fusionne #36 d'abord — c'est ta
-décision, pas la mienne, et elle ne bloque pas le démarrage.
+1. **« Bonjour » doit-il traverser le pipeline complet ?** Le §9 dit non. Cela
+   veut dire un chemin court qui saute planner, researcher, senegal et verifier.
+   C'est la bonne conception — et c'est aussi la première fois que `/chat`
+   contournera l'orchestration. Je le ferai *dans* l'orchestrateur, pas à côté.
+
+2. **`NOT_CHECKED` autorise-t-il le modèle à répondre de sa propre
+   connaissance ?** Le §12 dit oui. C'est un changement réel de posture pour
+   cette plateforme, qui refusait jusqu'ici de répondre sans source. Je le
+   respecterai, et l'interface devra distinguer clairement « fondé sur nos
+   sources » de « connaissance du modèle, non vérifiée ».
+
+Je commence par la phase 1.1 et je m'arrête après. **Je continue ?**
 
 ---
 
 ## Programmes précédents, terminés — ne pas rouvrir
 
-1. **REDESIGN CHAT-FIRST** — 8 chapitres, 11 phases. `POST /chat`, `/ui/` sert la
+1. **AUDIT ARCHITECTURE NOYAU LINUX** — 13 chapitres, 18 phases →
+   `docs/research/linux-kernel-architecture-audit.md`.
+   `SELECTIVE ARCHITECTURAL IMPROVEMENTS RECOMMENDED` : 5 recommandations, aucune
+   autorisée, aucune implémentée. **P10 (3 sites d'appel) devient plus urgente
+   après ce VOLET.**
+2. **REDESIGN CHAT-FIRST** — 8 chapitres, 11 phases. `POST /chat`, `/ui/` sert la
    conversation, `/ui/admin/` le tableau de bord, menu de 14 domaines.
-   **Constat qui reste vrai** : aucun des 17 agents ne rédige ; `/chat` rend le
-   refus des agents et ne converse pas encore. L'étape de rédaction qui le
-   rendrait conversant **n'est pas autorisée**.
-2. **AUDIT #01 `codebase-memory-mcp`** — 16 phases, `KEEP FOR RESEARCH`.
-3. **SUPERPOWERS** — audit 24 phases + 11 d'implémentation. **ADR-038**.
-4. **OPEN-SOURCE ECOSYSTEM AUDIT** — 22 phases. **ADR-037**.
+3. **AUDIT #01 `codebase-memory-mcp`** — 16 phases, `KEEP FOR RESEARCH`.
+4. **SUPERPOWERS** — **ADR-038**. **OPEN-SOURCE ECOSYSTEM** — **ADR-037**.
 5. **OpenClaw** (ADR-034), **DeepSeek Harness** (ADR-035) : non intégrés.
 6. **Live Context** (ADR-033), **Creative Canvas** (ADR-031),
    **Research Orchestration** (ADR-032), **MoneyPrinterTurbo** (ADR-030),
