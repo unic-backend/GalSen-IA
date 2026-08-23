@@ -475,3 +475,54 @@ class TestPanneEtMemoire:
 
         assert "apprends le Python" in vu["invite"]
         assert "User:" in vu["invite"] and "Assistant:" in vu["invite"]
+
+
+class TestAutoRevue:
+    """
+    Ce que la relecture de mon propre diff a trouvé (§19 du brief #1).
+
+    Trois défauts, dont un qui violait une règle du projet **dans une fonction
+    dont la docstring affirmait la respecter**.
+    """
+
+    def test_le_modele_utilise_n_est_jamais_devine(self):
+        """
+        `generate_text_with_fallback()` rend une chaîne : lequel des modèles a
+        répondu n'est nulle part dedans. Rendre le premier de la liste était un
+        nom deviné — faux précisément quand le repli a servi, c'est-à-dire dans
+        le seul cas intéressant.
+
+        Un nom deviné vaut moins que pas de nom : il se lit comme une mesure.
+        """
+        from src.chat.response import _modele_utilise
+
+        class MoteurBavard:
+            def list_models(self, status=None):
+                class M:
+                    name = "un-modele-qui-n-a-peut-etre-pas-repondu"
+                return [M(), M()]
+
+        assert _modele_utilise(MoteurBavard()) is None
+
+    def test_l_ancrage_atteint_l_invite(self):
+        """
+        Le champ entrait dans le contexte et n'en sortait jamais. Un champ que
+        personne ne lit est une promesse que personne ne tient.
+        """
+        from src.chat import ContexteReponse, construire_invite
+
+        sans_source = construire_invite(ContexteReponse(
+            message="Qui était Einstein ?", grounding_status="UNGROUNDED"))
+        assert "Nothing here is verified platform knowledge" in sans_source
+
+        avec_source = construire_invite(ContexteReponse(
+            message="Combien de régions ?", grounding_status="GROUNDED",
+            evidence=[{"content": "14 régions.", "source": "corpus",
+                       "verified": True}]))
+        assert "sourced platform knowledge" in avec_source
+
+    def test_aucune_propriete_morte_ne_subsiste(self):
+        """`constats_non_verifies` était définie et lue nulle part."""
+        from src.chat import ContexteReponse
+
+        assert not hasattr(ContexteReponse(message="x"), "constats_non_verifies")

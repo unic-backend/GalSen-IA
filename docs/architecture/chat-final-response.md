@@ -81,7 +81,7 @@ model and without a network.
 | `axes` | `planner.axes` | `domain`, `task_type`, `complexity`, `risk`, `freshness`, `language`, `geographic_scope` — **already computed**, never recomputed |
 | `evidence` | agent results | each item carries `content`, `source`, `scope`, `verified` |
 | `agent_notes` | agent results | refusals and gaps, e.g. `senegal.empty_base` |
-| `grounding` | computed before the call | `GROUNDED` / `UNGROUNDED` / `NOT_CHECKED` |
+| `grounding` | computed before the call | `GROUNDED` / `UNGROUNDED` / `NOT_CHECKED` — **reaches the prompt**, so the model knows when it answers from its own knowledge |
 
 **Not every internal result is passed** (§8). An agent's plan, its task list and
 its timing are machinery, not evidence.
@@ -90,7 +90,7 @@ its timing are machinery, not evidence.
 
 ```
 answer            : str            — the text shown to the user, never empty
-model_used        : str | None     — which model answered, None if none did
+model_used        : str | None     — always None today, see §13
 generated         : bool           — True only if a model produced the text
 failure_reason    : str | None     — why generation did not happen
 elapsed_seconds   : float          — measured, never 0.0 by default
@@ -248,3 +248,31 @@ records it.
 ---
 
 *Implemented. See ADR-039 for the decision and its cost.*
+
+---
+
+## 13. What the self-review of this diff found
+
+Section 19 of the follow-up brief asks for a review of one's own changes. It
+found three things, and the third is the one worth remembering.
+
+**A dead property.** `constats_non_verifies` was defined and read nowhere.
+Removed.
+
+**A field written and never read.** `grounding_status` travelled into the
+context and stopped there. A field nobody reads is a promise nobody keeps — so
+it now reaches the prompt, which is what §12 wanted anyway: the model is told
+when nothing is verified, and instructed to say so rather than to sound sourced.
+
+**A guess wearing the clothes of a measurement.** `_modele_utilise()` returned
+the engine's first active model, while its own docstring claimed it returned
+`None` rather than a guessed name. `generate_text_with_fallback()` tries
+candidates in order and returns a string: *which* model answered is nowhere in
+its return value. The first of the list is therefore wrong precisely when the
+fallback was used — the only case where the question is interesting.
+
+`model_used` is now always `None`, and the function says why. **A guessed name
+is worth less than no name: it reads as a measurement.** What would settle it:
+the engine returning the chosen model alongside the text.
+
+Three tests pin all three.

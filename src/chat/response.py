@@ -66,14 +66,6 @@ class ContexteReponse:
         """Les constats que le chercheur lui-même marque comme vérifiés."""
         return [c for c in self.evidence if isinstance(c, dict) and c.get("verified")]
 
-    @property
-    def constats_non_verifies(self) -> List[Dict[str, Any]]:
-        """Les autres — sources externes, non validées par la plateforme."""
-        return [
-            c for c in self.evidence
-            if isinstance(c, dict) and not c.get("verified")
-        ]
-
 
 @dataclass
 class ReponseFinale:
@@ -198,6 +190,22 @@ def construire_invite(contexte: ContexteReponse) -> str:
             "## Evidence gathered for this question\n\n"
             "No search was performed for this message. Answer from your own "
             "knowledge, and say so if the answer needs sources you do not have."
+        )
+
+    # `grounding_status` entrait dans le contexte et n'en sortait jamais —
+    # un champ que personne ne lit est une promesse que personne ne tient.
+    # Il sert ici à ce que le §12 demande : le modèle doit savoir quand il
+    # répond de sa propre connaissance plutôt que de sources.
+    if contexte.grounding_status == GROUNDED:
+        morceaux.append(
+            "## Grounding\n\nThe evidence above is sourced platform knowledge. "
+            "Rely on it, and do not add claims it does not support."
+        )
+    else:
+        morceaux.append(
+            "## Grounding\n\nNothing here is verified platform knowledge. If you "
+            "answer from your own knowledge, say so plainly. Never present this "
+            "answer as sourced."
         )
 
     morceaux.append("## The user's message\n\n" + contexte.message.strip())
@@ -410,17 +418,19 @@ def _detail_complet(erreur: Exception) -> str:
 
 def _modele_utilise(gestionnaire: Any) -> Optional[str]:
     """
-    Nomme le modèle qui a répondu, si le moteur permet de le savoir.
+    Nomme le modèle qui a répondu — c'est-à-dire : rend `None`.
 
-    `generate_text_with_fallback()` rend une chaîne et rien d'autre : le modèle
-    retenu n'est pas dans sa valeur de retour. On interroge donc le moteur, et
-    **on rend `None` plutôt qu'un nom deviné** quand il ne le dit pas.
+    **Cette fonction devinait, et sa docstring prétendait le contraire.** Elle
+    rendait le premier modèle actif du moteur, alors que
+    `generate_text_with_fallback()` essaie les candidats dans l'ordre et rend
+    une chaîne : *lequel* a répondu n'est nulle part dans sa valeur de retour.
+    Le premier de la liste n'est donc pas le bon dans le seul cas où la question
+    est intéressante — quand le repli a servi.
+
+    Trouvé le 2026-08-23 en relisant mon propre diff. Un nom deviné vaut moins
+    que pas de nom : il se lit comme une mesure.
+
+    Ce qui trancherait : que le moteur rende le modèle retenu avec le texte.
+    Le jour où il le fera, c'est ici que ça se branche.
     """
-    try:
-        actifs = gestionnaire.list_models(status="active")
-    except Exception:  # noqa: BLE001 — un moteur muet n'est pas une panne ici
-        return None
-    if not actifs:
-        return None
-    premier = actifs[0]
-    return getattr(premier, "name", None) or getattr(premier, "id", None)
+    return None
