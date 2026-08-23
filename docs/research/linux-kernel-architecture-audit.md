@@ -322,7 +322,177 @@ already has a form of the second (`PERMISSIONS_HORS_PLATEFORME` keeps publishing
 and learner reads out of every platform role, admin included). Whether the
 ceiling is enforced as consistently as the kernel's is chapter 06's question.
 
+## 2.2 — Modules, VFS, tracing, fault injection, boundaries, synchronisation
+
+### The VFS: one interface, many implementations
+
+> *"The Virtual File System […] provides the filesystem interface to userspace
+> programs. It also provides an abstraction within the kernel which allows
+> different filesystem implementations to coexist."*
+> — `Documentation/filesystems/vfs.rst`
+
+The principle: **a caller names an operation, never an implementation.** Adding
+a filesystem costs no change in `open(2)`.
+
+**GalSen IA already has this**, three times over:
+`src/model_engine/providers/provider_registry.py`, `src/model_engine/interfaces.py`,
+`src/creative/providers.py`. ADR-037 measured it too — *"every provider
+abstraction the directive asks for already existed"*. This is `D — ALREADY
+COVERED`, and stated here so the final report does not re-propose it.
+
+### Tracing
+
+> *"Ftrace is an internal tracer designed to help out developers and designers of
+> systems to find what is going on inside the kernel."* — `Documentation/trace/ftrace.rst`
+
+The kernel's tracing is **built in and always present**, switchable at runtime
+rather than compiled for a debugging session. GalSen IA's `decision_trace.py`,
+`observability/trail.py` and audit engine are the same posture. Chapter 07
+decides whether anything is missing.
+
+### Fault injection — the one concept GalSen IA does not have at all
+
+`Documentation/fault-injection/fault-injection.rst` describes an infrastructure
+for making allocations fail **on purpose**: `failslab` (slab allocation),
+`fail_page_alloc` (page allocation), and others. What makes it infrastructure
+rather than a test is that it is **parameterised at runtime**:
+
+| Knob | What it controls |
+|---|---|
+| `probability` | likelihood of injection, in percent |
+| `interval` | spacing between injections |
+| `times` | how many times to fail |
+| `space` | bytes to let through before failing |
+| `task-filter` | fail **only** processes marked `/proc/<pid>/make-it-fail` |
+| `stacktrace-depth` | how deep to match the calling site |
+| `verbose` | how loudly to report |
+
+**Measured in GalSen IA: nothing.** `grep -rln "fault_inject\|inject_failure\|chaos"`
+over `src/` and `tests/` returns **zero files**.
+
+And yet this repository *already practises fault injection* — by hand, once per
+session, under the name **"sabotage the guard before believing it"**. It is in
+`docs/memory/session-state.md` as the thing that has served every time. It was
+used four times today alone.
+
+The extractable principle is therefore not *"inject faults"* — the habit exists.
+It is that **the kernel turned that habit into a facility with knobs**, so it no
+longer depends on whoever is careful that day. That is the same argument this
+repository already accepted when it turned systematic debugging from an instinct
+into `.claude/skills/systematic-debugging`:
+
+> *"an instinct that works when the operator is careful is exactly what fails on
+> the day they are not."*
+
+The audit did not expect its strongest candidate to be one the repository had
+already argued for, in its own words, about a different subject.
+
+### Synchronisation
+
+`Documentation/locking/locktypes.rst` divides primitives by the context they may
+be taken in — sleeping versus non-sleeping — and the rule is about **where** a
+lock may be used, not how fast it is.
+
+GalSen IA uses locks in **68 files**. It is single-instance (ADR-009), and its
+orchestration is sequential, so the kernel's contention problems mostly do not
+arise. Nothing here suggests a change; chapter 08 will say so explicitly.
+
 ---
 
-*Chapters 02.2 to 13 pending. No recommendation is made before the feasibility
-gates of chapter 11.*
+# Chapter 03 — Principle extraction
+
+Eight fields per concept, as the brief requires. Only concepts that map to a
+problem GalSen IA actually has are carried forward.
+
+## 3.1 — Isolation and resources
+
+### P1 — Four distribution models, not one limit
+
+| Field | |
+|---|---|
+| **Linux principle** | cgroup-v2 distributes by weights, limits, protections or allocations. Limits may be over-committed; allocations may not. |
+| **Problem it solves** | A single "limit" cannot express a guarantee. Without protections, a subsystem starves that nobody meant to starve. |
+| **GalSen IA equivalent problem** | None measured today. There is no contention: no queue, sequential orchestration, one instance. |
+| **Current solution** | `SandboxPolicy` — six hard bounds, i.e. the *limits* model only. |
+| **Potential improvement** | None until work waits somewhere. |
+| **Complexity** | High |
+| **Risk** | Inventing a scheduler for a platform that schedules nothing |
+| **Reversibility** | N/A |
+| **Provisional class** | **E — NOT RELEVANT** (revisit if a queue ever exists) |
+
+### P2 — Delegation containment
+
+| Field | |
+|---|---|
+| **Linux principle** | *"processes can't be moved into or out of the sub-hierarchy by the delegatee"* |
+| **Problem it solves** | Delegating control over a subtree must not delegate the right to leave it. |
+| **GalSen IA equivalent problem** | A coding workspace must not be able to choose a workspace outside its declared roots. |
+| **Current solution** | `GALSEN_CODING_WORKSPACE_ROOTS` + `confine()`. An unset variable refuses everything rather than meaning "the whole host". |
+| **Potential improvement** | None identified. |
+| **Complexity** | — |
+| **Risk** | — |
+| **Reversibility** | — |
+| **Provisional class** | **D — ALREADY COVERED** |
+
+### P3 — Capabilities, piecemeal, with a bounding set
+
+| Field | |
+|---|---|
+| **Linux principle** | Privilege is a set of named powers; a **bounding set** is a ceiling a task may lower and never raise. |
+| **Problem it solves** | All-or-nothing privilege forces over-granting. |
+| **GalSen IA equivalent problem** | Same, for roles and tools. |
+| **Current solution** | 35 named permissions in `src/api/rbac.py`; `PERMISSIONS_HORS_PLATEFORME` is a true ceiling — publishing and learner reads sit outside every platform role, **admin included**. |
+| **Potential improvement** | Verify in chapter 06 that the ceiling is enforced everywhere, not only in education. |
+| **Complexity** | Low, if a gap is found |
+| **Risk** | Low |
+| **Reversibility** | High |
+| **Provisional class** | **D — ALREADY COVERED**, pending chapter 06 |
+
+### P4 — Namespaces for a real network cut
+
+| Field | |
+|---|---|
+| **Linux principle** | A namespace changes what a process *can see*, not what it is allowed to ask for. |
+| **Problem it solves** | Sandboxed code reaching the network. |
+| **GalSen IA equivalent problem** | Named already, by the platform: `NON_GARANTI` says *"no network cut without namespaces"*. |
+| **Current solution** | None. The gap is declared rather than hidden. |
+| **Potential improvement** | Requires privileges the platform states it does not have — to be re-tested in chapter 06, not assumed. |
+| **Complexity** | High |
+| **Risk** | A sandbox that *claims* a boundary it does not have is worse than none |
+| **Reversibility** | Medium |
+| **Provisional class** | **F — BLOCKED**, pending re-measurement |
+
+### P5 — Bounded execution before the first instruction
+
+| Field | |
+|---|---|
+| **Linux principle** | `setrlimit` is applied by the kernel to the child before `exec`; nothing the code does afterwards lifts it. |
+| **Problem it solves** | A limit the guest can raise is not a limit. |
+| **GalSen IA equivalent problem** | Same, for tool code. |
+| **Current solution** | Exactly this, in `src/sandbox/runner.py`, in `preexec_fn`. |
+| **Potential improvement** | **The orchestrator has no equivalent**: no timeout on any agent (chapter 01, finding 2). |
+| **Complexity** | Low |
+| **Risk** | Cutting a legitimately slow agent |
+| **Reversibility** | High — one guard, removable |
+| **Provisional class** | **A — USEFUL NOW** (candidate) |
+
+### P6 — Fault injection as a facility, not a habit
+
+| Field | |
+|---|---|
+| **Linux principle** | Failures are injectable at runtime, with probability, interval, count, task filter and stack depth. |
+| **Problem it solves** | Recovery paths are the least exercised code and the most load-bearing. |
+| **GalSen IA equivalent problem** | The self-healer, the degradation probes and every `UNAVAILABLE` path are exercised only when something really breaks. |
+| **Current solution** | **None as code.** The habit exists — *"sabotage the guard before believing it"* — performed manually, per session. |
+| **Potential improvement** | Turn the habit into a facility, as this repository already did for systematic debugging. |
+| **Complexity** | Medium |
+| **Risk** | A fault-injection switch reachable in production would be a weapon; it must be inert unless explicitly enabled |
+| **Reversibility** | High |
+| **Provisional class** | **A — USEFUL NOW** (candidate) |
+
+**Two candidates so far, both small and both reversible.** Neither is confirmed
+before the feasibility gates of chapter 11.
+
+---
+
+*Chapters 03.2 to 13 pending.*
