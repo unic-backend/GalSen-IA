@@ -77,7 +77,7 @@ last session stopped. Keep it up to date; it is the project's continuity.
 *Measured 2026-08-17.* Foundation and core engines are done (ADR-001, ADR-002). Fifteen
 engines **plus nine subsystems probed after the registry** (volets 47–64, probed by
 `src/integration/degradation.py`), **17 agents**, **24 declared tools** (13 runnable
-unattended), **142 API routes**, 39 ADRs (ADR-020 is `proposed`; ADR-024 to ADR-027 open the creative programme;
+unattended), **143 API routes**, 39 ADRs (ADR-020 is `proposed`; ADR-024 to ADR-027 open the creative programme;
 ADR-023 and ADR-028 add the interop and coding layers; ADR-030 and ADR-031 close the provider
 and canvas programmes; ADR-032 opens the research layer;
 ADR-033 opens the live-context layer; **ADR-034 audits OpenClaw and does not integrate it**;

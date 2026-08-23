@@ -6,7 +6,7 @@
 The platform runs. Fifteen engines and services are registered in `EngineRegistry`, and
 **nine more subsystems** built after it (volets 47–64) are probed separately — see
 *Subsystems and degradation* below. All of it is reachable through a REST API
-(`src/api/server.py`, **142 routes**, authenticated by API key or JWT (ADR-029) and
+(`src/api/server.py`, **143 routes**, authenticated by API key or JWT (ADR-029) and
 authorised by RBAC) and covered
 by their own test suites — **318 test files, 6 582 tests passing**, 12 skipped, 1 failing
 (*measured 2026-08-19*; the failure is the unpushed `v0.1.0` tag, identical on `main`).
