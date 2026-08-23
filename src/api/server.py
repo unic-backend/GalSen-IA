@@ -1576,17 +1576,33 @@ def _ancrage_de(resultat: Dict[str, Any]) -> "ChatGrounding":
         # constat, pas une absence de constat.
         chercheur = _resultat_agent(resultat, "researcher")
         if chercheur:
-            consultees = chercheur.get("sources_consulted") or {}
-            total = sum(v for v in consultees.values() if isinstance(v, int))
-            if total == 0:
+            constats = chercheur.get("findings") or []
+            # `verified` vient du chercheur lui-même : un constat de la base de
+            # connaissance est vérifié, un extrait web ne l'est pas. Compter les
+            # sources *consultées* dirait `GROUNDED` pour trois extraits web —
+            # c'est-à-dire exactement le défaut que cette route existe pour ne
+            # pas reproduire. La fiabilité vient du registre de sources, jamais
+            # du document qui l'affirme.
+            verifies = [c for c in constats if isinstance(c, dict) and c.get("verified")]
+            if verifies:
+                return ChatGrounding(
+                    status="GROUNDED",
+                    sources=[str(c.get("source")) for c in verifies][:10],
+                )
+            if constats:
                 return ChatGrounding(
                     status="UNGROUNDED",
-                    reason=_lacunes(chercheur)
-                    or "Aucune source n'a été consultée pour ce message.",
+                    sources=[],
+                    reason=(
+                        f"{len(constats)} élément(s) trouvé(s), aucun vérifié : "
+                        "ce sont des sources externes, pas des connaissances "
+                        "validées de la plateforme."
+                    ),
                 )
             return ChatGrounding(
-                status="GROUNDED",
-                sources=[str(d) for d in (chercheur.get("documents") or [])][:10],
+                status="UNGROUNDED",
+                reason=_lacunes(chercheur)
+                or "Aucune source n'a été consultée pour ce message.",
             )
         return ChatGrounding(
             status="NOT_CHECKED",
@@ -1611,6 +1627,45 @@ def _ancrage_de(resultat: Dict[str, Any]) -> "ChatGrounding":
             + (f" Ce qui trancherait : {trancherait}" if trancherait else "")
         ),
     )
+
+
+def _constats(constats: List[Dict[str, Any]]) -> str:
+    """
+    Rend les constats du chercheur, chacun attribué à sa source.
+
+    **Aucun n'est fondu dans un paragraphe.** Recopier trois extraits web dans
+    une prose continue les ferait lire comme une réponse de la plateforme, alors
+    qu'ils viennent d'ailleurs et que le chercheur les marque `verified: False`.
+    Chaque ligne garde donc son origine, et un constat non vérifié le dit.
+
+    Un constat sans texte est compté, jamais deviné : « 2 élément(s) sans texte »
+    est une information ; inventer leur contenu n'en serait pas une.
+    """
+    lignes: List[str] = []
+    sans_texte = 0
+    for constat in constats:
+        if not isinstance(constat, dict):
+            sans_texte += 1
+            continue
+        contenu = str(constat.get("content") or "").strip()
+        if not contenu:
+            sans_texte += 1
+            continue
+        source = str(constat.get("source") or "source inconnue")
+        marque = "" if constat.get("verified") else " — non vérifié"
+        lignes.append(f"- {contenu}\n  ({source}{marque})")
+
+    if not lignes:
+        return (
+            f"{sans_texte} élément(s) trouvé(s), aucun ne porte de texte "
+            "exploitable."
+        )
+
+    texte = "Voici ce qui a été trouvé, avec l'origine de chaque élément :\n\n"
+    texte += "\n".join(lignes)
+    if sans_texte:
+        texte += f"\n\n{sans_texte} autre(s) élément(s) sans texte exploitable."
+    return texte
 
 
 def _lacunes(chercheur: Dict[str, Any]) -> str:
@@ -1670,8 +1725,11 @@ def _texte_de_reponse(resultat: Dict[str, Any]) -> str:
     # trouver, ce qu'il a constaté **est** la réponse. Les lacunes sont celles
     # que le chercheur a écrites ; aucune n'est reformulée ni inventée.
     chercheur = _resultat_agent(resultat, "researcher")
+    constats = chercheur.get("findings") or []
+    if constats:
+        return _constats(constats)
     lacunes = _lacunes(chercheur)
-    if lacunes and not (chercheur.get("findings") or []):
+    if lacunes:
         return lacunes
 
     for entree in reversed(resultat.get("agent_results") or []):

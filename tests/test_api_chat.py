@@ -175,3 +175,106 @@ class TestConversation:
             "/chat", json={"message": "et donc ?", "history": historique}, headers=ENTETE
         )
         assert reponse.status_code in (200, 503)
+
+
+class TestQuandLeChercheurTrouve:
+    """
+    Le cas que personne ne pouvait voir sur une machine sans réseau.
+
+    **Mesuré en CI le 2026-08-23** : six tests de ce fichier sont passés au
+    rouge sur un commit ne touchant qu'un fichier de documentation. La cause
+    n'était ni l'ordre ni le hasard — `pytest-randomly` n'est pas installé et
+    l'ordre est identique. C'était le réseau : les exécuteurs GitHub en ont un,
+    cette machine n'en a pas.
+
+    Quand la recherche web aboutissait, le chercheur rendait des `findings`, et
+    la route **répondait 503** — c'est-à-dire qu'elle échouait précisément
+    quand la plateforme trouvait quelque chose. Le pire mode de défaillance
+    possible, et invisible ici.
+
+    Ces tests pilotent les fonctions directement plutôt que la route : un test
+    qui ne peut passer que là où le réseau existe n'est pas un test ici.
+    """
+
+    @staticmethod
+    def _resultat(constats, lacunes=None):
+        """Un résultat d'orchestration, à la forme réelle de `agents/researcher/`."""
+        return {
+            "agent_results": [
+                {"agent": "planner", "result": {"axes": {}}},
+                {
+                    "agent": "researcher",
+                    "result": {
+                        "findings": constats,
+                        "gaps": lacunes or [],
+                        "sources_consulted": {"web": len(constats)},
+                        "documents": [],
+                    },
+                },
+            ],
+            "aggregated_result": {"status": "success"},
+        }
+
+    def test_des_constats_ne_donnent_jamais_une_reponse_vide(self):
+        """C'est l'échec de CI, réduit à une ligne."""
+        import src.api.server as serveur
+
+        resultat = self._resultat(
+            [{"source": "https://exemple.org", "content": "le mil se sème en juin",
+              "verified": False}]
+        )
+        assert serveur._texte_de_reponse(resultat).strip()
+
+    def test_un_extrait_web_n_est_pas_un_ancrage(self):
+        """
+        `verified: False` vient du chercheur lui-même.
+
+        Compter les sources *consultées* aurait dit `GROUNDED` pour trois
+        extraits web — exactement le défaut que cette route existe pour ne pas
+        reproduire. La fiabilité vient du registre de sources, jamais du
+        document qui l'affirme.
+        """
+        import src.api.server as serveur
+
+        ancrage = serveur._ancrage_de(
+            self._resultat(
+                [{"source": "https://exemple.org", "content": "x", "verified": False}]
+            )
+        )
+        assert ancrage.status == "UNGROUNDED"
+        assert ancrage.sources == []
+
+    def test_un_constat_verifie_ancre_la_reponse(self):
+        import src.api.server as serveur
+
+        ancrage = serveur._ancrage_de(
+            self._resultat(
+                [{"source": "corpus:senegal", "content": "x", "verified": True}]
+            )
+        )
+        assert ancrage.status == "GROUNDED"
+        assert ancrage.sources == ["corpus:senegal"]
+
+    def test_chaque_constat_garde_son_origine(self):
+        """
+        Trois extraits fondus dans un paragraphe se liraient comme une réponse
+        de la plateforme, alors qu'ils viennent d'ailleurs.
+        """
+        import src.api.server as serveur
+
+        texte = serveur._texte_de_reponse(
+            self._resultat(
+                [{"source": "https://exemple.org", "content": "une affirmation",
+                  "verified": False}]
+            )
+        )
+        assert "https://exemple.org" in texte
+        assert "non vérifié" in texte
+
+    def test_un_constat_sans_texte_est_compte_jamais_invente(self):
+        import src.api.server as serveur
+
+        texte = serveur._texte_de_reponse(
+            self._resultat([{"source": "https://exemple.org", "content": ""}])
+        )
+        assert "1 élément(s)" in texte
