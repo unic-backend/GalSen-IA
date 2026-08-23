@@ -1,10 +1,29 @@
 # The final response layer — contract
 
-**Status: CONTRACT ONLY. No code exists yet.** Chapter 02 of the VOLET
-*« CHAT — RÉPONSE FINALE RÉELLE »*, owner's brief 2026-08-23.
+**Status: IMPLEMENTED.** `src/chat/`, wired into `POST /chat`. Decision
+recorded as **ADR-039**.
 
 This document defines what the layer receives, what it returns, what it may
-never do, and how it fails. Chapter 04 implements it.
+never do, and how it fails. It was written as a contract before any code, and
+the sections below are unchanged from that contract except where measurement
+corrected them — the corrections are marked where they happened rather than
+edited away.
+
+**The flow, as it actually runs:**
+
+```
+POST /chat
+  → RouterEngine.process_request(workflow_id="question")
+      → planner            (intents, axes, agent selection)
+      → the agents it selected, or none at all
+  → _ancrage_de()          grounding, computed HERE, before any generation
+  → _contexte_de_reponse() message · history · axes · evidence · agent notes
+  → RedacteurConversation.rediger()
+      → construire_invite()
+      → ModelManagerImpl.generate_text_with_fallback()   [async bridge]
+      → on failure: composer_sans_modele()
+  → ChatResponse(answer, grounding, generated, generation_unavailable, …)
+```
 
 ---
 
@@ -203,4 +222,29 @@ general. Two named intents, measured before and after, and nothing more.
 
 ---
 
-*Chapters 04 onward extend this document. Nothing here is implemented.*
+## 11. What was measured after implementation
+
+| Case | Measured 2026-08-23 |
+|---|---|
+| *« Bonjour »* | **1 092 ms → 77 ms**, only the planner runs |
+| *« Merci ! »* | 2 ms |
+| A general question with a model | generated answer, grounding stays `UNGROUNDED` |
+| Generations per turn | **1** |
+| Models registered on this machine | **0** — the chain is verified with a simulated provider |
+| Full suite | **7 148 passed, 9 skipped, 0 failed** |
+
+## 12. The two questions section 8 left open — answered
+
+**A greeting skips the research pipeline.** Not by a branch in `/chat` but by a
+`conversation` intent that mobilises no agent, and by restoring the distinction
+`selection_appliquee()` had collapsed. The orchestrator is not bypassed; it is
+given a plan that names nobody.
+
+**`NOT_CHECKED` lets the model answer from its own knowledge.** The prompt says
+so explicitly, and `generated` plus the grounding chip keep the two apart in the
+response. This is the change of posture the contract flagged, and ADR-039
+records it.
+
+---
+
+*Implemented. See ADR-039 for the decision and its cost.*

@@ -12,6 +12,61 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-23 — The chat writes, and writing still grounds nothing (ADR-039)
+
+Measured before touching anything: `POST /chat` returned the identical text,
+word for word, for *« bonjour »* and *« Qui était Albert Einstein ? »*. Tracing
+the real calls showed only `planner` and `researcher` ever ran, and that
+**nothing in the chain wrote** — between the agents' structured results and
+`ChatResponse.answer` sat one function that renders data.
+
+`src/chat/` is that missing stage. It receives an assembled context and returns
+text: it fetches nothing, calls no tool, opens no connection, and calls
+`ModelManagerImpl` and nothing else. Being a pure composer is what makes it
+testable on a machine with **zero models registered**, which is this one.
+
+**Writing never grounds.** Grounding is computed from the agents' evidence
+before generation and never touched by it. `ChatResponse.generated` is true only
+when a model produced the text — without it, a refusal composed by the platform
+would be indistinguishable from an answer, the exact lie this repository
+refuses everywhere else. Verified by sabotage: making generation overwrite
+grounding fails a test.
+
+Evidence keeps its origin all the way into the prompt, marked `VERIFIED` or
+`UNVERIFIED` with its scope, never melted into a paragraph. That follows
+ADR-019, which had already refused a global base and a Senegalese one. Machinery
+— plan, task list, timings — never enters: a model given machinery writes an
+execution report instead of an answer.
+
+**A greeting went from 1 092 ms to 77 ms.** A `conversation` intent mobilises no
+agent, which required restoring a distinction the repository already stated and
+then collapsed: `recommended_agents()` says *deciding to mobilise nobody is a
+decision, not deciding is not one*, and `selection_appliquee()` threw that away
+one function later. Three cases now, and the deliberate fallback it guards is
+intact.
+
+**Two defects were found by re-reading this same work.** `/chat` was returning
+`http://localhost:11434` in its failure message — a host and a port handed to
+any caller; the route now returns a short enumerated reason and keeps the whole
+cause in the log. And setting an intent with no agents raised `IndexError` in
+the planner: an intent that mobilises nobody is a valid plan, not a failure.
+
+Two things the brief asked for are **not** done, and are recorded rather than
+quietly dropped. The coding capability is still unreachable, because the
+`question` workflow does not declare `coder` and wiring a chat message to an
+agent that writes files is an operator decision. And a verified researcher
+finding does not ground a Senegalese question whose national base is empty —
+the `senegal` agent's verdict wins, which is defensible. Both are pinned by
+tests that will fail the day either changes.
+
+44 tests added, none removed, none weakened. `pytest -q` → **7 148 passed, 9
+skipped, 3 deselected, 0 failed**. `ruff check src tests scripts agents` → all
+checks passed. No dependency added, no secret introduced, no unrelated file
+touched.
+
+**What stays UNKNOWN**: everything needing a real model — answer quality, real
+latency, provider fallback. Zero models are registered here.
+
 ### Added — 2026-08-23 — A conversation, and what it refuses to say (chat-first redesign)
 
 The platform had no general conversation endpoint. Measured before touching

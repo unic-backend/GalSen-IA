@@ -8,37 +8,51 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ## Dernière session — 2026-08-23
 
-**En cours** : rien. **VOLET REDESIGN CHAT-FIRST terminé**, 8 chapitres, 11 phases,
-branche `claude/galsen-ia-phases-ukwz7p`.
+**En cours** : rien. **VOLET « CHAT — RÉPONSE FINALE RÉELLE » : 17 phases sur
+19 faites**, il reste la 10 (docs, en cours) et la 11 (rapport final).
+Branche `claude/galsen-ia-phases-ukwz7p`, repartie de `main` après la fusion
+de la PR #36.
 
-**Terminé** : la plateforme a une conversation. `POST /chat` (143 routes), le chat
-sert `/ui/`, le tableau de bord passe sous `/ui/admin/`, menu de 14 domaines,
-responsive mobile d'abord.
+**Terminé** : **`/chat` rédige enfin.** `src/chat/` compose une réponse à
+partir de ce que l'orchestration a trouvé et appelle `ModelManagerImpl`.
+Décision → **ADR-039**. Contrat et flux réel →
+`docs/architecture/chat-final-response.md`.
 
 À savoir sans relire :
-- **Aucun des 17 agents ne rédige.** Seuls `planner` et `coder` appellent le
-  modèle, pour planifier et pour coder. Le workflow `question` est
-  `planner → researcher → senegal → verifier` : recherche et vérification, pas
-  conversation. **`/chat` rend donc le refus des agents, jamais une phrase
-  fabriquée** — c'est honnête, et ça ne converse pas encore. Rendre le chat
-  *conversant* demande une étape de rédaction : **non autorisée, non faite.**
-- L'orchestrateur a l'honnêteté que `/agri/advice` n'a pas : l'agent `senegal`
-  répond `empty_base` avec « la base est vide sur ce sujet — ce n'est pas une
-  réponse négative ». **1,1 s** par tour, mesuré.
-- **Trois défauts trouvés en relisant du travail déjà déclaré terminé** :
-  le jeton d'ancrage fabriquait sa classe par interpolation (`jeton.grounded`,
-  invalide) et **n'a jamais eu sa couleur** ; `grounding.reason` était jeté ;
-  le déplacement du tableau de bord avait rendu le formulaire agricole et le
-  Media Studio **inatteignables en cliquant**. `tests/test_ui_chat.py`
-  (`TestJetonAncrage`) tient le premier, sabotage vérifiée.
+- **Le brief se trompait deux fois, et la mesure l'a corrigé.** Le routage
+  généraliste existait déjà (5 questions globales sur 5 n'appellent pas
+  `senegal`), et le planner appelait déjà le modèle. La vraie cause était plus
+  étroite : **rien ne rédigeait**.
+- **Écrire n'ancre jamais.** L'ancrage est calculé avant la génération.
+  `ChatResponse.generated` vaut vrai seulement si un modèle a écrit — sans ce
+  champ, un refus composé serait indiscernable d'une réponse.
+- **« bonjour » : 1 092 ms → 77 ms.** Une intention `conversation` ne mobilise
+  aucun agent, et `selection_appliquee()` distingue enfin les trois cas.
+  `recommended_agents()` faisait déjà cette distinction dans sa docstring ;
+  elle a été **rétablie, pas inventée**.
+- **Deux défauts trouvés en relisant mon propre travail** : `/chat` livrait
+  `http://localhost:11434` dans son message d'erreur, et `_build_tasks`
+  levait `IndexError` sur une intention sans agent.
+- **Zéro modèle enregistré ici**, mesuré après le démarrage complet. Toute la
+  chaîne est vérifiée avec un fournisseur simulé ; qualité, latence réelle et
+  repli entre fournisseurs restent `UNKNOWN`.
 
-**Prochaine étape** : rien d'autorisé. La branche n'est pas fusionnée et aucune PR
-n'a été demandée pour ce volet. Décision en attente du propriétaire : ouvrir ou
-non l'étape de rédaction qui ferait vraiment converser le chat.
+**Prochaine étape** : phase 11 — rapport final en 12 points (§24 du brief).
 
-**Ce qui a servi** : *une suite lancée avec `| tail -4` cache ses échecs.* Un run
-a rapporté « 25 failed » dont **3 seulement étaient visibles**, et les 22 autres
-ont été déclarés verts. Rediriger la sortie vers un fichier, jamais la tronquer.
+**Décisions en attente du propriétaire** (ni l'une ni l'autre faite) :
+1. **Déclarer `coder` dans le workflow `question`** — l'intention est corrigée
+   mais l'agent n'est pas atteint. Brancher un chat sur un agent qui écrit des
+   fichiers est une décision d'exploitant (§19). Un test épingle l'état réel.
+2. **P10 de l'audit Linux devient urgente** : ajouter une génération allonge le
+   tour, donc aggrave le blocage de la boucle d'événements (`/health` :
+   3,5 ms → 1 149 ms pendant un `/chat`). Trois sites d'appel.
+
+**Ce qui a servi** : *sabotez la garde avant de la croire* — cinq fois
+aujourd'hui, dont une qui a montré qu'un test cassé avait raison contre moi.
+
+**Repère mesuré le 2026-08-23** : `pytest -q` → **7 148 passent, 9 ignorés,
+3 désélectionnés, 0 échec**. `ruff check src tests scripts agents` → tout passe.
+44 tests ajoutés, **0 supprimé**.
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
 - **`GALSEN_CODING_WORKSPACE_ROOTS` doit être renseignée** ou le moteur de codage
