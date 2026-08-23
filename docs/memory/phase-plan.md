@@ -9,8 +9,8 @@ VOLET en cours   : **LINUX KERNEL ARCHITECTURE RESEARCH AUDIT**
                    Brief du propriétaire, 2026-08-23
 Chapitres        : **13**
 Phases           : **18**
-Phase courante   : **1.1 — en attente de confirmation**
-Terminées        : aucune
+Phase courante   : **1.3 — en attente de confirmation**
+Terminées        : **1.1**, **1.2** → `docs/research/linux-kernel-architecture-audit.md`
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
 **Ce que le brief interdit** : copier du code noyau, vendorer un composant,
@@ -48,8 +48,8 @@ le texte SPDX canonique et tout ce qui ne vit que sur `kernel.org`.
 
 ```
 Ch. 01  Audit du GalSen IA réel                  → 3 phases
-        1.1 orchestration, agents, ordonnancement, cycle de vie, files
-        1.2 ressources, isolation, bac à sable, sécurité, permissions
+        1.1 orchestration, agents, ordonnancement, cycle de vie, files ✅
+        1.2 ressources, isolation, bac à sable, sécurité, permissions ✅
         1.3 auto-réparation, observabilité, mémoire, config, dégradation
 
 Ch. 02  Étude de l'architecture Linux            → 2 phases
