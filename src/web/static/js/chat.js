@@ -9,7 +9,7 @@
  * même logique se contredisent invariablement.
  */
 
-import { api } from "./api-client.js";
+import { api, enregistrerCle, lireCle, oublierCle } from "./api-client.js";
 
 // --- État global ---
 
@@ -109,6 +109,7 @@ function initialiser() {
   textarea.addEventListener("input", () => ajusterHauteurTextarea(textarea));
 
   brancherSaisieVocale(textarea);
+  brancherLaCle();
 
   // Menu des domaines
   const boutonMenu = document.getElementById("bouton-menu");
@@ -414,5 +415,35 @@ function brancherSaisieVocale(textarea) {
       etat.classList.remove("echec");
     }
     reconnaissance.start();
+  });
+}
+
+
+/**
+ * Retient la clé d'accès dans le navigateur, pour ne la demander qu'une fois.
+ *
+ * Le mécanisme existait déjà — `api-client.js` lit la clé à chaque appel et la
+ * pose en en-tête — mais **cette page ne l'enregistrait jamais**. Le champ était
+ * donc décoratif : la clé partait bien avec la requête en cours, et disparaissait
+ * au rechargement. D'où l'obligation de la recoller à chaque visite.
+ *
+ * Elle ne quitte pas le navigateur : `localStorage` est local à la machine et à
+ * l'origine du site. Elle n'est jamais écrite dans la page servie, jamais
+ * envoyée ailleurs qu'à cette API. Vider le champ l'oublie — c'est la façon de
+ * se déconnecter sur un poste partagé.
+ */
+function brancherLaCle() {
+  const champ = document.getElementById("cle-api");
+  if (!champ) return;
+
+  champ.value = lireCle();
+
+  champ.addEventListener("input", () => {
+    const valeur = champ.value.trim();
+    if (valeur) {
+      enregistrerCle(valeur);
+    } else {
+      oublierCle();
+    }
   });
 }
