@@ -18,12 +18,14 @@ qu'il n'y a rien — jamais autre chose.
 """
 
 import logging
+import os
 import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..agent.context import executer_coroutine
+from ..reasoning import REPRISES_PAR_DEFAUT, deliberer
 
 # Les trois issues d'ancrage de la plateforme. Reprises telles quelles : cette
 # couche ne les calcule pas, elle les transporte.
@@ -90,6 +92,11 @@ class ReponseFinale:
     # pour la cacher serait la mauvaise moitié de la consigne.
     failure_detail: Optional[str] = None
     elapsed_seconds: float = 0.0
+    #: Ce que la boucle de délibération a fait : tentatives, constats, motif
+    #: d'arrêt. `None` quand aucune génération n'a eu lieu — un champ vide et un
+    #: champ absent ne disent pas la même chose, et « aucune délibération » ne
+    #: doit pas se lire comme « délibération sans constat ».
+    deliberation: Optional[Dict[str, Any]] = None
 
 
 # --------------------------------------------------------------------------
@@ -338,13 +345,22 @@ class RedacteurConversation:
     moteur décide du reste — y compris du repli entre modèles.
     """
 
-    def __init__(self, model_manager: Any) -> None:
+    def __init__(self, model_manager: Any, reprises_max: Optional[int] = None) -> None:
         """
         Args:
             model_manager: un `ModelManagerImpl`, ou tout objet exposant
                 `generate_text_with_fallback(prompt, task_requirements, **kw)`.
+            reprises_max: Nombre de reprises autorisées quand la critique trouve
+                un défaut bloquant. `GALSEN_CHAT_MAX_RETRIES` sinon, et
+                `REPRISES_PAR_DEFAUT` en dernier recours. **Zéro n'éteint pas la
+                critique** : les constats sont toujours rendus, seule la reprise
+                cesse — un exploitant qui veut la latency minimale garde ainsi
+                l'information.
         """
         self._modeles = model_manager
+        self._reprises_max = (
+            reprises_max if reprises_max is not None else _reprises_configurees()
+        )
 
     def exigences(self, contexte: ContexteReponse) -> Dict[str, Any]:
         """
@@ -444,8 +460,22 @@ class RedacteurConversation:
         invite = construire_invite(contexte)
 
         modele: Optional[str] = None
+        exigences = self.exigences(contexte)
+
+        def produire(consigne: str) -> Tuple[str, Optional[str]]:
+            """Une passe de génération, la consigne de reprise ajoutée à l'invite."""
+            return self._generer(
+                f"{invite}\n\n{consigne}" if consigne else invite, exigences
+            )
+
         try:
-            texte, modele = self._generer(invite, self.exigences(contexte))
+            deliberation = deliberer(
+                produire,
+                evidence=contexte.evidence,
+                grounding_status=contexte.grounding_status,
+                reprises_max=self._reprises_max,
+            )
+            texte, modele = deliberation.texte, deliberation.modele
         except Exception as erreur:  # noqa: BLE001 — toute panne est une donnée
             detail = _detail_complet(erreur)
             _JOURNAL.warning("Génération de réponse impossible : %s", detail)
@@ -479,13 +509,16 @@ class RedacteurConversation:
         # un compteur dans `/metrics`, un événement d'audit dédié — n'est pas
         # fabriqué pour faire nombre.
         _JOURNAL.info(
-            "Réponse générée en %.3f s par %s", duree, modele or "modèle non nommé",
+            "Réponse générée en %.3f s par %s (%d reprise(s), arrêt : %s)",
+            duree, modele or "modèle non nommé",
+            deliberation.reprises, deliberation.arret,
         )
         return ReponseFinale(
             answer=texte,
             generated=True,
             model_used=modele,
             elapsed_seconds=duree,
+            deliberation=deliberation.to_dict(),
         )
 
 
@@ -522,6 +555,37 @@ def _classer_panne(erreur: Exception) -> str:
     if type(erreur).__name__ == "ProviderUnavailableError":
         return AUCUN_FOURNISSEUR
     return GENERATION_ECHOUEE
+
+
+def _reprises_configurees() -> int:
+    """
+    Lit `GALSEN_CHAT_MAX_RETRIES`, ou rend le défaut.
+
+    Une valeur illisible ou négative rend le défaut **et le journalise** : une
+    variable mal écrite qui désactive silencieusement les reprises serait
+    découverte le jour où une réponse fausse est servie.
+
+    Returns:
+        Le nombre de reprises autorisées.
+    """
+    brut = os.environ.get("GALSEN_CHAT_MAX_RETRIES")
+    if brut is None:
+        return REPRISES_PAR_DEFAUT
+    try:
+        valeur = int(brut)
+    except ValueError:
+        _JOURNAL.warning(
+            "GALSEN_CHAT_MAX_RETRIES=%r n'est pas un entier : %d reprise(s) par défaut.",
+            brut, REPRISES_PAR_DEFAUT,
+        )
+        return REPRISES_PAR_DEFAUT
+    if valeur < 0:
+        _JOURNAL.warning(
+            "GALSEN_CHAT_MAX_RETRIES=%d est négatif : %d reprise(s) par défaut.",
+            valeur, REPRISES_PAR_DEFAUT,
+        )
+        return REPRISES_PAR_DEFAUT
+    return valeur
 
 
 def _detail_complet(erreur: Exception) -> str:

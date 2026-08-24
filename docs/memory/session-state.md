@@ -6,63 +6,65 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ---
 
-## Dernière session — 2026-08-24
+## Dernière session — 2026-08-24 (P3)
 
-**En cours** : rien. Mission « STRICT AUTONOMOUS AI ENGINE UPGRADE » —
-priorités P0 à P2 traitées (couche modèle et routage). P3 à P8 non entamées.
+**En cours** : rien. Mission « PHASE 2 — DEEP REASONING » : P3 (raisonnement),
+vérification, auto-correction et branchement de `src/skills/` faits. Bancs de
+modèles, serveurs d'inférence et infrastructure d'entraînement **non entamés**.
 Branche `claude/galsen-ia-phases-ukwz7p`, PR #37 ouverte.
 
-**Terminé** : **le routage de modèles sélectionne enfin.** Il ne sélectionnait
-pas : il prenait le premier de la liste. Décision → **ADR-040**. Candidats par
-rôle → `docs/models/local-model-selection.md`.
+**Terminé** : **le chat critique sa propre réponse et peut la réécrire une
+fois.** Décision → **ADR-041**. Et **`src/skills/` est enfin branchée** —
+elle existait sans que rien n'y écrive.
 
 À savoir sans relire :
-- **Six causes, toutes mesurées, aucune supposée.** La plus grave était la
-  cinquième : `generate_text_with_fallback` — le chemin que le chat appelle —
-  **n'appelait jamais `ProviderSelector`**. Tout le routage vivait dans un
-  composant que la génération ne consultait pas.
-- **`/api/tags` ne porte pas de `context_length`.** La clé lue n'a jamais
-  existé : tout modèle valait 8192, donc `summarization` (32k) et
-  `document_analysis` (100k) étaient irroutables **par construction**.
-- **Trois origines, jamais confondues** : `measured` (`/api/show`) >
-  `declared` (`config/model_routing.yaml`) > `default`. `capability_sources`
-  dit laquelle a fixé chaque champ. **Une mesure muette n'efface rien** —
-  « non mesuré » n'est pas « mesuré faux ».
-- **Sept des huit intentions du planner n'avaient aucune règle de routage.**
-  « Écris une fonction Python » se faisait écrire par le plus petit modèle.
-  Ajoutées à la politique, **pas renommées** dans le planner : elles désignent
-  aussi les agents.
-- **Aucun modèle téléchargé, chargé ni évalué.** Aucune revendication de
-  qualité ne dépasse `OBSERVED` — `huggingface.co` et `qwenlm.github.io` sont
-  en `EGRESS_BLOCKED`, mesuré.
+- **Deux modules, et la frontière est la conception.** `critics.py` constate et
+  ne corrige rien ; `deliberation.py` décide quoi en faire. **Aucun critique
+  n'interroge un modèle** : `agents/verifier/agent.py` explique pourquoi.
+- **Budget épuisé ⇒ la réponse est servie AVEC ses constats.** Une boucle qui
+  rend en silence une réponse qu'elle sait douteuse ajoute une garantie qui
+  n'existe pas. `GALSEN_CHAT_MAX_RETRIES`, une reprise par défaut ; `0` garde
+  la critique et n'arrête que la reprise.
+- **Le banc se donne 66,7 %, et c'est voulu.** Sa première version faisait 8/8 :
+  cas et contrôles sortaient de la même main. Quatre cas réellement ratés y ont
+  été ajoutés. Un banc dont le score ne peut que monter est une décoration.
+- **Le `tester` range, pas le `coder`.** C'est le seul endroit du dépôt où
+  existe une preuve. Un verdict vert **sans exécution** est refusé : le
+  `tester` rend `passed: True` quand il s'exclut par ré-entrance.
+- **Défaut trouvé en construisant** : `empty_answer` exigeait trois mots et
+  signalait « 42 ». **Vide veut dire vide.**
 
-**Prochaine étape** : P3 de la mission — raisonnement, vérification, outils.
-La bibliothèque de compétences (`src/skills/`, ADR d'Odyssey) **n'est branchée
-à aucun agent** : rien n'y écrit encore.
+**Prochaine étape** : bancs de modèles réels et serveurs d'inférence
+(vLLM/SGLang via `OpenAICompatibleProvider`, déjà présent) — tout cela attend
+un GPU. Puis l'infrastructure d'entraînement (SFT/LoRA/QLoRA).
 
 **Décisions en attente du propriétaire** (aucune faite)
-1. **Déclarer `coder` dans le workflow `question`** — l'intention est corrigée,
-   l'agent n'est pas atteint.
+1. **Déclarer `coder` dans le workflow `question`** — l'agent n'est pas atteint
+   depuis le chat, donc la boucle de compétences ne tourne pas depuis `/chat`.
 2. **P10 de l'audit Linux** : la boucle d'événements se bloque pendant un
-   `/chat` (`/health` : 3,5 ms → 1 149 ms). Trois sites d'appel.
+   `/chat` (`/health` : 3,5 ms → 1 149 ms). Une reprise allonge encore le tour.
 3. **Portée régionale dans `KnowledgeScope`**, ou expansion pays par pays.
 
-**Repère mesuré le 2026-08-24** : voir le rapport de fin de session pour le
-chiffre exact de `pytest -q` ; `ruff check src tests scripts agents` → tout
-passe. **47 tests ajoutés, 0 supprimé, 0 affaibli.**
+**Repère mesuré le 2026-08-24** : `pytest -q` → **7309 passés, 9 ignorés,
+3 désélectionnés, 0 échec**. `ruff check src tests scripts agents` → tout passe.
+**62 tests ajoutés, 0 supprimé, 0 affaibli.**
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
-- **`ollama serve`** : sans serveur, les profils restent `declared` au lieu
-  d'être `measured`. C'est le geste qui active le plus de choses d'un coup.
+- **`ollama serve`** : sans serveur, les profils de modèles restent `declared`
+  au lieu de `measured`, et aucune reprise réelle n'a jamais tourné.
 - `git push origin v0.1.0` → seul test rouge en CI, rouge sur `main` aussi.
   Refusé d'ici : `HTTP 403`, mesuré. **Ne pas réessayer, ne pas « corriger ».**
 - `GALSEN_CODING_WORKSPACE_ROOTS` non renseignée → le moteur de codage refuse tout.
-- Cet hôte : **aucun GPU**, `ffmpeg` absent, Hugging Face et `api.github.com`
-  en 403. `raw.githubusercontent.com` et `pypi.org` répondent.
+- Cet hôte : **aucun GPU**, `ffmpeg` absent, Hugging Face, `qwenlm.github.io` et
+  `api.github.com` en 403. `raw.githubusercontent.com` et `pypi.org` répondent.
 
 ---
 
 ### Sessions précédentes
+
+**2026-08-24 — Routage des modèles (ADR-040)** : il ne sélectionnait pas, il
+prenait le premier de la liste. Six causes mesurées. Dix types de tâche et huit
+intentions atteignent cinq modèles distincts.
 
 **2026-08-23 — `/chat` rédige (ADR-039)**, 19 phases. `src/chat/` compose une
 réponse et appelle `ModelManagerImpl`. « bonjour » : 1 092 ms → 77 ms.

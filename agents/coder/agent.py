@@ -16,6 +16,7 @@ from typing import Any, Dict, List
 from src.agent.base_agent import BaseAgent
 from src.agent.context import AgentContext
 from src.agent.legacy import run_agent_module
+from src.skills.loop import antecedents, rendre_anterioroites
 
 
 class CoderAgent(BaseAgent):
@@ -167,10 +168,29 @@ class CoderAgent(BaseAgent):
             f"Conventions: {conventions.get('expected_style')}\n"
         )
 
+        # Ce qui a déjà servi ici entre dans l'invite comme **antériorité**,
+        # jamais comme réponse toute faite (`src/skills/loop.py`). Seules les
+        # compétences dont une exécution de tests a prouvé le fonctionnement
+        # sont rendues : la bibliothèque range ce qui a marché, pas ce qu'un
+        # modèle a écrit.
+        deja_vu = antecedents(request)
+        bloc = rendre_anterioroites(deja_vu)
+        if bloc:
+            prompt = f"{prompt}\n{bloc}\n"
+
         outcome = context.generate(prompt, {"task_type": "code_generation"})
 
         if outcome.get("status") == "success":
-            return {"status": "generated", "code": outcome["text"], "model_id": outcome.get("model_id")}
+            return {
+                "status": "generated",
+                "code": outcome["text"],
+                "model_id": outcome.get("model_id"),
+                # Combien d'antériorités ont servi, et **par quel chemin** elles
+                # ont été retrouvées. Sans `retrieval_method`, un classement par
+                # mots se lirait comme une compréhension du sens.
+                "prior_skills": [c["name"] for c in deja_vu.get("skills", [])],
+                "retrieval_method": deja_vu.get("method"),
+            }
 
         return {
             "status": "not_generated",

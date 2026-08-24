@@ -12,6 +12,51 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-24 — The chat checks its own answer (ADR-041), and the skill library is finally connected
+
+ADR-039 gave the chat a writing stage that generates **once**. Nothing read what
+came back: an answer containing *« le total est 2 + 2 = 5 »*, or asserting
+*« il est prouvé que… »* about something never verified, or stating a claim one
+of the platform's own findings contradicts, was served as-is.
+
+`src/reasoning/` closes that loop. Two modules, and the boundary is the design:
+`critics.py` **observes** and corrects nothing; `deliberation.py` decides what to
+do with an observation and when to stop. No critic asks a model whether it was
+right — `agents/verifier/agent.py` already explains why that measures a model's
+confidence in itself rather than its correctness.
+
+Five checks, four blocking: empty answer, false arithmetic (in `Decimal`), a
+claim contradicted by a gathered finding, certainty markers while grounding is
+not `GROUNDED`. Naming the platform's internals is advisory — relaunching a
+generation for one badly chosen word costs more than the fault.
+
+Three stops, and the report says which fired: `verified`,
+`iteration_budget_exhausted`, `deadline_exceeded`. **When the budget runs out,
+the answer is served with its findings** — a loop that silently serves an answer
+it knows is doubtful is worth less than no loop. One retry by default,
+`GALSEN_CHAT_MAX_RETRIES`; `0` keeps the criticism and stops only the retry.
+
+Measured, `python -m src.reasoning.benchmark`, 22 cases: **66.7 % detection,
+0 % false alarms**. The first version of that benchmark scored 8/8 and said
+nothing — the cases and the checks came from the same hand. Four cases the checks
+genuinely miss were added, each carrying the reason. A benchmark whose score can
+only rise is a decoration.
+
+**`src/skills/` is connected.** It had existed since 2026-08-23 with nothing
+writing to it. `src/skills/loop.py` splits the loop across the two agents that
+can each hold one half: the `coder` **retrieves** proven procedures before
+writing (as prior art, never as a ready-made answer), and the `tester`
+**records** what it produced — but only when suites actually ran and were green.
+Recording on the coder's side would archive everything a model produces,
+including what does not compile; the tester is the only place in the repository
+where a proof exists, and `Competence.valider()` refuses a skill that calls
+itself verified without saying by what.
+
+A defect worth recording: the first `empty_answer` check required three words,
+so it flagged *« 42 »* and *« Oui. »* — complete answers to questions that need
+no more. A verifier that penalises concision costs a model call and improves
+nothing. Empty means empty.
+
 ### Fixed — 2026-08-24 — The model router selected nothing, and now selects (ADR-040)
 
 Measured before touching anything, on a realistic local fleet of five
