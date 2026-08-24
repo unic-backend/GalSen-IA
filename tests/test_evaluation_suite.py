@@ -31,6 +31,27 @@ from src.model_engine.evaluation_suite import (  # noqa: E402
 )
 
 
+@pytest.fixture(scope="module")
+def sortie():
+    """
+    Un seul lancement du script, partagé par les assertions qui l'inspectent.
+
+    Le script démarre l'application complète et enchaîne dix tours de
+    conversation. Le relancer une fois par assertion doublerait ce coût pour
+    vérifier deux propriétés du **même** passage — et c'est la durée d'un test
+    d'intégration qui décide s'il finit par être désactivé.
+
+    Au niveau du module plutôt que de la classe : une fixture de portée `class`
+    déclarée en méthode est dépréciée par pytest, et ce dépôt porte déjà un
+    avertissement de cette famille. En ajouter un second le banaliserait.
+    """
+    racine = os.path.join(os.path.dirname(__file__), "..")
+    return subprocess.run(
+        [sys.executable, "scripts/models/evaluate.py", "--modele", "qwen3.5:9b"],
+        cwd=racine, capture_output=True, text=True, timeout=900,
+    )
+
+
 def _reponse(texte: str, **surcharges):
     """Une charge `ChatResponse` plausible, que chaque test ajuste."""
     charge = {
@@ -186,24 +207,14 @@ class TestLeScriptTraverseLaChaineReelle:
     et non une erreur d'authentification ou d'import.
     """
 
-    def test_il_atteint_l_absence_de_modele_et_le_dit(self):
-        racine = os.path.join(os.path.dirname(__file__), "..")
-        sortie = subprocess.run(
-            [sys.executable, "scripts/models/evaluate.py", "--modele", "qwen3.5:9b"],
-            cwd=racine, capture_output=True, text=True, timeout=900,
-        )
+    def test_il_atteint_l_absence_de_modele_et_le_dit(self, sortie):
         assert "exécutées    : 0/10" in sortie.stdout
         assert "fournisseur" in sortie.stdout
         assert "401" not in sortie.stdout, "l'authentification doit être satisfaite"
         assert "NON MESURABLE" in sortie.stdout
 
-    def test_aucune_cle_n_est_affichee(self):
+    def test_aucune_cle_n_est_affichee(self, sortie):
         """Une clé jetable reste jetable : elle ne doit apparaître nulle part."""
-        racine = os.path.join(os.path.dirname(__file__), "..")
-        sortie = subprocess.run(
-            [sys.executable, "scripts/models/evaluate.py", "--modele", "qwen3.5:9b"],
-            cwd=racine, capture_output=True, text=True, timeout=900,
-        )
         assert "X-API-Key" not in sortie.stdout
         assert "GALSEN_API_KEYS" not in sortie.stdout
 
