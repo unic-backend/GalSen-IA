@@ -14,7 +14,28 @@ Terminées        : **1.1 · 1.2 · 2.1 · 2.2 · 3.1 · 3.2 · 4.1 · 4.2 · 5.
 Branche          : `claude/galsen-ia-phases-ukwz7p`, **repartie de `main`**
                    (`dc09303`) — la PR #36 est fusionnée, on n'empile pas
                    sur de l'historique déjà intégré.
-Cadence          : **deux phases par tour** (convenu le 2026-08-19)
+Cadence          : **continu** — décidée le 2026-08-24, sur la consigne du
+                   propriétaire du 2026-08-22 : *« ne me demande pas de
+                   confirmation entre les phases sauf si une décision réellement
+                   bloquante ou irréversible est nécessaire »*.
+
+                   `.claude/rules/phase-protocol.md` §2 le permet explicitement —
+                   la cadence appartient au propriétaire — et **exige qu'elle
+                   soit enregistrée ici** pour que la règle et la réalité ne
+                   divergent pas. C'est fait.
+
+                   **Les arrêts qui subsistent, et pourquoi ils ne sont pas
+                   négociables.** Enchaîner les phases ne dispense pas de
+                   s'arrêter quand la décision n'est pas la mienne :
+
+                   - une décision de produit ou d'architecture qui t'appartient ;
+                   - un geste irréversible (fusion, force push, suppression) —
+                     `.claude/rules/git-workflow.md` est permanent là-dessus ;
+                   - un conflit avec un ADR ou une règle du dépôt ;
+                   - un échec que je ne sais pas réparer ;
+                   - les 25 minutes de `.claude/rules/work-cadence.md`.
+
+                   Le reste s'enchaîne, chaque phase vérifiée avant la suivante.
 
 **Ce que le brief interdit** : reconstruire l'architecture, créer une seconde
 sélection de modèle, contourner l'orchestration, l'ancrage, la vérification, la
