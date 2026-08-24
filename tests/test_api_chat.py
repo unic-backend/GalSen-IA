@@ -367,13 +367,13 @@ class TestLaGenerationNAncreRien:
         async def faux(prompt, task_requirements, **k):
             return texte
 
-        precedent = serveur.model_manager.generate_text_with_fallback
-        serveur.model_manager.generate_text_with_fallback = faux
+        precedent = serveur.model_manager.generate_text_with_source
+        serveur.model_manager.generate_text_with_source = faux
         try:
             return client.post("/chat", json={"message": "Qui était Einstein ?"},
                                headers=ENTETE)
         finally:
-            serveur.model_manager.generate_text_with_fallback = precedent
+            serveur.model_manager.generate_text_with_source = precedent
 
     def test_une_reponse_generee_reste_non_ancree(self, client):
         reponse = self._reponse(client, "Einstein était un physicien.")
@@ -460,8 +460,8 @@ class TestPanneEtMemoire:
             vu["invite"] = prompt
             return "FastAPI ou Flask conviennent."
 
-        precedent = serveur.model_manager.generate_text_with_fallback
-        serveur.model_manager.generate_text_with_fallback = faux
+        precedent = serveur.model_manager.generate_text_with_source
+        serveur.model_manager.generate_text_with_source = faux
         try:
             client.post("/chat", json={
                 "message": "Quelle bibliothèque pour les API ?",
@@ -471,7 +471,7 @@ class TestPanneEtMemoire:
                 ],
             }, headers=ENTETE)
         finally:
-            serveur.model_manager.generate_text_with_fallback = precedent
+            serveur.model_manager.generate_text_with_source = precedent
 
         assert "apprends le Python" in vu["invite"]
         assert "User:" in vu["invite"] and "Assistant:" in vu["invite"]
@@ -487,7 +487,7 @@ class TestAutoRevue:
 
     def test_le_modele_utilise_n_est_jamais_devine(self):
         """
-        `generate_text_with_fallback()` rend une chaîne : lequel des modèles a
+        `generate_text_with_source()` rend une chaîne : lequel des modèles a
         répondu n'est nulle part dedans. Rendre le premier de la liste était un
         nom deviné — faux précisément quand le repli a servi, c'est-à-dire dans
         le seul cas intéressant.

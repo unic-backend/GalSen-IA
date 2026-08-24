@@ -226,14 +226,26 @@ class ProviderSelector:
         from .routing_policy import shared_policy
 
         task_type = task_requirements.get("task_type", "conversation")
-        complexity = task_requirements.get("complexity", "medium")
+        # Une complexité non annoncée est **inconnue**, pas moyenne. La traiter
+        # comme `medium` imposait un plancher de 8192 jetons que personne
+        # n'avait demandé : mesuré le 2026-08-24, c'est ce plancher qui rendait
+        # une tâche `vision` irroutable — le seul modèle de vision servi
+        # (`llava`, 4096 jetons) était écarté pour un contexte qu'une image ne
+        # réclame pas. `medium` reste la valeur **rapportée**, pour que les
+        # appelants qui la lisent ne changent pas de comportement ; elle ne
+        # relève simplement plus aucun plancher.
+        complexite_annoncee = task_requirements.get("complexity")
+        complexity = complexite_annoncee or "medium"
 
         modeles_servis = [
             descripteur.model_name
             for descripteur in self._model_registry.find_models(available_only=True)
         ]
+        demande_politique = {**task_requirements, "task_type": task_type}
+        if complexite_annoncee:
+            demande_politique["complexity"] = complexite_annoncee
         decision = shared_policy().decide(
-            {**task_requirements, "task_type": task_type, "complexity": complexity},
+            demande_politique,
             available_models=modeles_servis,
         )
         exigences = decision.requirements
@@ -244,7 +256,7 @@ class ProviderSelector:
         min_context = max(
             exigences.get("min_context_window", 0),
             profile.get("min_context_window", 0),
-            self.COMPLEXITY_CONTEXT.get(complexity, 0),
+            self.COMPLEXITY_CONTEXT.get(complexite_annoncee, 0) if complexite_annoncee else 0,
             int(task_requirements.get("min_context_window", 0)),
         )
 
@@ -305,17 +317,34 @@ class ProviderSelector:
             if de_la_famille:
                 candidates = de_la_famille
 
-        # « Question simple → petit modèle » : pour une tâche ordinaire, le moins
-        # cher des modèles capables suffit, et les candidats arrivent triés par
-        # coût croissant. C'est la seule optimisation de coût qui ne dégrade rien.
-        if requirements.get("prefer_cheapest"):
+        preferred_features = requirements.get("preferred_features", [])
+        if not preferred_features:
+            # À défaut de préférence applicable, le moins cher convient : les
+            # candidats arrivent triés par coût croissant.
             return candidates[0]
 
-        preferred_features = requirements.get("preferred_features", [])
-        if preferred_features:
-            for descriptor in candidates:
-                if any(feature in descriptor.special_features for feature in preferred_features):
-                    return descriptor
+        def atouts(descriptor: ModelDescriptor) -> int:
+            """Combien d'atouts attendus par la tâche ce modèle porte."""
+            return sum(1 for f in preferred_features if f in descriptor.special_features)
 
-        # À défaut de préférence applicable, le moins cher convient
-        return candidates[0]
+        def cout(descriptor: ModelDescriptor) -> float:
+            """Tarif d'entrée pour 1000 jetons ; zéro pour un modèle local."""
+            return float(descriptor.pricing_per_1k_tokens.get("input", 0.0) or 0.0)
+
+        # Le tri de Python est stable : à égalité, l'ordre d'arrivée — donc le
+        # coût croissant — tranche encore. C'est ce qui rend les deux branches
+        # ci-dessous sûres.
+        #
+        # Ce bloc retournait auparavant **le premier candidat portant au moins
+        # un** atout attendu, et `prefer_cheapest` court-circuitait tout. Avec
+        # des modèles locaux, tous gratuits, « le moins cher » est une égalité
+        # générale : le choix retombait sur l'ordre de la liste. Mesuré le
+        # 2026-08-24 sur cinq modèles spécialisés, `conversation`, `reasoning`
+        # et `code_generation` retournaient le même modèle — le premier.
+        if requirements.get("prefer_cheapest"):
+            # « Question simple → petit modèle » : le coût commande, et les
+            # atouts départagent les modèles de même prix.
+            return sorted(candidates, key=lambda d: (cout(d), -atouts(d)))[0]
+
+        # Ailleurs, la compétence commande et le coût départage.
+        return sorted(candidates, key=lambda d: -atouts(d))[0]

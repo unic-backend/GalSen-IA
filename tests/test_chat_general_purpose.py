@@ -89,8 +89,8 @@ class Tour:
                 reel["status"] = "success"
             return reel
 
-        precedent = serveur.model_manager.generate_text_with_fallback
-        serveur.model_manager.generate_text_with_fallback = faux_modele
+        precedent = serveur.model_manager.generate_text_with_source
+        serveur.model_manager.generate_text_with_source = faux_modele
         RouterEngine._dispatch_agent = espion
         try:
             corps = {"message": message}
@@ -98,7 +98,7 @@ class Tour:
                 corps["history"] = history
             self.reponse = self.client.post("/chat", json=corps, headers=ENTETE)
         finally:
-            serveur.model_manager.generate_text_with_fallback = precedent
+            serveur.model_manager.generate_text_with_source = precedent
             RouterEngine._dispatch_agent = vrai_dispatch
         self.charge = self.reponse.json() if self.reponse.status_code == 200 else {}
         return self
@@ -575,12 +575,12 @@ class TestCoutSecuriteObservabilite:
             appels.append(prompt)
             return MARQUEUR
 
-        precedent = serveur.model_manager.generate_text_with_fallback
-        serveur.model_manager.generate_text_with_fallback = faux
+        precedent = serveur.model_manager.generate_text_with_source
+        serveur.model_manager.generate_text_with_source = faux
         try:
             client.post("/chat", json={"message": "Explique Linux."}, headers=ENTETE)
         finally:
-            serveur.model_manager.generate_text_with_fallback = precedent
+            serveur.model_manager.generate_text_with_source = precedent
 
         assert len(appels) == 1
 

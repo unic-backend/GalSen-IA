@@ -21,7 +21,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..agent.context import executer_coroutine
 
@@ -370,6 +370,43 @@ class RedacteurConversation:
             exigences["complexity"] = complexite
         return exigences
 
+    def _generer(self, invite: str, exigences: Dict[str, Any]) -> Tuple[str, Optional[str]]:
+        """
+        Appelle le moteur et rend le texte **avec le nom du modèle**, si connu.
+
+        Deux méthodes existent sur le moteur : `generate_text_with_source`, qui
+        nomme le modèle ayant abouti, et `generate_text_with_fallback`, qui rend
+        une chaîne seule. La première est préférée ; la seconde reste le repli,
+        parce que tout objet exposant `generate_text_with_fallback` doit
+        continuer de fonctionner ici — c'est le contrat annoncé au constructeur,
+        et plusieurs doubles de test s'y tiennent.
+
+        Args:
+            invite: L'invite complète
+            exigences: Exigences de sélection de modèle
+
+        Returns:
+            Le couple `(texte, nom du modèle ou None)`. `None` signifie que le
+            moteur ne sait pas le dire — jamais qu'on l'a deviné.
+        """
+        avec_source = getattr(self._modeles, "generate_text_with_source", None)
+        if callable(avec_source):
+            resultat = executer_coroutine(
+                avec_source(prompt=invite, task_requirements=exigences)
+            )
+            # Un double de test peut rendre une chaîne seule : l'accepter évite
+            # qu'un objet conforme au contrat annoncé au constructeur casse ici.
+            if isinstance(resultat, tuple):
+                return resultat[0], resultat[1]
+            return resultat, None
+
+        texte = executer_coroutine(
+            self._modeles.generate_text_with_fallback(
+                prompt=invite, task_requirements=exigences
+            )
+        )
+        return texte, None
+
     def rediger(self, contexte: ContexteReponse) -> ReponseFinale:
         """
         Rend la réponse finale, générée si un modèle répond, composée sinon.
@@ -406,13 +443,9 @@ class RedacteurConversation:
 
         invite = construire_invite(contexte)
 
+        modele: Optional[str] = None
         try:
-            texte = executer_coroutine(
-                self._modeles.generate_text_with_fallback(
-                    prompt=invite,
-                    task_requirements=self.exigences(contexte),
-                )
-            )
+            texte, modele = self._generer(invite, self.exigences(contexte))
         except Exception as erreur:  # noqa: BLE001 — toute panne est une donnée
             detail = _detail_complet(erreur)
             _JOURNAL.warning("Génération de réponse impossible : %s", detail)
@@ -437,7 +470,6 @@ class RedacteurConversation:
             )
 
         duree = round(time.perf_counter() - debut, 3)
-        modele = _modele_utilise(self._modeles)
         # Trace symétrique de celle des pannes : sans elle, un exploitant voit
         # les échecs et jamais les réussites, ce qui donne d'une plateforme qui
         # marche l'image d'une plateforme qui tombe.
@@ -500,19 +532,24 @@ def _detail_complet(erreur: Exception) -> str:
 
 def _modele_utilise(gestionnaire: Any) -> Optional[str]:
     """
-    Nomme le modèle qui a répondu — c'est-à-dire : rend `None`.
+    Rend `None`. **Conservée pour ce qu'elle documente, pas pour ce qu'elle fait.**
 
-    **Cette fonction devinait, et sa docstring prétendait le contraire.** Elle
-    rendait le premier modèle actif du moteur, alors que
-    `generate_text_with_fallback()` essaie les candidats dans l'ordre et rend
-    une chaîne : *lequel* a répondu n'est nulle part dans sa valeur de retour.
-    Le premier de la liste n'est donc pas le bon dans le seul cas où la question
-    est intéressante — quand le repli a servi.
+    Cette fonction devinait — elle rendait le premier modèle actif du moteur —
+    et sa docstring prétendait le contraire. Le premier de la liste n'est pas le
+    bon dans le seul cas où la question est intéressante : quand le repli a
+    servi. Elle a donc été réduite à `None` le 2026-08-23, avec cette note :
+    *« ce qui trancherait, c'est que le moteur rende le modèle retenu avec le
+    texte »*.
 
-    Trouvé le 2026-08-23 en relisant mon propre diff. Un nom deviné vaut moins
-    que pas de nom : il se lit comme une mesure.
+    C'est fait (2026-08-24) : `ModelManagerImpl.generate_text_with_source()`
+    rend le couple, et `RedacteurConversation._generer()` l'utilise. Plus
+    personne n'appelle cette fonction dans le chemin de rédaction.
 
-    Ce qui trancherait : que le moteur rende le modèle retenu avec le texte.
-    Le jour où il le fera, c'est ici que ça se branche.
+    Args:
+        gestionnaire: Ignoré. Le paramètre reste pour ne pas casser un appelant.
+
+    Returns:
+        `None`, toujours. Un nom deviné vaut moins que pas de nom : il se lit
+        comme une mesure.
     """
     return None

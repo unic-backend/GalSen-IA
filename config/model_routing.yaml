@@ -89,9 +89,136 @@ tasks:
     preferred_features: ["long_context"]
     min_context_window: 100000
 
+  # ---------------------------------------------------------------------------
+  # Les intentions du planner
+  # ---------------------------------------------------------------------------
+  # Mesuré le 2026-08-24 : le planner produit huit intentions
+  # (`agents/planner/agent.py`, `INTENT_RULES`) et **sept d'entre elles
+  # n'existaient pas ici**. Le chat transmet pourtant cet axe comme `task_type`
+  # à la sélection de modèle. Conséquence : « écris une fonction Python »
+  # arrivait en `implementation`, ne correspondait à aucune règle, tombait sur
+  # `default` — `general_conversation` + `prefer_cheapest` — et se faisait
+  # écrire par le plus petit modèle installé.
+  #
+  # Les intentions sont ajoutées ici plutôt que renommées là-bas : elles
+  # désignent aussi les agents à mobiliser, et les renommer casserait cette
+  # correspondance pour réparer celle-ci. Un seul vocabulaire, deux lecteurs.
+
+  research:
+    family: samp
+    preferred_features: ["reasoning", "analysis", "long_context"]
+    min_context_window: 32000
+
+  implementation:
+    family: top
+    preferred_features: ["code_generation"]
+    min_context_window: 8192
+
+  quality:
+    family: top
+    preferred_features: ["code_generation", "reasoning"]
+    min_context_window: 32000
+
+  security:
+    family: samp
+    preferred_features: ["reasoning", "analysis"]
+    min_context_window: 32000
+
+  documentation:
+    family: samp
+    preferred_features: ["long_context", "general_conversation"]
+    min_context_window: 8192
+
+  deployment:
+    family: samp
+    preferred_features: ["reasoning"]
+    min_context_window: 8192
+
+  monitoring:
+    family: samp
+    preferred_features: ["analysis"]
+    min_context_window: 8192
+
 # Appliqué quand le type de tâche est inconnu ou absent. Volontairement modeste :
 # router une tâche non déclarée vers un gros modèle coûte cher pour rien.
 default:
   preferred_features: ["general_conversation"]
   min_context_window: 4096
   prefer_cheapest: true
+
+# =============================================================================
+# Ce que sait faire un modèle local — profils par motif de nom
+# =============================================================================
+# Mesuré le 2026-08-24 : le fournisseur local annonçait **les mêmes capacités
+# pour tous les modèles** — `supports_vision: false`, `supports_function_calling:
+# false`, et `special_features: [local, no_cost, offline]`. Aucun de ces trois
+# atouts n'appartient au vocabulaire de `preferred_features` ci-dessus, donc
+# aucune préférence de tâche ne s'appliquait jamais. Conséquence mesurée sur un
+# parc de cinq modèles spécialisés : `code_generation`, `reasoning` et
+# `conversation` retournaient tous le **premier de la liste**, `vision` et
+# `document_analysis` ne retournaient **rien**.
+#
+# Trois niveaux, du plus fort au plus faible — et le descripteur dit toujours
+# lequel a servi :
+#
+#   1. `measured`  — interrogé sur `/api/show` du serveur Ollama. `capabilities`
+#                    donne `vision` et `tools`, `model_info.<arch>.context_length`
+#                    donne le contexte réel. C'est la seule source qui constate.
+#   2. `declared`  — ce fichier. Une décision d'exploitation : l'opérateur dit
+#                    quel modèle il a installé et à quoi il sert.
+#   3. `default`   — rien n'est su. Le contexte reste celui de `/api/tags` et
+#                    aucun atout n'est déclaré.
+#
+# **Une mesure écrase toujours une déclaration.** Les `context_window` ci-dessous
+# sont des valeurs de départ à confirmer sur la machine : lancez `ollama serve`
+# et le profil sera mesuré au lieu d'être lu ici.
+#
+# Vocabulaire des atouts : celui de `preferred_features` — `general_conversation`,
+# `fast_response`, `reasoning`, `analysis`, `long_context`, `code_generation`.
+# En inventer un second garantirait qu'ils cessent de dire la même chose.
+#
+# L'ordre compte : le **premier** motif qui correspond au nom gagne. Les motifs
+# les plus spécifiques sont donc placés avant les plus généraux.
+local_models:
+  # --- Modèles de code -------------------------------------------------------
+  # `reasoning` n'y figure pas volontairement : un modèle de code raisonne
+  # **sur du code**, et l'annoncer comme raisonneur généraliste le faisait
+  # gagner à égalité contre un vrai modèle de raisonnement, sur l'ordre de la
+  # liste. `code_review` le retient quand même — cette tâche demande les deux.
+  - matches: ["coder", "codellama", "codestral", "starcoder", "deepseek-coder"]
+    features: ["code_generation"]
+    context_window: 32768
+
+  # --- Modèles de raisonnement ----------------------------------------------
+  # Un modèle de raisonnement produit une chaîne de pensée avant sa réponse :
+  # il est lent, et ne doit pas servir une salutation.
+  - matches: ["deepseek-r1", "qwq", "marco-o1", "reasoner"]
+    features: ["reasoning", "analysis"]
+    context_window: 32768
+
+  # --- Modèles de vision -----------------------------------------------------
+  - matches: ["llava", "-vl", "vision", "bakllava", "moondream", "minicpm-v"]
+    features: ["analysis"]
+    supports_vision: true
+    context_window: 4096
+
+  # --- Petits modèles rapides ------------------------------------------------
+  # Ce qui les qualifie n'est pas leur qualité mais leur latence : ils existent
+  # pour que « bonjour » ne traverse pas un modèle de 14 milliards de paramètres.
+  - matches: ["phi3", "phi4-mini", "gemma:2b", "gemma2:2b", "qwen2.5:0.5b",
+              "qwen2.5:1.5b", "qwen2.5:3b", "llama3.2:1b", "llama3.2:3b",
+              "tinyllama", "smollm"]
+    features: ["general_conversation", "fast_response"]
+
+  # --- Modèles à long contexte ----------------------------------------------
+  - matches: ["llama3.1", "llama3.2", "llama3.3", "gemma3", "command-r"]
+    features: ["general_conversation", "reasoning", "long_context", "analysis"]
+    supports_tools: true
+    context_window: 131072
+
+  # --- Modèles généralistes --------------------------------------------------
+  # Placé en dernier : « qwen2.5 » correspondrait sinon à « qwen2.5-coder ».
+  - matches: ["qwen2.5", "qwen3", "mistral", "mixtral", "gemma2", "llama3"]
+    features: ["general_conversation", "reasoning", "analysis"]
+    supports_tools: true
+    context_window: 32768

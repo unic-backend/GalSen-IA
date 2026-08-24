@@ -2,7 +2,7 @@
 Gestionnaire principal du moteur de modèles GalSen IA.
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 from .types import ModelItem, ModelStatus
 from .interfaces import (
     ModelStore, ModelManager
@@ -280,11 +280,21 @@ class ModelManagerImpl(ModelManager):
 
         return response.text
 
-    async def generate_text_with_fallback(self, prompt: str,
-                                          task_requirements: Dict[str, Any],
-                                          **kwargs) -> str:
+    async def generate_text_with_source(self, prompt: str,
+                                        task_requirements: Dict[str, Any],
+                                        **kwargs) -> Tuple[str, str]:
         """
-        Génère du texte en essayant les modèles adaptés jusqu'à en trouver un qui répond.
+        Génère du texte **et nomme le modèle qui a répondu**.
+
+        `generate_text_with_fallback` ne rend qu'une chaîne : *lequel* des
+        candidats a abouti n'apparaît nulle part dans sa valeur de retour. Un
+        appelant qui veut l'afficher n'a que deux options, et les deux sont
+        mauvaises — deviner le premier de la liste, ce qui est faux dans le seul
+        cas intéressant (quand le repli a servi), ou ne rien dire.
+
+        Cette méthode existe pour qu'il en ait une troisième. Elle ne remplace
+        pas l'autre : `generate_text_with_fallback` reste le chemin de ceux qui
+        n'ont besoin que du texte.
 
         Args:
             prompt: Invite envoyée au modèle
@@ -292,7 +302,7 @@ class ModelManagerImpl(ModelManager):
             **kwargs: Options transmises au fournisseur
 
         Returns:
-            Le texte généré par le premier modèle ayant abouti
+            Le couple `(texte, nom du modèle)`.
 
         Raises:
             ProviderUnavailableError: Si aucun modèle candidat n'a pu répondre
@@ -310,7 +320,7 @@ class ModelManagerImpl(ModelManager):
         for model_item in candidates:
             response = await asyncio.to_thread(self.generate, model_item, prompt, **kwargs)
             if response.succeeded:
-                return response.text
+                return response.text, model_item.name
 
             last_detail = response.detail or ""
             self._logger.info(
@@ -322,6 +332,32 @@ class ModelManagerImpl(ModelManager):
             reason=UnavailabilityReason.NO_CREDENTIALS,
             detail=last_detail or "Tous les modèles candidats ont échoué",
         )
+
+    async def generate_text_with_fallback(self, prompt: str,
+                                          task_requirements: Dict[str, Any],
+                                          **kwargs) -> str:
+        """
+        Génère du texte en essayant les modèles adaptés jusqu'à en trouver un qui répond.
+
+        Args:
+            prompt: Invite envoyée au modèle
+            task_requirements: Exigences de la tâche
+            **kwargs: Options transmises au fournisseur
+
+        Returns:
+            Le texte généré par le premier modèle ayant abouti
+
+        Raises:
+            ProviderUnavailableError: Si aucun modèle candidat n'a pu répondre
+        """
+        # Une seule implémentation du repli, ici déléguée : deux boucles
+        # identiques finiraient par diverger, et c'est la divergence entre
+        # deux chemins censés faire la même chose qui a produit le défaut de
+        # routage corrigé le 2026-08-24.
+        texte, _ = await self.generate_text_with_source(
+            prompt, task_requirements, **kwargs
+        )
+        return texte
 
     async def generate_text_with_load_balancing(self, prompt: str,
                                                 task_requirements: Dict[str, Any],
@@ -581,6 +617,19 @@ class ModelManagerImpl(ModelManager):
 
         Les modèles déjà enregistrés dans le stockage passent en premier, puis
         ceux du catalogue servis par un fournisseur disponible.
+
+        **Le catalogue est désormais trié par `ProviderSelector`** avant d'être
+        ajouté. Il ne l'était pas : les modèles du catalogue arrivaient dans
+        l'ordre du fournisseur, et comme `generate_text_with_fallback` essaie le
+        premier qui répond, un serveur local en bonne santé répondait toujours
+        avec le **premier modèle installé**, quelle que soit la tâche demandée.
+        Toute la sélection par capacité vivait dans `ProviderSelector`, que ce
+        chemin n'appelait pas — c'est-à-dire nulle part, du point de vue d'un
+        utilisateur du chat.
+
+        Rien n'est retiré de la liste : le modèle retenu passe devant, les
+        autres restent derrière dans leur ordre d'origine. Le repli garde donc
+        exactement la même portée qu'avant.
         """
         candidates: List[ModelItem] = []
         seen: set = set()
@@ -597,12 +646,47 @@ class ModelManagerImpl(ModelManager):
                     candidates.append(model_item)
                     seen.add(model_item.model_id)
 
-        for model_item in self._model_registry.build_all_model_items(available_only=True):
+        for model_item in self._catalogue_trie(task_requirements):
             if model_item.model_id not in seen:
                 candidates.append(model_item)
                 seen.add(model_item.model_id)
 
         return candidates
+
+    def _catalogue_trie(self, task_requirements: Dict[str, Any]) -> List[ModelItem]:
+        """
+        Retourne le catalogue disponible, le modèle adapté à la tâche en tête.
+
+        Args:
+            task_requirements: Exigences de la tâche, `task_type` compris
+
+        Returns:
+            Les modèles du catalogue. En cas d'échec de la sélection, l'ordre
+            d'origine — router moins finement vaut mieux que ne plus router.
+        """
+        catalogue = self._model_registry.build_all_model_items(available_only=True)
+        if len(catalogue) < 2 or not task_requirements:
+            return catalogue
+
+        try:
+            from .provider_selector import ProviderSelector
+
+            selection = ProviderSelector(
+                provider_registry=self._provider_registry,
+                model_registry=self._model_registry,
+            ).select(task_requirements)
+        except Exception as erreur:  # noqa: BLE001 - une sélection ratée ne doit rien bloquer
+            self._logger.warning(
+                "Tri du catalogue impossible (%s) : ordre du fournisseur conservé.", erreur
+            )
+            return catalogue
+
+        if selection.descriptor is None:
+            return catalogue
+
+        attendu = f"{selection.descriptor.provider_id}:{selection.descriptor.model_name}"
+        en_tete = [m for m in catalogue if m.model_id == attendu]
+        return en_tete + [m for m in catalogue if m.model_id != attendu]
 
     def _record_generation(self, model_item: ModelItem, prompt: str,
                            response: GenerationResponse) -> None:

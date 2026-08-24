@@ -12,6 +12,50 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Fixed — 2026-08-24 — The model router selected nothing, and now selects (ADR-040)
+
+Measured before touching anything, on a realistic local fleet of five
+specialised models: `code_generation`, `reasoning` and `conversation` all
+returned **the first model in the list** — the same one, three times — while
+`vision`, `summarization` and `document_analysis` returned nothing at all. The
+capability-based routing layer existed, was wired, and compared descriptors that
+were identical for every model.
+
+Five causes, each measured and each fixed:
+
+- `LocalProvider` built one identical descriptor for every model — no vision, no
+  tools, 8192 tokens, and three special features belonging to no routing
+  vocabulary. `src/model_engine/local_catalogue.py` now establishes a profile
+  from three ranked sources — **measured** (`/api/show`), **declared**
+  (`config/model_routing.yaml`), **default** — and every descriptor carries
+  `capability_sources` saying which one fixed each field.
+- `/api/tags` carries no `context_length`; the key read from it never existed,
+  so every model was 8192 and long-context tasks were unroutable by
+  construction. The real context is now asked of `/api/show`.
+- An unstated complexity was treated as `medium`, silently imposing an
+  8192-token floor — the floor that excluded the only vision model served.
+- `ProviderSelector._pick_best` returned the first candidate carrying *any*
+  expected feature, and `prefer_cheapest` short-circuited before features were
+  considered. It now scores by how many expected features a model carries, with
+  cost as the tiebreak.
+- **`generate_text_with_fallback` never called the selector** — the chat's own
+  generation path walked the catalogue in provider order. It now sorts the
+  catalogue first, pruning nothing, so the fallback keeps its full reach.
+
+And, at the seam between subsystems: seven of the planner's eight intents had no
+routing rule, so *« écris une fonction Python »* fell through to the default
+rule and was answered by the smallest model installed. The intents are now
+declared in the routing policy rather than renamed in the planner — they also
+designate which agents to mobilise.
+
+Ten task types and eight planner intents now reach five distinct models.
+`tests/test_local_model_profiles.py` asserts that table (47 tests); removing the
+integration makes eight of them fail — verified by sabotage.
+
+Model candidates per role, with what was and was not verified →
+`docs/models/local-model-selection.md`. **No model was downloaded, loaded or
+benchmarked**, and no quality claim in that document rises above `OBSERVED`.
+
 ### Added — 2026-08-23 — The chat writes, and writing still grounds nothing (ADR-039)
 
 Measured before touching anything: `POST /chat` returned the identical text,
