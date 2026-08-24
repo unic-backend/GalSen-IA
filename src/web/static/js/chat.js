@@ -1,18 +1,3 @@
-<<<<<<< HEAD
-﻿/**
- * Interface conversationnelle GalSen IA â€” logique d'affichage (chapitre 01, phase 1.2).
- *
- * Ce fichier construit la couche de prÃ©sentation du chat : bulles utilisateur et
- * assistant, indicateur Â« en cours Â», messages d'erreur et saisie vocale. Le
- * cÃ¢blage sur l'orchestration (POST /workflow/run via api-client.js) arrive au
- * chapitre 02 ; ici, seule la structure interactive est en place.
- *
- * RÃ¨gles respectÃ©es (ADR-008) :
- * - aucune Ã©criture via `innerHTML` : tout texte est insÃ©rÃ© avec `textContent`
- *   pour ne jamais interprÃ©ter de balisage venu d'une rÃ©ponse d'API ;
- * - aucun `fetch` direct : le seul module autorisÃ© Ã  appeler le rÃ©seau est
- *   `api-client.js`.
-=======
 /**
  * Conversation GalSen IA — ch. 04 du VOLET chat-first.
  *
@@ -22,209 +7,10 @@
  * Il réutilise `api-client.js`, jamais un second client. Deux clients
  * ferraient diverger sur la gestion de la clé, et deux implémentations de la
  * même logique se contredisent invariablement.
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
  */
 
 import { api } from "./api-client.js";
 
-<<<<<<< HEAD
-const $ = (selecteur) => document.querySelector(selecteur);
-
-document.addEventListener("DOMContentLoaded", () => {
-  const boutonMenu = $("#menu-domaines");
-  const menu = $("#liste-domaines");
-  const conversation = $("#conversation");
-  const formulaire = $("#formulaire-saisie");
-  const saisie = $("#saisie");
-  const boutonVocal = $("#bouton-vocal");
-
-  // --- Menu des domaines ----------------------------------------------------
-
-  /** Ferme le menu et rend l'Ã©tat au bouton qui l'ouvre. */
-  function fermerMenu() {
-    menu.hidden = true;
-    boutonMenu.setAttribute("aria-expanded", "false");
-  }
-
-  /** Ouvre le menu. */
-  function ouvrirMenu() {
-    menu.hidden = false;
-    boutonMenu.setAttribute("aria-expanded", "true");
-  }
-
-  if (boutonMenu && menu) {
-    boutonMenu.addEventListener("click", () => {
-      if (menu.hidden) ouvrirMenu();
-      else fermerMenu();
-    });
-
-    // Fermeture au clavier (Ã‰chap) et au clic hors du menu.
-    document.addEventListener("keydown", (evenement) => {
-      if (evenement.key === "Escape") fermerMenu();
-    });
-
-    document.addEventListener("click", (evenement) => {
-      const horsMenu = !menu.contains(evenement.target)
-        && !boutonMenu.contains(evenement.target);
-      if (!menu.hidden && horsMenu) fermerMenu();
-    });
-  }
-
-  // --- Affichage des messages ----------------------------------------------
-
-  /** Retire l'Ã©cran d'accueil quand la premiÃ¨re bulle apparaÃ®t. */
-  function retirerAccueil() {
-    const accueil = conversation.querySelector(".accueil");
-    if (accueil) accueil.remove();
-  }
-
-  /** CrÃ©e une bulle et l'ajoute en bas de la conversation. */
-  function ajouterMessage(role, texte) {
-    retirerAccueil();
-    const bulle = document.createElement("div");
-    bulle.className = `message message--${role}`;
-    bulle.textContent = texte;
-    conversation.appendChild(bulle);
-    conversation.scrollTop = conversation.scrollHeight;
-  }
-
-  /** Affiche l'indicateur Â« en cours Â» en bas de la conversation. */
-  function afficherEnCours() {
-    masquerEnCours();
-    const indicateur = document.createElement("div");
-    indicateur.id = "en-cours";
-    indicateur.className = "message message--info";
-    indicateur.textContent = "â€¦";
-    conversation.appendChild(indicateur);
-    conversation.scrollTop = conversation.scrollHeight;
-  }
-
-  /** Retire l'indicateur Â« en cours Â» s'il est prÃ©sent. */
-  function masquerEnCours() {
-    const indicateur = $("#en-cours");
-    if (indicateur) indicateur.remove();
-  }
-
-  /** Affiche un message d'erreur, sans le faire passer pour une rÃ©ponse. */
-  function afficherErreur(message) {
-    masquerEnCours();
-    const erreur = document.createElement("div");
-    erreur.className = "message message--erreur";
-    erreur.textContent = message;
-    conversation.appendChild(erreur);
-    conversation.scrollTop = conversation.scrollHeight;
-  }
-
-  // --- Saisie vocale -------------------------------------------------------
-
-  const ReconnaissanceVocale = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (ReconnaissanceVocale && boutonVocal) {
-    const reconnaissance = new ReconnaissanceVocale();
-    let enEcoute = false;
-
-    reconnaissance.lang = "fr-FR";
-    reconnaissance.interimResults = false;
-    reconnaissance.maxAlternatives = 1;
-
-    reconnaissance.addEventListener("result", (evenement) => {
-      const transcription = evenement.results[0][0].transcript;
-      saisie.value = (saisie.value ? `${saisie.value} ` : "") + transcription;
-    });
-
-    reconnaissance.addEventListener("error", () => {
-      enEcoute = false;
-      boutonVocal.classList.remove("bouton-vocal--actif");
-      afficherErreur("La saisie vocale n'a pas fonctionnÃ©. Utilisez le clavier.");
-    });
-
-    reconnaissance.addEventListener("end", () => {
-      enEcoute = false;
-      boutonVocal.classList.remove("bouton-vocal--actif");
-    });
-
-    boutonVocal.addEventListener("click", () => {
-      if (enEcoute) {
-        reconnaissance.stop();
-        return;
-      }
-      enEcoute = true;
-      boutonVocal.classList.add("bouton-vocal--actif");
-      reconnaissance.start();
-    });
-  } else if (boutonVocal) {
-    // Repli : sans Web Speech, le bouton est dÃ©sactivÃ© plutÃ´t que de promettre
-    // une saisie vocale qui ne viendra pas.
-    boutonVocal.disabled = true;
-    boutonVocal.title = "Saisie vocale non disponible sur ce navigateur";
-  }
-
-  // --- Envoi ----------------------------------------------------------------
-
-  if (formulaire && saisie && conversation) {
-  formulaire.addEventListener("submit", async (evenement) => {
-    evenement.preventDefault();
-
-    const texte = saisie.value.trim();
-    if (!texte) return;
-
-    ajouterMessage("utilisateur", texte);
-    saisie.value = "";
-    afficherEnCours();
-
-    try {
-      const reponse = await api.workflow.run(texte);
-
-      masquerEnCours();
-
-      let resultat = reponse?.aggregated_result;
-
-      if (Array.isArray(resultat)) {
-        resultat = resultat
-          .map((element) => {
-            if (typeof element === "string") {
-              return element;
-            }
-
-            if (element && typeof element.text === "string") {
-              return element.text;
-            }
-
-            if (element && typeof element.result === "string") {
-              return element.result;
-            }
-
-            return JSON.stringify(element);
-          })
-          .filter(Boolean)
-          .join("\n\n");
-      }
-
-      if (
-        resultat === null ||
-        resultat === undefined ||
-        resultat === ""
-      ) {
-        resultat =
-          reponse?.error ||
-          "Aucune réponse exploitable n'a été produite.";
-      }
-
-      if (typeof resultat !== "string") {
-        resultat = JSON.stringify(resultat, null, 2);
-      }
-
-      ajouterMessage("assistant", resultat);
-    } catch (erreur) {
-      afficherErreur(
-        erreur?.message ||
-        "Impossible de contacter l'orchestrateur."
-      );
-    }
-      });
-  }
-});
-=======
 // --- État global ---
 
 /** La conversation en mémoire, avec ses tours et son ID. */
@@ -321,6 +107,8 @@ function initialiser() {
 
   // Ajuster la hauteur du textarea à la saisie.
   textarea.addEventListener("input", () => ajusterHauteurTextarea(textarea));
+
+  brancherSaisieVocale(textarea);
 
   // Menu des domaines
   const boutonMenu = document.getElementById("bouton-menu");
@@ -553,4 +341,78 @@ function ajusterHauteurTextarea(textarea) {
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 320) + "px";
 }
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
+
+
+/**
+ * Branche la saisie vocale sur le champ de saisie.
+ *
+ * Ajoutée par le propriétaire le 2026-08-23. Portée depuis une interface qui
+ * appelait encore `/workflow/run` : le micro remplit le champ, et c'est le
+ * chemin `/chat` habituel qui envoie — la voix ne contourne rien.
+ *
+ * **Le repli refuse plutôt que de promettre.** `SpeechRecognition` n'existe pas
+ * partout (Firefox, la plupart des navigateurs mobiles hors Chrome) ; un bouton
+ * qui ne fait rien est pire qu'un bouton désactivé qui dit pourquoi.
+ */
+function brancherSaisieVocale(textarea) {
+  const bouton = document.getElementById("bouton-vocal");
+  if (!bouton) return;
+
+  const Reconnaissance =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!Reconnaissance) {
+    bouton.disabled = true;
+    bouton.title = "Saisie vocale non disponible sur ce navigateur";
+    return;
+  }
+
+  const reconnaissance = new Reconnaissance();
+  // Le français par défaut : c'est la langue de l'interface. Le wolof n'est pas
+  // proposé par les moteurs de reconnaissance des navigateurs — le dire vaut
+  // mieux que de laisser croire qu'il est reconnu.
+  reconnaissance.lang = "fr-FR";
+  reconnaissance.interimResults = false;
+  reconnaissance.maxAlternatives = 1;
+
+  let enEcoute = false;
+  const etat = document.getElementById("etat");
+
+  const arreter = () => {
+    enEcoute = false;
+    bouton.classList.remove("bouton-vocal--actif");
+  };
+
+  reconnaissance.addEventListener("result", (evenement) => {
+    const transcription = evenement.results[0][0].transcript;
+    textarea.value = textarea.value
+      ? `${textarea.value} ${transcription}`
+      : transcription;
+    ajusterHauteurTextarea(textarea);
+    textarea.focus();
+  });
+
+  reconnaissance.addEventListener("error", () => {
+    arreter();
+    if (etat) {
+      etat.textContent = "La saisie vocale n'a pas fonctionné. Utilise le clavier.";
+      etat.classList.add("echec");
+    }
+  });
+
+  reconnaissance.addEventListener("end", arreter);
+
+  bouton.addEventListener("click", () => {
+    if (enEcoute) {
+      reconnaissance.stop();
+      return;
+    }
+    enEcoute = true;
+    bouton.classList.add("bouton-vocal--actif");
+    if (etat) {
+      etat.textContent = "";
+      etat.classList.remove("echec");
+    }
+    reconnaissance.start();
+  });
+}

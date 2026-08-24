@@ -330,19 +330,17 @@ class RedacteurConversation:
         agents.
         """
         debut = time.perf_counter()
-                # Une conversation simple ne nécessite pas de génération par modèle.
-        # Le Planner a déjà déterminé qu'aucun agent n'est requis.
-        type_tache = contexte.axe("task_type")
-        if type_tache == "conversation" or (
-            isinstance(type_tache, list) and "conversation" in type_tache
-        ):
-            return ReponseFinale(
-                answer=composer_sans_modele(contexte),
-                generated=False,
-                failure_reason=None,
-                failure_detail=None,
-                elapsed_seconds=round(time.perf_counter() - debut, 3),
-            )
+
+        # Un court-circuit pour l'intention `conversation` a été essayé le
+        # 2026-08-23 et **retiré après mesure** : il rendait
+        # `composer_sans_modele()`, qui sans preuve ni constat répond « je n'ai
+        # pas de quoi répondre à cette question ». Une salutation recevait donc
+        # un refus.
+        #
+        # L'économie visée était réelle mais mal placée : ce qui coûtait
+        # 1 095 ms, c'était le pipeline de recherche, et le planificateur ne le
+        # lance plus pour une conversation. Rester ici coûte un appel de modèle
+        # sur une invite minuscule — le prix d'un vrai bonjour.
         invite = construire_invite(contexte)
 
         try:

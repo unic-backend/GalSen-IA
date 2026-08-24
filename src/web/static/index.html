@@ -6,11 +6,7 @@
     <title>GalSen IA</title>
     <meta
       name="description"
-<<<<<<< HEAD
-      content="GalSen IA, un assistant unique pour tous vos domaines : agriculture, santé, éducation, création multimédia et bien d'autres."
-=======
       content="GalSen IA — poser une question, et voir sur quoi la réponse repose."
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
     />
     <meta name="color-scheme" content="light dark" />
     <!-- Icône embarquée : une requête de moins, et pas de 404 dans la console.
@@ -24,114 +20,6 @@
   </head>
 
   <body>
-<<<<<<< HEAD
-    <!-- En-tête minimal : un menu à gauche, le nom au centre de l'attention. -->
-    <header class="entete">
-      <button
-        id="menu-domaines"
-        class="bouton-menu"
-        type="button"
-        aria-expanded="false"
-        aria-controls="liste-domaines"
-        aria-label="Ouvrir le menu des domaines"
-      >
-        <span aria-hidden="true">☰</span>
-      </button>
-      <h1 class="marque">GalSen IA</h1>
-
-      <!-- Les domaines sont des modes d'un même assistant, pas des assistants
-           séparés. Par défaut, l'orchestration détecte elle-même le domaine. -->
-      <nav id="liste-domaines" class="menu-domaines" hidden aria-label="Domaines">
-        <ul>
-          <li>
-            <button type="button" class="domaine domaine--actif" data-domaine="auto">
-              <span aria-hidden="true">✨</span> Détection automatique
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="discussion">
-              <span aria-hidden="true">💬</span> Discussion générale
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="multimedia">
-              <span aria-hidden="true">🎬</span> Création multimédia
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="agriculture">
-              <span aria-hidden="true">🌾</span> Agriculture
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="sante">
-              <span aria-hidden="true">🏥</span> Santé
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="education">
-              <span aria-hidden="true">📚</span> Éducation
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="programmation">
-              <span aria-hidden="true">💻</span> Programmation
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="science">
-              <span aria-hidden="true">🔬</span> Science
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="architecture">
-              <span aria-hidden="true">🏗️</span> Architecture
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="entreprise">
-              <span aria-hidden="true">📊</span> Entreprise
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="senegal">
-              <span aria-hidden="true">🌍</span> Sénégal
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="analyse">
-              <span aria-hidden="true">📈</span> Analyse
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="recherche">
-              <span aria-hidden="true">🔎</span> Recherche
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="connaissance">
-              <span aria-hidden="true">🧠</span> Connaissance
-            </button>
-          </li>
-          <li>
-            <button type="button" class="domaine" data-domaine="outils">
-              <span aria-hidden="true">⚙️</span> Outils
-            </button>
-          </li>
-        </ul>
-      </nav>
-    </header>
-
-    <main class="chat">
-      <!-- La conversation : un accueil au premier chargement, des bulles ensuite. -->
-      <section id="conversation" class="conversation" aria-live="polite">
-        <div class="accueil">
-          <h2>Comment puis-je vous aider ?</h2>
-          <p class="discret">
-            Posez votre question : l'assistant détecte le domaine tout seul, ou
-            choisissez-en un dans le menu.
-          </p>
-=======
     <!-- La page est une seule colonne conversationnelle. Aucune carte, aucun
          panneau d'état : ce qui relevait du diagnostic vit sous /ui/admin. -->
     <div class="application">
@@ -188,38 +76,8 @@
         <div class="marque">
           <span class="sceau" aria-hidden="true">G</span>
           <span class="nom">GalSen&nbsp;IA</span>
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
         </div>
 
-<<<<<<< HEAD
-      <!-- La barre de saisie : un champ, la voix, l'envoi. -->
-      <form id="formulaire-saisie" class="barre-saisie">
-        <label for="saisie" class="visuellement-cache">Votre message</label>
-        <textarea
-          id="saisie"
-          rows="1"
-          placeholder="Écrire un message…"
-          autocomplete="off"
-        ></textarea>
-        <button
-          id="bouton-vocal"
-          type="button"
-          aria-label="Saisie vocale"
-          title="Saisie vocale"
-        >
-          <span aria-hidden="true">🎙</span>
-        </button>
-        <button
-          id="bouton-envoyer"
-          type="submit"
-          aria-label="Envoyer"
-          title="Envoyer"
-        >
-          <span aria-hidden="true">➤</span>
-        </button>
-      </form>
-    </main>
-=======
         <!-- La clé reste dans le navigateur. Elle n'est jamais écrite dans la
              page servie, et jamais envoyée ailleurs qu'à cette API. -->
         <div class="cle">
@@ -243,7 +101,6 @@
             Je réponds avec ce que la plateforme sait vraiment — et je dis quand
             elle ne sait pas.
           </p>
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
 
           <ul class="pistes">
             <li>
@@ -277,6 +134,17 @@
           placeholder="Écris ici…"
           required
         ></textarea>
+        <!-- Saisie vocale. Ajoutée par le propriétaire le 2026-08-23 ; portée
+             ici depuis une interface qui appelait encore `/workflow/run`, pour
+             qu'elle bénéficie de la couche de réponse. -->
+        <button
+          type="button"
+          id="bouton-vocal"
+          aria-label="Saisie vocale"
+          title="Saisie vocale"
+        >
+          <span aria-hidden="true">🎙</span>
+        </button>
         <button type="submit" id="envoyer" aria-label="Envoyer">
           <span aria-hidden="true">↑</span>
         </button>
@@ -292,17 +160,11 @@
          part nulle part. Le dire vaut mieux que laisser quelqu'un taper une
          question dans le vide. Le tableau de bord porte la même garantie. -->
     <noscript>
-<<<<<<< HEAD
-      <p class="message message--info">
-        Cette interface a besoin de JavaScript pour dialoguer avec l'API. L'état
-        de la plateforme reste consultable sur <a href="/health">/health</a>.
-=======
       <p class="sans-js">
         Cette conversation a besoin de JavaScript pour interroger la
         plateforme. Son état reste consultable sur
         <a href="/health">/health</a>, et le tableau de bord sur
         <a href="/ui/admin/">/ui/admin/</a>.
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
       </p>
     </noscript>
 

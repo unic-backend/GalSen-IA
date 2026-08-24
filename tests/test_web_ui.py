@@ -55,10 +55,8 @@ class TestFichiersServis:
         "chemin, type_attendu",
         [
             ("/ui/js/api-client.js", "javascript"),
-            ("/ui/js/chat.js", "javascript"),
             ("/ui/js/dashboard.js", "javascript"),
             ("/ui/js/studio.js", "javascript"),
-            ("/ui/css/chat.css", "css"),
             ("/ui/css/dashboard.css", "css"),
             ("/ui/css/studio.css", "css"),
             ("/ui/studio.html", "html"),
@@ -82,17 +80,10 @@ class TestFichiersServis:
 class TestContenuDeLaPage:
     """Vérifie que la page porte ce dont le script a besoin."""
 
-<<<<<<< HEAD
-    def test_les_points_de_montage_existent(self, client):
-        """La conversation, la saisie et le menu doivent exister, sinon le script écrit dans le vide."""
-        page = client.get(f"{UI_PREFIX}/").text
-        for identifiant in ('id="conversation"', 'id="saisie"', 'id="menu-domaines"'):
-=======
     def test_le_chat_existe_a_ui(self, client):
         """Le chat doit exister à /ui/, avec conversation et composeur."""
         page = client.get(f"{UI_PREFIX}/").text
         for identifiant in ('id="conversation"', 'id="composeur"', 'id="message"'):
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
             assert identifiant in page
 
     def test_le_script_du_chat_est_module(self, client):
@@ -100,10 +91,7 @@ class TestContenuDeLaPage:
         page = client.get(f"{UI_PREFIX}/").text
         assert 'type="module"' in page
         assert "/ui/js/chat.js" in page
-<<<<<<< HEAD
-=======
         assert 'type="module"' in page
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
 
     def test_page_en_francais(self, client):
         """L'interface s'adresse à des utilisateurs francophones."""
@@ -165,8 +153,8 @@ class TestSourcesLivrees:
     def test_les_fichiers_existent(self):
         """Les fichiers annoncés par l'ADR-008 doivent être présents."""
         for relatif in (
-            "index.html", "js/api-client.js", "js/chat.js", "js/dashboard.js",
-            "css/chat.css", "css/dashboard.css", "studio.html", "js/studio.js",
+            "index.html", "js/api-client.js", "js/dashboard.js",
+            "css/dashboard.css", "studio.html", "js/studio.js",
             "css/studio.css",
         ):
             assert os.path.isfile(os.path.join(STATIC_DIRECTORY, relatif)), relatif

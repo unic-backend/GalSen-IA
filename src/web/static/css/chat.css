@@ -1,13 +1,4 @@
 /*
-<<<<<<< HEAD
- * Feuille de style de l'interface conversationnelle GalSen IA.
- *
- * Cette version pose la structure du chat : en-tête, conversation, barre de
- * saisie et menu des domaines. L'identité visuelle complète, le thème
- * clair/sombre et le travail mobile-first arrivent avec le chapitre 04.
- * Aucune police n'est téléchargée : sur une connexion lente, une police
- * distante retarde l'affichage du texte.
-=======
  * Feuille de style de la conversation GalSen IA (VOLET chat-first, ch. 03).
  *
  * ## Ce qui est repris, et pourquoi
@@ -29,7 +20,6 @@
  * **Aucune animation d'attente déguisée en progression.** Les trois points qui
  * pulsent disent « ça travaille » ; ils ne prétendent pas savoir combien de
  * temps il reste, parce que personne ne le sait.
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
  */
 
 :root {
@@ -39,9 +29,6 @@
   --texte: #16191d;
   --texte-doux: #5b6570;
   --accent: #0b6e4f; /* vert, comme le drapeau */
-<<<<<<< HEAD
-  --rayon: 12px;
-=======
   --accent-contraste: #ffffff;
   --ancre: #0b6e4f; /* la réponse repose sur des sources */
   --sans-ancre: #9a6700; /* rien ne la fonde — ocre, pas rouge */
@@ -49,7 +36,6 @@
   --erreur: #b42318;
   --rayon: 14px;
   --colonne: 46rem;
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
 }
 
 @media (prefers-color-scheme: dark) {
@@ -60,14 +46,11 @@
     --texte: #e8eaed;
     --texte-doux: #9aa4ae;
     --accent: #35c08c;
-<<<<<<< HEAD
-=======
     --accent-contraste: #0d1512;
     --ancre: #35c08c;
     --sans-ancre: #e0a800;
     --non-verifie: #9aa4ae;
     --erreur: #ff6b5e;
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
   }
 }
 
@@ -82,193 +65,6 @@ body {
 
 body {
   margin: 0;
-<<<<<<< HEAD
-  display: flex;
-  flex-direction: column;
-  background: var(--fond);
-  color: var(--texte);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.5;
-}
-
-/* En-tête minimal : le menu à gauche, le nom au centre. */
-.entete {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.6rem 0.75rem;
-  border-bottom: 1px solid var(--bordure);
-}
-
-.bouton-menu {
-  position: absolute;
-  left: 0.75rem;
-  font: inherit;
-  font-size: 1.2rem;
-  line-height: 1;
-  padding: 0.35rem 0.6rem;
-  border: 1px solid var(--bordure);
-  border-radius: var(--rayon);
-  background: transparent;
-  color: var(--texte);
-  cursor: pointer;
-}
-
-.marque {
-  font-size: 1.15rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-/* Menu des domaines : un panneau discret ancré sous l'en-tête. */
-.menu-domaines {
-  position: absolute;
-  top: 100%;
-  left: 0.75rem;
-  z-index: 10;
-  min-width: 16rem;
-  background: var(--fond);
-  border: 1px solid var(--bordure);
-  border-radius: var(--rayon);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.menu-domaines ul {
-  list-style: none;
-  margin: 0;
-  padding: 0.4rem;
-}
-
-.domaine {
-  font: inherit;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  text-align: left;
-  padding: 0.5rem 0.6rem;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--texte);
-  cursor: pointer;
-}
-
-.domaine:hover,
-.domaine:focus-visible {
-  background: var(--fond-doux);
-}
-
-.domaine--actif {
-  color: var(--accent);
-  font-weight: 600;
-}
-
-/* Le chat occupe tout l'espace restant entre l'en-tête et la saisie. */
-.chat {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.conversation {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.accueil {
-  margin: auto;
-  text-align: center;
-  max-width: 40rem;
-}
-
-.accueil h2 {
-  font-size: 1.5rem;
-  margin: 0 0 0.5rem;
-}
-
-/* Barre de saisie, épinglée en bas. */
-.barre-saisie {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border-top: 1px solid var(--bordure);
-}
-
-.barre-saisie textarea {
-  font: inherit;
-  flex: 1;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--bordure);
-  border-radius: var(--rayon);
-  background: var(--fond);
-  color: var(--texte);
-  resize: none;
-  min-height: 2.5rem;
-  max-height: 8rem;
-}
-
-.barre-saisie button {
-  font: inherit;
-  font-size: 1rem;
-  line-height: 1;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--bordure);
-  border-radius: var(--rayon);
-  background: var(--fond-doux);
-  color: var(--texte);
-  cursor: pointer;
-}
-
-.barre-saisie button[type="submit"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
-.discret {
-  color: var(--texte-doux);
-  font-size: 0.9rem;
-}
-
-.message {
-  padding: 0.6rem 0.8rem;
-  border-radius: var(--rayon);
-  border: 1px solid currentColor;
-  font-size: 0.9rem;
-}
-
-.message--info {
-  color: var(--texte-doux);
-}
-
-/* Utilitaire : un libellé lisible par les lecteurs d'écran sans être affiché. */
-.visuellement-cache {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Le focus doit rester visible : c'est la seule façon de naviguer au clavier */
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-=======
   background: var(--fond);
   color: var(--texte);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -587,6 +383,26 @@ body {
   cursor: pointer;
 }
 
+/* La saisie vocale se distingue de l'envoi : elle propose, elle ne valide pas.
+   Fond neutre, et un état actif visible pendant l'écoute — sans quoi rien ne
+   dit qu'un micro est ouvert. */
+#bouton-vocal {
+  color: var(--texte);
+  background: var(--fond-doux);
+  border: 1px solid var(--bordure);
+}
+
+#bouton-vocal:hover:not(:disabled),
+#bouton-vocal:focus-visible {
+  border-color: var(--accent);
+}
+
+.bouton-vocal--actif {
+  color: var(--accent-contraste);
+  background: var(--erreur);
+  border-color: var(--erreur);
+}
+
 .composeur button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -763,5 +579,4 @@ body {
   background: var(--fond-doux);
   border: 1px solid var(--bordure);
   border-radius: var(--rayon);
->>>>>>> f8b0c60f12a9156a80608b76d3a9bf2266613290
 }
