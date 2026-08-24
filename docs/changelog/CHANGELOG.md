@@ -12,6 +12,39 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Fixed — 2026-08-24 — The anti-fabrication rule was suppressing answers the model could give alone
+
+Second defect from the first real run, and the more interesting one. Two trials
+failed, and **the model had not miscalculated — it had refused to answer**:
+
+> TEST-03: *« je n'ai pas reçu de calcul spécifique à vérifier »*
+> TEST-05: *« je n'ai pas trouvé d'informations sur les matériaux BA13 **dans
+> les sources fournies** »*
+
+The second sentence names the cause. The system prompt said: *if the context
+does not contain it, say you do not know, do not fill the gap.* Good against
+fabrication — but it applied to **every** request. Multiplying 320 by 4 500
+needs no documentation; neither does writing a Python function. The researcher
+had found nothing (DuckDuckGo timed out), the model read "no sources", and
+concluded it could not answer.
+
+The prompt now distinguishes two kinds of request, and the evidence rules apply
+to only one:
+
+- a **FACT** about the world — a date, a figure, a name, a price, a regulation.
+  No knowledge and no context ⇒ say you do not know. Unchanged.
+- a **TASK** carried out by the model — a calculation, code, a translation, a
+  plan, a definition. Carry it out. An empty context is not a reason to refuse,
+  and figures the user supplied are input, not claims needing a source.
+
+One more line answers TEST-03's exact failure: the user's message is always in
+the prompt, and the model must never claim it did not receive it.
+
+**The anti-fabrication half is untouched and pinned by its own test.** Relaxing
+for tasks must relax nothing for facts — that is the guarantee this repository
+refuses to lose.
+
+
 ### Fixed — 2026-08-24 — A generation timeout that silently changed model
 
 **The first real run of the ten trials produced a defect, and this is it.**

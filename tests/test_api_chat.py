@@ -521,6 +521,58 @@ class TestAutoRevue:
                        "verified": True}]))
         assert "sourced platform knowledge" in avec_source
 
+    def test_une_tache_calculable_n_exige_aucune_source(self):
+        """
+        Mesuré le 2026-08-24, premier passage réel des dix épreuves : à
+        « 320 plaques à 4 500 FCFA, calcule le total », le modèle a répondu
+        *« je n'ai pas reçu de calcul »*, et à la demande de fonction Python
+        *« je n'ai pas trouvé d'informations sur les matériaux BA13 **dans les
+        sources fournies** »*.
+
+        La cause était dans cette consigne : « si le contexte ne contient pas la
+        chose, dis que tu ne sais pas » s'appliquait à **toute** demande. Une
+        multiplication et une fonction Python n'ont jamais eu besoin d'une
+        source — la règle anti-invention étouffait les réponses que le modèle
+        sait produire seul.
+
+        La distinction fait vivre les deux moitiés : un **fait** exige une
+        source, une **tâche** n'en exige aucune.
+        """
+        from src.chat import ContexteReponse, construire_invite
+
+        invite = construire_invite(ContexteReponse(message="Combien font 320 × 4500 ?"))
+        assert "A TASK you carry out yourself" in invite
+        assert "A FACT about the world" in invite
+        assert "not a reason to refuse" in invite
+
+    def test_l_invite_interdit_de_pretendre_ne_pas_avoir_recu_la_question(self):
+        """
+        L'autre moitié du même échec : le modèle a affirmé ne pas avoir reçu le
+        calcul, alors que la question est toujours dans l'invite.
+        """
+        from src.chat import ContexteReponse, construire_invite
+
+        invite = construire_invite(ContexteReponse(message="Calcule 187 × 46."))
+        assert "Never say you did not receive it" in invite
+        assert "The user's message" in invite
+
+    def test_la_regle_anti_invention_reste_entiere(self):
+        """
+        Assouplir pour les tâches ne doit rien assouplir pour les faits. C'est
+        la garantie que ce dépôt refuse de perdre.
+        """
+        from src.chat import ContexteReponse, construire_invite
+
+        # Espaces normalisés : la consigne est repliée à 79 colonnes, et une
+        # assertion sensible à la coupure casserait au prochain reformatage
+        # sans que la règle ait bougé d'un mot.
+        invite = " ".join(
+            construire_invite(ContexteReponse(message="peu importe")).split()
+        )
+        assert "Never invent a source" in invite
+        assert "say you do not know. Do not fill the gap" in invite
+        assert "Never present it as established fact" in invite
+
     def test_aucune_propriete_morte_ne_subsiste(self):
         """`constats_non_verifies` était définie et lue nulle part."""
         from src.chat import ContexteReponse
