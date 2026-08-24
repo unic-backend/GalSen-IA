@@ -6,62 +6,67 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ---
 
-## Dernière session — 2026-08-24 (Phase 3)
+## Dernière session — 2026-08-24 (les dix épreuves)
 
-**En cours** : rien. Mission « PHASE 3 — REAL LOCAL BRAIN + SERVER » : routage
-par rôle, reconnaissance de Qwen3.5, infrastructure serveur et banc de modèles
-faits. **Aucun modèle n'a tourné** — c'est le fait principal de cette session.
-Branche `claude/galsen-ia-phases-ukwz7p`, PR #37 ouverte.
+**En cours** : rien. Mission « RUN THE FIRST REAL MODEL TEST » : le harnais est
+fait et **tourne**, mais **aucun modèle n'a répondu** — c'est le résultat, pas
+un contretemps. Branche `claude/galsen-ia-phases-ukwz7p`, PR #37 ouverte.
 
-**Terminé** : **la préférence tranche entre égaux, et un grand modèle est une
-URL.** Décision → **ADR-042**. Déploiement → `docs/models/deployment.md`.
+**Terminé** : les dix épreuves du propriétaire, câblées sur le **vrai** `/chat`
+(`src/model_engine/evaluation_suite.py`, `scripts/models/evaluate.py`).
 
 À savoir sans relire :
-- **Cet hôte ne peut atteindre aucun poids.** Mesuré : `registry.ollama.ai`,
-  `ollama.com`, `huggingface.co`, `cdn-lfs.huggingface.co` → `000`. Pas de GPU,
-  pas d'Ollama. `pypi.org` et `raw.githubusercontent.com` répondent.
-- **Les commandes vLLM sont recopiées, pas reconstruites** — recettes
-  officielles `vllm-project/recipes`, lues cette session. Un drapeau inventé
-  pour un modèle de 400 milliards coûte une heure de GPU loué à découvrir.
-- **`role_preferences` n'agit qu'à égalité.** Elle ne remonte jamais un modèle
-  moins capable, sinon elle deviendrait un routage en dur.
-- **La vision de Qwen3.5 n'est pas déclarée.** Annoncée par des sources
-  secondaires, elle sera mesurée par `/api/show`.
-- **`bench.py` ne rend aucun chiffre sans modèle**, jamais un zéro : un taux nul
-  se compare, une absence non. Et un écart < 1,5 tâche est `ÉGALITÉ`.
-- **L'entraînement n'a pas été refait** : `scripts/training/train_adapter.py`
-  est déjà une recette QLoRA réelle.
+- **Le moteur s'installe, les poids non.** `llama-cpp-python 0.3.35` installé
+  depuis pypi et importable. Mais `registry.ollama.ai`, `ollama.com`,
+  `huggingface.co`, `hf-mirror.com`, `modelscope.cn`, `gpt4all.io` → `000`, et
+  `github.com/…/releases` → `403`. La liste `noProxy` du mandataire dit ce qui
+  passe : npm, jsr, pypi, crates.io, proxy.golang.org. **Aucun paquet pypi
+  n'embarque de poids utilisables** (vérifié : tinyllama, smollm, llm-gguf,
+  minillm — code seul, ≤ 30 Ko).
+- **Les dix épreuves passent par `/chat`**, pas par un fournisseur direct :
+  elles mesurent ce qu'un utilisateur reçoit, donc un calcul faux est jugé
+  **après** la boucle de délibération.
+- **Trois issues, jamais deux** : `PASS`, `FAIL`, `NOT_CHECKED`. Quatre épreuves
+  n'ont aucune vérité vérifiable par machine ; leur réponse entière est gardée
+  pour lecture humaine.
+- **Une réponse non générée n'est jamais notée** — sinon on mesurerait le repli
+  composé par la plateforme.
+- **La clé jetable n'est pas un contournement** : mécanisme documenté
+  `GALSEN_API_KEYS`, jamais écrite ni affichée.
 
-**Prochaine étape, sur ta machine** : `ollama serve`, puis
-`ollama pull qwen3.5:9b` et `ollama pull qwen2.5:14b`, puis
-`python scripts/models/preflight.py --generer`, puis
-`python scripts/models/bench.py --modele qwen3.5:9b --contre qwen2.5:14b`.
-C'est la seule séquence qui transforme `PREPARED` en `TESTED`.
+**Prochaine étape, sur ta machine — c'est la seule qui produise des chiffres** :
+```
+ollama serve
+ollama pull qwen3.5:9b && ollama pull qwen2.5:14b
+python scripts/models/evaluate.py --modele qwen3.5:9b --contre qwen2.5:14b --json rapport.json
+```
 
 **Décisions en attente du propriétaire** (aucune faite)
 1. **Déclarer `coder` dans le workflow `question`** — l'agent n'est pas atteint
-   depuis le chat, donc la boucle de compétences ne tourne pas depuis `/chat`.
+   depuis le chat, donc TEST-05 mesure la rédaction, pas le moteur de codage.
 2. **P10 de l'audit Linux** : la boucle d'événements se bloque pendant un
    `/chat` (`/health` : 3,5 ms → 1 149 ms).
-3. **Base de `train_adapter.py`** : elle vise Qwen2.5-7B ; Qwen3.5 serait une
-   autre base — une ligne, plus un entraînement réel qui demande un GPU.
+3. **Base de `train_adapter.py`** : elle vise Qwen2.5-7B.
 
-**Repère mesuré le 2026-08-24** : `pytest -q` → **7345 passés, 9 ignorés,
+**Repère mesuré le 2026-08-24** : `pytest -q` → **7371 passés, 9 ignorés,
 3 désélectionnés, 0 échec**. `ruff check src tests scripts agents` → tout passe.
-**36 tests ajoutés, 0 supprimé, 0 affaibli.**
+**26 tests ajoutés, 0 supprimé, 0 affaibli.**
 
-**Bloqué — gestes de l'exploitant, aucun faisable ici**
-- **`ollama serve` + `ollama pull`** : sans eux, aucun chiffre de modèle
-  n'existe et les profils restent `declared` au lieu de `measured`.
-- **Un serveur GPU loué** pour Kimi K2.5, Qwen3.5-397B, DeepSeek-R1, GLM-5.1 :
-  huit H200 chacun, et **aucun ne tient sur 12 Go**.
+**Bloqué — aucun faisable ici**
+- **Les poids.** Tous les hôtes refusés par la passerelle, mesuré deux fois.
+- **`ollama serve` + `ollama pull`** sur ta machine : le seul geste qui
+  transforme `NOT_EXECUTED` en résultat.
+- **Un serveur GPU loué** pour Kimi K2.5, Qwen3.5-397B, DeepSeek-R1, GLM-5.1.
 - `git push origin v0.1.0` → seul test rouge en CI, rouge sur `main` aussi.
-  Refusé d'ici : `HTTP 403`, mesuré. **Ne pas réessayer, ne pas « corriger ».**
-- `GALSEN_CODING_WORKSPACE_ROOTS` non renseignée → le moteur de codage refuse tout.
+  **Ne pas réessayer, ne pas « corriger ».**
 
 ---
 
 ### Sessions précédentes
+
+**2026-08-24 — Phase 3 (ADR-042)** : `role_preferences` tranche entre égaux,
+Qwen3.5 reconnu, quatre familles serveur préparées avec les commandes vLLM
+officielles recopiées.
 
 **2026-08-24 — P3, le chat critique sa réponse (ADR-041)** et `src/skills/`
 branchée. Banc des critiques : 66,7 % de détection, 0 % de fausse alerte.

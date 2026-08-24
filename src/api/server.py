@@ -792,6 +792,22 @@ class ChatResponse(BaseModel):
         None,
         description="Pourquoi aucun modèle n'a rédigé, quand c'est le cas",
     )
+    model_used: Optional[str] = Field(
+        None,
+        description=(
+            "Le modèle qui a rédigé, quand le moteur sait le dire. `None` "
+            "signifie qu'il ne le sait pas — jamais qu'on l'a deviné."
+        ),
+    )
+    deliberation: Optional[Dict[str, Any]] = Field(
+        None,
+        description=(
+            "Ce que la critique a trouvé, combien de reprises ont eu lieu, et "
+            "pourquoi la boucle s'est arrêtée (ADR-041). `None` quand aucune "
+            "génération n'a eu lieu : une absence de délibération ne doit pas "
+            "se lire comme une délibération sans constat."
+        ),
+    )
 
 
 class WorkflowRunRequest(BaseModel):
@@ -1578,6 +1594,8 @@ async def chat(request: ChatRequest):
         elapsed_seconds=round(time.time() - debut, 3),
         generated=finale.generated,
         generation_unavailable=None if finale.generated else finale.failure_reason,
+        model_used=finale.model_used,
+        deliberation=finale.deliberation,
     )
 
 

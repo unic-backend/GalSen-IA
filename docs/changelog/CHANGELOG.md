@@ -12,6 +12,49 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-24 — The ten trials, wired to the real `/chat` path — and the exact blocker
+
+The owner asked for the **first real GalSen IA responses from a real model**.
+They do not exist, and this entry says why before it says anything else.
+
+**The inference engine installs. The weights cannot be fetched.**
+`llama-cpp-python 0.3.35` was installed from pypi and imports — a real engine is
+present. But every model host is refused by this environment's gateway, measured:
+`registry.ollama.ai`, `ollama.com`, `huggingface.co`, `hf-mirror.com`,
+`modelscope.cn`, `gpt4all.io` → `000`; `github.com/…/releases` → `403`. The
+proxy's own `noProxy` list names what *is* reachable — npm, jsr, pypi,
+crates.io, proxy.golang.org — and no package on pypi bundles usable LLM weights
+(`tinyllama`, `smollm`, `llm-gguf`, `minillm` are all code-only, ≤ 30 KB).
+
+So the ten trials were built and **run**, and every one of them reports
+`NOT_EXECUTED — aucun fournisseur de modèle n'est disponible`, reached through
+the real path rather than asserted.
+
+`src/model_engine/evaluation_suite.py` holds the trials. Unlike
+`benchmark.py`, which interrogates a provider directly, this one goes through
+`POST /chat` — planner, agents, grounding, writing, deterministic criticism,
+possible retry. It measures **what a user receives**, which matters for six of
+the ten: a wrong sum is judged on what comes out *after* the deliberation loop.
+
+**Three outcomes, never two.** Four trials — explaining AI in plain French, a
+site strategy, an SME example, a Wolof version — have no machine-checkable
+truth. They report `NOT_CHECKED` and keep their full answer for a human. Scoring
+them would have shown ten results where only six exist.
+
+A generated answer is required before any trial is scored: when the platform
+composes a fallback from what the agents found, scoring it would measure the
+fallback, not the model.
+
+`ChatResponse` now carries `model_used` and `deliberation` — surfacing values
+already computed, so an API caller can see which model wrote and what the
+criticism found.
+
+The evaluation provisions a throwaway API key through the documented
+`GALSEN_API_KEYS` mechanism when none exists. That is not a bypass:
+authentication checks exactly what it checked, on a key the operator just
+created on their own machine, never written or printed.
+
+
 ### Added — 2026-08-24 — Preference decides between equals, and a large model is a URL (ADR-042)
 
 ADR-040 made the router select by capability. Measured again against the fleet
