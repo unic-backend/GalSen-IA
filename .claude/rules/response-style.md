@@ -50,6 +50,35 @@ When several files changed, a table `path | what changed` beats prose.
 
 ---
 
+# Commands the user has to run
+
+**One command per code block. Never two, never a numbered list inside one
+block.** The user copies with a click; a block holding three commands is a block
+they have to edit before it runs, and editing a pasted command is where mistakes
+happen.
+
+Number the steps *outside* the blocks instead:
+
+```
+**1.** Créer la branche :
+
+    git checkout -b feature/x
+
+**2.** Pousser :
+
+    git push -u origin feature/x
+```
+
+**Say which terminal.** This project is driven from **PowerShell on Windows**,
+usually the integrated terminal in VS Code at `PS C:\GalSen IA>`. A command
+written for the agent's Linux container is not a command the user can paste, and
+saying "run this" without saying *where* leaves them to guess.
+
+When a command must run somewhere else — a normal clone, a GPU host, a server —
+name that place in the same sentence as the command.
+
+---
+
 # Uncertainty
 
 Say "je ne sais pas" or "je n'ai pas vérifié" in one sentence, then say what
