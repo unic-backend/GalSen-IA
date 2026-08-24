@@ -501,12 +501,27 @@ class TestIConstatVerifie:
         """
         Le constat ci-dessus, épinglé plutôt que laissé dans un commentaire.
 
-        Si ce comportement change un jour, ce test le dira — et ce sera une
-        décision, pas une dérive.
+        **Les deux agents sont imposés, et c'est la correction du 2026-08-24.**
+        La première version n'imposait que le chercheur et laissait l'agent
+        `senegal` répondre depuis le corpus réel : elle passait ici, où la base
+        est vide, et **échouait en CI**, où elle a su répondre — `assert
+        'GROUNDED' != 'GROUNDED'`.
+
+        Le test épinglait une préséance, mais à travers un état ambiant qu'il ne
+        contrôlait pas. Un test dont le verdict dépend du contenu de la base ne
+        mesure pas la règle qu'il prétend mesurer.
         """
-        tour = Tour(client, resultats={"researcher": CONSTAT_VERIFIE}).envoyer(
-            "Combien de régions compte le Sénégal ?")
+        tour = Tour(client, resultats={
+            "researcher": CONSTAT_VERIFIE,
+            "senegal": {
+                "status": "empty_base",
+                "reason": "La base ne contient rien sur ce sujet.",
+                "elements": [],
+            },
+        }).envoyer("Combien de régions compte le Sénégal ?")
         assert "senegal" in tour.agents
+        # Le verdict de `senegal` l'emporte, malgré un constat vérifié du
+        # chercheur : il fait autorité sur la portée nationale.
         assert tour.charge["grounding"]["status"] != "GROUNDED"
 
 
