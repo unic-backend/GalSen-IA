@@ -152,12 +152,49 @@ class TestAConnaissanceGenerale:
 # --------------------------------------------------------------------------
 
 class TestBConversationSimple:
-    """*« Bonjour »* — et surtout : rien d'autre ne doit se déclencher."""
+    """
+    *« Bonjour »* — et surtout : rien d'autre ne doit se déclencher.
+
+    **Ce contrat a changé le 2026-08-24, en mieux.** Une salutation recevait une
+    réponse *générée* ; elle reçoit maintenant une réponse *composée*, sans
+    aucun appel de modèle. Un échange de politesse n'affirme rien sur le monde,
+    et c'est le seul endroit où une phrase écrite d'avance est honnête —
+    `generated` reste faux pour que personne ne s'y trompe.
+
+    Ce que le test exige n'a pas faibli : une **vraie** réponse, pas un refus.
+    C'est précisément ce qui manquait à la première version du raccourci, qui
+    rendait « je n'ai pas de quoi répondre à cette question » à un « bonjour ».
+    """
 
     def test_une_salutation_recoit_une_vraie_reponse(self, client):
         tour = Tour(client).envoyer("Bonjour")
         assert tour.reponse.status_code == 200
-        _est_une_vraie_reponse(tour.charge)
+        texte = tour.charge["answer"]
+        assert texte.strip()
+        # Une vraie réponse d'accueil, et surtout pas un refus.
+        assert "n'ai pas de quoi répondre" not in texte
+        assert "rien trouvé" not in texte
+        for rouage in ROUAGES:
+            assert rouage not in texte.lower()
+
+    def test_une_salutation_ne_consomme_aucun_modele(self, client):
+        """
+        L'idée du propriétaire, mesurée : à 1,7 ms d'orchestration, tout le coût
+        restant d'un « bonjour » serait l'appel au modèle. Il n'a plus lieu.
+        """
+        tour = Tour(client).envoyer("Bonjour")
+        assert tour.charge["generated"] is False
+        assert tour.invite is None, "aucune invite ne doit être construite"
+
+    def test_une_question_qui_commence_poliment_est_bien_generee(self, client):
+        """
+        La limite du raccourci, épinglée. « Bonjour, explique-moi la relativité »
+        est une question, pas un salut — lui répondre « bonjour ! » serait pire
+        que la milliseconde économisée.
+        """
+        tour = Tour(client).envoyer("Bonjour, explique-moi la relativité générale")
+        assert tour.charge["generated"] is True
+        assert tour.invite is not None
 
     def test_une_salutation_ne_lance_aucune_recherche(self, client):
         """

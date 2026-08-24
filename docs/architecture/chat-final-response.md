@@ -276,3 +276,35 @@ is worth less than no name: it reads as a measurement.** What would settle it:
 the engine returning the chosen model alongside the text.
 
 Three tests pin all three.
+
+---
+
+## 14. A courtesy exchange does not call a model
+
+Added 2026-08-24, from the owner's own change — and the measurement is what
+settled it.
+
+His planner optimisation skips knowledge search, memory recall, plan storage
+and model refinement for the `conversation` intent. Measured after it:
+**orchestrating a greeting costs 1.7 ms**, down from 1 092 ms. So the entire
+remaining cost of *« bonjour »* was the model call, and his instinct to skip it
+was right.
+
+His first version returned `composer_sans_modele()`, which with no evidence
+answers *« je n'ai pas de quoi répondre à cette question »* — **a greeting got a
+refusal**, measured. What was missing was not the shortcut but something to say.
+
+`reponse_de_courtoisie()` supplies it. A courtesy exchange asserts nothing about
+the world, which makes it the one place where a written-in-advance sentence is
+honest, and `generated` stays `False` so nobody can mistake it for a model's
+words.
+
+**The boundary is where the care goes.** What remains after removing the
+courtesy phrase decides: *« bonjour »* is a greeting, *« bonjour, explique-moi la
+relativité »* is a question that opens politely, and answering it *« bonjour ! »*
+would cost far more than the millisecond saved. **In doubt, generate.** A missed
+shortcut costs latency; a wrong one costs a wrong answer.
+
+Measured end to end: *« Bonjour »* → a real greeting, **zero model calls**;
+*« Bonjour, explique-moi la relativité générale »* → generated, one call.
+Verified by sabotage — widening the boundary fails the test that pins it.

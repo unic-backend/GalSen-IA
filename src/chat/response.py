@@ -18,6 +18,7 @@ qu'il n'y a rien — jamais autre chose.
 """
 
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -216,6 +217,56 @@ def construire_invite(contexte: ContexteReponse) -> str:
 # Le plancher honnête : répondre sans modèle
 # --------------------------------------------------------------------------
 
+# Un échange de courtoisie n'affirme rien sur le monde. C'est le seul endroit
+# où une phrase écrite d'avance est honnête : « bonjour » ne prétend pas être
+# une connaissance, et `generated` reste faux pour que personne ne s'y trompe.
+#
+# Les motifs suivent les mots-clés de l'intention `conversation` du planner —
+# une seule liste ferait autorité, deux finiraient par diverger, donc celle-ci
+# ne fait que répondre à ce que celle-là reconnaît.
+_COURTOISIES = (
+    (("merci", "merci beaucoup", "thanks", "thank you"),
+     "Avec plaisir. Autre chose ?"),
+    (("au revoir", "a bientot", "à bientôt", "bye", "adieu"),
+     "À bientôt !"),
+    (("nanga def", "na nga def"),
+     "Maangi fi rekk, jërëjëf ! Comment puis-je t'aider ?"),
+    (("bonjour", "bonsoir", "salut", "hello", "ca va", "ça va"),
+     "Bonjour ! Comment puis-je t'aider ?"),
+)
+
+
+def reponse_de_courtoisie(message: str) -> Optional[str]:
+    """
+    Rend une réponse d'accueil quand le message n'est qu'un échange de politesse.
+
+    Retourne `None` dès que le message dit autre chose — auquel cas la
+    rédaction reprend son cours normal. **Ne jamais deviner ici** : une phrase
+    toute faite servie à une vraie question serait pire que la latence qu'elle
+    économise.
+    """
+    reduit = re.sub(r"[^\w\s'-]", " ", (message or "").lower())
+    reduit = " ".join(reduit.split())
+    if not reduit:
+        return None
+
+    for motifs, reponse in _COURTOISIES:
+        for motif in motifs:
+            if motif not in reduit:
+                continue
+            # Ce qui reste une fois la politesse retirée décide. « bonjour »
+            # est un salut ; « bonjour, explique-moi la relativité » est une
+            # question qui commence poliment, et lui répondre « bonjour ! »
+            # serait pire que la milliseconde économisée.
+            #
+            # **Dans le doute, on génère.** Un raccourci manqué coûte une
+            # latence ; un raccourci qui se trompe coûte une mauvaise réponse.
+            reste = " ".join(reduit.replace(motif, " ").split())
+            if len(reste.split()) <= 1:
+                return reponse
+    return None
+
+
 def composer_sans_modele(contexte: ContexteReponse) -> str:
     """
     Compose une réponse quand aucun modèle ne peut rédiger.
@@ -331,16 +382,28 @@ class RedacteurConversation:
         """
         debut = time.perf_counter()
 
-        # Un court-circuit pour l'intention `conversation` a été essayé le
-        # 2026-08-23 et **retiré après mesure** : il rendait
-        # `composer_sans_modele()`, qui sans preuve ni constat répond « je n'ai
-        # pas de quoi répondre à cette question ». Une salutation recevait donc
-        # un refus.
+        # Un échange de politesse ne mobilise pas un modèle. Le planificateur a
+        # déjà écarté toute recherche pour l'intention `conversation` — mesuré
+        # le 2026-08-24, l'orchestration d'un « bonjour » coûte alors 1,7 ms —
+        # et le seul coût restant serait la génération.
         #
-        # L'économie visée était réelle mais mal placée : ce qui coûtait
-        # 1 095 ms, c'était le pipeline de recherche, et le planificateur ne le
-        # lance plus pour une conversation. Rester ici coûte un appel de modèle
-        # sur une invite minuscule — le prix d'un vrai bonjour.
+        # La première version de ce court-circuit rendait
+        # `composer_sans_modele()`, qui sans preuve répond « je n'ai pas de quoi
+        # répondre à cette question » : une salutation recevait un refus. Ce qui
+        # manquait n'était pas le raccourci, c'était une chose à dire.
+        #
+        # `reponse_de_courtoisie()` rend `None` dès que le message dit autre
+        # chose, et la rédaction reprend alors son cours. Un raccourci qui se
+        # trompe coûte plus cher que la latence qu'il économise.
+        if _est_une_conversation(contexte) and not contexte.evidence:
+            courtoisie = reponse_de_courtoisie(contexte.message)
+            if courtoisie:
+                return ReponseFinale(
+                    answer=courtoisie,
+                    generated=False,
+                    elapsed_seconds=round(time.perf_counter() - debut, 3),
+                )
+
         invite = construire_invite(contexte)
 
         try:
@@ -405,6 +468,14 @@ class RedacteurConversation:
 AUCUN_FOURNISSEUR = "aucun fournisseur de modèle n'est disponible"
 GENERATION_ECHOUEE = "la génération a échoué"
 TEXTE_VIDE = "le modèle a rendu un texte vide"
+
+
+def _est_une_conversation(contexte: ContexteReponse) -> bool:
+    """Vrai quand le planificateur a classé la demande comme un simple échange."""
+    valeur = contexte.axe("task_type")
+    if isinstance(valeur, list):
+        return "conversation" in valeur
+    return valeur == "conversation"
 
 
 def _classer_panne(erreur: Exception) -> str:
