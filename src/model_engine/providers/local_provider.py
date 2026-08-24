@@ -13,6 +13,7 @@ platform usable where bandwidth is expensive or unreliable.
 
 import json
 import logging
+import os
 import socket
 import time
 import urllib.error
@@ -52,8 +53,26 @@ class LocalProvider(ModelProvider):
     # Délai court : sonder un serveur absent ne doit pas retarder le moteur
     PROBE_TIMEOUT_SECONDS = 1.0
 
-    # Délai de génération, plus large car un modèle local peut être lent
-    GENERATION_TIMEOUT_SECONDS = 120
+    # Délai de génération.
+    #
+    # **Mesuré le 2026-08-24 sur une RTX A2000 12 Go**, premier passage réel des
+    # dix épreuves : `qwen3.5:9b` a dépassé 120 s **deux fois sur dix**. Ce
+    # n'était pas une panne du serveur — c'est un modèle qui raisonne avant de
+    # répondre, et qui met légitimement plus longtemps.
+    #
+    # Le coût de l'erreur n'était pas la lenteur, il était pire : le repli a
+    # envoyé une question d'arithmétique au modèle **de code**, qui a mal
+    # répondu. Un délai trop court ne ralentit pas la plateforme, il lui fait
+    # changer de modèle en silence.
+    #
+    # 120 s avait été choisi quand aucun modèle ne tournait ici : il n'avait
+    # jamais rencontré de modèle réel.
+    DEFAULT_GENERATION_TIMEOUT_SECONDS = 300
+
+    #: Variable qui règle ce délai sans toucher au code. Un modèle plus lent,
+    #: une machine plus modeste, ou l'inverse : c'est une décision
+    #: d'exploitation, pas d'architecture.
+    TIMEOUT_VARIABLE = "GALSEN_LOCAL_GENERATION_TIMEOUT"
 
     # Durée de validité du résultat de la sonde, pour ne pas la refaire à chaque appel
     AVAILABILITY_CACHE_SECONDS = 30.0
@@ -78,6 +97,7 @@ class LocalProvider(ModelProvider):
         self._cached_availability: Optional[ProviderInfo] = None
         self._availability_checked_at: float = 0.0
         self._catalogue = catalogue or CatalogueLocal()
+        self.GENERATION_TIMEOUT_SECONDS = self._delai_de_generation()
         # Les capacités d'un modèle ne changent pas en cours d'exécution :
         # interroger `/api/show` à chaque construction de descripteur coûterait
         # un aller-retour par modèle et par sélection.
@@ -308,6 +328,37 @@ class LocalProvider(ModelProvider):
             special_features=atouts,
             capability_sources=dict(profil.origines),
         )
+
+    @classmethod
+    def _delai_de_generation(cls) -> int:
+        """
+        Lit `GALSEN_LOCAL_GENERATION_TIMEOUT`, ou rend le défaut.
+
+        Une valeur illisible ou nulle rend le défaut **et le journalise** : un
+        délai mal écrit qui ferait basculer silencieusement vers un autre modèle
+        serait découvert le jour où une réponse vient du mauvais.
+
+        Returns:
+            Le délai en secondes.
+        """
+        brut = os.environ.get(cls.TIMEOUT_VARIABLE)
+        if brut is None:
+            return cls.DEFAULT_GENERATION_TIMEOUT_SECONDS
+        try:
+            valeur = int(brut)
+        except ValueError:
+            logger.warning(
+                "%s=%r n'est pas un entier : %d s par défaut.",
+                cls.TIMEOUT_VARIABLE, brut, cls.DEFAULT_GENERATION_TIMEOUT_SECONDS,
+            )
+            return cls.DEFAULT_GENERATION_TIMEOUT_SECONDS
+        if valeur <= 0:
+            logger.warning(
+                "%s=%d n'est pas un délai utilisable : %d s par défaut.",
+                cls.TIMEOUT_VARIABLE, valeur, cls.DEFAULT_GENERATION_TIMEOUT_SECONDS,
+            )
+            return cls.DEFAULT_GENERATION_TIMEOUT_SECONDS
+        return valeur
 
     def _mesurer(self, name: str) -> Optional[ProfilLocal]:
         """

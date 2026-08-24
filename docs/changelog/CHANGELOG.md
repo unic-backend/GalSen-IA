@@ -12,6 +12,26 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Fixed — 2026-08-24 — A generation timeout that silently changed model
+
+**The first real run of the ten trials produced a defect, and this is it.**
+Measured on an RTX A2000 12 GB: `qwen3.5:9b` exceeded the 120-second generation
+timeout **twice out of ten**. It was not a server failure — it is a model that
+reasons before answering, and legitimately takes longer.
+
+The cost was not slowness. On TEST-03 the fallback sent an **arithmetic**
+question to the **coding** model, which answered wrongly. A timeout set too
+short does not slow the platform down; it makes it change model in silence.
+
+`LocalProvider` now defaults to 300 s and reads `GALSEN_LOCAL_GENERATION_TIMEOUT`.
+An unreadable or non-positive value logs a warning and falls back to the
+default — a badly written timeout that silently reroutes to another model would
+be discovered the day an answer comes from the wrong one.
+
+The 120 s figure was chosen when no model ran in this environment. It had never
+met a real one.
+
+
 ### Added — 2026-08-24 — The ten trials, wired to the real `/chat` path — and the exact blocker
 
 The owner asked for the **first real GalSen IA responses from a real model**.

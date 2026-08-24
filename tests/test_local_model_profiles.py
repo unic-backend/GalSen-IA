@@ -156,6 +156,43 @@ class TestCeQueLaMesureDit:
         assert profil_mesure({"model_info": {"llama.context_length": 0}}).context_window is None
 
 
+class TestLeDelaiDeGeneration:
+    """
+    Le délai, et ce que coûte de le régler trop court.
+
+    Mesuré le 2026-08-24 sur une RTX A2000 12 Go, premier passage réel des dix
+    épreuves : `qwen3.5:9b` a dépassé 120 s **deux fois sur dix**. Le coût n'a
+    pas été la lenteur — le repli a envoyé une question d'arithmétique au modèle
+    de code, qui a mal répondu. Un délai trop court fait changer de modèle en
+    silence.
+    """
+
+    def test_le_defaut_laisse_un_modele_qui_raisonne_finir(self):
+        """300 s : au-delà des deux dépassements mesurés, avec de la marge."""
+        assert LocalProvider().GENERATION_TIMEOUT_SECONDS == 300
+
+    def test_l_exploitant_peut_le_regler(self, monkeypatch):
+        monkeypatch.setenv(LocalProvider.TIMEOUT_VARIABLE, "600")
+        assert LocalProvider().GENERATION_TIMEOUT_SECONDS == 600
+
+    @pytest.mark.parametrize("valeur", ["", "beaucoup", "0", "-30"])
+    def test_une_valeur_inutilisable_retombe_sur_le_defaut(self, monkeypatch, valeur):
+        """
+        Et le journalise. Un délai mal écrit qui ferait basculer silencieusement
+        vers un autre modèle serait découvert le jour où une réponse vient du
+        mauvais — c'est-à-dire trop tard.
+        """
+        monkeypatch.setenv(LocalProvider.TIMEOUT_VARIABLE, valeur)
+        assert LocalProvider().GENERATION_TIMEOUT_SECONDS == 300
+
+    def test_le_delai_de_sonde_reste_court(self):
+        """
+        Sonder et générer sont deux choses. Allonger la sonde ferait attendre
+        une seconde entière par tour pour découvrir qu'aucun serveur n'écoute.
+        """
+        assert LocalProvider.PROBE_TIMEOUT_SECONDS <= 2.0
+
+
 class TestLaPrioriteDesOrigines:
     """Mesure > déclaration > défaut, et le descripteur dit laquelle a servi."""
 
