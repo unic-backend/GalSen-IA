@@ -58,7 +58,13 @@ class TestRessources:
         assert reponse.status_code == 200
         assert "api.post" in reponse.text
         assert "afficherReponse" in reponse.text
-        assert "import { api }" in reponse.text
+        # Ce qui compte est **d'où** vient le client, pas la liste exacte des
+        # symboles importés. La version d'origine exigeait la chaîne
+        # `import { api }` et s'est cassée le 2026-08-24 dès qu'un second
+        # symbole a rejoint l'import — alors que la règle qu'elle défend, un
+        # seul client d'API partagé, n'avait pas bougé.
+        assert 'from "./api-client.js"' in reponse.text
+        assert "fetch(" not in reponse.text, "aucun appel réseau direct hors du client"
 
     def test_la_feuille_de_style_est_servie(self, client):
         assert client.get("/ui/css/chat.css").status_code == 200
