@@ -1,0 +1,50 @@
+# Qwen3.5-397B-A17B — le vaisseau amiral de la famille, à ne pas confondre avec
+# le Qwen3.5-9B dense qui tourne, lui, sur une carte de 12 Go.
+# Source : vllm-project/recipes, Qwen/Qwen3.5.md, lue le 2026-08-24. VERIFIED.
+name: qwen3.5-397b
+display_name: Qwen3.5-397B-A17B
+huggingface_id: Qwen/Qwen3.5-397B-A17B-FP8
+state: NOT DOWNLOADED — REQUIRES GPU SERVER
+
+architecture:
+  kind: MoE
+  total_parameters: "397B"        # VERIFIED — tableau de la recette officielle
+  active_parameters: "17B"        # VERIFIED
+  multimodal: true                # VERIFIED — « multimodal mixture-of-experts »
+  note: "Architecture à gated delta networks."
+
+hardware:
+  minimum: "8x H200, ou 8x MI300X/MI355X"   # VERIFIED — « verified on 8x H200 GPUs and 8x MI300X/MI355X »
+  alternative: "4x GB200 avec le point de contrôle NVFP4"  # VERIFIED
+  runs_on_12gb_vram: false
+
+backend: vllm
+docker_image: "vllm/vllm-openai"
+
+# Variante débit : `--language-model-only` saute l'encodeur visuel et libère la
+# mémoire pour le cache KV. À ne pas utiliser si les images comptent.
+serve_command:
+  - vllm
+  - serve
+  - Qwen/Qwen3.5-397B-A17B-FP8
+  - -dp
+  - "8"
+  - --enable-expert-parallel
+  - --reasoning-parser
+  - qwen3
+  - --enable-prefix-caching
+
+# Variante latence, MTP-1 : réduit le temps par jeton au prix du débit.
+serve_command_low_latency:
+  - vllm
+  - serve
+  - Qwen/Qwen3.5-397B-A17B-FP8
+  - --tensor-parallel-size
+  - "8"
+  - --speculative-config
+  - '{"method": "mtp", "num_speculative_tokens": 1}'
+  - --reasoning-parser
+  - qwen3
+
+tool_calling_flags: ["--enable-auto-tool-choice", "--tool-call-parser", "qwen3_coder"]
+roles: ["general", "reasoning", "long_context", "document_analysis", "vision", "agentic"]

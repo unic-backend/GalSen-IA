@@ -12,6 +12,49 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Added — 2026-08-24 — Preference decides between equals, and a large model is a URL (ADR-042)
+
+ADR-040 made the router select by capability. Measured again against the fleet
+this phase targets, a gap remained: a `reasoning` task finds **three** models
+carrying the `reasoning` strength, all local and therefore all free, so cost
+breaks nothing — the choice fell back to **the order they were installed in**.
+
+`config/model_routing.yaml` gains `role_preferences`: per role, an ordered list
+of name patterns, consulted **only among candidates already equally capable**.
+It never promotes a weaker model — a preference that could override capability
+would be hard-coded routing, which is what a configuration file exists to
+prevent. Eleven roles now reach five distinct models by operator intent.
+
+`qwen3.5:9b` is recognised, with its 262 144-token context — the first local
+model to clear `document_analysis`'s 100 000-token floor. Its pattern sits
+before the generalist entry, which contains `qwen3` and would otherwise swallow
+it. **Its multimodality is not declared**: secondary sources report it,
+`/api/show` will measure it, and asserting it from a search summary would route
+images to a model that may not read them. `qwen2.5:14b` stays as the baseline.
+
+`config/models/` prepares four server families — Kimi K2.5, Qwen3.5-397B-A17B,
+DeepSeek-R1-0528, GLM-5.1. Every `serve_command` was **copied from the official
+vLLM recipes repository**, fetched in this session, not reconstructed. Reaching
+them needs no code: `OpenAICompatibleProvider` already speaks the contract vLLM
+and SGLang serve, so a large model is a base URL and a model name.
+
+Four scripts, all runnable: `preflight.py` (what the platform will do with the
+installed models, and whether each capability is measured or declared),
+`serve_large.py`, `connect.py`, `bench.py`.
+
+**No model was downloaded, loaded or benchmarked.** This environment has no GPU,
+no Ollama, and every weight host is refused by the proxy — `registry.ollama.ai`,
+`ollama.com`, `huggingface.co`, `cdn-lfs.huggingface.co` all return `000`,
+measured. What *was* tested is the refusals: `bench.py` returns **no number at
+all** rather than a zero, and the comparison refuses to put a `SCRIPTED` run
+beside a `REAL` one. A gap under one and a half tasks is reported as `ÉGALITÉ`,
+which is the guard against concluding that the newer model is better.
+
+Training was **not** rebuilt: `scripts/training/train_adapter.py` is already a
+real QLoRA recipe with a lineage registry, and adding a second pipeline to look
+productive would duplicate working infrastructure.
+
+
 ### Added — 2026-08-24 — The chat checks its own answer (ADR-041), and the skill library is finally connected
 
 ADR-039 gave the chat a writing stage that generates **once**. Nothing read what

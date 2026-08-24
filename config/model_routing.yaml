@@ -147,6 +147,44 @@ default:
   prefer_cheapest: true
 
 # =============================================================================
+# Préférences de rôle — qui l'emporte à compétence égale
+# =============================================================================
+# Mesuré le 2026-08-24, parc `qwen3.5:9b`, `qwen2.5:14b`, `deepseek-r1:8b` : une
+# tâche `reasoning` trouve **trois** modèles portant l'atout `reasoning`. Ils
+# sont tous gratuits, donc le coût ne départage rien, et le choix retombait sur
+# **l'ordre de la liste** — c'est-à-dire sur l'ordre d'installation.
+#
+# Cette section rend l'arbitrage à l'exploitant. Elle n'écarte personne : elle
+# n'agit **qu'entre modèles déjà également capables**. Un modèle nommé ici mais
+# dépourvu de l'atout attendu ne gagne rien — la compétence reste au-dessus de
+# la préférence, sinon la préférence deviendrait un routage en dur, ce que ce
+# fichier existe pour éviter.
+#
+# Premier motif qui correspond, premier servi. Un rôle absent d'ici garde le
+# comportement précédent : le moins cher, puis l'ordre d'arrivée.
+role_preferences:
+  # Un modèle de raisonnement dédié avant un généraliste qui sait raisonner.
+  reasoning: ["deepseek-r1", "qwq", "qwen3.5"]
+  planning: ["deepseek-r1", "qwen3.5"]
+  analysis: ["deepseek-r1", "qwen3.5"]
+  security: ["deepseek-r1", "qwen3.5"]
+
+  # Le contexte le plus large gagne : c'est la seule chose qui compte ici.
+  document_analysis: ["qwen3.5", "llama3.1", "gemma3"]
+  summarization: ["qwen3.5", "llama3.1", "gemma3"]
+  research: ["qwen3.5", "llama3.1"]
+
+  # Un modèle de code, jamais un généraliste, quand un modèle de code est là.
+  code_generation: ["coder", "codestral", "deepseek-coder"]
+  code_review: ["coder", "codestral", "deepseek-coder"]
+  implementation: ["coder", "codestral", "deepseek-coder"]
+  quality: ["coder", "codestral", "deepseek-coder"]
+
+  # La latence commande : le plus petit modèle installé.
+  conversation: ["0.8b", "1b", "1.5b", "3b", "mini", "small"]
+  translation: ["0.8b", "1b", "1.5b", "3b", "mini", "small"]
+
+# =============================================================================
 # Ce que sait faire un modèle local — profils par motif de nom
 # =============================================================================
 # Mesuré le 2026-08-24 : le fournisseur local annonçait **les mêmes capacités
@@ -195,6 +233,27 @@ local_models:
   - matches: ["deepseek-r1", "qwq", "marco-o1", "reasoner"]
     features: ["reasoning", "analysis"]
     context_window: 32768
+
+  # --- Qwen3.5 : le modèle local visé sur une carte de 12 Go ----------------
+  # Placé **avant** la ligne généraliste, qui contient « qwen3 » et l'avalerait.
+  #
+  # Faits `OBSERVED` le 2026-08-24 (moteur de recherche ; `huggingface.co` et
+  # `qwenlm.github.io` sont refusés par le mandataire de cet environnement,
+  # donc aucune fiche n'a pu être lue directement) :
+  #   - 9 milliards de paramètres, dense, Apache-2.0 ;
+  #   - **262 144 jetons de contexte natif**, extensible ;
+  #   - multimodalité annoncée — **non déclarée ici**. La vision se mesure sur
+  #     `/api/show` ; l'affirmer depuis un résumé de recherche en ferait une
+  #     capacité inventée, et le routage enverrait des images à un modèle qui
+  #     ne les lit peut-être pas.
+  #
+  # `long_context` y figure parce que 262 144 jetons dépassent de loin le seuil
+  # de `document_analysis` (100 000). C'est la première fois qu'un modèle local
+  # peut réellement servir cette tâche.
+  - matches: ["qwen3.5", "qwen3-5"]
+    features: ["general_conversation", "reasoning", "analysis", "long_context"]
+    supports_tools: true
+    context_window: 262144
 
   # --- Modèles de vision -----------------------------------------------------
   - matches: ["llava", "-vl", "vision", "bakllava", "moondream", "minicpm-v"]

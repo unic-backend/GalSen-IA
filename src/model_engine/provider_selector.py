@@ -277,6 +277,10 @@ class ProviderSelector:
                 exigences.get("preferred_features") or profile.get("preferred_features", [])
             ),
             "preferred_provider": task_requirements.get("preferred_provider"),
+            # Motifs qui départagent les modèles également capables. Recopié
+            # explicitement : ce dictionnaire est reconstruit clé par clé, donc
+            # tout ce qui n'est pas nommé ici est perdu en silence.
+            "role_preferences": exigences.get("role_preferences") or [],
             # Ce que la politique a décidé voyage avec les exigences : sans cela,
             # la réponse ne peut pas dire pourquoi ce modèle-là a été retenu.
             "prefer_cheapest": bool(exigences.get("prefer_cheapest")),
@@ -344,7 +348,59 @@ class ProviderSelector:
         if requirements.get("prefer_cheapest"):
             # « Question simple → petit modèle » : le coût commande, et les
             # atouts départagent les modèles de même prix.
-            return sorted(candidates, key=lambda d: (cout(d), -atouts(d)))[0]
+            classes = sorted(candidates, key=lambda d: (cout(d), -atouts(d)))
+        else:
+            # Ailleurs, la compétence commande et le coût départage.
+            classes = sorted(candidates, key=lambda d: -atouts(d))
 
-        # Ailleurs, la compétence commande et le coût départage.
-        return sorted(candidates, key=lambda d: -atouts(d))[0]
+        return self._preference_de_role(classes, requirements)
+
+    @staticmethod
+    def _preference_de_role(
+        classes: List[ModelDescriptor], requirements: Dict[str, Any]
+    ) -> ModelDescriptor:
+        """
+        Départage les candidats **également bien classés** par préférence de rôle.
+
+        Mesuré le 2026-08-24 : une tâche `reasoning` face à `qwen3.5:9b`,
+        `qwen2.5:14b` et `deepseek-r1:8b` trouve trois modèles portant l'atout
+        `reasoning`. Tous gratuits, donc le coût ne départage rien : le choix
+        retombait sur l'ordre de la liste, c'est-à-dire sur l'ordre
+        d'installation.
+
+        La préférence n'agit **qu'à égalité** — elle ne remonte jamais un modèle
+        moins bien classé. Sinon elle deviendrait un routage en dur, ce que
+        `config/model_routing.yaml` existe pour éviter.
+
+        Args:
+            classes: Candidats déjà triés, le meilleur en tête.
+            requirements: Exigences, dont `role_preferences`.
+
+        Returns:
+            Le candidat retenu ; le premier du classement si aucune préférence
+            ne s'applique.
+        """
+        preferences = requirements.get("role_preferences") or []
+        if not preferences or len(classes) < 2:
+            return classes[0]
+
+        # « Aussi bien classé que le premier » se juge sur les mêmes critères
+        # que le tri : mêmes atouts, même coût.
+        premier = classes[0]
+        attendus = requirements.get("preferred_features") or []
+
+        def signature(descriptor: ModelDescriptor) -> tuple:
+            return (
+                sum(1 for f in attendus if f in descriptor.special_features),
+                float(descriptor.pricing_per_1k_tokens.get("input", 0.0) or 0.0),
+            )
+
+        egaux = [d for d in classes if signature(d) == signature(premier)]
+        if len(egaux) < 2:
+            return premier
+
+        for motif in preferences:
+            for descriptor in egaux:
+                if str(motif).lower() in descriptor.model_name.lower():
+                    return descriptor
+        return premier

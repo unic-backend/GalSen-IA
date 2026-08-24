@@ -6,61 +6,65 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ---
 
-## Dernière session — 2026-08-24 (P3)
+## Dernière session — 2026-08-24 (Phase 3)
 
-**En cours** : rien. Mission « PHASE 2 — DEEP REASONING » : P3 (raisonnement),
-vérification, auto-correction et branchement de `src/skills/` faits. Bancs de
-modèles, serveurs d'inférence et infrastructure d'entraînement **non entamés**.
+**En cours** : rien. Mission « PHASE 3 — REAL LOCAL BRAIN + SERVER » : routage
+par rôle, reconnaissance de Qwen3.5, infrastructure serveur et banc de modèles
+faits. **Aucun modèle n'a tourné** — c'est le fait principal de cette session.
 Branche `claude/galsen-ia-phases-ukwz7p`, PR #37 ouverte.
 
-**Terminé** : **le chat critique sa propre réponse et peut la réécrire une
-fois.** Décision → **ADR-041**. Et **`src/skills/` est enfin branchée** —
-elle existait sans que rien n'y écrive.
+**Terminé** : **la préférence tranche entre égaux, et un grand modèle est une
+URL.** Décision → **ADR-042**. Déploiement → `docs/models/deployment.md`.
 
 À savoir sans relire :
-- **Deux modules, et la frontière est la conception.** `critics.py` constate et
-  ne corrige rien ; `deliberation.py` décide quoi en faire. **Aucun critique
-  n'interroge un modèle** : `agents/verifier/agent.py` explique pourquoi.
-- **Budget épuisé ⇒ la réponse est servie AVEC ses constats.** Une boucle qui
-  rend en silence une réponse qu'elle sait douteuse ajoute une garantie qui
-  n'existe pas. `GALSEN_CHAT_MAX_RETRIES`, une reprise par défaut ; `0` garde
-  la critique et n'arrête que la reprise.
-- **Le banc se donne 66,7 %, et c'est voulu.** Sa première version faisait 8/8 :
-  cas et contrôles sortaient de la même main. Quatre cas réellement ratés y ont
-  été ajoutés. Un banc dont le score ne peut que monter est une décoration.
-- **Le `tester` range, pas le `coder`.** C'est le seul endroit du dépôt où
-  existe une preuve. Un verdict vert **sans exécution** est refusé : le
-  `tester` rend `passed: True` quand il s'exclut par ré-entrance.
-- **Défaut trouvé en construisant** : `empty_answer` exigeait trois mots et
-  signalait « 42 ». **Vide veut dire vide.**
+- **Cet hôte ne peut atteindre aucun poids.** Mesuré : `registry.ollama.ai`,
+  `ollama.com`, `huggingface.co`, `cdn-lfs.huggingface.co` → `000`. Pas de GPU,
+  pas d'Ollama. `pypi.org` et `raw.githubusercontent.com` répondent.
+- **Les commandes vLLM sont recopiées, pas reconstruites** — recettes
+  officielles `vllm-project/recipes`, lues cette session. Un drapeau inventé
+  pour un modèle de 400 milliards coûte une heure de GPU loué à découvrir.
+- **`role_preferences` n'agit qu'à égalité.** Elle ne remonte jamais un modèle
+  moins capable, sinon elle deviendrait un routage en dur.
+- **La vision de Qwen3.5 n'est pas déclarée.** Annoncée par des sources
+  secondaires, elle sera mesurée par `/api/show`.
+- **`bench.py` ne rend aucun chiffre sans modèle**, jamais un zéro : un taux nul
+  se compare, une absence non. Et un écart < 1,5 tâche est `ÉGALITÉ`.
+- **L'entraînement n'a pas été refait** : `scripts/training/train_adapter.py`
+  est déjà une recette QLoRA réelle.
 
-**Prochaine étape** : bancs de modèles réels et serveurs d'inférence
-(vLLM/SGLang via `OpenAICompatibleProvider`, déjà présent) — tout cela attend
-un GPU. Puis l'infrastructure d'entraînement (SFT/LoRA/QLoRA).
+**Prochaine étape, sur ta machine** : `ollama serve`, puis
+`ollama pull qwen3.5:9b` et `ollama pull qwen2.5:14b`, puis
+`python scripts/models/preflight.py --generer`, puis
+`python scripts/models/bench.py --modele qwen3.5:9b --contre qwen2.5:14b`.
+C'est la seule séquence qui transforme `PREPARED` en `TESTED`.
 
 **Décisions en attente du propriétaire** (aucune faite)
 1. **Déclarer `coder` dans le workflow `question`** — l'agent n'est pas atteint
    depuis le chat, donc la boucle de compétences ne tourne pas depuis `/chat`.
 2. **P10 de l'audit Linux** : la boucle d'événements se bloque pendant un
-   `/chat` (`/health` : 3,5 ms → 1 149 ms). Une reprise allonge encore le tour.
-3. **Portée régionale dans `KnowledgeScope`**, ou expansion pays par pays.
+   `/chat` (`/health` : 3,5 ms → 1 149 ms).
+3. **Base de `train_adapter.py`** : elle vise Qwen2.5-7B ; Qwen3.5 serait une
+   autre base — une ligne, plus un entraînement réel qui demande un GPU.
 
-**Repère mesuré le 2026-08-24** : `pytest -q` → **7309 passés, 9 ignorés,
+**Repère mesuré le 2026-08-24** : `pytest -q` → **7345 passés, 9 ignorés,
 3 désélectionnés, 0 échec**. `ruff check src tests scripts agents` → tout passe.
-**62 tests ajoutés, 0 supprimé, 0 affaibli.**
+**36 tests ajoutés, 0 supprimé, 0 affaibli.**
 
 **Bloqué — gestes de l'exploitant, aucun faisable ici**
-- **`ollama serve`** : sans serveur, les profils de modèles restent `declared`
-  au lieu de `measured`, et aucune reprise réelle n'a jamais tourné.
+- **`ollama serve` + `ollama pull`** : sans eux, aucun chiffre de modèle
+  n'existe et les profils restent `declared` au lieu de `measured`.
+- **Un serveur GPU loué** pour Kimi K2.5, Qwen3.5-397B, DeepSeek-R1, GLM-5.1 :
+  huit H200 chacun, et **aucun ne tient sur 12 Go**.
 - `git push origin v0.1.0` → seul test rouge en CI, rouge sur `main` aussi.
   Refusé d'ici : `HTTP 403`, mesuré. **Ne pas réessayer, ne pas « corriger ».**
 - `GALSEN_CODING_WORKSPACE_ROOTS` non renseignée → le moteur de codage refuse tout.
-- Cet hôte : **aucun GPU**, `ffmpeg` absent, Hugging Face, `qwenlm.github.io` et
-  `api.github.com` en 403. `raw.githubusercontent.com` et `pypi.org` répondent.
 
 ---
 
 ### Sessions précédentes
+
+**2026-08-24 — P3, le chat critique sa réponse (ADR-041)** et `src/skills/`
+branchée. Banc des critiques : 66,7 % de détection, 0 % de fausse alerte.
 
 **2026-08-24 — Routage des modèles (ADR-040)** : il ne sélectionnait pas, il
 prenait le premier de la liste. Six causes mesurées. Dix types de tâche et huit
