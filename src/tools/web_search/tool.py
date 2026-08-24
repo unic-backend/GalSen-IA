@@ -149,6 +149,32 @@ def _enveloppe_de_resultat(resultat: dict) -> dict:
     return resultat
 
 
+def _refus_definitif(erreur: Exception) -> bool:
+    """
+    Dit si une erreur réseau est un refus qui ne changera pas d'avis.
+
+    Réessayer coûte une attente et une seconde tentative ; cela n'a de sens que
+    si l'échec peut cesser. Trois familles se distinguent :
+
+    - **définitif** : un 4xx qui n'est ni `408` (délai dépassé) ni `429` (trop
+      de requêtes) — la ressource est refusée, pas indisponible ;
+    - **définitif aussi** : un mandataire qui refuse d'ouvrir le tunnel. CPython
+      le rend en `URLError` portant « Tunnel connection failed », et c'est une
+      décision de politique, pas un incident ;
+    - **passager** : tout le reste — délais, coupures, 5xx, 429. Ceux-là gardent
+      leur reprise.
+
+    En cas de doute, on rend `False` : réessayer à tort coûte une latence,
+    abandonner à tort coûte un résultat.
+    """
+    code = getattr(erreur, "code", None)
+    if isinstance(code, int):
+        return 400 <= code < 500 and code not in (408, 429)
+
+    motif = str(getattr(erreur, "reason", "") or erreur)
+    return "Tunnel connection failed" in motif
+
+
 class WebSearchTool(BaseTool):
     """
     Web search tool that provides search capabilities using DuckDuckGo as a fallback
@@ -262,11 +288,15 @@ class WebSearchTool(BaseTool):
                     return response.read().decode(charset, errors="replace")
             except (URLError, HTTPError, TimeoutError) as e:
                 last_error = e
-                if attempt < self.max_retries:
-                    sleep_time = self.backoff_factor * (2**attempt)
-                    time.sleep(sleep_time)
-                else:
+                # Un refus définitif ne devient pas une acceptation en
+                # réessayant. Mesuré le 2026-08-24 sur cette machine : le
+                # mandataire refuse le tunnel en 403, et la reprise coûtait
+                # 500 ms d'attente puis 300 ms d'une seconde tentative
+                # condamnée — 800 ms perdus sur chaque requête qui cherche.
+                if _refus_definitif(e) or attempt >= self.max_retries:
                     break
+                sleep_time = self.backoff_factor * (2**attempt)
+                time.sleep(sleep_time)
         raise RuntimeError(f"Failed to fetch {url} after {self.max_retries} retries: {last_error}")
 
     def _search(
