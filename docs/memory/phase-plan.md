@@ -5,115 +5,100 @@ phase attend une confirmation.
 
 ---
 
-VOLET en cours   : **LINUX KERNEL ARCHITECTURE RESEARCH AUDIT**
-                   Brief du propriétaire, 2026-08-23
-Chapitres        : **13**
-Phases           : **18**
-Phase courante   : AUCUNE — VOLET TERMINÉ
-Terminées        : **1.1 · 1.2 · 1.3 · 2.1 · 2.2 · 3.1 · 3.2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 11 · 12 · 13.1 · 13.2** — les 18 → `docs/research/linux-kernel-architecture-audit.md`
+VOLET en cours   : **FUSION ARENA → GALSEN IA**
+                   Décision du propriétaire, 2026-08-26
+Chapitres        : **8**
+Phases           : **12**
+Phase courante   : 1.1 — en attente de confirmation
+Terminées        : aucune
 Cadence          : **deux phases par tour** (convenu le 2026-08-19)
 
-**Ce que le brief interdit** : copier du code noyau, vendorer un composant,
-introduire une dépendance Linux, modifier l'architecture existante. Rien n'est
-implémenté pendant cet audit. `RESEARCH → EVALUATE → DOCUMENT → COMPARE →
-RECOMMEND`, et pas un pas de plus (`.claude/rules/spec-driven-governance.md`).
+**Décisions du propriétaire, prises avant ce plan :**
+
+- Les deux projets n'en font plus qu'un. ARENA rejoint GalSen IA, pas l'inverse.
+  Motif donné : *« GalSen IA a eu une mauvaise aperçu, je peux pas l'utiliser
+  depuis que je l'ai créé ; ARENA, sur 1 jour, je commence à travailler avec. »*
+- Le projet unifié **reste public sous Apache-2.0**. Le propriétaire l'a
+  explicitement choisi après que la conséquence lui a été présentée : ARENA
+  devient donc utilisable par tous. Cela remplace sa décision du 2026-08-26
+  matin (« personne ne doit l'utiliser »).
+
+**Contrainte non négociable, et elle n'est pas un choix :**
+
+L'historique Git d'ARENA contient **6 secrets en clair**, et les clés du
+propriétaire **ne sont pas encore changées**. Le transfert se fait donc
+**fichier par fichier, sans historique**. Aucun `git subtree`, aucun
+`git remote add`, aucun merge d'historique. Cette contrainte tombe le jour où
+la rotation des clés est faite et vérifiée — pas avant.
 
 ---
 
 ## Ce qui a été mesuré avant d'écrire ce plan
 
-Un plan qui suppose ses sources accessibles n'est pas un plan. Mesuré le
-2026-08-23, depuis cette machine :
+Un plan écrit de mémoire suppose ; celui-ci a compté. Mesuré le 2026-08-26 :
 
-| Source | Réponse |
-|---|---:|
-| `raw.githubusercontent.com/torvalds/linux/…` | **200** |
-| `github.com/torvalds/linux` | 403 |
-| `docs.kernel.org` | **000** |
-| `www.kernel.org` · `git.kernel.org` | 000 |
-| `spdx.org` | 000 |
+| Mesure | GalSen IA | ARENA |
+|---|---|---|
+| Fichiers Python | 958 | 109 |
+| Lignes Python | 230 576 | 8 385 |
+| Tests | 7 373 | 369 |
+| ADR | 39 | 0 |
 
-**L'audit est faisable, et par la meilleure source.** `docs.kernel.org` n'est que
-le rendu de `Documentation/` dans l'arbre ; cet arbre répond. Vérifié fichier par
-fichier : `COPYING` (496 o), `cgroup-v2.rst` (135 502 o), `ftrace.rst`
-(145 229 o), `fault-injection.rst` (19 325 o), `credentials.rst` (20 875 o),
-`license-rules.rst` (18 477 o).
+**Collisions réelles, comptées et non supposées :**
 
-Ce qui reste hors d'atteinte et devra être dit `UNKNOWN` plutôt que deviné :
-le texte SPDX canonique et tout ce qui ne vit que sur `kernel.org`.
+- Agents portant le même nom des deux côtés : **`coder`, `researcher`**
+- Dossiers de premier niveau en commun : `agents/ config/ data/ docs/ scripts/
+  tests/ tools/` — 7 sur 12
+- Fichiers de test homonymes : **`test_sandbox.py`** (un seul)
+- Imports racine à réécrire dans ARENA : **43** (`agents.`, `tools.`, `core.`,
+  `apps.`)
+
+**Emplacement retenu : `src/arena/`.** GalSen IA place chaque sous-système sous
+`src/` (`src/darra_j/`, `src/media/`, `src/live_context/`). ARENA suit la même
+règle plutôt que d'en inventer une — `.claude/rules/spec-driven-governance.md`,
+*« Existing architecture has priority »*. Cela règle d'un coup les 7 collisions
+de dossiers et les 2 collisions d'agents, sans renommer une seule capacité.
 
 ---
 
 ## Le plan
 
 ```
-Ch. 01  Audit du GalSen IA réel                  → 3 phases
-        1.1 orchestration, agents, ordonnancement, cycle de vie, files ✅
-        1.2 ressources, isolation, bac à sable, sécurité, permissions ✅
-        1.3 auto-réparation, observabilité, mémoire, config, dégradation ✅
-
-Ch. 02  Étude de l'architecture Linux            → 2 phases
-        2.1 processus, ordonnancement, mémoire, namespaces, cgroups, capabilities ✅
-        2.2 modules, VFS, traçage, injection de fautes, frontières, synchronisation ✅
-
-Ch. 03  Extraction des principes                 → 2 phases
-        3.1 les huit champs, pour les concepts d'isolation et de ressources ✅
-        3.2 les huit champs, pour fautes, observabilité et frontières ✅
-
-Ch. 04  Auto-réparation                          → 1 phase (indivisible) ✅
-Ch. 05  Gestion des ressources                   → 1 phase (indivisible) ✅
-Ch. 06  Isolation des agents                     → 1 phase (indivisible) ✅
-Ch. 07  Observabilité                            → 1 phase (indivisible) ✅
-Ch. 08  Frontières architecturales               → 1 phase (indivisible) ✅
-Ch. 09  Licences                                 → 1 phase (indivisible) ✅
-Ch. 10  Preuve qu'aucun code n'a été copié       → 1 phase (indivisible) ✅
-Ch. 11  Portes de faisabilité (10 questions)     → 1 phase (indivisible) ✅
-Ch. 12  Classement A–F + plus petite implémentation réversible
-                                                 → 1 phase (indivisible) ✅
-
-Ch. 13  Rapport final, 22 points                 → 2 phases  ✅ TERMINÉ
-        13.1 points 1 à 11
-        13.2 points 12 à 22, verdict
-        → **SELECTIVE ARCHITECTURAL IMPROVEMENTS RECOMMENDED**
+Ch. 01  Sécurité préalable        → 1 phase (indivisible)
+Ch. 02  ADR et emplacement        → 1 phase (indivisible)
+Ch. 03  Transfert du code         → 3 phases  (3.1 API, 3.2 agents, 3.3 outils)
+Ch. 04  Dépendances               → 1 phase (indivisible)
+Ch. 05  Tests                     → 2 phases  (5.1 portage, 5.2 passage au vert)
+Ch. 06  Interface et services     → 2 phases  (6.1 frontend, 6.2 LibreChat/Docker)
+Ch. 07  Documentation et mémoire  → 1 phase (indivisible)
+Ch. 08  Validation complète       → 1 phase (indivisible)
 ```
 
-**Total : 18 phases.**
+**Total : 12 phases.**
 
----
+### Détail
 
-## Ce que je dois te dire avant que tu confirmes
+| Phase | Ce qu'elle fait | Comment elle se vérifie |
+|---|---|---|
+| **1.1** | Scanner les fichiers ARENA à transférer, prouver qu'aucun secret ne part dans un dépôt public | `gitleaks` sur l'arbre de travail → 0 fuite |
+| **2.1** | Écrire l'ADR-040bis actant la fusion, l'emplacement `src/arena/`, la licence et l'interdiction d'historique | l'ADR existe, le garde-fou de comptage d'ADR de `CLAUDE.md` passe |
+| **3.1** | `apps/backend/` → `src/arena/api/` — config, runtime, security, prompts, rate_limit, 3 routeurs | `python -c "import src.arena.api"` + table des routes figée |
+| **3.2** | 13 agents → `src/arena/agents/` | chaque agent s'importe |
+| **3.3** | 8 familles d'outils → `src/arena/tools/` | chaque outil s'importe |
+| **4.1** | Fusionner `requirements.txt` — 6 dépendances nouvelles côté ARENA | `pip install --dry-run -r requirements.txt` résout |
+| **5.1** | 369 tests → `tests/arena/`, `test_sandbox.py` désambiguïsé | pytest les collecte |
+| **5.2** | Les faire passer avec les imports GalSen IA | `pytest tests/arena` → 369 passed |
+| **6.1** | Frontend ARENA et Media Studio sous l'interface GalSen IA | les pages se chargent hors ligne |
+| **6.2** | `librechat.yaml`, Open WebUI, `docker-compose.yml`, `.env.example` | `docker compose config` valide |
+| **7.1** | `CLAUDE.md`, `docs/architecture/overview.md`, CHANGELOG, `docs/memory/` | garde-fous de documentation au vert |
+| **8.1** | Suite entière des deux projets réunis, ruff, régression | `pytest` → 7 742 attendus, `ruff` → 0 |
 
-**Le chapitre 01 décide de tout le reste.** Le brief le dit lui-même : *« ne
-suppose pas qu'une capacité est absente parce qu'elle porte un autre nom »*.
-Cette plateforme a déjà un bac à sable qui applique des limites du noyau
-(`src/sandbox/`), une dégradation mesurée (`src/integration/degradation.py`), une
-piste d'exécution suivable de bout en bout (`/observability/trail/{id}`) et une
-auto-réparation. La plupart des principes Linux vont probablement tomber en
-**D — DÉJÀ COUVERT**, et ce sera le résultat, pas un échec de l'audit.
+### Ce que ce VOLET ne fait pas
 
-**Deux choses que je ne peux pas mesurer ici**, et qui resteront `UNKNOWN` :
-tout ce qui concerne le GPU (cette machine n'en a pas) et le comportement sous
-charge réelle (aucun fournisseur de modèle n'y répond).
-
-**Un point d'intendance** : la PR #36 est ouverte et non fusionnée, et je n'ai
-autorisation de pousser que sur `claude/galsen-ia-phases-ukwz7p`. Cet audit
-produit des documents ; ils atterriront donc dans cette PR, à côté du redesign
-chat-first. Si tu préfères qu'ils vivent seuls, fusionne #36 d'abord — c'est ta
-décision, pas la mienne, et elle ne bloque pas le démarrage.
-
----
-
-## Programmes précédents, terminés — ne pas rouvrir
-
-1. **REDESIGN CHAT-FIRST** — 8 chapitres, 11 phases. `POST /chat`, `/ui/` sert la
-   conversation, `/ui/admin/` le tableau de bord, menu de 14 domaines.
-   **Constat qui reste vrai** : aucun des 17 agents ne rédige ; `/chat` rend le
-   refus des agents et ne converse pas encore. L'étape de rédaction qui le
-   rendrait conversant **n'est pas autorisée**.
-2. **AUDIT #01 `codebase-memory-mcp`** — 16 phases, `KEEP FOR RESEARCH`.
-3. **SUPERPOWERS** — audit 24 phases + 11 d'implémentation. **ADR-038**.
-4. **OPEN-SOURCE ECOSYSTEM AUDIT** — 22 phases. **ADR-037**.
-5. **OpenClaw** (ADR-034), **DeepSeek Harness** (ADR-035) : non intégrés.
-6. **Live Context** (ADR-033), **Creative Canvas** (ADR-031),
-   **Research Orchestration** (ADR-032), **MoneyPrinterTurbo** (ADR-030),
-   **Apache-2.0** (ADR-036).
+- **Aucune capacité n'est réécrite.** ARENA est déplacé, pas refondu.
+- **Aucune fusion de code entre capacités jumelles.** Le `coder` d'ARENA et
+  celui de GalSen IA coexistent ; les rapprocher est une décision distincte, à
+  prendre une fois que l'ensemble tourne.
+- **Aucune suppression du dépôt `arena-personal-ai`.** Il reste tel quel jusqu'à
+  ce que le propriétaire constate que la fusion fonctionne.
+- **La rotation des clés reste due**, et n'est pas dans ce VOLET.
