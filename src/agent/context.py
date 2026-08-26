@@ -29,6 +29,31 @@ from .blackboard import Blackboard
 MAX_DELEGATION_DEPTH = 3
 
 
+def executer_coroutine(coroutine) -> Any:
+    """
+    Exécute une coroutine depuis du code synchrone.
+
+    Les agents s'exécutent dans les threads du Router Engine, où aucune boucle
+    d'événements ne tourne : `asyncio.run` convient. Si une boucle existe déjà,
+    la coroutine est exécutée dans un thread dédié pour ne pas entrer en
+    conflit avec elle.
+
+    **Fonction de module plutôt que méthode** depuis que `src/chat/` en a besoin
+    aussi : le corps n'a jamais utilisé `self`, et deux ponts async divergent
+    toujours — celui qu'on oublie de corriger est celui qui bloque la boucle.
+    `AgentContext._run_async()` délègue ici et se comporte à l'identique.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coroutine)
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(asyncio.run, coroutine).result()
+
+
 class AgentContext:
     """
     Contexte d'exécution transmis à chaque agent.
@@ -1234,20 +1259,11 @@ class AgentContext:
         """
         Exécute une coroutine depuis du code synchrone.
 
-        Les agents s'exécutent dans les threads du Router Engine, où aucune
-        boucle d'événements ne tourne : `asyncio.run` convient. Si une boucle
-        existe déjà, la coroutine est exécutée dans un thread dédié pour ne pas
-        entrer en conflit avec elle.
+        Délègue à `executer_coroutine()`, qui porte l'implémentation depuis que
+        la couche de réponse en a besoin elle aussi. Cette méthode reste pour
+        les appelants existants ; le comportement est inchangé.
         """
-        try:
-            asyncio.get_running_loop()
-        except RuntimeError:
-            return asyncio.run(coroutine)
-
-        from concurrent.futures import ThreadPoolExecutor
-
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            return executor.submit(asyncio.run, coroutine).result()
+        return executer_coroutine(coroutine)
 
     @staticmethod
     def _to_memory_type(memory_type_enum, value: str):

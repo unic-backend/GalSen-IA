@@ -83,15 +83,36 @@ def selection_appliquee(pipeline: Iterable[str],
         pipeline: les agents déclarés, dans l'ordre.
         recommandes: la recommandation du planificateur, ou None.
 
+    **Trois cas, pas deux.** `recommended_agents()` distingue déjà « le
+    planificateur n'a pas tourné » de « il n'a mobilisé personne » — sa
+    docstring le dit : *décider de ne mobiliser personne est une décision, ne
+    pas décider n'en est pas une*. Cette fonction écrasait la distinction une
+    ligne plus bas, avec `restreint or None`, si bien qu'un plan délibérément
+    vide relançait le pipeline entier.
+
+    Mesuré le 2026-08-23 : l'intention `conversation` du planificateur ne
+    mobilise aucun agent, et « bonjour » traversait quand même le `researcher`
+    pendant 1 092 ms.
+
+    Args:
+        pipeline: les agents déclarés, dans l'ordre.
+        recommandes: la recommandation du planificateur, ou None.
+
     Returns:
-        Le pipeline restreint, ou None quand la recommandation est inutilisable
-        — planificateur absent, ou recommandation vide. Dans ce cas l'appelant
-        garde le pipeline entier : ne rien exécuter parce qu'une heuristique
-        n'a rien reconnu serait pire que d'en faire trop.
+        - `None` — la recommandation est **inutilisable** : planificateur
+          absent, ou agents nommés dont aucun n'est déclaré dans le workflow.
+          L'appelant garde le pipeline entier : ne rien exécuter parce qu'une
+          heuristique n'a rien reconnu serait pire que d'en faire trop.
+        - `[]` — le planificateur a **décidé** de ne mobiliser personne.
+          L'appelant n'exécute personne, et c'est le plan.
+        - une liste — le pipeline restreint.
     """
     if recommandes is None:
         return None
     retenus = set(recommandes)
+    if not retenus:
+        # Une décision, pas une absence de décision.
+        return []
     restreint = [agent for agent in pipeline if agent in retenus]
     return restreint or None
 

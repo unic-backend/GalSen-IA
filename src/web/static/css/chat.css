@@ -383,6 +383,26 @@ body {
   cursor: pointer;
 }
 
+/* La saisie vocale se distingue de l'envoi : elle propose, elle ne valide pas.
+   Fond neutre, et un état actif visible pendant l'écoute — sans quoi rien ne
+   dit qu'un micro est ouvert. */
+#bouton-vocal {
+  color: var(--texte);
+  background: var(--fond-doux);
+  border: 1px solid var(--bordure);
+}
+
+#bouton-vocal:hover:not(:disabled),
+#bouton-vocal:focus-visible {
+  border-color: var(--accent);
+}
+
+.bouton-vocal--actif {
+  color: var(--accent-contraste);
+  background: var(--erreur);
+  border-color: var(--erreur);
+}
+
 .composeur button:disabled {
   opacity: 0.45;
   cursor: not-allowed;

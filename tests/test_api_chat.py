@@ -278,3 +278,303 @@ class TestQuandLeChercheurTrouve:
             self._resultat([{"source": "https://exemple.org", "content": ""}])
         )
         assert "1 élément(s)" in texte
+
+
+class TestContexteDeReponse:
+    """
+    Ce que la rédaction reçoit — et ce qu'elle ne doit jamais recevoir.
+
+    Le contexte est le seul endroit où l'on choisit ce que le modèle voit. Un
+    rouage qui s'y glisse ressort en prose : donner à un modèle la liste des
+    tâches du planner, c'est lui demander d'écrire un rapport d'exécution.
+    """
+
+    @staticmethod
+    def _resultat(senegal=None, chercheur=None):
+        agents = [{"agent": "planner", "result": {"axes": {"language": {"value": "fr"}}}}]
+        if chercheur is not None:
+            agents.append({"agent": "researcher", "result": chercheur})
+        if senegal is not None:
+            agents.append({"agent": "senegal", "result": senegal})
+        return {"agent_results": agents, "aggregated_result": {}}
+
+    def test_un_element_du_corpus_est_une_preuve_verifiee(self):
+        """
+        Rien n'entre dans le corpus sans source (ADR-019), et
+        `apply_scope_policy` a déjà tranché. Ces éléments sont donc vérifiés —
+        parce que le corpus l'exige, pas parce que c'est pratique.
+        """
+        import src.api.server as serveur
+
+        contexte = serveur._contexte_de_reponse(
+            self._resultat(senegal={
+                "status": "grounded",
+                "elements": [{"id": "sn-001", "content": "14 régions.",
+                              "scope": "country:sn"}],
+            }),
+            "Combien de régions ?", [], serveur.ChatGrounding(status="GROUNDED"),
+        )
+        assert len(contexte.constats_verifies) == 1
+        assert contexte.constats_verifies[0]["scope"] == "country:sn"
+        assert contexte.constats_verifies[0]["source"] == "sn-001"
+
+    def test_un_refus_est_transporte_mot_pour_mot(self):
+        """Reformuler un refus, c'est déjà commencer à l'adoucir."""
+        import src.api.server as serveur
+
+        raison = "La base ne contient rien sur ce sujet — ce n'est pas une réponse négative."
+        contexte = serveur._contexte_de_reponse(
+            self._resultat(senegal={"status": "empty_base", "reason": raison,
+                                    "what_would_settle_it": "ingérer le corpus"}),
+            "Question", [], serveur.ChatGrounding(status="UNGROUNDED"),
+        )
+        assert raison in contexte.agent_notes
+        assert any("ingérer le corpus" in n for n in contexte.agent_notes)
+
+    def test_aucun_rouage_n_entre_dans_le_contexte(self):
+        """
+        Le plan, les tâches et les durées restent dehors (§8 du brief).
+
+        Ce test regarde l'invite réellement construite, pas le contexte : c'est
+        l'invite que le modèle lit, et c'est donc là que la fuite se verrait.
+        """
+        import src.api.server as serveur
+        from src.chat import construire_invite
+
+        resultat = self._resultat(chercheur={"findings": [], "gaps": []})
+        resultat["agent_results"][0]["result"]["tasks"] = ["étape secrète"]
+        resultat["agent_results"][0]["result"]["task_count"] = 7
+
+        invite = construire_invite(serveur._contexte_de_reponse(
+            resultat, "Bonjour", [], serveur.ChatGrounding(status="NOT_CHECKED")))
+        assert "étape secrète" not in invite
+        assert "task_count" not in invite
+
+
+class TestLaGenerationNAncreRien:
+    """
+    L'invariant que ce VOLET ne doit jamais casser.
+
+    Le §12 du brief le dit, et c'est la seule phrase de tout le document qui
+    protège l'utilisateur : *« the system must never claim that a response is
+    grounded simply because a model generated it »*. Un modèle qui écrit bien
+    ne rend rien plus sourcé.
+    """
+
+    def _reponse(self, client, texte):
+        import src.api.server as serveur
+
+        async def faux(prompt, task_requirements, **k):
+            return texte
+
+        precedent = serveur.model_manager.generate_text_with_source
+        serveur.model_manager.generate_text_with_source = faux
+        try:
+            return client.post("/chat", json={"message": "Qui était Einstein ?"},
+                               headers=ENTETE)
+        finally:
+            serveur.model_manager.generate_text_with_source = precedent
+
+    def test_une_reponse_generee_reste_non_ancree(self, client):
+        reponse = self._reponse(client, "Einstein était un physicien.")
+        assert reponse.status_code == 200
+        charge = reponse.json()
+        assert charge["generated"] is True
+        assert charge["answer"].startswith("Einstein")
+        # La fluidité n'ancre pas.
+        assert charge["grounding"]["status"] != "GROUNDED"
+
+    def test_sans_modele_la_reponse_n_est_pas_marquee_generee(self, client):
+        """Le champ qui empêche de confondre un refus composé et une réponse."""
+        reponse = client.post("/chat", json={"message": "Qui était Einstein ?"},
+                              headers=ENTETE)
+        if reponse.status_code == 200:
+            charge = reponse.json()
+            assert charge["generated"] is False
+            assert charge["generation_unavailable"]
+
+
+class TestPanneEtMemoire:
+    """
+    Ce qu'on dit quand ça rate, et ce dont on se souvient (§14 et §15).
+    """
+
+    def test_aucune_infrastructure_ne_fuit_dans_la_reponse(self, client):
+        """
+        **Mesuré le 2026-08-23 : ce défaut a existé.** Le motif rendu par
+        l'API portait `http://localhost:11434` — un hôte et un port livrés à
+        quiconque appelle la route. Le §14 l'interdit, et un message d'erreur
+        est le dernier endroit où l'on pense à regarder.
+        """
+        charge = client.post("/chat", json={"message": "Explique Linux."},
+                             headers=ENTETE).json()
+        motif = charge.get("generation_unavailable") or ""
+        assert "http://" not in motif
+        assert "localhost" not in motif
+        assert ":11434" not in motif
+
+    def test_la_cause_reelle_est_conservee_a_l_interieur(self):
+        """
+        Cacher une panne n'est pas la traiter. Le détail entier reste dans
+        `failure_detail`, journalisé, et il porte le geste à faire.
+        """
+        from src.chat import ContexteReponse, RedacteurConversation
+        from src.model_engine.model_manager import ModelManagerImpl
+
+        finale = RedacteurConversation(ModelManagerImpl()).rediger(
+            ContexteReponse(message="Explique Linux.")
+        )
+        assert finale.generated is False
+        assert finale.failure_detail
+        # Plus long que le motif public : c'est tout l'intérêt.
+        assert len(finale.failure_detail) > len(finale.failure_reason or "")
+
+    def test_un_motif_public_est_stable_et_court(self):
+        """
+        Une valeur énumérée ne change pas quand le fournisseur change, donc un
+        client peut s'y fier. Une prose de fournisseur, non.
+        """
+        from src.chat.response import AUCUN_FOURNISSEUR, _classer_panne
+        from src.model_engine.providers.base import ProviderUnavailableError
+
+        class FausseRaison:
+            value = "no_credentials"
+
+        erreur = ProviderUnavailableError("ollama", FausseRaison(), "http://localhost:11434")
+        assert _classer_panne(erreur) == AUCUN_FOURNISSEUR
+        assert "localhost" not in _classer_panne(erreur)
+
+    def test_le_tour_precedent_atteint_le_modele(self, client):
+        """
+        §15 : « j'apprends le Python » puis « quelle bibliothèque pour les
+        API ? » — la seconde réponse doit pouvoir se servir de la première.
+
+        Aucun second système de mémoire n'est créé : l'historique voyage de la
+        requête jusqu'à l'invite, en passant par le contexte de réponse.
+        """
+        import src.api.server as serveur
+
+        vu = {}
+
+        async def faux(prompt, task_requirements, **k):
+            vu["invite"] = prompt
+            return "FastAPI ou Flask conviennent."
+
+        precedent = serveur.model_manager.generate_text_with_source
+        serveur.model_manager.generate_text_with_source = faux
+        try:
+            client.post("/chat", json={
+                "message": "Quelle bibliothèque pour les API ?",
+                "history": [
+                    {"role": "user", "content": "J'apprends le Python."},
+                    {"role": "assistant", "content": "Par où veux-tu commencer ?"},
+                ],
+            }, headers=ENTETE)
+        finally:
+            serveur.model_manager.generate_text_with_source = precedent
+
+        assert "apprends le Python" in vu["invite"]
+        assert "User:" in vu["invite"] and "Assistant:" in vu["invite"]
+
+
+class TestAutoRevue:
+    """
+    Ce que la relecture de mon propre diff a trouvé (§19 du brief #1).
+
+    Trois défauts, dont un qui violait une règle du projet **dans une fonction
+    dont la docstring affirmait la respecter**.
+    """
+
+    def test_le_modele_utilise_n_est_jamais_devine(self):
+        """
+        `generate_text_with_source()` rend une chaîne : lequel des modèles a
+        répondu n'est nulle part dedans. Rendre le premier de la liste était un
+        nom deviné — faux précisément quand le repli a servi, c'est-à-dire dans
+        le seul cas intéressant.
+
+        Un nom deviné vaut moins que pas de nom : il se lit comme une mesure.
+        """
+        from src.chat.response import _modele_utilise
+
+        class MoteurBavard:
+            def list_models(self, status=None):
+                class M:
+                    name = "un-modele-qui-n-a-peut-etre-pas-repondu"
+                return [M(), M()]
+
+        assert _modele_utilise(MoteurBavard()) is None
+
+    def test_l_ancrage_atteint_l_invite(self):
+        """
+        Le champ entrait dans le contexte et n'en sortait jamais. Un champ que
+        personne ne lit est une promesse que personne ne tient.
+        """
+        from src.chat import ContexteReponse, construire_invite
+
+        sans_source = construire_invite(ContexteReponse(
+            message="Qui était Einstein ?", grounding_status="UNGROUNDED"))
+        assert "Nothing here is verified platform knowledge" in sans_source
+
+        avec_source = construire_invite(ContexteReponse(
+            message="Combien de régions ?", grounding_status="GROUNDED",
+            evidence=[{"content": "14 régions.", "source": "corpus",
+                       "verified": True}]))
+        assert "sourced platform knowledge" in avec_source
+
+    def test_une_tache_calculable_n_exige_aucune_source(self):
+        """
+        Mesuré le 2026-08-24, premier passage réel des dix épreuves : à
+        « 320 plaques à 4 500 FCFA, calcule le total », le modèle a répondu
+        *« je n'ai pas reçu de calcul »*, et à la demande de fonction Python
+        *« je n'ai pas trouvé d'informations sur les matériaux BA13 **dans les
+        sources fournies** »*.
+
+        La cause était dans cette consigne : « si le contexte ne contient pas la
+        chose, dis que tu ne sais pas » s'appliquait à **toute** demande. Une
+        multiplication et une fonction Python n'ont jamais eu besoin d'une
+        source — la règle anti-invention étouffait les réponses que le modèle
+        sait produire seul.
+
+        La distinction fait vivre les deux moitiés : un **fait** exige une
+        source, une **tâche** n'en exige aucune.
+        """
+        from src.chat import ContexteReponse, construire_invite
+
+        invite = construire_invite(ContexteReponse(message="Combien font 320 × 4500 ?"))
+        assert "A TASK you carry out yourself" in invite
+        assert "A FACT about the world" in invite
+        assert "not a reason to refuse" in invite
+
+    def test_l_invite_interdit_de_pretendre_ne_pas_avoir_recu_la_question(self):
+        """
+        L'autre moitié du même échec : le modèle a affirmé ne pas avoir reçu le
+        calcul, alors que la question est toujours dans l'invite.
+        """
+        from src.chat import ContexteReponse, construire_invite
+
+        invite = construire_invite(ContexteReponse(message="Calcule 187 × 46."))
+        assert "Never say you did not receive it" in invite
+        assert "The user's message" in invite
+
+    def test_la_regle_anti_invention_reste_entiere(self):
+        """
+        Assouplir pour les tâches ne doit rien assouplir pour les faits. C'est
+        la garantie que ce dépôt refuse de perdre.
+        """
+        from src.chat import ContexteReponse, construire_invite
+
+        # Espaces normalisés : la consigne est repliée à 79 colonnes, et une
+        # assertion sensible à la coupure casserait au prochain reformatage
+        # sans que la règle ait bougé d'un mot.
+        invite = " ".join(
+            construire_invite(ContexteReponse(message="peu importe")).split()
+        )
+        assert "Never invent a source" in invite
+        assert "say you do not know. Do not fill the gap" in invite
+        assert "Never present it as established fact" in invite
+
+    def test_aucune_propriete_morte_ne_subsiste(self):
+        """`constats_non_verifies` était définie et lue nulle part."""
+        from src.chat import ContexteReponse
+
+        assert not hasattr(ContexteReponse(message="x"), "constats_non_verifies")

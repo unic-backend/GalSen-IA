@@ -128,8 +128,34 @@ def test_une_recommandation_inutilisable_laisse_le_pipeline_entier():
 
     `None` signale à l'orchestrateur de garder la déclaration ; c'est le repli
     volontaire, pas une exécution vide.
+
+    **Ce test a changé le 2026-08-23, et il faut dire pourquoi.** Il affirmait
+    aussi `selection_appliquee(pipeline, []) is None`, ce qui était juste tant
+    qu'aucun planificateur ne pouvait rendre une liste vide : `[]` ne pouvait
+    alors signifier que « l'heuristique n'a rien reconnu ». L'intention
+    `conversation` a créé le cas manquant — un plan qui ne mobilise personne
+    **exprès** — et `recommended_agents()` distinguait déjà les deux dans sa
+    propre docstring : *décider de ne mobiliser personne est une décision, ne
+    pas décider n'en est pas une*. La distinction est rétablie plutôt
+    qu'inventée ; le repli volontaire, lui, est intact.
     """
     from src.router.decision_trace import selection_appliquee
 
+    # Le planificateur n'a pas tourné : pipeline entier.
     assert selection_appliquee(["planner", "tester"], None) is None
-    assert selection_appliquee(["planner", "tester"], []) is None
+    # Il a nommé des agents dont aucun n'est déclaré : recommandation
+    # inutilisable, pipeline entier.
+    assert selection_appliquee(["planner", "tester"], ["deployment"]) is None
+
+
+def test_un_plan_deliberement_vide_n_execute_personne():
+    """
+    Une décision de ne mobiliser personne doit être suivie, pas contournée.
+
+    Mesuré le 2026-08-23 : sans ce cas, « bonjour » traversait le `researcher`
+    pendant 1 092 ms pour chercher des sources sur une salutation. Avec lui,
+    77 ms et seul le planificateur tourne.
+    """
+    from src.router.decision_trace import selection_appliquee
+
+    assert selection_appliquee(["planner", "researcher"], []) == []

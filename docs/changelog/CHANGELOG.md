@@ -12,6 +12,289 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Fixed — 2026-08-24 — The anti-fabrication rule was suppressing answers the model could give alone
+
+Second defect from the first real run, and the more interesting one. Two trials
+failed, and **the model had not miscalculated — it had refused to answer**:
+
+> TEST-03: *« je n'ai pas reçu de calcul spécifique à vérifier »*
+> TEST-05: *« je n'ai pas trouvé d'informations sur les matériaux BA13 **dans
+> les sources fournies** »*
+
+The second sentence names the cause. The system prompt said: *if the context
+does not contain it, say you do not know, do not fill the gap.* Good against
+fabrication — but it applied to **every** request. Multiplying 320 by 4 500
+needs no documentation; neither does writing a Python function. The researcher
+had found nothing (DuckDuckGo timed out), the model read "no sources", and
+concluded it could not answer.
+
+The prompt now distinguishes two kinds of request, and the evidence rules apply
+to only one:
+
+- a **FACT** about the world — a date, a figure, a name, a price, a regulation.
+  No knowledge and no context ⇒ say you do not know. Unchanged.
+- a **TASK** carried out by the model — a calculation, code, a translation, a
+  plan, a definition. Carry it out. An empty context is not a reason to refuse,
+  and figures the user supplied are input, not claims needing a source.
+
+One more line answers TEST-03's exact failure: the user's message is always in
+the prompt, and the model must never claim it did not receive it.
+
+**The anti-fabrication half is untouched and pinned by its own test.** Relaxing
+for tasks must relax nothing for facts — that is the guarantee this repository
+refuses to lose.
+
+
+### Fixed — 2026-08-24 — A generation timeout that silently changed model
+
+**The first real run of the ten trials produced a defect, and this is it.**
+Measured on an RTX A2000 12 GB: `qwen3.5:9b` exceeded the 120-second generation
+timeout **twice out of ten**. It was not a server failure — it is a model that
+reasons before answering, and legitimately takes longer.
+
+The cost was not slowness. On TEST-03 the fallback sent an **arithmetic**
+question to the **coding** model, which answered wrongly. A timeout set too
+short does not slow the platform down; it makes it change model in silence.
+
+`LocalProvider` now defaults to 300 s and reads `GALSEN_LOCAL_GENERATION_TIMEOUT`.
+An unreadable or non-positive value logs a warning and falls back to the
+default — a badly written timeout that silently reroutes to another model would
+be discovered the day an answer comes from the wrong one.
+
+The 120 s figure was chosen when no model ran in this environment. It had never
+met a real one.
+
+
+### Added — 2026-08-24 — The ten trials, wired to the real `/chat` path — and the exact blocker
+
+The owner asked for the **first real GalSen IA responses from a real model**.
+They do not exist, and this entry says why before it says anything else.
+
+**The inference engine installs. The weights cannot be fetched.**
+`llama-cpp-python 0.3.35` was installed from pypi and imports — a real engine is
+present. But every model host is refused by this environment's gateway, measured:
+`registry.ollama.ai`, `ollama.com`, `huggingface.co`, `hf-mirror.com`,
+`modelscope.cn`, `gpt4all.io` → `000`; `github.com/…/releases` → `403`. The
+proxy's own `noProxy` list names what *is* reachable — npm, jsr, pypi,
+crates.io, proxy.golang.org — and no package on pypi bundles usable LLM weights
+(`tinyllama`, `smollm`, `llm-gguf`, `minillm` are all code-only, ≤ 30 KB).
+
+So the ten trials were built and **run**, and every one of them reports
+`NOT_EXECUTED — aucun fournisseur de modèle n'est disponible`, reached through
+the real path rather than asserted.
+
+`src/model_engine/evaluation_suite.py` holds the trials. Unlike
+`benchmark.py`, which interrogates a provider directly, this one goes through
+`POST /chat` — planner, agents, grounding, writing, deterministic criticism,
+possible retry. It measures **what a user receives**, which matters for six of
+the ten: a wrong sum is judged on what comes out *after* the deliberation loop.
+
+**Three outcomes, never two.** Four trials — explaining AI in plain French, a
+site strategy, an SME example, a Wolof version — have no machine-checkable
+truth. They report `NOT_CHECKED` and keep their full answer for a human. Scoring
+them would have shown ten results where only six exist.
+
+A generated answer is required before any trial is scored: when the platform
+composes a fallback from what the agents found, scoring it would measure the
+fallback, not the model.
+
+`ChatResponse` now carries `model_used` and `deliberation` — surfacing values
+already computed, so an API caller can see which model wrote and what the
+criticism found.
+
+The evaluation provisions a throwaway API key through the documented
+`GALSEN_API_KEYS` mechanism when none exists. That is not a bypass:
+authentication checks exactly what it checked, on a key the operator just
+created on their own machine, never written or printed.
+
+
+### Added — 2026-08-24 — Preference decides between equals, and a large model is a URL (ADR-042)
+
+ADR-040 made the router select by capability. Measured again against the fleet
+this phase targets, a gap remained: a `reasoning` task finds **three** models
+carrying the `reasoning` strength, all local and therefore all free, so cost
+breaks nothing — the choice fell back to **the order they were installed in**.
+
+`config/model_routing.yaml` gains `role_preferences`: per role, an ordered list
+of name patterns, consulted **only among candidates already equally capable**.
+It never promotes a weaker model — a preference that could override capability
+would be hard-coded routing, which is what a configuration file exists to
+prevent. Eleven roles now reach five distinct models by operator intent.
+
+`qwen3.5:9b` is recognised, with its 262 144-token context — the first local
+model to clear `document_analysis`'s 100 000-token floor. Its pattern sits
+before the generalist entry, which contains `qwen3` and would otherwise swallow
+it. **Its multimodality is not declared**: secondary sources report it,
+`/api/show` will measure it, and asserting it from a search summary would route
+images to a model that may not read them. `qwen2.5:14b` stays as the baseline.
+
+`config/models/` prepares four server families — Kimi K2.5, Qwen3.5-397B-A17B,
+DeepSeek-R1-0528, GLM-5.1. Every `serve_command` was **copied from the official
+vLLM recipes repository**, fetched in this session, not reconstructed. Reaching
+them needs no code: `OpenAICompatibleProvider` already speaks the contract vLLM
+and SGLang serve, so a large model is a base URL and a model name.
+
+Four scripts, all runnable: `preflight.py` (what the platform will do with the
+installed models, and whether each capability is measured or declared),
+`serve_large.py`, `connect.py`, `bench.py`.
+
+**No model was downloaded, loaded or benchmarked.** This environment has no GPU,
+no Ollama, and every weight host is refused by the proxy — `registry.ollama.ai`,
+`ollama.com`, `huggingface.co`, `cdn-lfs.huggingface.co` all return `000`,
+measured. What *was* tested is the refusals: `bench.py` returns **no number at
+all** rather than a zero, and the comparison refuses to put a `SCRIPTED` run
+beside a `REAL` one. A gap under one and a half tasks is reported as `ÉGALITÉ`,
+which is the guard against concluding that the newer model is better.
+
+Training was **not** rebuilt: `scripts/training/train_adapter.py` is already a
+real QLoRA recipe with a lineage registry, and adding a second pipeline to look
+productive would duplicate working infrastructure.
+
+
+### Added — 2026-08-24 — The chat checks its own answer (ADR-041), and the skill library is finally connected
+
+ADR-039 gave the chat a writing stage that generates **once**. Nothing read what
+came back: an answer containing *« le total est 2 + 2 = 5 »*, or asserting
+*« il est prouvé que… »* about something never verified, or stating a claim one
+of the platform's own findings contradicts, was served as-is.
+
+`src/reasoning/` closes that loop. Two modules, and the boundary is the design:
+`critics.py` **observes** and corrects nothing; `deliberation.py` decides what to
+do with an observation and when to stop. No critic asks a model whether it was
+right — `agents/verifier/agent.py` already explains why that measures a model's
+confidence in itself rather than its correctness.
+
+Five checks, four blocking: empty answer, false arithmetic (in `Decimal`), a
+claim contradicted by a gathered finding, certainty markers while grounding is
+not `GROUNDED`. Naming the platform's internals is advisory — relaunching a
+generation for one badly chosen word costs more than the fault.
+
+Three stops, and the report says which fired: `verified`,
+`iteration_budget_exhausted`, `deadline_exceeded`. **When the budget runs out,
+the answer is served with its findings** — a loop that silently serves an answer
+it knows is doubtful is worth less than no loop. One retry by default,
+`GALSEN_CHAT_MAX_RETRIES`; `0` keeps the criticism and stops only the retry.
+
+Measured, `python -m src.reasoning.benchmark`, 22 cases: **66.7 % detection,
+0 % false alarms**. The first version of that benchmark scored 8/8 and said
+nothing — the cases and the checks came from the same hand. Four cases the checks
+genuinely miss were added, each carrying the reason. A benchmark whose score can
+only rise is a decoration.
+
+**`src/skills/` is connected.** It had existed since 2026-08-23 with nothing
+writing to it. `src/skills/loop.py` splits the loop across the two agents that
+can each hold one half: the `coder` **retrieves** proven procedures before
+writing (as prior art, never as a ready-made answer), and the `tester`
+**records** what it produced — but only when suites actually ran and were green.
+Recording on the coder's side would archive everything a model produces,
+including what does not compile; the tester is the only place in the repository
+where a proof exists, and `Competence.valider()` refuses a skill that calls
+itself verified without saying by what.
+
+A defect worth recording: the first `empty_answer` check required three words,
+so it flagged *« 42 »* and *« Oui. »* — complete answers to questions that need
+no more. A verifier that penalises concision costs a model call and improves
+nothing. Empty means empty.
+
+### Fixed — 2026-08-24 — The model router selected nothing, and now selects (ADR-040)
+
+Measured before touching anything, on a realistic local fleet of five
+specialised models: `code_generation`, `reasoning` and `conversation` all
+returned **the first model in the list** — the same one, three times — while
+`vision`, `summarization` and `document_analysis` returned nothing at all. The
+capability-based routing layer existed, was wired, and compared descriptors that
+were identical for every model.
+
+Five causes, each measured and each fixed:
+
+- `LocalProvider` built one identical descriptor for every model — no vision, no
+  tools, 8192 tokens, and three special features belonging to no routing
+  vocabulary. `src/model_engine/local_catalogue.py` now establishes a profile
+  from three ranked sources — **measured** (`/api/show`), **declared**
+  (`config/model_routing.yaml`), **default** — and every descriptor carries
+  `capability_sources` saying which one fixed each field.
+- `/api/tags` carries no `context_length`; the key read from it never existed,
+  so every model was 8192 and long-context tasks were unroutable by
+  construction. The real context is now asked of `/api/show`.
+- An unstated complexity was treated as `medium`, silently imposing an
+  8192-token floor — the floor that excluded the only vision model served.
+- `ProviderSelector._pick_best` returned the first candidate carrying *any*
+  expected feature, and `prefer_cheapest` short-circuited before features were
+  considered. It now scores by how many expected features a model carries, with
+  cost as the tiebreak.
+- **`generate_text_with_fallback` never called the selector** — the chat's own
+  generation path walked the catalogue in provider order. It now sorts the
+  catalogue first, pruning nothing, so the fallback keeps its full reach.
+
+And, at the seam between subsystems: seven of the planner's eight intents had no
+routing rule, so *« écris une fonction Python »* fell through to the default
+rule and was answered by the smallest model installed. The intents are now
+declared in the routing policy rather than renamed in the planner — they also
+designate which agents to mobilise.
+
+Ten task types and eight planner intents now reach five distinct models.
+`tests/test_local_model_profiles.py` asserts that table (47 tests); removing the
+integration makes eight of them fail — verified by sabotage.
+
+Model candidates per role, with what was and was not verified →
+`docs/models/local-model-selection.md`. **No model was downloaded, loaded or
+benchmarked**, and no quality claim in that document rises above `OBSERVED`.
+
+### Added — 2026-08-23 — The chat writes, and writing still grounds nothing (ADR-039)
+
+Measured before touching anything: `POST /chat` returned the identical text,
+word for word, for *« bonjour »* and *« Qui était Albert Einstein ? »*. Tracing
+the real calls showed only `planner` and `researcher` ever ran, and that
+**nothing in the chain wrote** — between the agents' structured results and
+`ChatResponse.answer` sat one function that renders data.
+
+`src/chat/` is that missing stage. It receives an assembled context and returns
+text: it fetches nothing, calls no tool, opens no connection, and calls
+`ModelManagerImpl` and nothing else. Being a pure composer is what makes it
+testable on a machine with **zero models registered**, which is this one.
+
+**Writing never grounds.** Grounding is computed from the agents' evidence
+before generation and never touched by it. `ChatResponse.generated` is true only
+when a model produced the text — without it, a refusal composed by the platform
+would be indistinguishable from an answer, the exact lie this repository
+refuses everywhere else. Verified by sabotage: making generation overwrite
+grounding fails a test.
+
+Evidence keeps its origin all the way into the prompt, marked `VERIFIED` or
+`UNVERIFIED` with its scope, never melted into a paragraph. That follows
+ADR-019, which had already refused a global base and a Senegalese one. Machinery
+— plan, task list, timings — never enters: a model given machinery writes an
+execution report instead of an answer.
+
+**A greeting went from 1 092 ms to 77 ms.** A `conversation` intent mobilises no
+agent, which required restoring a distinction the repository already stated and
+then collapsed: `recommended_agents()` says *deciding to mobilise nobody is a
+decision, not deciding is not one*, and `selection_appliquee()` threw that away
+one function later. Three cases now, and the deliberate fallback it guards is
+intact.
+
+**Two defects were found by re-reading this same work.** `/chat` was returning
+`http://localhost:11434` in its failure message — a host and a port handed to
+any caller; the route now returns a short enumerated reason and keeps the whole
+cause in the log. And setting an intent with no agents raised `IndexError` in
+the planner: an intent that mobilises nobody is a valid plan, not a failure.
+
+Two things the brief asked for are **not** done, and are recorded rather than
+quietly dropped. The coding capability is still unreachable, because the
+`question` workflow does not declare `coder` and wiring a chat message to an
+agent that writes files is an operator decision. And a verified researcher
+finding does not ground a Senegalese question whose national base is empty —
+the `senegal` agent's verdict wins, which is defensible. Both are pinned by
+tests that will fail the day either changes.
+
+44 tests added, none removed, none weakened. `pytest -q` → **7 148 passed, 9
+skipped, 3 deselected, 0 failed**. `ruff check src tests scripts agents` → all
+checks passed. No dependency added, no secret introduced, no unrelated file
+touched.
+
+**What stays UNKNOWN**: everything needing a real model — answer quality, real
+latency, provider fallback. Zero models are registered here.
+
 ### Added — 2026-08-23 — A conversation, and what it refuses to say (chat-first redesign)
 
 The platform had no general conversation endpoint. Measured before touching

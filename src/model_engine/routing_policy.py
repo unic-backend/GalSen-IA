@@ -203,6 +203,11 @@ class RoutingPolicy:
             "preferred_features": list(base.get("preferred_features", [])),
             "prefer_cheapest": bool(base.get("prefer_cheapest", False)),
             "max_input_cost": base.get("max_input_cost"),
+            # Motifs de noms qui l'emportent **à compétence égale**. Vide quand
+            # le rôle n'en déclare aucun : le comportement précédent tient.
+            "role_preferences": list(
+                self._politique.get("role_preferences", {}).get(demande.get("task_type"), [])
+            ),
         }
 
         # La complexité relève le contexte minimal, elle ne l'abaisse jamais :

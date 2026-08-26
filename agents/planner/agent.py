@@ -50,6 +50,21 @@ class PlannerAgent(BaseAgent):
     # Intentions reconnues dans une demande, et agents qu'elles mobilisent.
     # L'ordre des clés fixe l'ordre des phases du plan.
     INTENT_RULES = {
+        # Un échange de conversation n'a rien à chercher. Mesuré le 2026-08-23 :
+        # « bonjour » traversait le `researcher` pendant **1 095 ms** pour
+        # constater qu'il n'existe aucune source sur une salutation. C'est le
+        # même défaut que `quality` dans le repli, un cran plus loin — et le
+        # commentaire de `FALLBACK_INTENTS` en garde la trace.
+        #
+        # Aucun agent : la couche de réponse répond depuis le message et
+        # l'historique. Ce n'est pas un contournement de l'orchestrateur, c'est
+        # un plan qui ne mobilise personne.
+        "conversation": {
+            "keywords": ("bonjour", "bonsoir", "salut", "nanga def", "hello",
+                         "merci", "au revoir", "a bientot", "ca va"),
+            "agents": (),
+            "description": "Répondre à un échange, sans rien chercher",
+        },
         "research": {
             "keywords": ("recherche", "rechercher", "étudier", "analyser le marché", "veille",
                          "research", "investigate", "explore", "étude", "comparer"),
@@ -58,7 +73,17 @@ class PlannerAgent(BaseAgent):
         },
         "implementation": {
             "keywords": ("développer", "créer", "implémenter", "coder", "construire", "ajouter",
-                         "build", "implement", "develop", "create", "application", "fonctionnalité"),
+                         "build", "implement", "develop", "create", "application", "fonctionnalité",
+                         # Mesuré le 2026-08-23 : « Écris une fonction Python »
+                         # tombait sur `research`, à l'identique de « Explique
+                         # Linux », et n'atteignait jamais le moteur de codage.
+                         # Les motifs restent composés à dessein : « écris » seul
+                         # attraperait « écris-moi un poème », qui n'a rien à
+                         # faire chez le `coder`.
+                         "écris une fonction", "écrire une fonction",
+                         "écris un script", "écrire un script",
+                         "écris du code", "écrire du code",
+                         "write a function", "write a script", "write code"),
             "agents": ("coder",),
             "description": "Concevoir et écrire la solution",
         },
@@ -99,6 +124,11 @@ class PlannerAgent(BaseAgent):
         },
     }
 
+    # Au-delà, ce n'est plus un échange : c'est une demande qui commence
+    # poliment. Six mots laissent passer « bonjour, comment vas-tu ? » et
+    # arrêtent « bonjour, peux-tu m'expliquer la relativité générale ».
+    MOTS_MAX_CONVERSATION = 6
+
     # Plan appliqué quand aucune intention n'est reconnue : comprendre avant d'agir.
     #
     # `quality` en faisait partie, et cela devient coûteux dès que la
@@ -120,21 +150,54 @@ class PlannerAgent(BaseAgent):
         """
         request = context.request_text()
 
+        # 1. Détecter l'intention avant d'appeler les moteurs coûteux.
         detected_intents = self._detect_intents(request)
-        prior_knowledge = context.search_knowledge(request, limit=3)
-        prior_memories = context.recall(request, limit=3)
+
+        # 2. Une conversation simple ne nécessite ni recherche de connaissances
+        # ni recherche mémoire.
+        if detected_intents == ["conversation"]:
+            prior_knowledge = []
+            prior_memories = []
+        else:
+            prior_knowledge = context.search_knowledge(request, limit=3)
+            prior_memories = context.recall(request, limit=3)
 
         tasks = self._build_tasks(detected_intents, request)
 
-        # Le plan est mémorisé pour que les agents suivants sachent ce qui est attendu d'eux
-        context.remember(
-            content={"objective": request, "tasks": tasks},
-            memory_type="agent_shared",
-            tags=["plan", "planner"],
+        # 3. Une conversation simple ne produit aucune tâche pour les agents.
+        # Il est donc inutile de l'enregistrer comme plan partagé.
+        if detected_intents != ["conversation"]:
+            context.remember(
+                content={"objective": request, "tasks": tasks},
+                memory_type="agent_shared",
+                tags=["plan", "planner"],
+            )
+
+        axes = self._axes(
+            request,
+            detected_intents,
+            prior_knowledge,
+            context,
         )
 
-        axes = self._axes(request, detected_intents, prior_knowledge, context)
-        agents, effets = self._agents_avec_axes(detected_intents, axes)
+        agents, effets = self._agents_avec_axes(
+            detected_intents,
+            axes,
+        )
+
+        # 4. Le raffinement par modèle est inutile pour une conversation simple.
+        if detected_intents == ["conversation"]:
+            model_assisted = {
+                "status": "skipped",
+                "suggestion": "",
+                "reason": "Raffinement modèle inutile pour une conversation simple.",
+            }
+        else:
+            model_assisted = self._try_model_refinement(
+                context,
+                request,
+                tasks,
+            )
 
         return {
             "objective": request,
@@ -142,19 +205,15 @@ class PlannerAgent(BaseAgent):
             "task_count": len(tasks),
             "tasks": tasks,
             "agents_required": agents,
-            # Les dix axes de la demande (VOLET 36, ch. F). Deux agissent, huit
-            # sont observés — et `axes_effect` dit lequel a ajouté quel agent :
-            # un axe qui changerait le routage sans se voir est exactement
-            # ce qui rend un planificateur inexplicable.
             "axes": axes,
             "axes_effect": effets,
             "context_used": {
                 "knowledge_items": len(prior_knowledge),
                 "memories": len(prior_memories),
             },
-            "model_assisted": self._try_model_refinement(context, request, tasks),
+            "model_assisted": model_assisted,
         }
-
+    
     def _axes(self, request: str, intents: List[str], prior_knowledge: List[Any],
               context: AgentContext) -> Dict[str, Any]:
         """
@@ -289,6 +348,16 @@ class PlannerAgent(BaseAgent):
             if any(_MOTIFS[keyword].search(normalise) for keyword in rule["keywords"])
         ]
 
+        # `conversation` ne s'ajoute jamais aux autres intentions : « bonjour,
+        # explique-moi la relativité » est une question, pas une salutation. Et
+        # une salutation reste une salutation seulement si elle est brève —
+        # sans cette borne, un long message commençant par « bonjour » perdrait
+        # sa recherche, ce qui est le défaut inverse de celui qu'on corrige.
+        if "conversation" in detected:
+            autres = [i for i in detected if i != "conversation"]
+            if autres or len(normalise.split()) > self.MOTS_MAX_CONVERSATION:
+                detected = autres
+
         return detected or list(self.FALLBACK_INTENTS)
 
     def _agents_for(self, intents: List[str]) -> List[str]:
@@ -323,7 +392,13 @@ class PlannerAgent(BaseAgent):
                 # Premier agent de la phase : c'est lui qui porte la tâche. Le
                 # champ existe pour que `context.tasks_for()` réponde sans avoir
                 # à connaître la forme du plan.
-                "assigned_agent": rule["agents"][0],
+                #
+                # `None` quand l'intention ne mobilise personne — le cas de
+                # `conversation`, où il n'y a rien à faire exécuter. Indexer un
+                # tuple vide levait `IndexError` et faisait tomber le planner
+                # tout entier : une intention sans agent est un plan valide,
+                # pas une panne.
+                "assigned_agent": rule["agents"][0] if rule["agents"] else None,
                 "depends_on": tasks[-1]["id"] if tasks else None,
                 "priority": len(self.INTENT_RULES) - order,
             })

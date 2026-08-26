@@ -1,0 +1,39 @@
+# GLM-5.1 — serveur.
+# Source : vllm-project/recipes, GLM/GLM5.md, lue le 2026-08-24. VERIFIED.
+name: glm-5.1
+display_name: GLM-5.1-FP8
+huggingface_id: zai-org/GLM-5.1-FP8
+state: NOT DOWNLOADED — REQUIRES GPU SERVER
+
+architecture:
+  kind: MoE
+  evidence: "Comptes de paramètres non lus ici : NOT VERIFIED."
+
+hardware:
+  minimum: "8 GPU, tensor parallel 8"   # VERIFIED — flag de la recette
+  runs_on_12gb_vram: false
+
+backend: vllm
+serve_command:
+  - vllm
+  - serve
+  - zai-org/GLM-5.1-FP8
+  - --tensor-parallel-size
+  - "8"
+  - --speculative-config.method
+  - mtp
+  - --speculative-config.num_speculative_tokens
+  - "3"
+  - --tool-call-parser
+  - glm47
+  - --reasoning-parser
+  - glm45
+  - --enable-auto-tool-choice
+  - --chat-template-content-format=string
+  - --served-model-name
+  - glm-5.1-fp8
+
+# Le mode « pensée » est actif par défaut côté vLLM ; le désactiver demande
+# `"chat_template_kwargs": {"enable_thinking": false}` dans la requête. VERIFIED.
+thinking_enabled_by_default: true
+roles: ["reasoning", "general", "agentic"]

@@ -1,0 +1,44 @@
+# Kimi K2.5 — modèle serveur, jamais local.
+# Source de la commande : vllm-project/recipes, moonshotai/Kimi-K2.5.md,
+# lue le 2026-08-24. VERIFIED.
+name: kimi-k2.5
+display_name: Kimi K2.5
+huggingface_id: moonshotai/Kimi-K2.5
+state: NOT DOWNLOADED — REQUIRES GPU SERVER
+
+architecture:
+  kind: MoE
+  total_parameters: "1T"          # OBSERVED
+  active_parameters: "32B"        # OBSERVED
+  multimodal: true                # VERIFIED — « native multimodal agentic model »
+  evidence: "Total et actifs OBSERVED (moteur de recherche) ; la fiche du modèle est refusée par le mandataire."
+
+# Ce qu'il faut pour le servir. Ne pas tenter sur une carte de 12 Go : ce n'est
+# pas une question de patience, les poids n'y entrent pas.
+hardware:
+  minimum: "8x H200 (~640 Go de VRAM agrégée) en BF16"   # VERIFIED — « Verified on 8×H200 GPUs »
+  alternative: "4x Blackwell (GB200) en NVFP4"           # OBSERVED
+  amd: "8x MI300X / MI325X / MI355X, ROCm 7.2.1, Python 3.12"  # VERIFIED
+  vllm_minimum_version: "0.15.0"                         # OBSERVED
+  runs_on_12gb_vram: false
+
+backend: vllm
+docker_image: "vllm/vllm-openai:v0.17.0-cu130"
+
+serve_command:
+  - vllm
+  - serve
+  - moonshotai/Kimi-K2.5
+  - --tensor-parallel-size
+  - "8"
+  - --mm-encoder-tp-mode
+  - data
+  - --tool-call-parser
+  - kimi_k2
+  - --reasoning-parser
+  - kimi_k2
+  - --enable-auto-tool-choice
+  - --trust-remote-code
+
+# Rôles visés une fois servi. Le routage les honorera par `role_preferences`.
+roles: ["reasoning", "planning", "analysis", "vision", "agentic"]
