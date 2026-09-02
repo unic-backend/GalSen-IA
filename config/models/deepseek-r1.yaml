@@ -1,0 +1,34 @@
+# DeepSeek-R1 — raisonnement, sur serveur.
+# Source : vllm-project/recipes, DeepSeek/DeepSeek-V3.md (qui couvre R1),
+# lue le 2026-08-24. VERIFIED.
+name: deepseek-r1
+display_name: DeepSeek-R1-0528
+huggingface_id: deepseek-ai/DeepSeek-R1-0528
+state: NOT DOWNLOADED — REQUIRES GPU SERVER
+
+architecture:
+  kind: MoE
+  evidence: "Les comptes de paramètres n'ont été lus dans aucune source ici : NOT VERIFIED."
+
+hardware:
+  minimum: "8 GPU, tensor parallel 8 + expert parallel"  # VERIFIED — flags de la recette
+  runs_on_12gb_vram: false
+  note: "La recette officielle ne chiffre pas la VRAM ; ne pas l'inventer."
+
+backend: vllm
+serve_command:
+  - vllm
+  - serve
+  - deepseek-ai/DeepSeek-R1-0528
+  - --trust-remote-code
+  - --tensor-parallel-size
+  - "8"
+  - --enable-expert-parallel
+
+# Variante locale : les distillations R1 tiennent sur 12 Go et sont déjà
+# reconnues par `config/model_routing.yaml` (motif « deepseek-r1 »).
+local_variants:
+  - name: "deepseek-r1:8b"
+    backend: ollama
+    state: "NOT DOWNLOADED — installable sur la machine de développement"
+roles: ["reasoning", "planning", "analysis"]

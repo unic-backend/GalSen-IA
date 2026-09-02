@@ -102,3 +102,27 @@ Ch. 08  Validation complète       → 1 phase (indivisible)
 - **Aucune suppression du dépôt `arena-personal-ai`.** Il reste tel quel jusqu'à
   ce que le propriétaire constate que la fusion fonctionne.
 - **La rotation des clés reste due**, et n'est pas dans ce VOLET.
+
+---
+
+## Programmes précédents, terminés — ne pas rouvrir
+
+1. **AUDIT ARCHITECTURE NOYAU LINUX** — 13 chapitres, 18 phases →
+   `docs/research/linux-kernel-architecture-audit.md`.
+   `SELECTIVE ARCHITECTURAL IMPROVEMENTS RECOMMENDED` : 5 recommandations, aucune
+   autorisée, aucune implémentée. **P10 (3 sites d'appel) devient plus urgente
+   après ce VOLET.**
+2. **REDESIGN CHAT-FIRST** — 8 chapitres, 11 phases. `POST /chat`, `/ui/` sert la
+   conversation, `/ui/admin/` le tableau de bord, menu de 14 domaines.
+3. **AUDIT #01 `codebase-memory-mcp`** — 16 phases, `KEEP FOR RESEARCH`.
+4. **SUPERPOWERS** — **ADR-038**. **OPEN-SOURCE ECOSYSTEM** — **ADR-037**.
+5. **OpenClaw** (ADR-034), **DeepSeek Harness** (ADR-035) : non intégrés.
+6. **Live Context** (ADR-033), **Creative Canvas** (ADR-031),
+   **Research Orchestration** (ADR-032), **MoneyPrinterTurbo** (ADR-030),
+   **Apache-2.0** (ADR-036).
+7. **CHAT — RÉPONSE FINALE RÉELLE** — 11 chapitres, 19 phases, brief du
+   2026-08-23 → `docs/chat/final-response-report.md`, **ADR-039**. Le pipeline
+   `/chat` rédige enfin une vraie réponse au lieu de rendre les données brutes
+   des agents (« bonjour » : 1 092 → 77 ms). Les 19 phases ✅, 7 148 tests
+   passent (44 ajoutés, 0 supprimé), lint vert. Fusionné via la PR #37 avant
+   l'ouverture de ce VOLET fusion.

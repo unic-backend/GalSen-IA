@@ -9,7 +9,7 @@
  * même logique se contredisent invariablement.
  */
 
-import { api } from "./api-client.js";
+import { api, enregistrerCle, lireCle, oublierCle } from "./api-client.js";
 
 // --- État global ---
 
@@ -107,6 +107,9 @@ function initialiser() {
 
   // Ajuster la hauteur du textarea à la saisie.
   textarea.addEventListener("input", () => ajusterHauteurTextarea(textarea));
+
+  brancherSaisieVocale(textarea);
+  brancherLaCle();
 
   // Menu des domaines
   const boutonMenu = document.getElementById("bouton-menu");
@@ -338,4 +341,109 @@ function ajusterHauteurTextarea(textarea) {
   if (!textarea) return;
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 320) + "px";
+}
+
+
+/**
+ * Branche la saisie vocale sur le champ de saisie.
+ *
+ * Ajoutée par le propriétaire le 2026-08-23. Portée depuis une interface qui
+ * appelait encore `/workflow/run` : le micro remplit le champ, et c'est le
+ * chemin `/chat` habituel qui envoie — la voix ne contourne rien.
+ *
+ * **Le repli refuse plutôt que de promettre.** `SpeechRecognition` n'existe pas
+ * partout (Firefox, la plupart des navigateurs mobiles hors Chrome) ; un bouton
+ * qui ne fait rien est pire qu'un bouton désactivé qui dit pourquoi.
+ */
+function brancherSaisieVocale(textarea) {
+  const bouton = document.getElementById("bouton-vocal");
+  if (!bouton) return;
+
+  const Reconnaissance =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!Reconnaissance) {
+    bouton.disabled = true;
+    bouton.title = "Saisie vocale non disponible sur ce navigateur";
+    return;
+  }
+
+  const reconnaissance = new Reconnaissance();
+  // Le français par défaut : c'est la langue de l'interface. Le wolof n'est pas
+  // proposé par les moteurs de reconnaissance des navigateurs — le dire vaut
+  // mieux que de laisser croire qu'il est reconnu.
+  reconnaissance.lang = "fr-FR";
+  reconnaissance.interimResults = false;
+  reconnaissance.maxAlternatives = 1;
+
+  let enEcoute = false;
+  const etat = document.getElementById("etat");
+
+  const arreter = () => {
+    enEcoute = false;
+    bouton.classList.remove("bouton-vocal--actif");
+  };
+
+  reconnaissance.addEventListener("result", (evenement) => {
+    const transcription = evenement.results[0][0].transcript;
+    textarea.value = textarea.value
+      ? `${textarea.value} ${transcription}`
+      : transcription;
+    ajusterHauteurTextarea(textarea);
+    textarea.focus();
+  });
+
+  reconnaissance.addEventListener("error", () => {
+    arreter();
+    if (etat) {
+      etat.textContent = "La saisie vocale n'a pas fonctionné. Utilise le clavier.";
+      etat.classList.add("echec");
+    }
+  });
+
+  reconnaissance.addEventListener("end", arreter);
+
+  bouton.addEventListener("click", () => {
+    if (enEcoute) {
+      reconnaissance.stop();
+      return;
+    }
+    enEcoute = true;
+    bouton.classList.add("bouton-vocal--actif");
+    if (etat) {
+      etat.textContent = "";
+      etat.classList.remove("echec");
+    }
+    reconnaissance.start();
+  });
+}
+
+
+/**
+ * Retient la clé d'accès dans le navigateur, pour ne la demander qu'une fois.
+ *
+ * Le mécanisme existait déjà — `api-client.js` lit la clé à chaque appel et la
+ * pose en en-tête — mais **cette page ne l'enregistrait jamais**. Le champ était
+ * donc décoratif : la clé partait bien avec la requête en cours, et disparaissait
+ * au rechargement. D'où l'obligation de la recoller à chaque visite.
+ *
+ * Elle ne quitte pas le navigateur : `localStorage` est local à la machine et à
+ * l'origine du site. Elle n'est jamais écrite dans la page servie, jamais
+ * envoyée ailleurs qu'à cette API. Vider le champ l'oublie — c'est la façon de
+ * se déconnecter sur un poste partagé.
+ */
+function brancherLaCle() {
+  const champ = document.getElementById("cle-api");
+  if (!champ) return;
+
+  champ.value = lireCle();
+
+  champ.addEventListener("input", () => {
+    const valeur = champ.value.trim();
+    if (valeur) {
+      enregistrerCle(valeur);
+    } else {
+      oublierCle();
+    }
+  });
 }

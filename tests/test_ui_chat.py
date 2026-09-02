@@ -184,3 +184,53 @@ class TestJetonAncrage:
         trouve = re.search(r"ANCRAGE\[statut\]\s*\|\|\s*ANCRAGE\.([A-Z_]+)", script)
         assert trouve, "aucun repli explicite pour un statut inconnu"
         assert trouve.group(1) == "NOT_CHECKED"
+
+
+class TestLaCleNEstDemandeeQuUneFois:
+    """
+    Coller sa clé à chaque visite n'est pas une mesure de sécurité, c'est une
+    friction — et une friction pousse les gens à contourner la sécurité.
+
+    Le mécanisme existait déjà dans `api-client.js` : la clé est lue à chaque
+    appel et posée en en-tête. **Cette page ne l'enregistrait simplement
+    jamais**, si bien que le champ marchait pour la requête en cours et
+    disparaissait au rechargement.
+    """
+
+    @staticmethod
+    def _corps_du_script() -> str:
+        """
+        Le script **sans sa ligne d'import**.
+
+        La première version de ces tests cherchait `enregistrerCle` dans le
+        fichier entier. Le sabotage — retirer l'appel — les laissait passer,
+        parce que l'import suffisait à satisfaire la recherche. **Un test qui
+        ne peut pas échouer ne vaut rien**, et celui-là s'accordait avec
+        lui-même plutôt qu'avec le comportement. Corrigé le 2026-08-24.
+        """
+        script = _lire(os.path.join(RACINE, "src", "web", "static", "js", "chat.js"))
+        return "\n".join(
+            ligne for ligne in script.splitlines()
+            if not ligne.lstrip().startswith("import ")
+        )
+
+    def test_le_champ_est_prerempli_au_chargement(self):
+        assert "lireCle()" in self._corps_du_script()
+
+    def test_ce_qu_on_tape_est_enregistre(self):
+        assert "enregistrerCle(" in self._corps_du_script()
+
+    def test_vider_le_champ_oublie_la_cle(self):
+        """
+        La façon de se déconnecter sur un poste partagé. Sans elle, la clé
+        resterait dans le navigateur de quelqu'un d'autre.
+        """
+        assert "oublierCle()" in self._corps_du_script()
+
+    def test_la_cle_n_est_toujours_pas_ecrite_dans_la_page(self, client):
+        """
+        Retenir la clé côté navigateur ne doit pas la faire apparaître côté
+        serveur. Ce test existait déjà ; il compte double maintenant.
+        """
+        page = client.get("/ui/").text
+        assert not re.search(r'id="cle-api"[^>]*\svalue=', page)

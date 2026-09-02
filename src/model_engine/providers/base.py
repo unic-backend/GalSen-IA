@@ -92,6 +92,13 @@ class ModelDescriptor:
     pricing_per_1k_tokens: Dict[str, float] = field(default_factory=dict)
     training_data_cutoff: Optional[str] = None
     special_features: List[str] = field(default_factory=list)
+    #: Origine de chaque capacité renseignée : `measured` quand le serveur l'a
+    #: constatée, `declared` quand la configuration l'affirme, `default` quand
+    #: personne ne l'a dite. Un contexte de 131072 deviné et un contexte de
+    #: 131072 mesuré n'autorisent pas les mêmes conclusions ; sans ce champ,
+    #: rien ne les distinguait. Vide par défaut : les fournisseurs qui ne
+    #: renseignent pas leur origine se comportent exactement comme avant.
+    capability_sources: Dict[str, str] = field(default_factory=dict)
 
     def to_capabilities(self) -> Dict[str, Any]:
         """
@@ -110,6 +117,7 @@ class ModelDescriptor:
             "training_data_cutoff": self.training_data_cutoff,
             "pricing_per_1k_tokens": dict(self.pricing_per_1k_tokens),
             "special_features": list(self.special_features),
+            "capability_sources": dict(self.capability_sources),
         }
 
 

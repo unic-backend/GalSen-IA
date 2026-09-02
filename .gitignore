@@ -77,3 +77,12 @@ data/raw_senegal/*.json
 # reference dans le code, aucun historique. Ignore plutot que commite tel
 # quel — a documenter ou supprimer une fois son origine confirmee.
 config/permissions.yaml
+
+# Sauvegardes et correctifs locaux. Git est déjà la sauvegarde : un `.patch`
+# de 61 Ko a été commité à la racine le 2026-08-23, et il dupliquait ce que
+# l'historique portait déjà. Retiré du suivi le 2026-08-24 ; toujours
+# récupérable par `git show 1ba9bd9:sauvegarde-avant-probleme-1.patch`.
+*.patch
+*.diff
+*.orig
+*.rej

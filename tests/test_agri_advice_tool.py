@@ -26,10 +26,24 @@ def gestionnaire():
 
 
 @pytest.fixture
-def outil(gestionnaire):
-    """Outil branché sur le gestionnaire simulé."""
+def connaissance_fiable():
+    """Gestionnaire de connaissances simulé, avec une connaissance fiable.
+
+    La garde de fiabilité appelle `retrieve_reliable` sur le moteur partagé ;
+    sans cet injecteur, les tests de génération tomberaient sur la base réelle
+    (vide) et la garde refuserait de générer.
+    """
+    faux = MagicMock()
+    faux.retrieve_reliable.return_value = {"items": [], "reliable": True}
+    return faux
+
+
+@pytest.fixture
+def outil(gestionnaire, connaissance_fiable):
+    """Outil branché sur les gestionnaires simulés."""
     instance = AgriAdviceTool()
     instance._model_manager = gestionnaire
+    instance._knowledge_manager = connaissance_fiable
     return instance
 
 
@@ -99,10 +113,11 @@ class TestConseilGenere:
         outil.execute("get_advice", "Kañ lañuy ji dugub ?", language="wo")
         assert "Wolof" in gestionnaire_pret.generate.call_args[0][1]
 
-    def test_langue_par_defaut_configurable(self, gestionnaire_pret):
+    def test_langue_par_defaut_configurable(self, gestionnaire_pret, connaissance_fiable):
         """La configuration doit pouvoir fixer la langue par défaut."""
         instance = AgriAdviceTool({"language": "wo"})
         instance._model_manager = gestionnaire_pret
+        instance._knowledge_manager = connaissance_fiable
         assert instance.execute("get_advice", "Kañ lañuy ji dugub ?")["language"] == "wo"
 
     def test_exigences_de_tache_transmises(self, outil, gestionnaire_pret):

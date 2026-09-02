@@ -12,7 +12,7 @@ execution is detected and refused.
 
 import os
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from src.agent.base_agent import BaseAgent
 from src.agent.context import AgentContext
@@ -83,7 +83,7 @@ class TesterAgent(BaseAgent):
         passed = [run for run in executions if run["passed"]]
         failed = [run for run in executions if not run["passed"]]
 
-        return {
+        resultat = {
             "suites_found": len(suites),
             "suites_executed": len(executions),
             "suites_excluded": excluded,
@@ -93,6 +93,38 @@ class TesterAgent(BaseAgent):
             "failed_suites": [run["suite"] for run in failed],
             "verdict": self._verdict(passed, failed),
         }
+        resultat["skill_recorded"] = self._ranger_la_competence(context, resultat)
+        return resultat
+
+    def _ranger_la_competence(
+        self, context: AgentContext, resultat: Dict[str, Any]
+    ) -> Optional[str]:
+        """
+        Range le code du `coder` dans la bibliothèque **si les suites sont vertes**.
+
+        C'est ici, et nulle part ailleurs, parce que c'est le seul endroit du
+        dépôt où existe une preuve d'exécution. `Competence.valider()` refuse
+        une compétence qui se dit vérifiée sans dire par quoi ; le `coder`, qui
+        n'exécute rien, ne pourrait jamais la fournir.
+
+        Args:
+            context: Contexte d'exécution, pour lire le résultat du `coder`
+            resultat: Ce que cet agent s'apprête à rendre
+
+        Returns:
+            Le nom de la compétence rangée, ou `None` — ce qui est le cas
+            ordinaire et jamais une erreur.
+        """
+        from src.skills.loop import ranger_depuis_le_tester
+
+        verdict = dict(resultat.get("verdict") or {})
+        verdict["suites_executed"] = resultat.get("suites_executed", 0)
+        competence = ranger_depuis_le_tester(
+            resultat_coder=context.previous_result("coder"),
+            verdict=verdict,
+            demande=context.request_text(),
+        )
+        return competence.nom if competence else None
 
     def _exclude_orchestration_suites(
         self, suites: List[str], context: AgentContext

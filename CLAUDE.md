@@ -77,16 +77,22 @@ last session stopped. Keep it up to date; it is the project's continuity.
 *Measured 2026-08-17.* Foundation and core engines are done (ADR-001, ADR-002). Fifteen
 engines **plus nine subsystems probed after the registry** (volets 47–64, probed by
 `src/integration/degradation.py`), **17 agents**, **24 declared tools** (13 runnable
-unattended), **143 API routes**, 39 ADRs (ADR-020 is `proposed`; ADR-024 to ADR-027 open the creative programme;
+unattended), **143 API routes**, 43 ADRs (ADR-020 is `proposed`; ADR-024 to ADR-027 open the creative programme;
 ADR-023 and ADR-028 add the interop and coding layers; ADR-030 and ADR-031 close the provider
 and canvas programmes; ADR-032 opens the research layer;
 ADR-033 opens the live-context layer; **ADR-034 audits OpenClaw and does not integrate it**;
 **ADR-035 places DeepSeek Harness as a fourth coding backend, implementation not yet authorized**;
 **ADR-036 licenses the platform under Apache-2.0** — it had no licence file at all;
 **ADR-037 audits twelve open-source projects and integrates none of them**;
-**ADR-038 adopts six Superpowers concepts as prose and installs nothing**) — see
+**ADR-038 adopts six Superpowers concepts as prose and installs nothing**;
+**ADR-040 makes a local model declare what it can do, and say where that is known from** —
+the router selected nothing before it, it took the first model in the list;
+**ADR-041 has the chat criticise its own answer and rewrite it once** — deterministic
+checks only, and when the budget runs out the answer is served *with* its findings;
+**ADR-042 makes preference decide between equals, and a large model a URL** — no model
+has ever run here, and the scripts say so instead of returning a zero) — see
 `docs/architecture/overview.md`, kept synchronized with the measured state.
-**7027 tests pass**, 9 skipped, 3 deselected — *measured 2026-08-22*. The `v0.1.0` tag test passes only where
+**7148 tests pass**, 9 skipped, 3 deselected — *measured 2026-08-23*. The `v0.1.0` tag test passes only where
 the tag exists locally; the tag has never been pushed, so it fails in CI and on `main` alike.
 
 Unattended work is real: a routine can fire a workflow through the one orchestrator, and
@@ -291,3 +297,69 @@ Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
 2. Use `detect_changes_tool` for code review.
 3. Use `get_affected_flows_tool` to understand impact.
 4. Use `query_graph_tool` pattern="tests_for" to check coverage.
+# CONTINUOUS EXECUTION & CONTEXT MANAGEMENT
+
+GALSEN-IA est un projet de longue durée.
+
+Lorsque tu travailles sur une tâche ou une phase :
+
+1. Analyse d'abord le périmètre.
+2. Travaille de manière autonome.
+3. Si le contexte devient trop volumineux, utilise correctement la
+   compression/résumé du contexte disponible.
+4. Après compression, reprends exactement au dernier état connu.
+5. Ne recommence pas inutilement les analyses déjà terminées.
+6. Conserve un état de progression compact et persistant pour les
+   longues tâches.
+
+À chaque phase terminée :
+
+- vérifier le résultat ;
+- exécuter les tests pertinents ;
+- corriger les problèmes détectés ;
+- mettre à jour l'état/progression ;
+- passer automatiquement à la phase suivante lorsque cela est prévu.
+
+NE PAS demander une confirmation simplement parce qu'une phase est
+terminée.
+
+NE PAS afficher inutilement tout le contexte précédent.
+
+NE PAS relire massivement les mêmes fichiers après une compression
+de contexte.
+
+Avant toute nouvelle lecture importante, vérifier si l'information
+existe déjà dans l'état de travail ou dans les fichiers de suivi.
+
+Créer/maintenir un état compact du travail, par exemple :
+
+docs/WORK_STATE.md
+
+Ce fichier doit contenir uniquement :
+
+- phase actuelle ;
+- phases terminées ;
+- modifications réalisées ;
+- tests réalisés ;
+- problèmes connus ;
+- prochaines étapes ;
+- décisions importantes ;
+- fichiers importants concernés.
+
+Il doit rester court et être mis à jour après chaque étape majeure.
+
+IMPORTANT :
+
+Une compression de contexte ne signifie PAS que le projet doit
+recommencer.
+
+Après récupération du contexte :
+
+WORK_STATE.md + git diff + git status + résultats des tests
+doivent servir de source de reprise.
+
+OBJECTIF :
+
+Permettre à Claude Code de travailler sur GALSEN-IA pendant de
+longues sessions sans perdre la progression, sans boucler et sans
+recommencer inutilement le travail.

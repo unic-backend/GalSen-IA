@@ -86,10 +86,19 @@ def mock_memory_manager_failing():
 def mock_model_manager():
     """Crée un ModelManagerImpl mocké avec des fournisseurs disponibles."""
     mgr = MagicMock()
+    # La forme est celle que `ProviderInfo.to_dict()` produit réellement :
+    # une clé `status` valant `ready`, `unavailable` ou `degraded`
+    # (`ProviderStatus`, `src/model_engine/providers/base.py:22`).
+    #
+    # Cette simulation portait `{"available": True}` — une clé que le moteur
+    # **ne produit jamais**. Le contrôle de santé comptait donc toujours zéro
+    # fournisseur disponible, quel que soit l'état réel, et le test passait en
+    # accord avec lui-même plutôt qu'avec la plateforme. Corrigé le 2026-08-24 ;
+    # les assertions, elles, n'ont pas bougé.
     mgr.get_provider_status.return_value = {
-        "openai": {"available": True},
-        "anthropic": {"available": False},
-        "local": {"available": True},
+        "openai": {"status": "ready"},
+        "anthropic": {"status": "unavailable"},
+        "local": {"status": "ready"},
     }
     return mgr
 
@@ -107,8 +116,8 @@ def mock_model_manager_all_unavailable():
     """Crée un ModelManagerImpl mocké où aucun fournisseur n'est dispo."""
     mgr = MagicMock()
     mgr.get_provider_status.return_value = {
-        "openai": {"available": False},
-        "anthropic": {"available": False},
+        "openai": {"status": "unavailable"},
+        "anthropic": {"status": "unavailable"},
     }
     return mgr
 
@@ -562,7 +571,7 @@ class TestCheckHealth:
             tool_engine=MagicMock(),
         )
         # Rendre model_manager fonctionnel pour ne pas avoir d'exception
-        checker._model_manager.get_provider_status.return_value = {"openai": {"available": True}}
+        checker._model_manager.get_provider_status.return_value = {"openai": {"status": "ready"}}
         checker._knowledge_manager.get_stats.return_value = {"store": {"total_items": 0}}
         checker._tool_engine.list_tools.return_value = []
 

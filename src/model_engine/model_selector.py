@@ -108,6 +108,31 @@ class SimpleModelSelector(ModelSelector):
             if capables:
                 models = capables
 
+        # Atouts attendus par la tâche. Sans cette étape, le classement retombe
+        # sur `_default_priorities`, une table qui ne connaît que GPT-4, Claude
+        # et Gemini — des fournisseurs qu'ADR-014 a retirés. Tous les modèles
+        # locaux y valent 50 : **le choix se faisait donc sur l'ordre de la
+        # liste**, exactement comme du côté `ProviderSelector` avant sa
+        # correction. Les deux chemins appliquent maintenant la même règle,
+        # depuis la même politique.
+        attendus = decision.requirements.get("preferred_features") or []
+        if attendus:
+            def correspondances(modele) -> int:
+                """Combien d'atouts attendus par la tâche ce modèle porte."""
+                return sum(
+                    1 for atout in attendus if atout in (modele.supported_features or [])
+                )
+
+            meilleur = max((correspondances(m) for m in models), default=0)
+            if meilleur > 0:
+                # On **restreint** au lieu de trier, parce que le classement
+                # final ajoute `priority * 10` : un modèle de raisonnement est
+                # `HIGH` par construction (`_PRIORITY_BY_FEATURE`) et gagnerait
+                # dix points contre un modèle de code sur une tâche de code.
+                # La priorité doit départager les modèles **également adaptés**,
+                # pas décider à la place de la tâche.
+                models = [m for m in models if correspondances(m) == meilleur]
+
         # Sélectionner le meilleur parmi ceux restants
         if models:
             return self._select_by_priority_and_factors(models)
