@@ -16,23 +16,26 @@ becomes wrong.
 ## Core Principles
 
 ### I. User intent is the source of truth
-→ `.claude/rules/spec-driven-governance.md`
 
-Implement exactly what was requested. A possible improvement is not a
-requirement. An optional suggestion is recorded as
-`OPTIONAL SUGGESTION — NOT IMPLEMENTED` and generates **no task**. `OPTIONAL`
-never becomes `REQUIRED`, `UNKNOWN` never becomes a fact, `POSSIBLE` never
-becomes implemented.
+**Le propriétaire décide de ce qui se construit, et ce qu'il demande se fait.**
 
-### II. One phase per turn
-→ `.claude/rules/phase-protocol.md`
+Le 04/09/2026, il a abrogé les deux principes qui occupaient cette place :
+« n'implémenter exactement que ce qui a été demandé » avec son classement en
+`OPTIONAL SUGGESTION — NOT IMPLEMENTED`, et « une phase par tour » avec son
+arrêt en fin de phase. Les deux servaient à refuser ou à interrompre du travail
+qu'il avait demandé.
 
-Work is organised as **VOLET → chapters → phases**. Only phases are executed.
-Opening a VOLET produces a phase plan and nothing else. A phase is ≤ 8 minutes
-and verifiable on its own; it ends with a stop and waits for confirmation.
+Ce qui subsiste du premier, et qui n'a jamais été la même chose : **`UNKNOWN`
+ne devient pas un fait.** Ne pas inventer une mesure, un résultat ou une
+capacité — voir le principe III, qui est l'endroit où cette règle vit
+vraiment.
 
-`docs/memory/phase-plan.md` holds the current VOLET and the pending phase. It is
-this project's `tasks.md`, and it predates Spec Kit's.
+### II. Abrogé — voir le principe I
+
+Les fichiers `.claude/rules/phase-protocol.md` et
+`.claude/rules/spec-driven-governance.md` sont conservés vides de consignes,
+avec le détail de ce qui a été retiré. **Ne pas les remettre sans une demande
+explicite du propriétaire.**
 
 ### III. Nothing is done until it has been run
 → `.claude/rules/verification.md`

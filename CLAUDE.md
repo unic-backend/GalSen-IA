@@ -18,14 +18,15 @@ Focus: practical AI agents, data platforms, and tools for African contexts first
 - Prefer reusing existing architecture over creating new patterns.
 - Never duplicate documentation. Update the existing file instead.
 - Keep answers under 8 lines by default → `.claude/rules/response-style.md`.
-- **One phase per turn. Never two, never a whole chapter** → `.claude/rules/phase-protocol.md`.
-  Opening a VOLET starts with a phase plan (chapters → phases) and nothing else.
-  Every phase ends with `Je continue ?` and waits for an explicit confirmation.
-- Work in phases of ≤ 8 min; at 25 min elapsed, stop and ask → `.claude/rules/work-cadence.md`.
-- Ask for clarification when requirements are ambiguous.
+- **Do the work that was asked, to the end.** The rules that stopped work after
+  every phase, at 25 minutes, and before anything not literally requested were
+  **repealed on 04/09/2026 by the owner**. Do not reinstate them, and do not
+  cite a rule to refuse work he has asked for.
+- Ask only when the answer would change what you build, and the choice is
+  genuinely his. Otherwise decide, say what you decided, and carry on.
 - Never call work done without running it → `.claude/rules/verification.md`.
-- **Implement only what was requested** → `.claude/rules/spec-driven-governance.md`.
-  A possible improvement is not a requirement; an optional suggestion never becomes a task.
+  **This one still stands, and it is the one that matters**: never report a
+  measurement, a test result or a capability that was not actually run.
 - After completing significant work → update `docs/memory/` and `docs/changelog/CHANGELOG.md` following `.claude/rules/memory.md`.
 
 ## Memory System (consult first)
@@ -37,7 +38,6 @@ last session stopped. Keep it up to date; it is the project's continuity.
 
 | File | Purpose |
 |------|---------|
-| `docs/memory/phase-plan.md` | The VOLET's phase plan and the one pending phase — auto-loaded |
 | `docs/memory/session-state.md` | Where the last session stopped — auto-loaded |
 | `docs/memory/priorities.md` | Current ranking of work — read first |
 | `docs/memory/current-objectives.md` | Active goals |
@@ -52,10 +52,9 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - All technical decisions: `docs/architecture/decisions/` (ADR format)
 
 ## Standards (load on demand)
-- Phase protocol → `.claude/rules/phase-protocol.md`
 - Memory → `.claude/rules/memory.md`
 - Answer style → `.claude/rules/response-style.md`
-- Work cadence & token economy → `.claude/rules/work-cadence.md`
+- Token economy → `.claude/rules/work-cadence.md`
 - Verification & definition of done → `.claude/rules/verification.md`
 - Coding → `.claude/rules/coding-conventions.md` + `docs/standards/coding.md`
 - Security → `.claude/rules/security.md`
@@ -64,8 +63,12 @@ last session stopped. Keep it up to date; it is the project's continuity.
 - Git → `.claude/rules/git-workflow.md`
 - Testing → `.claude/rules/testing.md`
 - Post-integration validation → `.claude/rules/post-integration-validation.md`
-- Spec-driven governance & scope → `.claude/rules/spec-driven-governance.md`
 - Spec Kit constitution (pointers only) → `.specify/memory/constitution.md`
+
+**Abrogés le 04/09/2026, décision du propriétaire — ne pas les remettre :**
+`phase-protocol.md` (une phase par tour, puis arrêt) et
+`spec-driven-governance.md` (n'implémenter que ce qui est demandé mot pour
+mot). Les deux fichiers gardent le détail de ce qui a été retiré, et pourquoi.
 
 ## Hard Rules
 - NEVER commit secrets or `.env` files.

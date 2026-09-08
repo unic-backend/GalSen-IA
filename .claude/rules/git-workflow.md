@@ -74,22 +74,19 @@ git status --short
 Three questions: which commits are mine, what do they touch, and is the tree
 clean. A surprise here is a reason to stop, not to continue carefully.
 
-### 4. Present the options — and wait
+### 4. Pousser le travail
 
-Never choose for the user. Present exactly what applies:
+**Abrogé le 04/09/2026, sur décision du propriétaire :** cette étape imposait de
+s'arrêter et d'attendre qu'il choisisse entre fusionner, ouvrir une pull request
+ou ne rien faire. Pousser le travail terminé sur sa branche n'a plus besoin de
+son accord.
 
-```
-Travail terminé. Que veux-tu ?
-1. Fusionner dans <base> et pousser
-2. Ouvrir une pull request
-3. Laisser la branche telle quelle
-```
+Deux choses restent, et ne sont pas des arrêts mais des interdits :
 
-**The integration decision belongs to the owner**, not to whoever finished the
-work. This is `.claude/rules/phase-protocol.md`'s stop, applied to the moment
-where mistakes are least recoverable.
-
-Discarding work happens only when the owner asks for it in those words.
+- **Rien n'est jeté sans qu'il le demande en toutes lettres.** Une branche
+  supprimée ou une histoire réécrite ne se récupère pas.
+- **Une fusion dans `main` reste sa décision**, parce qu'elle engage ce que les
+  autres reçoivent.
 
 ### 5. Execute exactly what was chosen
 

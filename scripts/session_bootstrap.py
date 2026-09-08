@@ -17,7 +17,6 @@ MEMORY = ROOT / "docs" / "memory"
 
 # (file, heading, max lines kept, drop everything above the first "---" rule)
 SOURCES = [
-    ("phase-plan.md", "PHASE EN COURS - N'EN EXECUTER QU'UNE", 20, True),
     ("session-state.md", "ETAT DE LA DERNIERE SESSION", 40, True),
     ("priorities.md", "PRIORITES", 20, False),
     ("current-objectives.md", "OBJECTIFS ACTIFS", 20, False),
@@ -26,21 +25,17 @@ SOURCES = [
 
 MAX_CHARS = 6000
 
-# Le protocole de phases est repete a chaque demarrage plutot que laisse dans un
-# fichier de regles : une regle qu'il faut penser a ouvrir est une regle oubliee.
-PHASE_PROTOCOL = """
-=== PROTOCOLE DE PHASES - OBLIGATOIRE ===
-Le travail va par VOLET > chapitre > phase. Seules les phases s'executent.
-1. Nouveau VOLET : publier d'abord le plan (nb de chapitres -> nb de phases),
-   l'ecrire dans docs/memory/phase-plan.md, puis S'ARRETER.
-2. Ensuite : UNE phase par tour. Jamais deux. Jamais un chapitre entier,
-   sauf si ce chapitre ne contient qu'une seule phase.
-3. Fin de phase : verifier, annoncer "Phase X.Y terminee", nommer la suivante,
-   demander "Je continue ?" et ATTENDRE.
-   Seul un "continuer" / "confirmer" / "oui" explicite relance le travail.
-4. Mettre a jour docs/memory/phase-plan.md avant chaque arret.
-Detail : `.claude/rules/phase-protocol.md`
-"""
+# Le protocole de phases etait repete ici a chaque demarrage. **Abroge le
+# 04/09/2026, sur decision du proprietaire** : il imposait une phase par tour,
+# puis un arret avec « Je continue ? » et l'attente d'un oui explicite, et
+# c'est ce qui empechait le travail demande d'aboutir.
+#
+# Il etait injecte ici plutot que laisse dans un fichier de regles, ce qui le
+# rendait bien plus contraignant que les fichiers eux-memes : vider
+# `.claude/rules/phase-protocol.md` sans toucher a ce bloc n'aurait rien
+# change, puisque c'est ce texte-la que chaque session lit en premier.
+#
+# Ne pas le remettre sans une demande explicite du proprietaire.
 
 
 def read_trimmed(path: Path, max_lines: int, skip_preamble: bool = False) -> str:
@@ -73,7 +68,6 @@ def build_context() -> str:
     blocks = [
         "MEMOIRE PROJET GALSEN IA - chargee automatiquement au demarrage.",
         "Reprends le travail a partir de cet etat. Ne refais pas ce qui est marque termine.",
-        PHASE_PROTOCOL.strip(),
     ]
     for filename, heading, max_lines, skip_preamble in SOURCES:
         body = read_trimmed(MEMORY / filename, max_lines, skip_preamble)
@@ -82,10 +76,10 @@ def build_context() -> str:
         blocks.append("\n=== {} ({}) ===\n{}".format(heading, filename, body))
 
     blocks.append(
-        "\nRegles: `.claude/rules/phase-protocol.md` (une phase par tour), "
-        "`.claude/rules/memory.md` (memoire), "
-        "`.claude/rules/work-cadence.md` (phases, 25 min), "
-        "`.claude/rules/response-style.md` (reponses courtes)."
+        "\nRegles: `.claude/rules/memory.md` (memoire), "
+        "`.claude/rules/response-style.md` (reponses courtes), "
+        "`.claude/rules/verification.md` (ne jamais annoncer un test non lance), "
+        "`.claude/rules/security.md` (secrets)."
     )
     context = "\n".join(blocks)
     if len(context) > MAX_CHARS:

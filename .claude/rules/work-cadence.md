@@ -1,56 +1,19 @@
 # GalSen IA - Work Cadence
 
-Long autonomous runs are the main way work gets lost here: an hour of effort
-that ends on a timeout leaves nothing behind. Work in phases, check in often.
+**Le 04/09/2026, sur décision du propriétaire, ce fichier a perdu tout ce qui
+arrêtait le travail :**
 
----
+- la limite de 25 minutes et son check-in obligatoire (« Je continue ou
+  j'arrête ici ? », puis attendre une réponse pour reprendre) ;
+- le découpage imposé en phases de 8 minutes, vérifiables une à une, avec
+  interdiction d'en commencer une avant d'avoir fini la précédente ;
+- « ask before writing code » quand une tâche ne se découpe pas.
 
-# The 25 minute limit
+Ce qui reste ci-dessous ne bloque rien. La section *Token economy* est
+conservée telle quelle parce que `.claude/rules/verification.md` y renvoie
+**nommément** pour délimiter sa règle de fraîcheur.
 
-At the start of any task, record the wall-clock time (`Get-Date` on Windows).
-
-Check the elapsed time at every phase boundary. At **25 minutes**, stop -
-even mid-plan, even if the next step feels small.
-
-When you stop, report in this shape and wait:
-
-```
-25 min atteintes. Fait : <phases terminees>. En cours : <phase, etat exact>.
-Reste : <phases restantes, estimation>.
-Je continue ou j'arrete ici ?
-```
-
-Never restart the clock by yourself. Only the user's answer restarts it.
-
-This limit is about elapsed time, not about difficulty. A hard task that
-finishes in 10 minutes needs no check-in; an easy task still running at 25
-minutes does.
-
----
-
-# Phases
-
-**How a phase is executed is decided by `.claude/rules/phase-protocol.md`:
-one phase per turn, then stop and wait for confirmation.** This section defines
-what a phase *is*; that file defines the discipline around it.
-
-Split before starting, not when you are already lost.
-
-A phase is:
-
-- one coherent unit (one module, one engine, one test suite)
-- **8 minutes of work maximum**
-- verifiable on its own - it compiles, imports, or passes its tests
-
-Never begin a phase without finishing and verifying the previous one.
-Never redo a completed phase.
-After an interruption, resume from the last verified phase - never from zero.
-
-If a task cannot be split into phases under 8 minutes, it is not understood
-well enough yet. Ask before writing code.
-
-Announce the phase plan in one line per phase, then execute. Do not describe
-a plan you have not been asked to review.
+**Ne pas remettre ces arrêts sans une demande explicite du propriétaire.**
 
 ---
 

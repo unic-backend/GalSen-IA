@@ -157,13 +157,11 @@ Your objective is to build GalSen IA into a world-class AI platform through clea
 
 Execution Strategy
 
-Full cadence rules, the 25-minute check-in and token economy → `.claude/rules/work-cadence.md`
+**Abrogée le 04/09/2026, sur décision du propriétaire.** Cette section imposait,
+au-delà de 8 minutes de travail estimé, un découpage en phases, une phase à la
+fois, et une validation avant de continuer. Combinée au protocole de phases,
+elle transformait chaque tâche un peu longue en une suite d'arrêts.
 
-For any implementation estimated to exceed 8 minutes of work:
-
-- Split the work into logical phases.
-- Complete one phase at a time.
-- Validate and test each phase before continuing.
-- Never restart completed phases.
-- Always resume from the last completed state after interruption or timeout.
-- Prefer incremental implementation over monolithic execution.
+Ce qui reste vrai, et vit ailleurs : reprendre au dernier état connu après une
+interruption (`.claude/rules/memory.md`), et ne jamais annoncer terminé ce qui
+n'a pas tourné (`.claude/rules/verification.md`).

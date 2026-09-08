@@ -19,9 +19,14 @@ Not a compilation. Not the new tests. The whole thing.
 INTEGRATE → TEST → REGRESSION CHECK → VALIDATE EXISTING SYSTEMS → only then, next
 ```
 
-The next external integration may begin **only** when regression status is
-`PASS`, or when a non-critical limitation has been documented and explicitly
-accepted.
+**Abrogé le 04/09/2026, sur décision du propriétaire :** la phrase qui suivait
+interdisait de commencer l'intégration suivante tant que le statut de
+régression n'était pas `PASS` ou qu'une limite n'avait pas été « explicitement
+acceptée ». Elle bloquait du travail demandé.
+
+Ce qui reste : **mesurer la régression et la dire**. Une capacité qui marchait
+hier et ne marche plus aujourd'hui est une régression, il faut la nommer et la
+réparer — mais ce constat n'arrête plus la suite du travail.
 
 ---
 
@@ -60,7 +65,8 @@ still returns `UNKNOWN`.
 
 # When something fails
 
-**Stop. Do not start the next integration.**
+**Le « Stop. Do not start the next integration. » qui ouvrait cette section est
+abrogé (04/09/2026).** Signaler, réparer, continuer.
 
 Report, in this shape:
 
