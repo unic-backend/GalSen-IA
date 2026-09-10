@@ -12,6 +12,29 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Changed — 2026-09-10 — Repealed the rules that stopped requested work
+
+`.claude/rules/phase-protocol.md` and `spec-driven-governance.md` (one phase per turn
+then stop for an explicit yes; implement only what was asked word-for-word) are repealed
+at the owner's request, along with `scripts/session_bootstrap.py`'s SessionStart
+injection of the same phase protocol, the 25-minute/8-minute check-ins in
+`work-cadence.md`, the mandatory stop in `post-integration-validation.md`, the
+phase-based execution strategy in `core-rules.md`, and the end-of-branch stop in
+`git-workflow.md`. `security.md` and `verification.md` are untouched — neither ever
+forbade a feature. Repealed files keep their text instead of being deleted: about twenty
+documents cite them by name.
+
+### Found — 2026-09-10 — The full suite is not green in this sandbox, unrelated to any code change
+
+A full run surfaced 30 failing tests (`tests/test_multimodal_ingestion.py`,
+`tests/creative/test_golden.py`, media tests, `test_requirements.py`) that assert a
+capability is absent by relying on this sandbox's real environment rather than a
+controlled double — it now ships `faster-whisper` and a full OpenCV where the tests
+expect them missing. Proven unrelated to the branch that surfaced it (doc/rule files
+only). Tracked in `docs/memory/pending-work.md`. Separately, `bcrypt` (declared in
+`requirements.txt`, correctly installed by the `Dockerfile`) was simply missing from this
+particular container; installing it fixed 56 unrelated auth-test failures/errors.
+
 ### Fixed — 2026-08-24 — The anti-fabrication rule was suppressing answers the model could give alone
 
 Second defect from the first real run, and the more interesting one. Two trials

@@ -6,63 +6,60 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ---
 
-## Dernière session — 2026-08-24 (les dix épreuves)
+## Dernière session — 2026-09-10 (la branche `claude/arena-personal-ai-qh66ix` redémarrée après fusion, et la suite n'est plus verte)
 
-**En cours** : rien. Mission « RUN THE FIRST REAL MODEL TEST » : le harnais est
-fait et **tourne**, mais **aucun modèle n'a répondu** — c'est le résultat, pas
-un contretemps. Branche `claude/galsen-ia-phases-ukwz7p`, PR #37 ouverte.
+**En cours** : rien. Le travail de la session précédente (abroger les règles qui
+arrêtaient le travail demandé — `09a1a70`, `d8d97bf`) était déjà commité mais
+**jamais poussé**, et le PR #38 de cette même branche avait entre-temps été
+fusionné dans `main`. Rebasé sur `origin/main` (aucun conflit — même contenu),
+vérifié, poussé en force-with-lease : `40b234f`.
 
-**Terminé** : les dix épreuves du propriétaire, câblées sur le **vrai** `/chat`
-(`src/model_engine/evaluation_suite.py`, `scripts/models/evaluate.py`).
+**Terminé** :
+- Rebase + push de la branche (règle « après un PR fusionné, redémarrer la
+  branche, garder les commits non fusionnés » de `.claude/rules/git-workflow.md`).
+- `ruff check scripts src tests agents` propre ; hook `session_bootstrap.py`
+  reconfirmé sans trace de « PROTOCOLE DE PHASES »/« Je continue »/« ATTENDRE ».
+- **Suite complète mesurée deux fois, à neuf** : `bcrypt` déclaré dans
+  `requirements.txt` mais absent de ce conteneur → 56 échecs/erreurs
+  (`test_auth_oauth.py`, `test_auth_hybrid.py`, `test_auth_reset_lockout.py`).
+  Installé (`pip install bcrypt==5.0.0`) — **corrige tout**, confirmé par un
+  second run complet. Le `Dockerfile` installe déjà correctement
+  `requirements.txt` ; l'écart vient de ce bac à sable précis, pas du dépôt.
+- **Après ce correctif : 7349 passés, 24 échoués, 6 erreurs, 11 ignorés, 3
+  désélectionnés.** Aucun rapport avec la branche — diff contre `main` limité
+  à 9 fichiers de règles/doc + `scripts/session_bootstrap.py`, zéro `src/`
+  zéro `tests/`. Cause réelle : ce bac à sable a maintenant `faster-whisper`
+  et un OpenCV complet **installés**, alors que `tests/test_multimodal_ingestion.py`,
+  `tests/creative/test_golden.py`, `tests/creative/test_representation_voice.py`,
+  `tests/creative/test_creative_providers.py`, `tests/media/test_media_*.py`,
+  `tests/media/test_moneyprinterturbo.py` supposent ces outils **absents** en
+  s'appuyant sur l'environnement réel plutôt que sur un double contrôlé — la
+  moindre montée en capacité du bac à sable les casse. `test_requirements.py`
+  le confirme : `faster-whisper` est importé par `src/agents/tools` et n'est
+  déclaré nulle part.
 
-À savoir sans relire :
-- **Le moteur s'installe, les poids non.** `llama-cpp-python 0.3.35` installé
-  depuis pypi et importable. Mais `registry.ollama.ai`, `ollama.com`,
-  `huggingface.co`, `hf-mirror.com`, `modelscope.cn`, `gpt4all.io` → `000`, et
-  `github.com/…/releases` → `403`. La liste `noProxy` du mandataire dit ce qui
-  passe : npm, jsr, pypi, crates.io, proxy.golang.org. **Aucun paquet pypi
-  n'embarque de poids utilisables** (vérifié : tinyllama, smollm, llm-gguf,
-  minillm — code seul, ≤ 30 Ko).
-- **Les dix épreuves passent par `/chat`**, pas par un fournisseur direct :
-  elles mesurent ce qu'un utilisateur reçoit, donc un calcul faux est jugé
-  **après** la boucle de délibération.
-- **Trois issues, jamais deux** : `PASS`, `FAIL`, `NOT_CHECKED`. Quatre épreuves
-  n'ont aucune vérité vérifiable par machine ; leur réponse entière est gardée
-  pour lecture humaine.
-- **Une réponse non générée n'est jamais notée** — sinon on mesurerait le repli
-  composé par la plateforme.
-- **La clé jetable n'est pas un contournement** : mécanisme documenté
-  `GALSEN_API_KEYS`, jamais écrite ni affichée.
+**Prochaine étape** : ouvrir un VOLET séparé — « rendre les tests de capacité
+absente déterministes (mock, pas environnement réel) + déclarer
+`faster-whisper` » — voir `docs/memory/pending-work.md`. Ce n'est pas la
+même mission que le repeal de règles, ne pas les mélanger.
 
-**Prochaine étape, sur ta machine — c'est la seule qui produise des chiffres** :
-```
-ollama serve
-ollama pull qwen3.5:9b && ollama pull qwen2.5:14b
-python scripts/models/evaluate.py --modele qwen3.5:9b --contre qwen2.5:14b --json rapport.json
-```
-
-**Décisions en attente du propriétaire** (aucune faite)
-1. **Déclarer `coder` dans le workflow `question`** — l'agent n'est pas atteint
-   depuis le chat, donc TEST-05 mesure la rédaction, pas le moteur de codage.
-2. **P10 de l'audit Linux** : la boucle d'événements se bloque pendant un
-   `/chat` (`/health` : 3,5 ms → 1 149 ms).
-3. **Base de `train_adapter.py`** : elle vise Qwen2.5-7B.
-
-**Repère mesuré le 2026-08-24** : `pytest -q` → **7371 passés, 9 ignorés,
-3 désélectionnés, 0 échec**. `ruff check src tests scripts agents` → tout passe.
-**26 tests ajoutés, 0 supprimé, 0 affaibli.**
-
-**Bloqué — aucun faisable ici**
-- **Les poids.** Tous les hôtes refusés par la passerelle, mesuré deux fois.
-- **`ollama serve` + `ollama pull`** sur ta machine : le seul geste qui
-  transforme `NOT_EXECUTED` en résultat.
-- **Un serveur GPU loué** pour Kimi K2.5, Qwen3.5-397B, DeepSeek-R1, GLM-5.1.
-- `git push origin v0.1.0` → seul test rouge en CI, rouge sur `main` aussi.
-  **Ne pas réessayer, ne pas « corriger ».**
+**Bloqué** : rien sur la branche actuelle. Le repeal des règles est fait et
+poussé ; aucun PR ouvert pour lui (non demandé).
 
 ---
 
 ### Sessions précédentes
+
+**2026-08-24 — les dix épreuves** : mission « RUN THE FIRST REAL MODEL TEST »,
+harnais câblé sur le **vrai** `/chat` (`src/model_engine/evaluation_suite.py`,
+`scripts/models/evaluate.py`), branche `claude/galsen-ia-phases-ukwz7p`, PR #37.
+**Aucun modèle n'a répondu ici** : `llama-cpp-python` s'installe, mais
+`ollama.com`, `huggingface.co`, `hf-mirror.com`, `modelscope.cn`, `gpt4all.io`
+→ `000`, `github.com/…/releases` → `403`. Aucun paquet pypi n'embarque de
+poids utilisables (tinyllama, smollm, llm-gguf, minillm testés : code seul).
+Prochaine étape restée sur la machine du propriétaire : `ollama serve` +
+`ollama pull qwen3.5:9b` + `scripts/models/evaluate.py`. Mesuré alors :
+7371 passés, 9 ignorés, 3 désélectionnés, 0 échec.
 
 **2026-08-24 — Phase 3 (ADR-042)** : `role_preferences` tranche entre égaux,
 Qwen3.5 reconnu, quatre familles serveur préparées avec les commandes vLLM
@@ -105,3 +102,8 @@ PR #28. **MPT ne génère pas de vidéo.**
 - Ni `/dev/snd`, ni `/dev/video*`, `DISPLAY` vide — mesuré par `capture.py`.
 - Mandataire : 9 domaines `.sn`, Banque mondiale, UNESCO, FAO, OMS → `CONNECT 403`.
 - `ollama serve` : génération et récupération sémantique non mesurées.
+- **2026-08-29 — PR #38** : plan de phase ARENA → GalSen IA (VOLET 65),
+  fusionné dans `main` le 2026-09-02. GalSen IA absorbe ARENA sous
+  `src/arena/`, licence Apache-2.0 commune, transfert fichier par fichier
+  (sans historique Git — 6 secrets dans l'historique d'ARENA), rotation de
+  clés préalable et séparée.
