@@ -175,12 +175,28 @@ def _s08() -> Dict[str, Any]:
 
 
 def _s09() -> Dict[str, Any]:
-    """Référence vidéo : le décodage vidéo manque, et c'est dit."""
+    """Référence vidéo : ce qui manque au décodage est rapporté, jamais comblé."""
     from .reference.ingestion import ingestion_report
-    sondes = ingestion_report()["probes"]
+    rapport = ingestion_report()
+    sondes = rapport["probes"]
     indisponibles = [nom for nom, etat in sondes.items() if etat != "AVAILABLE"]
-    assert indisponibles, "Toutes les sondes seraient disponibles."
-    return _bloque("décodage et analyse vidéo", indisponibles)
+
+    # Corrigé le 2026-09-12. Ce scénario **exigeait** qu'une sonde soit absente
+    # (`assert indisponibles`). Le jour où le bac à sable a reçu un `ffmpeg`
+    # complet et OpenCV, l'assertion a sauté — et comme elle lève au lieu de
+    # rendre un verdict, elle a emporté `run_all()` et six tests qui ne la
+    # concernaient pas. Un scénario d'or **rapporte** l'état mesuré ; il ne
+    # décide pas de l'état que la machine a le droit d'avoir.
+    #
+    # Ce qui reste vrai dans les deux cas, et qui est l'invariant réel : les
+    # champs qu'aucune sonde ne peut mesurer restent déclarés bloqués avec la
+    # capacité qui leur manque. Le décodage vidéo n'y change rien — une vidéo
+    # lisible ne produit toujours ni visage, ni carrure, ni identité.
+    assert rapport["blocked"], "Aucun champ bloqué ne serait déclaré."
+    if indisponibles:
+        return _bloque("décodage et analyse vidéo", indisponibles,
+                       blocked_fields=sorted(rapport["blocked"]))
+    return _verifie(probes=dict(sondes), blocked_fields=sorted(rapport["blocked"]))
 
 
 def _s10() -> Dict[str, Any]:
@@ -388,7 +404,8 @@ SCENARIOS: List[GoldenScenario] = [
     GoldenScenario(8, "Multiple reference images → one entity",
                    "L'analyse déclare ce qu'elle sait et ce qui manque.", _s08),
     GoldenScenario(9, "Video reference → entity recreation",
-                   "Le décodage vidéo manque, et c'est rapporté.", _s09),
+                   "Ce qui manque au décodage est rapporté ; ce qu'aucune "
+                   "sonde ne mesure reste bloqué.", _s09),
     GoldenScenario(10, "Multiple real-person references → multi-entity scene",
                    "Le consentement existe ; la génération non.", _s10),
     GoldenScenario(11, "Recurring reference entity",
@@ -507,7 +524,9 @@ def language_coverage() -> Dict[str, Any]:
             "Toutes les langues passent par le même registre et le même "
             "chemin de code : §64 demande qu'aucune n'ait d'architecture "
             "propre, et ce qui le prouve est qu'aucune n'apparaît dans le "
-            "code. Nommable n'est ni comprise ni parlée — les deux dernières "
-            "colonnes sont vides ici."
+            "code. Nommable n'est ni comprise ni parlée : `understood` suit "
+            "la sonde `transcription` et vaut donc ce que cette machine "
+            "mesure ; `speakable` est vide partout, et le restera tant "
+            "qu'aucune synthèse vocale ne sera écrite ici (§26)."
         ),
     }

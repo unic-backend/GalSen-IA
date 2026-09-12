@@ -206,7 +206,11 @@ def test_un_chemin_hors_cadre_est_refuse_par_la_route(client, cles, racine_media
 
 
 def test_une_capacite_absente_repond_503_avec_ce_qui_manque(
-        client, cles, racine_media):
+        client, cles, racine_media, capacite_forcee):
+    # L'absence est posée (2026-09-12) : ce test mesure le **code de réponse**
+    # et ce qu'il nomme, pas ce que le bac à sable a installé. Il était rouge
+    # depuis que celui-ci a reçu un `ffmpeg` complet.
+    capacite_forcee("media_probe", "UNAVAILABLE", "Ni `ffprobe` ni `ffmpeg`.")
     identite = client.post(
         "/media/projects", json={"objective": "Test"},
         headers={"X-API-Key": cles["admin"]},

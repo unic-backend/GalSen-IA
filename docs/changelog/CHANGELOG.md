@@ -12,6 +12,52 @@ capability answers `503` until an operator configures a model provider. Release 
 
 ## [Unreleased]
 
+### Fixed — 2026-09-12 — The "capability absent" tests measured the sandbox, not the code
+
+Thirty tests asserted *when the tool is missing, the platform says so* by relying on this
+sandbox genuinely lacking the tool. When it gained `faster-whisper`, a full OpenCV, a
+full `ffmpeg` and a browser driver, 24 failed and 6 errored with **no line of `src/`
+changed**. A test that turns red when the environment *gains* a capability measures the
+machine, not the code — and it fails in the most expensive direction, since nothing broke.
+
+Two instruments now live in `conftest.py`:
+
+- `module_absent(*names)` makes a module unimportable whatever the machine has
+  (`None` in `sys.modules`, which raises `ImportError` exactly like a missing package),
+  restoring it — and its already-imported submodules — on exit.
+- `capacite_forcee` pins what a media capability probe answers, for the capabilities that
+  do not hinge on an import: `ffmpeg` is interrogated as a binary, `transcription` goes
+  through the VOLET 32 registry. An unknown capability name is refused, so a typo cannot
+  silently force nothing.
+
+Both keep the tested path entirely real — the probe, the refusal, the report, `probe()`'s
+own `try/except` and `CONSEQUENCES` — and control only the environment.
+`tests/test_capacite_absente.py` proves the instrument itself (7 tests; three sabotages,
+each dropping the precise tests that cover it).
+
+Four claims that had become false were corrected in place rather than deleted:
+
+- `src/creative/golden.py::_s09` **asserted** that a probe was unavailable, and raised
+  instead of returning a verdict — taking `run_all()` and six unrelated tests down with
+  it. A golden scenario reports the measured state; it does not decide which state the
+  machine is allowed to be in. It now returns `BLOCKED` when a probe is missing and
+  `VERIFIED` otherwise, and scenario 9's declared invariant is restated to match.
+- `language_coverage()`'s note claimed *the last two columns are empty here*. `understood`
+  follows the `transcription` probe and therefore follows the machine; only `speakable` is
+  empty by construction — no speech synthesis is written in this repository (§26).
+- `src/media/providers/moneyprinterturbo.py` claimed *nothing can run here — no `ffmpeg`*
+  in its module docstring, and *this machine's `ffmpeg` is built `--disable-everything`*
+  in `BLOCAGES`. The lesson is kept (interrogate the tool, never check that a binary
+  exists); the assertion about one particular machine is not.
+- `tests/test_requirements.py` counted only `requirements.txt` and
+  `requirements-optional.txt` as runtime declarations, so `faster-whisper` — declared in
+  `requirements-audio.txt` since VOLET 32 — passed for undeclared. And only on a machine
+  where it is *installed*, since module → distribution translation goes through the
+  installed packages: the check was mute where the package was missing and wrong where it
+  was not. The list is now explicit (`DECLARATIONS_D_EXECUTION`), excludes
+  `requirements-dev.txt` and `requirements-training.txt` by name, and two counter-tests
+  stop it from widening into the file it exists to guard.
+
 ### Changed — 2026-09-10 — Repealed the rules that stopped requested work
 
 `.claude/rules/phase-protocol.md` and `spec-driven-governance.md` (one phase per turn

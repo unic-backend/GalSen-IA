@@ -59,13 +59,41 @@ def test_un_module_cite_et_absent_est_rapporte_absent():
     assert "n'existe pas" in etat["reason"]
 
 
-def test_une_etape_bloquee_nomme_ce_qui_lui_manque():
+def test_une_etape_bloquee_nomme_ce_qui_lui_manque(capacite_forcee):
+    """
+    **Corrigé le 2026-09-12**, exactement comme `MOTION_DESIGN` l'avait été :
+    ce test comptait sur le `ffmpeg` amputé de ce bac à sable pour que
+    `media_probe` manque. Le jour où un `ffmpeg` complet y est arrivé, l'étape
+    est passée READY et le test est devenu rouge sans qu'une ligne de `src/`
+    ait bougé.
+
+    L'absence est désormais **posée**. Ce qui est mesuré reste entier : le
+    calcul de l'étape, le nom de la capacité, et le fait que le module, lui,
+    est bien écrit — ce qui manque s'installe.
+    """
+    capacite_forcee("media_probe", "UNAVAILABLE", "Ni `ffprobe` ni `ffmpeg`.")
+
     analyse = [e for e in readiness()["stages"]
                if e["stage"] == "MEDIA_ANALYSIS"][0]
+
     assert analyse["state"] == BLOQUE
     assert [m["capability"] for m in analyse["missing"]] == ["media_probe"]
     # Le module est écrit ; ce qui manque s'installe.
     assert analyse["module"] == "src/media/ingestion/inspect.py"
+
+
+def test_la_meme_etape_est_prete_quand_sa_capacite_repond(capacite_forcee):
+    """
+    Le contre-test : sans lui, une étape déclarée bloquée en dur passerait le
+    test précédent sans jamais consulter sa sonde.
+    """
+    capacite_forcee("media_probe", "AVAILABLE", "`ffprobe` disponible.")
+
+    analyse = [e for e in readiness()["stages"]
+               if e["stage"] == "MEDIA_ANALYSIS"][0]
+
+    assert analyse["state"] == PRET
+    assert analyse["missing"] == []
 
 
 def test_une_etape_sans_dependance_est_prete_ici():
@@ -128,8 +156,19 @@ def test_le_verdict_distingue_ce_qui_s_installe_de_ce_qui_s_ecrit():
     assert "ALL STAGES RUNNABLE HERE" in _verdict(tout_pret)
 
 
-def test_les_capacites_manquantes_sont_agregees_une_seule_fois():
+def test_les_capacites_manquantes_sont_agregees_une_seule_fois(capacite_forcee):
+    """
+    Deux capacités absentes, chacune exigée par plusieurs étapes : l'agrégat
+    doit les nommer **une fois**, trié, sans doublon.
+
+    Les deux absences sont posées (2026-09-12) : les compter sur ce que la
+    machine n'a pas revenait à affirmer que la liste ne serait jamais vide.
+    """
+    capacite_forcee("media_probe", "UNAVAILABLE", "Ni `ffprobe` ni `ffmpeg`.")
+    capacite_forcee("transcription", "UNAVAILABLE", "Aucun transcripteur actif.")
+
     manquantes = readiness()["missing_capabilities"]
+
     assert manquantes == sorted(set(manquantes))
     assert "media_probe" in manquantes
     assert "transcription" in manquantes

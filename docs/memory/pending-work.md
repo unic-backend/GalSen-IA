@@ -28,21 +28,6 @@ gets re-argued at every review.
 
 ## P1 — High · a Phase 2 exit criterion depends on it, or it removes a demonstrated risk
 
-- **Make the "capability absent" tests deterministic, and declare `faster-whisper`.**
-  Measured 2026-09-10: `tests/test_multimodal_ingestion.py`,
-  `tests/creative/test_golden.py`, `tests/creative/test_representation_voice.py`,
-  `tests/creative/test_creative_providers.py`, `tests/media/test_media_*.py` and
-  `tests/media/test_moneyprinterturbo.py` assert what happens when a tool (whisper,
-  OpenCV) is absent by relying on the **real environment actually lacking it**, not on a
-  controlled double. This sandbox now has `faster-whisper` and a full OpenCV installed —
-  24 failed, 6 errors on a full run, **proven unrelated to any code change**
-  (`git diff --stat` against the commit that measured it touched 9 rule/doc files only).
-  `test_requirements.py` names the second half of the same gap: `faster-whisper` is
-  imported by `src/agents/tools` and declared in no requirements file.
-  *Deciding criterion:* it is `priorities.md`'s own #1 — "no module is done while its
-  tests fail" — and it currently fails non-deterministically depending on which optional
-  ML packages happen to be pre-installed in a given sandbox.
-
 - **Build the Senegalese corpus.** The base now holds **250 verifiable passages** from the
   project's own documentation (VOLET 28), and the ingestion path chunks, keeps provenance
   per passage and cites sources. What is missing is the corpus that matters: agriculture,
@@ -104,6 +89,18 @@ gets re-argued at every review.
   deployment exists there is no operational history worth keeping.
 
 ## P3 — Low · worth doing, nothing waits on it
+
+- **`src/media/core/capabilities.clear_cache()` clears nothing.** Found on 2026-09-12
+  while making the capability tests deterministic: `_cache` (line 91) is declared,
+  cleared by `clear_cache()` and **written nowhere**; no probe reads it, and nothing in
+  the repository calls `clear_cache()`. Its docstring — *« Oublie les résultats
+  mémorisés. Utile après une installation. »* — promises a memoisation that does not
+  exist. Either implement it (the probes shell out to `ffmpeg` on every call, which the
+  full suite pays for repeatedly) or remove both; leaving a public function that
+  documents a behaviour it does not have is the thing this repository refuses elsewhere.
+  Left untouched deliberately: it is not what the current work was about.
+  *Deciding criterion:* nothing depends on it today, and the cost of the wrong choice is
+  a behaviour change in a module every media test goes through.
 
 - **Share the two subsystems that block a second instance** (ADR-009): key revocations,
   then rate-limit counters. Files, notifications and engine state are already cleared by

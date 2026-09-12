@@ -139,7 +139,13 @@ def test_un_etat_inconnu_n_est_pas_un_feu_vert():
     assert any("inconnu" in o for o in verdict["obstacles"])
 
 
-def test_une_capacite_absente_rend_indisponible():
+def test_une_capacite_absente_rend_indisponible(capacite_forcee):
+    # L'absence est **posée** (2026-09-12). Elle était auparavant celle du bac à
+    # sable : le jour où `faster-whisper` y a été installé, ce test est devenu
+    # rouge sans qu'une ligne de `src/` ait bougé. Ce qu'il mesure, c'est que la
+    # déclaration d'un fournisseur ne vaut pas disponibilité — pas ce que la
+    # machine a sous la main.
+    capacite_forcee("transcription", "UNAVAILABLE", "Aucun transcripteur actif.")
     fournisseur = CreativeProvider(
         provider_id="x", tasks=frozenset({"speech_recognition"}),
         requires=("transcription",))

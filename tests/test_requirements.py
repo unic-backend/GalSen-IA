@@ -41,6 +41,34 @@ PREMIERE_PARTIE = {
 # Dépendances utilisées uniquement par la suite de tests.
 DEVELOPPEMENT = {"pytest", "pytest-asyncio", "pytest-cov", "httpx2"}
 
+# Les fichiers où une dépendance **d'exécution** peut être déclarée. Ce ne sont
+# pas tous les `requirements*.txt` : deux en sont exclus, et c'est le tri qui
+# donne son sens au contrôle ci-dessous.
+#
+#   - `requirements-dev.txt` — pytest et ses greffons n'ont rien à faire dans un
+#     conteneur exposé au réseau. C'est le fichier que ce test existe pour
+#     surveiller : un paquet qui y glisserait par erreur reste ici « non
+#     déclaré ».
+#   - `requirements-training.txt` — son propre en-tête dit qu'il n'est installé
+#     « ni dans l'image de production, ni sur un poste de développement
+#     ordinaire ». Il sert une machine d'entraînement, pas la plateforme qui
+#     sert.
+#
+# Les trois autres sont des installations **délibérées** qui activent une
+# capacité chargée en lazy, chacune le disant dans son en-tête. Corrigé le
+# 2026-09-12 : la liste ne retenait que `requirements.txt` et
+# `requirements-optional.txt`, si bien que `faster-whisper`, déclaré dans
+# `requirements-audio.txt` depuis le VOLET 32, passait pour non déclaré — mais
+# **seulement sur une machine où il est installé**, puisque la traduction
+# module → distribution passe par les paquets présents. Le test était donc muet
+# là où le paquet manquait et faux là où il ne manquait pas.
+DECLARATIONS_D_EXECUTION = (
+    "requirements.txt",
+    "requirements-optional.txt",
+    "requirements-audio.txt",
+    "requirements-embeddings.txt",
+)
+
 
 def _lire(nom: str) -> str:
     """Retourne le contenu d'un fichier d'exigences."""
@@ -163,14 +191,47 @@ def test_toute_dependance_importee_par_le_code_est_declaree():
     Et `test_une_dependance_optionnelle_est_chargee_en_lazy` empêche cette porte
     de s'élargir en silence.
     """
-    declarees = _declarees("requirements.txt") | _declarees("requirements-optional.txt")
+    declarees = set()
+    for fichier in DECLARATIONS_D_EXECUTION:
+        declarees |= _declarees(fichier)
     attendues = _distributions(_modules_importes(SOURCES_EXECUTION))
     manquantes = sorted(attendues - declarees)
 
     assert manquantes == [], (
         f"importées par {'/'.join(SOURCES_EXECUTION)} mais absentes de "
-        f"requirements.txt et de requirements-optional.txt : {manquantes}"
+        f"{', '.join(DECLARATIONS_D_EXECUTION)} : {manquantes}"
     )
+
+
+def test_le_fichier_de_developpement_ne_compte_jamais_comme_declaration():
+    """
+    Le contre-test de la liste ci-dessus, et la raison pour laquelle elle est
+    écrite plutôt que dérivée d'un `glob`.
+
+    Élargir la liste à tous les `requirements*.txt` aurait été plus court d'une
+    ligne — et aurait supprimé le contrôle : un paquet d'exécution déplacé par
+    erreur vers `requirements-dev.txt` serait alors « déclaré », et l'erreur
+    n'apparaîtrait qu'au démarrage du conteneur, en production.
+    """
+    assert "requirements-dev.txt" not in DECLARATIONS_D_EXECUTION
+    assert "requirements-training.txt" not in DECLARATIONS_D_EXECUTION
+    # Et chaque fichier retenu existe : une entrée mal orthographiée
+    # n'apporterait aucune déclaration sans que rien ne le signale.
+    for fichier in DECLARATIONS_D_EXECUTION:
+        assert (RACINE / fichier).is_file(), f"{fichier} n'existe pas"
+
+
+def test_whisper_est_declare_la_ou_son_poids_le_place():
+    """
+    `faster-whisper` tire CTranslate2 et ~500 Mo de poids : il ne peut pas être
+    exigé de toute installation, et il n'est pas non plus un outil de test.
+
+    Ce test nomme le cas qui a mis la liste en défaut, pour qu'un déplacement
+    du paquet vers `requirements.txt` ou `requirements-dev.txt` se voie.
+    """
+    assert "faster-whisper" in _declarees("requirements-audio.txt")
+    assert "faster-whisper" not in _declarees("requirements.txt")
+    assert "faster-whisper" not in _declarees("requirements-dev.txt")
 
 
 def test_une_dependance_optionnelle_est_chargee_en_lazy():
@@ -185,8 +246,18 @@ def test_une_dependance_optionnelle_est_chargee_en_lazy():
     Le contrôle porte sur les paquets **installés et déclarés optionnels** : ce
     sont les seuls dont l'import de tête aurait pu passer inaperçu, puisqu'il
     réussit sur cette machine.
+
+    Élargi le 2026-09-12 aux trois fichiers d'installation délibérée, en même
+    temps que `DECLARATIONS_D_EXECUTION`. Une porte qu'on élargit sans élargir
+    sa serrure n'est plus une porte : `faster-whisper` et
+    `sentence-transformers` promettent exactement la même chose que les paquets
+    de `requirements-optional.txt` — absents, la fonctionnalité se désactive et
+    le reste tient —, donc ils doivent tenir la même promesse.
     """
-    optionnelles = _declarees("requirements-optional.txt")
+    optionnelles = set()
+    for fichier in DECLARATIONS_D_EXECUTION:
+        if fichier != "requirements.txt":
+            optionnelles |= _declarees(fichier)
     execution = _declarees("requirements.txt")
     table = packages_distributions()
 

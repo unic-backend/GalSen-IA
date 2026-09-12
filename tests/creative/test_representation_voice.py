@@ -288,14 +288,57 @@ def test_comprendre_et_parler_sont_deux_capacites():
     assert "§26" in par_langue["wo"]["speaking_reason"]
 
 
-def test_la_chaine_dit_ou_elle_s_arrete_reellement():
-    etat = pipeline_state()
-    assert etat["first_block"] == "audio_analysis"
-    bloquees = {e["stage"]: e for e in etat["stages"]
+def test_une_etape_bloquee_dit_ce_qui_lui_manque():
+    """
+    La séparation de locuteurs ne dépend d'aucune installation : elle est
+    déclarée externe. Ce test-là ne dépend donc de rien sur la machine.
+    """
+    bloquees = {e["stage"]: e for e in pipeline_state()["stages"]
                 if e["state"] == "BLOCKED"}
+
     assert "speaker_diarization" in bloquees
     # Une étape bloquée dit quoi installer, ou qu'aucune installation ne suffit.
     assert "pyannote" in bloquees["speaker_diarization"]["reason"]
+
+
+def test_la_chaine_s_arrete_a_la_premiere_etape_bloquee(capacite_forcee):
+    """
+    **Corrigé le 2026-09-12.** Ce test affirmait `first_block == "audio_analysis"`.
+    C'était vrai de ce bac à sable-là, dont le `ffmpeg` était compilé
+    `--disable-everything` ; le jour où il a reçu un `ffmpeg` complet, l'étape
+    est passée READY et le test est devenu rouge alors que rien n'avait cassé.
+
+    Ce que la fonction promet n'est pas « la chaîne s'arrête à l'analyse
+    audio » — c'est « elle s'arrête à la **première** étape bloquée dans
+    l'ordre de §21 ». C'est cela qui est mesuré ici, sur une absence posée.
+    """
+    capacite_forcee("audio_analysis", "UNAVAILABLE", "Aucun décodage audio.")
+
+    etat = pipeline_state()
+
+    assert etat["first_block"] == "audio_analysis"
+    assert etat["stages"][0]["stage"] == "audio_analysis"
+    assert etat["stages"][0]["missing"] == "audio_analysis"
+
+
+def test_le_premier_blocage_suit_l_ordre_de_la_directive(capacite_forcee):
+    """
+    Le contre-test : lever le premier blocage doit déplacer le point d'arrêt
+    vers l'étape suivante, jamais le faire disparaître.
+
+    Sans lui, `first_block` pourrait rendre n'importe quelle étape bloquée et
+    les deux tests passeraient quand même.
+    """
+    capacite_forcee("audio_analysis", "AVAILABLE", "Analyse audio disponible.")
+    capacite_forcee("transcription", "UNAVAILABLE", "Aucun transcripteur actif.")
+
+    etat = pipeline_state()
+
+    assert etat["first_block"] == "language_identification"
+    ordre = [e["stage"] for e in etat["stages"]]
+    assert ordre.index("language_identification") < ordre.index("speaker_diarization")
+    # L'étape précédente n'est pas bloquée : le point d'arrêt a bien avancé.
+    assert etat["stages"][0]["state"] == "READY"
 
 
 def test_la_preservation_de_l_audio_est_verifiee_sur_le_disque(tmp_path):

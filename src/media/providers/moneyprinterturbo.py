@@ -27,10 +27,16 @@ l'importe pas. Deux raisons, la première étant juridique :
 
 ## Ce que ce module fait aujourd'hui : refuser en disant quoi installer
 
-Rien ne peut s'exécuter ici — pas de `ffmpeg`, pas de service configuré, pas de
-clé d'API. `generate()` **refuse**, comme `wangp.generate()`, et pour la même
-raison : un résultat bouché est indiscernable d'une composition qui a
-silencieusement échoué.
+Trois conditions doivent tenir ensemble, et `health()` les **mesure** à chaque
+appel : un service déclaré, un `ffmpeg` qui encode réellement, au moins une
+banque d'images configurée. Tant qu'il en manque une, `generate()` **refuse**,
+comme `wangp.generate()`, et pour la même raison : un résultat bouché est
+indiscernable d'une composition qui a silencieusement échoué.
+
+*Corrigé le 2026-09-12 :* cette section affirmait « rien ne peut s'exécuter ici
+— pas de `ffmpeg` ». C'était l'état d'un bac à sable donné, pas une propriété du
+module, et le jour où ce bac à sable a reçu un `ffmpeg` complet la phrase est
+devenue fausse. L'état se lit dans `health()`, jamais dans cette docstring.
 
 Ce que la déclaration apporte quand même : le graphe de capacités enregistre
 qu'un chemin **sans GPU** existe, la fiche de licence fait refuser le
@@ -76,10 +82,12 @@ BLOCAGES = {
         "n'importe pas le projet (ADR-030 : appel par API, pas par lien)."
     ),
     "ffmpeg": (
-        "MoneyPrinterTurbo compose avec moviepy et délègue à `ffmpeg`. Le "
-        "`ffmpeg` de cette machine est construit `--disable-everything` : il "
-        "répond à `-version` comme un complet et n'encode rien. C'est le même "
-        "blocage que quatre étapes du moteur média."
+        "MoneyPrinterTurbo compose avec moviepy et délègue à `ffmpeg`. La "
+        "sonde `video_encode` interroge l'outil au lieu de vérifier qu'un "
+        "binaire existe : un `ffmpeg` construit `--disable-everything` répond "
+        "à `-version` comme un complet et n'encode rien, et ce dépôt l'a "
+        "appris à ses dépens. C'est le même blocage que quatre étapes du "
+        "moteur média."
     ),
     "material": (
         "Aucune banque d'images déclarée configurée. Sans Pexels ni Pixabay, "

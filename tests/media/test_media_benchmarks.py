@@ -36,8 +36,17 @@ def test_une_operation_reelle_est_mesuree():
     assert resultat["min_ms"] <= resultat["median_ms"] <= resultat["max_ms"]
 
 
-def test_une_capacite_absente_donne_non_mesure_pas_zero():
+def test_une_capacite_absente_donne_non_mesure_pas_zero(capacite_forcee):
+    """
+    **Corrigé le 2026-09-12.** L'absence de transcription était celle du bac à
+    sable ; le jour où `faster-whisper` y a été installé, ce test est devenu
+    rouge alors que rien n'avait cassé. Elle est maintenant posée : c'est le
+    refus de rendre `0` qui est mesuré, pas ce que la machine a sous la main.
+    """
+    capacite_forcee("transcription", "UNAVAILABLE", "Aucun transcripteur actif.")
+
     resultat = bench_transcription(samples=2)
+
     assert resultat["status"] == NON_MESURE
     assert resultat["missing"] == "transcription"
     # Zéro décrirait une transcription instantanée.
@@ -142,8 +151,12 @@ def test_un_encodage_reel_est_mesure_sur_cette_machine(tmp_path):
         assert resultat["missing"] == "frame_encode"
 
 
-def test_ce_qui_n_a_pas_ete_mesure_est_nomme():
+def test_ce_qui_n_a_pas_ete_mesure_est_nomme(capacite_forcee):
+    """Un relevé qui tait ce qu'il n'a pas mesuré se lit comme un relevé complet."""
+    capacite_forcee("transcription", "UNAVAILABLE", "Aucun transcripteur actif.")
+
     releve = run_all(samples=1)
+
     assert "transcription" in releve["not_measured"]
     assert releve["not_measured"]["transcription"] == "transcription"
 

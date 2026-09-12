@@ -150,10 +150,47 @@ class TestCouvertureDesLangues:
     def test_aucune_architecture_par_langue(self):
         assert language_coverage()["per_language_architecture"] is False
 
-    def test_nommable_n_est_ni_comprise_ni_parlee(self):
-        """La confusion la moins chère à écrire dans une plateforme d'IA."""
+    def test_aucune_langue_n_est_parlee(self):
+        """
+        `speakable` ne dépend d'aucune installation : **aucune synthèse vocale
+        n'est écrite dans ce dépôt** (§26). Rien à poser ni à simuler ici.
+        """
+        assert language_coverage()["speakable"] == []
+
+    def test_nommable_n_est_pas_comprise(self, capacite_forcee):
+        """
+        La confusion la moins chère à écrire dans une plateforme d'IA.
+
+        **Corrigé le 2026-09-12.** Ce test affirmait `understood == []`. C'était
+        vrai de ce bac à sable-là, qui n'avait pas Whisper ; le jour où il l'a
+        eu, il est devenu rouge alors que rien n'avait cassé — et il aurait
+        fallu le lire comme « la plateforme comprend désormais quelque chose »,
+        ce qui est une bonne nouvelle, pas une régression.
+
+        Ce qui est mesuré maintenant : quinze langues nommables, et
+        `understood` qui suit la sonde `transcription` au lieu de la nommabilité.
+        """
+        capacite_forcee("transcription", "UNAVAILABLE", "Aucun transcripteur actif.")
         couverture = language_coverage()
-        assert couverture["understood"] == []
+        assert couverture["all_nameable"] is True
+        assert couverture["understood"] == [], (
+            "Sans transcription, aucune langue n'est comprise — même nommable."
+        )
+
+    def test_comprendre_suit_la_sonde_pas_le_registre(self, capacite_forcee):
+        """
+        Le contre-test : `understood == []` doit venir de l'absence de la
+        sonde, pas d'une colonne qui serait vide par construction.
+
+        Sans lui, supprimer le calcul de `understood` laisserait le test
+        précédent au vert.
+        """
+        capacite_forcee("transcription", "AVAILABLE", "Transcripteur de test.")
+        couverture = language_coverage()
+        assert couverture["understood"], (
+            "Avec la transcription, des langues doivent être comprises."
+        )
+        # Et comprendre ne devient toujours pas parler.
         assert couverture["speakable"] == []
 
 

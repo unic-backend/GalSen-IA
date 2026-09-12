@@ -76,12 +76,24 @@ def test_un_rendu_avant_le_plan_est_refuse_avant_tout_encodage():
     assert resultat["failed_at"]["produced_by"]["edit_plan"] == ["create_edit_plan"]
 
 
-def test_un_enchainement_possible_est_accepte_et_dit_ce_qui_est_bloque():
+def test_un_enchainement_possible_est_accepte_et_dit_ce_qui_est_bloque(
+        capacite_forcee):
+    """
+    Ordonnable n'est pas exécutable, et c'est tout l'objet de ce test.
+
+    L'absence de `video_encode` est **posée** depuis le 2026-09-12 : elle était
+    celle du bac à sable, dont le `ffmpeg` était compilé `--disable-everything`.
+    Le jour où il a reçu un `ffmpeg` complet, `blocked` s'est vidé et le test
+    est devenu rouge alors que rien n'avait cassé.
+    """
+    capacite_forcee("video_encode", "UNAVAILABLE", "Aucun encodeur H.264.")
+
     resultat = plan_chain(
         ["analyze_media", "transcribe_media", "create_edit_plan",
          "render_video"],
         available=["media"],
     )
+
     assert resultat["ordered"] is True
     assert [etape["tool"] for etape in resultat["steps"]][0] == "analyze_media"
     # Ordonnable n'est pas exécutable : ce qui bloque ici est une capacité.
@@ -109,9 +121,11 @@ def test_l_ordre_compte_pas_seulement_la_presence():
 # --------------------------------------------------------------------------
 
 
-def test_une_capacite_absente_est_nommee_pas_remplacee():
+def test_une_capacite_absente_est_nommee_pas_remplacee(capacite_forcee):
+    # L'absence est posée (2026-09-12) : ce qui est mesuré, c'est que l'outil
+    # **nomme** la capacité qui lui manque au lieu de lui substituer un défaut.
+    capacite_forcee("media_probe", "UNAVAILABLE", "Ni `ffprobe` ni `ffmpeg`.")
     etat = availability("analyze_media")
-    # `media_probe` est absent de cette machine : mesuré, pas supposé.
     assert etat["status"] == "NOT_CONFIGURED"
     assert [m["capability"] for m in etat["missing"]] == ["media_probe"]
     assert etat["missing"][0]["without_it"]
@@ -163,7 +177,9 @@ def test_une_operation_inconnue_est_refusee_avec_la_liste():
     assert "inconnue" in str(erreur.value)
 
 
-def test_un_outil_dont_la_capacite_manque_rend_son_etat_pas_un_resultat():
+def test_un_outil_dont_la_capacite_manque_rend_son_etat_pas_un_resultat(
+        capacite_forcee):
+    capacite_forcee("media_probe", "UNAVAILABLE", "Ni `ffprobe` ni `ffmpeg`.")
     resultat = MediaTool().execute("analyze_media", "/tmp/inexistant.mp4")
     assert resultat["status"] == "NOT_CONFIGURED"
     # Aucune durée, aucun codec, aucune valeur par défaut.
@@ -210,7 +226,8 @@ def test_un_defaut_constate_est_reparable_lui():
     assert [c["check"] for c in resultat["failures"]] == ["file_exists"]
 
 
-def test_reparer_exige_un_encodeur_et_le_dit():
+def test_reparer_exige_un_encodeur_et_le_dit(capacite_forcee):
+    capacite_forcee("video_encode", "UNAVAILABLE", "Aucun encodeur H.264.")
     resultat = MediaTool().execute("repair_video", {"checks": []})
     assert resultat["status"] == "NOT_CONFIGURED"
     assert [m["capability"] for m in resultat["missing"]] == ["video_encode"]

@@ -68,7 +68,15 @@ class TestDeclaration:
 class TestSante:
     """Un blocage sans geste de réparation fait chercher au mauvais endroit."""
 
-    def test_les_trois_conditions_sont_rapportees_ensemble(self, monkeypatch):
+    def test_les_trois_conditions_sont_rapportees_ensemble(
+            self, monkeypatch, capacite_forcee):
+        """
+        Les trois manques sont **posés** depuis le 2026-09-12 : deux par
+        l'environnement, le troisième par la sonde. Compter sur le `ffmpeg`
+        amputé du bac à sable rendait ce test rouge le jour où il a reçu un
+        `ffmpeg` complet — c'est-à-dire quand rien n'avait cassé.
+        """
+        capacite_forcee("video_encode", "UNAVAILABLE", "Aucun encodeur H.264.")
         monkeypatch.delenv(VARIABLE_URL, raising=False)
         for nom in VARIABLES_MATERIEL:
             monkeypatch.delenv(nom, raising=False)
@@ -80,8 +88,10 @@ class TestSante:
         for nom, texte in health()["actions"].items():
             assert texte and texte == BLOCAGES[nom]
 
-    def test_declarer_un_service_retire_ce_manque_seul(self, monkeypatch):
+    def test_declarer_un_service_retire_ce_manque_seul(
+            self, monkeypatch, capacite_forcee):
         """Les conditions sont indépendantes : en réparer une ne ment pas."""
+        capacite_forcee("video_encode", "UNAVAILABLE", "Aucun encodeur H.264.")
         monkeypatch.setenv(VARIABLE_URL, "http://localhost:8080")
         etat = health()
         assert "service" not in etat["missing"]
@@ -94,10 +104,19 @@ class TestSante:
         monkeypatch.setenv(VARIABLES_MATERIEL[0], "true")
         assert "material" not in health()["missing"]
 
-    def test_le_manque_ffmpeg_est_mesure_pas_suppose(self):
+    def test_le_manque_ffmpeg_est_mesure_pas_suppose(self, capacite_forcee):
         """La sonde interroge l'outil ; ce dépôt a payé pour l'apprendre."""
+        capacite_forcee("video_encode", "UNAVAILABLE", "Aucun encodeur H.264.")
         assert "ffmpeg" in health()["missing"]
         assert "n'encode rien" in BLOCAGES["ffmpeg"]
+
+    def test_un_encodeur_qui_repond_retire_ce_manque(self, capacite_forcee):
+        """
+        Le contre-test : sans lui, un « ffmpeg » ajouté en dur à la liste des
+        manques passerait le test précédent sans consulter aucune sonde.
+        """
+        capacite_forcee("video_encode", "AVAILABLE", "H.264 disponible.")
+        assert "ffmpeg" not in health()["missing"]
 
     def test_indisponible_tant_que_tout_n_est_pas_reuni(self):
         assert is_available() is False
@@ -111,7 +130,11 @@ class TestRefus:
             mpt_generate(request=None, output_path="/tmp/x.mp4")
         assert "ne peut pas servir" in str(erreur.value)
 
-    def test_le_refus_enumere_ce_qui_manque(self):
+    def test_le_refus_enumere_ce_qui_manque(self, monkeypatch, capacite_forcee):
+        capacite_forcee("video_encode", "UNAVAILABLE", "Aucun encodeur H.264.")
+        monkeypatch.delenv(VARIABLE_URL, raising=False)
+        for nom in VARIABLES_MATERIEL:
+            monkeypatch.delenv(nom, raising=False)
         with pytest.raises(NotImplementedError) as erreur:
             mpt_generate(request=None, output_path="/tmp/x.mp4")
         message = str(erreur.value)

@@ -3,6 +3,15 @@
 Journal en ajout seul. **Ne pas le lire en entier** — le chercher.
 Entrées antérieures au 2026-08-20 → `docs/memory/archive/completed-work-2026.md`.
 
+### 2026-09-12 (Tests de capacité absente — déterministes)
+
+- 2026-09-12 - Instrument de l'absence (`conftest.py`, `module_absent` + `capacite_forcee`, `tests/test_capacite_absente.py`) - 30 tests mesuraient le bac à sable au lieu du code ; 24 échouaient et 6 erraient depuis qu'il a gagné `faster-whisper`, OpenCV, un `ffmpeg` complet et un pilote de navigateur, sans qu'une ligne de `src/` ait bougé.
+- 2026-09-12 - Décision : simuler l'absence par `None` dans `sys.modules` plutôt qu'ajouter une couture d'injection dans chaque sonde - le chemin testé (sonde, refus, rapport) reste entièrement réel et `src/` ne gagne aucune abstraction qui n'existe que pour les tests - si c'est faux, une sonde qui n'importe pas son outil (le binaire `ffmpeg`) échappe à l'instrument, ce que `capacite_forcee` couvre séparément.
+- 2026-09-12 - Décision : `DECLARATIONS_D_EXECUTION` écrite à la main plutôt qu'un `glob` sur `requirements*.txt` - le glob aurait admis `requirements-dev.txt` et supprimé le contrôle que le test existe pour tenir - si c'est faux, un paquet d'exécution glissé dans le fichier de développement ne se voit qu'au démarrage du conteneur, en production.
+- 2026-09-12 - Défaut corrigé dans `src/creative/golden.py::_s09` : le scénario **exigeait** qu'une sonde soit absente et **levait** au lieu de rendre un verdict, emportant `run_all()` et six tests étrangers. Il rapporte désormais l'état mesuré.
+- 2026-09-12 - Trois affirmations devenues fausses corrigées sur place : la note de `language_coverage()`, la docstring et `BLOCAGES["ffmpeg"]` de `src/media/providers/moneyprinterturbo.py`.
+- 2026-09-12 - Constat non corrigé : `CLAUDE.md` affirme encore « This machine's `ffmpeg` is built `--disable-everything` » (mesuré le 2026-08-17). Ce n'est plus vrai de ce bac à sable. La leçon qu'elle illustre — interroger l'outil, jamais vérifier qu'un binaire existe — reste juste ; c'est la mesure qui a vieilli.
+
 ### 2026-08-20 (OPENCLAW — audit, 19 phases sur 19, ADR-034 : ne pas intégrer)
 
 - 2026-08-23 - `/chat` rédige (`src/chat/`, ADR-039) - 19 phases. Couche de réponse branchée sur `ModelManagerImpl`, ancrage calculé avant génération.

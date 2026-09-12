@@ -11,6 +11,13 @@ La règle qui gouverne ces tests : **une capacité absente refuse, elle n'invent
 pas**. Une transcription fabriquée met des mots dans la bouche de quelqu'un ;
 c'est la forme la plus dommageable que puisse prendre la fabrication que ce dépôt
 refuse, et la seule qui puisse nuire à une personne nommée.
+
+**Corrigé le 2026-09-12.** Les tests du refus mesuraient l'absence de Whisper en
+comptant sur le fait qu'il n'était pas installé sur la machine. Le jour où il
+l'a été, six d'entre eux sont devenus rouges sans qu'une ligne de `src/` ait
+bougé. L'absence est désormais posée explicitement par `module_absent`
+(`conftest.py`) : le chemin testé — la sonde, le refus, le rapport — reste
+entièrement réel, seul l'environnement est contrôlé au lieu d'être subi.
 """
 
 import os
@@ -20,6 +27,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from conftest import module_absent  # noqa: E402
 from src.knowledge_engine.ingestion import DocumentIngestor  # noqa: E402
 from src.knowledge_engine.knowledge_manager import KnowledgeManagerImpl  # noqa: E402
 from src.knowledge_engine.types import SourceCategory  # noqa: E402
@@ -74,6 +82,31 @@ class TranscripteurDeTest(TranscriptionProvider):
         )
 
 
+# Les deux implémentations acceptées par `WhisperTranscriber`. Ne bloquer que la
+# première laisserait la seconde répondre : l'absence serait partielle, donc
+# fausse.
+IMPLEMENTATIONS_WHISPER = ("faster_whisper", "whisper")
+
+
+@pytest.fixture
+def sans_whisper():
+    """Aucune implémentation de Whisper n'est installée, quoi qu'ait la machine."""
+    with module_absent(*IMPLEMENTATIONS_WHISPER):
+        # Le registre garde le fournisseur retenu : sans cette remise à zéro
+        # *dans* le bloc, un `WhisperTranscriber` découvert par un test
+        # précédent survivrait à l'absence qu'on vient de poser.
+        reset_transcriber()
+        yield
+    reset_transcriber()
+
+
+@pytest.fixture
+def sans_ocr():
+    """`pytesseract` est absent — l'un des huit paquets optionnels du VOLET 26.4."""
+    with module_absent("pytesseract"):
+        yield
+
+
 @pytest.fixture(autouse=True)
 def transcripteur_neuf():
     """Le transcripteur partagé ne doit pas fuir d'un test à l'autre."""
@@ -112,7 +145,7 @@ def audio(tmp_path):
 # Sans transcripteur, l'audio est refusé — jamais transcrit à vide
 # ----------------------------------------------------------------------
 
-def test_sans_transcripteur_le_fichier_audio_est_ecarte(base, audio):
+def test_sans_transcripteur_le_fichier_audio_est_ecarte(base, audio, sans_whisper):
     """
     Le traiter comme un document vide serait le pire des deux mondes : la base
     gagnerait une entrée sans contenu, et l'opérateur croirait le message
@@ -127,7 +160,7 @@ def test_sans_transcripteur_le_fichier_audio_est_ecarte(base, audio):
     assert "audio non transcrit" in rapport.skipped[0]
 
 
-def test_le_defaut_est_sans_transcripteur():
+def test_le_defaut_est_sans_transcripteur(sans_whisper):
     """L'état normal d'une installation sans Whisper."""
     assert active_transcriber() is None
     etat = transcription_status()
@@ -135,7 +168,7 @@ def test_le_defaut_est_sans_transcripteur():
     assert etat["reason"] == "missing_dependency"
 
 
-def test_l_etat_dit_quoi_installer():
+def test_l_etat_dit_quoi_installer(sans_whisper):
     """Un motif sans geste n'aide personne."""
     assert "requirements-audio.txt" in transcription_status()["detail"]
 
@@ -222,7 +255,7 @@ def test_une_transcription_qui_echoue_est_rapportee(base, audio):
 # Le fournisseur Whisper, dans un environnement qui ne peut pas l'exécuter
 # ----------------------------------------------------------------------
 
-def test_whisper_absent_rapporte_au_lieu_de_lever():
+def test_whisper_absent_rapporte_au_lieu_de_lever(sans_whisper):
     """
     L'état est interrogeable sans rien télécharger.
 
@@ -234,7 +267,7 @@ def test_whisper_absent_rapporte_au_lieu_de_lever():
     assert etat.reason is TranscriptionUnavailable.MISSING_DEPENDENCY
 
 
-def test_whisper_leve_plutot_que_rendre_un_texte_vide(tmp_path):
+def test_whisper_leve_plutot_que_rendre_un_texte_vide(tmp_path, sans_whisper):
     """
     Rendre `""` se confondrait avec « la personne n'a rien dit ».
 
@@ -278,7 +311,7 @@ def test_une_image_devient_une_description_mesuree(base, image):
     assert "PNG" in contenu
 
 
-def test_l_absence_d_ocr_retire_le_texte_mais_pas_l_image(base, image):
+def test_l_absence_d_ocr_retire_le_texte_mais_pas_l_image(base, image, sans_ocr):
     """
     `pytesseract` est souvent absent — c'est l'un des huit paquets optionnels
     trouvés au VOLET 26.4. Son absence ne doit pas empêcher l'image d'entrer.

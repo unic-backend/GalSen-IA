@@ -127,7 +127,10 @@ def test_aucune_chaine_n_est_proposee_tant_qu_une_question_reste_ouverte():
     assert "structure" not in plan
 
 
-def test_une_demande_complete_produit_une_chaine_verifiee():
+def test_une_demande_complete_produit_une_chaine_verifiee(capacite_forcee):
+    # `video_encode` est posé absent (2026-09-12) : ce qui est mesuré est que la
+    # chaîne distingue « bloqué par une capacité » de « bloqué par l'ordre ».
+    capacite_forcee("video_encode", "UNAVAILABLE", "Aucun encodeur H.264.")
     plan = production_plan(
         "Fais-moi un documentaire vertical de 2 minutes en wolof.",
         available=["media", "project"],
