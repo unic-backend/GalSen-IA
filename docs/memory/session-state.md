@@ -6,45 +6,38 @@ Ce fichier est injecté automatiquement au démarrage de chaque session Claude C
 
 ---
 
-## Dernière session — 2026-09-10 (la branche `claude/arena-personal-ai-qh66ix` redémarrée après fusion, et la suite n'est plus verte)
+## Dernière session — 2026-09-12 (les tests de capacité absente ne mesurent plus la machine ; la suite est verte)
 
-**En cours** : rien. Le travail de la session précédente (abroger les règles qui
-arrêtaient le travail demandé — `09a1a70`, `d8d97bf`) était déjà commité mais
-**jamais poussé**, et le PR #38 de cette même branche avait entre-temps été
-fusionné dans `main`. Rebasé sur `origin/main` (aucun conflit — même contenu),
-vérifié, poussé en force-with-lease : `40b234f`.
+**En cours** : rien.
 
-**Terminé** :
-- Rebase + push de la branche (règle « après un PR fusionné, redémarrer la
-  branche, garder les commits non fusionnés » de `.claude/rules/git-workflow.md`).
-- `ruff check scripts src tests agents` propre ; hook `session_bootstrap.py`
-  reconfirmé sans trace de « PROTOCOLE DE PHASES »/« Je continue »/« ATTENDRE ».
-- **Suite complète mesurée deux fois, à neuf** : `bcrypt` déclaré dans
-  `requirements.txt` mais absent de ce conteneur → 56 échecs/erreurs
-  (`test_auth_oauth.py`, `test_auth_hybrid.py`, `test_auth_reset_lockout.py`).
-  Installé (`pip install bcrypt==5.0.0`) — **corrige tout**, confirmé par un
-  second run complet. Le `Dockerfile` installe déjà correctement
-  `requirements.txt` ; l'écart vient de ce bac à sable précis, pas du dépôt.
-- **Après ce correctif : 7349 passés, 24 échoués, 6 erreurs, 11 ignorés, 3
-  désélectionnés.** Aucun rapport avec la branche — diff contre `main` limité
-  à 9 fichiers de règles/doc + `scripts/session_bootstrap.py`, zéro `src/`
-  zéro `tests/`. Cause réelle : ce bac à sable a maintenant `faster-whisper`
-  et un OpenCV complet **installés**, alors que `tests/test_multimodal_ingestion.py`,
-  `tests/creative/test_golden.py`, `tests/creative/test_representation_voice.py`,
-  `tests/creative/test_creative_providers.py`, `tests/media/test_media_*.py`,
-  `tests/media/test_moneyprinterturbo.py` supposent ces outils **absents** en
-  s'appuyant sur l'environnement réel plutôt que sur un double contrôlé — la
-  moindre montée en capacité du bac à sable les casse. `test_requirements.py`
-  le confirme : `faster-whisper` est importé par `src/agents/tools` et n'est
-  déclaré nulle part.
+**Terminé** — commit `f8e7dc7`, poussé sur `claude/arena-personal-ai-qh66ix` :
+- Instrument de l'absence dans `conftest.py` : `module_absent(*noms)` (un `None`
+  dans `sys.modules` lève `ImportError` comme un paquet absent) et
+  `capacite_forcee` (pour ce qui ne tient pas à un import : le binaire `ffmpeg`,
+  le registre de transcription du VOLET 32). `tests/test_capacite_absente.py`
+  prouve l'instrument lui-même — 7 tests, 3 sabotages.
+- Les 24 échecs et 6 erreurs du 10/09 sont corrigés à la source : ils venaient de
+  tests qui affirmaient une absence en comptant sur le bac à sable.
+- Quatre affirmations devenues fausses corrigées **dans `src/`** : `_s09` de
+  `golden.py` **exigeait** qu'une sonde manque et **levait** (c'est lui qui
+  emportait les 6 erreurs), la note de `language_coverage()`, la docstring et
+  `BLOCAGES["ffmpeg"]` de `moneyprinterturbo.py`.
+- `faster-whisper` : `DECLARATIONS_D_EXECUTION` dans `test_requirements.py`
+  admet `requirements-audio.txt`, exclut `-dev` et `-training` nommément, avec
+  deux contre-tests.
+- **Mesuré le 12/09, après la dernière édition : 7394 passés, 11 ignorés, 3
+  désélectionnés, 0 échec, 0 erreur** (9 min 07). `ruff check src tests scripts
+  agents conftest.py` propre. Aucun test supprimé ni affaibli : 215 → 223
+  collectés dans les fichiers touchés, plus 7 nouveaux.
 
-**Prochaine étape** : ouvrir un VOLET séparé — « rendre les tests de capacité
-absente déterministes (mock, pas environnement réel) + déclarer
-`faster-whisper` » — voir `docs/memory/pending-work.md`. Ce n'est pas la
-même mission que le repeal de règles, ne pas les mélanger.
+**Prochaine étape** : la P0 de `priorities.md` — `ollama serve` avec un modèle
+de contexte ≥ 8192, sur la machine du propriétaire. Rien dans le dépôt ne
+l'attend.
 
-**Bloqué** : rien sur la branche actuelle. Le repeal des règles est fait et
-poussé ; aucun PR ouvert pour lui (non demandé).
+**Bloqué** : rien. Deux constats notés sans être corrigés — `CLAUDE.md` affirme
+encore que le `ffmpeg` de cette machine est `--disable-everything` (mesure du
+17/08, fausse dans ce bac à sable) ; `capabilities.clear_cache()` vide un cache
+que rien n'écrit (P3 de `pending-work.md`).
 
 ---
 
